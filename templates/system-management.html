@@ -1,0 +1,39 @@
+{% extends 'base2.html' %} 
+{% load static %} 
+{% block content %}
+
+<!-- CONTENT -->
+<div class="container-fluid my-4">
+  <!-- Tabs -->
+  <div class="card-box p-4 mb-4">
+    <div class="d-flex gap-3">
+      <button class="btn nav-btn active" onclick="loadPage('{% url 'syllabus-management' %}', this)">
+        <i class="bi bi-book-open"></i> Syllabus Management
+      </button>
+      <button class="btn nav-btn" onclick="loadPage('{% url 'scholarship_test:scholarshiptest_management' %}', this)">
+        <i class="bi bi-mortarboard"></i> Test Management
+      </button>
+      <button class="btn nav-btn" onclick="loadPage('{% url 'bridgecourse:bridgecourse-management' %}', this)">
+        <i class="bi bi-award"></i> Bridge Course Management
+      </button>
+      <button class="btn nav-btn" onclick="loadPage('{% url 'user-management' %}', this)">
+        <i class="bi bi-people"></i> User Management
+      </button>
+      <button class="btn nav-btn" onclick="loadPage('{% url 'attendance' %}', this)">
+        <i class="bi bi-calendar-check"></i> Attendance
+      </button>
+      <button class="btn nav-btn" onclick="loadPage('{% url 'teacherschedule:index' %}', this)">
+        <i class="bi bi-calendar-week"></i> Teacher's Schedule
+      </button>
+    </div>
+  </div>
+
+  <!-- Page Loader -->
+  <div class="card-box p-0 animate__animated animate__fadeInUp">
+    <iframe id="contentFrame" src="{% url 'syllabus-management' %}"></iframe>
+  </div>
+</div>
+
+<!-- SCRIPT -->
+<script src="{% static 'js/system-management.js'%}"></script>
+{% endblock %}

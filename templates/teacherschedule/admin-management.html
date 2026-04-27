@@ -1,0 +1,1552 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teacher's Schedule Management - Student Diagnostic System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{% static 'img/logo.webp' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(90deg, #0d6efd, #0891b2);
+      --primary-color: #2563eb;
+      --secondary-color: #06b6d4;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: #f4f9fc; }
+    
+    .page-header {
+      background: var(--primary-gradient);
+      color: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .breadcrumb-item a { color: white; text-decoration: none; }
+    .breadcrumb-item.active { color: rgba(255,255,255,0.8); }
+    
+    .card {
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .card-header {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 20px;
+      font-weight: 600;
+    }
+    
+    .form-control, .form-select {
+      border-radius: 10px;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    .btn-primary {
+      background: var(--primary-gradient);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    
+    .btn-outline {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 8px 16px;
+      background: white;
+      color: #333;
+    }
+    
+    .btn-outline:hover {
+      background: #f8f9fa;
+      border-color: #d0d0d0;
+      color: #111827;
+    }
+
+    .btn-outline:focus,
+    .btn-outline:active {
+      color: #111827 !important;
+      background: #f8f9fa !important;
+      border-color: #d0d0d0 !important;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-outline i {
+      color: inherit;
+    }
+    
+    .table th {
+      background: #f8f9fa;
+      color: #495057;
+      font-weight: 600;
+      border-bottom: 2px solid #e5e7eb;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+    
+    .table td {
+      vertical-align: middle;
+      padding: 14px 12px;
+    }
+
+    .table th,
+    .form-label,
+    .modal-title,
+    #scheduleTableBody td {
+      text-transform: uppercase;
+    }
+    
+    .badge-subject {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .badge-completed {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    
+    .badge-pending {
+      background: #fef3c7;
+      color: #d97706;
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .action-btn.edit {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    
+    .action-btn.delete {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .bulk-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .import-folder {
+      border: 1px solid #dbe3ef;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: #fff;
+    }
+
+    .folder-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      text-align: left;
+    }
+
+    .folder-toggle-icon {
+      color: #64748b;
+      transition: transform 0.2s ease;
+    }
+
+    .folder-toggle[aria-expanded="true"] .folder-toggle-icon {
+      transform: rotate(90deg);
+    }
+
+    .folder-files {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .folder-files.open {
+      display: block;
+    }
+
+    .import-file-card {
+      border: 1px solid #dbe3ef;
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 16px;
+      background: #fff;
+    }
+
+    .import-file-link {
+      color: #1f2937;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-decoration: none;
+    }
+
+    .import-file-link:hover {
+      color: var(--primary-color);
+    }
+
+    .folder-label {
+      font-size: 0.95rem;
+      color: #64748b;
+    }
+    
+    .action-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--primary-color);
+      background: #f0f7ff;
+    }
+    
+    .upload-icon {
+      font-size: 48px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+    
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 10px;
+    }
+    
+    .view-toggle button {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .view-toggle button.active {
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .calendar-view {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    
+    .calendar-day {
+      min-height: 100px;
+      padding: 8px;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .calendar-day.today {
+      border-color: var(--primary-color);
+      background: #f0f7ff;
+    }
+    
+    .calendar-day.has-event {
+      background: #faf5ff;
+    }
+    
+    .calendar-date {
+      font-weight: 600;
+      font-size: 14px;
+      color: #333;
+    }
+    
+    .calendar-event {
+      font-size: 11px;
+      padding: 4px 8px;
+      margin-top: 4px;
+      border-radius: 4px;
+      background: #ede9fe;
+      color: #5b21b6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+    
+    .summary-stat {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0369a1;
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    @media (min-width: 768px) and (max-width: 1400px) {
+      #tableView {
+        overflow-x: auto;
+      }
+
+      #tableView .table-responsive {
+        margin: 0 10px;
+        padding: 10px 8px 4px;
+        border-radius: 14px;
+        background: #fff;
+        display: block;
+        width: 100%;
+        overflow-x: auto !important;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #tableView .table {
+        width: max-content !important;
+        min-width: 100% !important;
+        max-width: none !important;
+        table-layout: auto !important;
+        margin-bottom: 0;
+      }
+
+      #tableView .table th {
+        padding: 14px 12px;
+        white-space: nowrap !important;
+        min-width: max-content !important;
+        width: 1% !important;
+      }
+
+      #tableView .table td {
+        padding: 16px 12px;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        overflow-wrap: normal !important;
+        min-width: max-content !important;
+        width: 1% !important;
+      }
+
+      #tableView .table td *,
+      #tableView .table th * {
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        overflow-wrap: normal !important;
+      }
+
+      #calendarView {
+        margin: 0 10px;
+        padding: 10px 8px 4px;
+      }
+
+      .calendar-view {
+        gap: 12px;
+      }
+
+      .calendar-day {
+        min-height: 118px;
+        padding: 12px;
+      }
+
+      .calendar-date {
+        margin-bottom: 6px;
+      }
+
+      .calendar-event {
+        margin-top: 6px;
+        padding: 6px 8px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .page-header { padding: 16px; }
+      .calendar-view { grid-template-columns: repeat(1, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="container py-4" style="max-width: 95%">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="#"><i class="bi bi-house"></i> Home</a></li>
+            <li class="breadcrumb-item active">Teacher's Schedule Management</li>
+          </ol>
+        </nav>
+        <h3 class="fw-bold mb-1"><i class="bi bi-calendar-week me-2"></i>Teacher's Schedule Management</h3>
+        <p class="mb-0 opacity-75">Create, manage and organize academic schedules</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-outline"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#addScheduleModal"
+        >
+          <i class="bi bi-plus-circle me-1"></i> Add Schedule Entry
+        </button>
+        <button class="btn btn-outline" type="button" data-bs-toggle="modal" data-bs-target="#importScheduleModal">
+          <i class="bi bi-upload me-1"></i> Import
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="summary-stat">
+        <div class="stat-number" id="totalEntriesCount">{{ entries|length }}</div>
+        <div class="stat-label">Total Entries</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-stat">
+        <div class="stat-number">{{ subjects|length }}</div>
+        <div class="stat-label">Subjects</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-stat">
+        <div class="stat-number">{{ teachers|length }}</div>
+        <div class="stat-label">Teachers</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-stat">
+        <div class="stat-number" id="completedCount">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Main Column -->
+    <div class="col-12">
+      <!-- View Toggle & Filters -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            <div class="view-toggle">
+              <button type="button" class="active" onclick="switchView('table', this)">
+                <i class="bi bi-table"></i> Table
+              </button>
+              <button type="button" onclick="switchView('calendar', this)">
+                <i class="bi bi-calendar3"></i> Calendar
+              </button>
+            </div>
+            <form method="get" class="d-flex gap-2 flex-wrap">
+              <select name="subject" class="form-select" style="width: auto; min-width: 150px;">
+                <option value="">All Subjects</option>
+                {% for s in all_subjects %}
+                <option value="{{ s.name }}" {% if filter_subject == s.name %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+              </select>
+              <input type="date" name="date_from" class="form-control" style="width: auto;" value="{{ filter_date_from }}" placeholder="From">
+              <input type="date" name="date_to" class="form-control" style="width: auto;" value="{{ filter_date_to }}" placeholder="To">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-funnel"></i> Filter
+              </button>
+            </form>
+          </div>
+
+          <!-- Table View -->
+          <div id="tableView">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>DATE</th>
+                    <th>SUBJECT</th>
+                    <th>TOPICS</th>
+                    <th>TEACHERS</th>
+                    <th>DURATION</th>
+                    <th>DPP</th>
+                    <th>STATUS</th>
+                    <th>LECTURE TIME</th>
+                  </tr>
+                </thead>
+                <tbody id="scheduleTableBody">
+                  {% for entry in entries %}
+                  <tr data-id="{{ entry.id }}">
+                    <td>{{ entry.date|date:"d-m-Y" }}</td>
+                    <td><span class="badge-subject">{{ entry.subject.subject }}</span></td>
+                    <td>{{ entry.topic }}</td>
+                    <td>{{ entry.teacher.name|default:"-" }}</td>
+                    <td>{{ entry.get_duration_display }}</td>
+                    <td>
+                      {% if entry.dpp_file %}
+                      <a href="{{ entry.dpp_file.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Open PDF
+                      </a>
+                      {% else %}
+                      {{ entry.lecture_number }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if entry.is_completed %}
+                      <span class="badge-subject badge-completed"><i class="bi bi-check-circle me-1"></i>COMPLETED</span>
+                      {% else %}
+                      <span class="badge-subject badge-pending"><i class="bi bi-clock me-1"></i>PENDING</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ entry.lecture_time|time:"h:i A"|default:"-" }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                      <i class="bi bi-inbox d-block mb-2" style="font-size: 32px;"></i>
+                      No schedule entries found. Add one below.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          <!-- Calendar View -->
+          <div id="calendarView" style="display: none;">
+            <div class="calendar-view" id="calendarContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="max-width: 95%">
+  <div class="card mb-4" id="parsedImportSection">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div><i class="bi bi-file-earmark-text me-2"></i>Imported Content</div>
+      <span class="text-muted small" id="parsedImportsCount">0 imports</span>
+    </div>
+    <div class="card-body">
+      <div class="bulk-toolbar">
+        <label class="d-flex align-items-center gap-2 mb-0">
+          <input type="checkbox" id="selectAllImports" onchange="toggleAllImports(this)">
+          <span class="small fw-semibold">Select all imported files</span>
+        </label>
+        <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDeleteImportsBtn" onclick="bulkDeleteImports()" disabled>
+          <i class="bi bi-trash me-1"></i> Delete Selected
+        </button>
+      </div>
+      <div id="parsedImportsContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Add Schedule Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Add Schedule Entry</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="scheduleForm">
+          <div class="mb-3">
+            <label class="form-label">DATE <span class="text-danger">*</span></label>
+            <input type="date" name="date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">SUBJECT <span class="text-danger">*</span></label>
+            <select name="subject" class="form-select" required>
+              <option value="">Select Subject</option>
+              {% for s in all_subjects %}
+              <option value="{{ s.name }}" data-grade="{{ s.grade }}" data-board="{{ s.board }}" data-batch="{{ s.batch }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">TOPICS <span class="text-danger">*</span></label>
+            <input type="text" name="topic" class="form-control" placeholder="Enter topic name" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">TEACHERS</label>
+              {% if is_superuser %}
+              <select name="teacher_id" class="form-select">
+                <option value="">No Teacher Assigned</option>
+                {% for t in teachers %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              <select name="teacher_id" class="form-select" required>
+                <option value="">Select Teacher</option>
+                {% for t in teachers %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+                {% endfor %}
+              </select>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">DURATION</label>
+              <select name="duration" class="form-select">
+                <option value="1">1 Lecture</option>
+                <option value="2">2 Lectures</option>
+                <option value="3">3 Lectures</option>
+                <option value="4">4 Lectures</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">DPP PDF</label>
+              <input
+                type="file"
+                name="dpp_file"
+                class="form-control"
+                accept=".pdf,application/pdf"
+              >
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">STATUS</label>
+              <select name="is_completed" class="form-select">
+                <option value="false">PENDING</option>
+                <option value="true">COMPLETED</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">LECTURE TIME</label>
+            <input type="time" name="lecture_time" class="form-control">
+          </div>
+          <input type="hidden" name="grade" value="10">
+          <input type="hidden" name="board" value="CBSE">
+          <input type="hidden" name="batch" value="B1">
+          <input type="hidden" name="chapter" value="">
+          <input type="hidden" name="notes" value="">
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-2"></i>Save Schedule
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Schedule Entry</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editForm">
+          <input type="hidden" name="entry_id" id="editEntryId">
+          <div class="mb-3">
+            <label class="form-label">Topic</label>
+            <input type="text" name="topic" id="editTopic" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Chapter</label>
+            <input type="text" name="chapter" id="editChapter" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Teacher</label>
+            <select name="teacher_id" id="editTeacher" class="form-select">
+              <option value="">No Teacher Assigned</option>
+              {% for t in teachers %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Lecture Time</label>
+            <input type="time" name="lecture_time" id="editLectureTime" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" id="editNotes" class="form-control" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importScheduleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+        <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Import Schedule File</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="scheduleImportForm">
+          <div class="mb-3">
+            <label class="form-label">Teacher <span class="text-danger">*</span></label>
+            <select name="teacher_id" class="form-select" required>
+              <option value="">Select Teacher</option>
+              {% for t in teachers %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Schedule File <span class="text-danger">*</span></label>
+            <input
+              type="file"
+              name="schedule_file"
+              class="form-control"
+              accept=".pdf,.xls,.xlsx,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              required
+            >
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-upload me-2"></i>Import File
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ entries_json|json_script:"entries-data" }}
+{{ parsed_imports_json|json_script:"parsed-imports-data" }}
+
+<script>
+let currentView = 'table';
+let selectedEntries = [];
+let selectedImports = [];
+let openImportFolders = [];
+let entriesData = JSON.parse(document.getElementById('entries-data').textContent);
+let parsedImportsData = JSON.parse(document.getElementById('parsed-imports-data').textContent);
+
+document.addEventListener('DOMContentLoaded', function() {
+  renderTable();
+  renderParsedImports();
+  renderCalendar();
+  updateSummaryStats();
+});
+
+function getCookie(name) {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(`${name}=`));
+
+  return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : null;
+}
+
+function getJsonHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-CSRFToken': getCookie('csrftoken') || '',
+  };
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatDisplayDate(dateValue) {
+  if (!dateValue) return '-';
+  const [year, month, day] = dateValue.split('-');
+  return `${day}-${month}-${year}`;
+}
+
+function sortEntries() {
+  entriesData.sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date);
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+    return (a.lecture_number || 0) - (b.lecture_number || 0);
+  });
+}
+
+function updateSummaryStats() {
+  document.getElementById('totalEntriesCount').textContent = entriesData.length;
+  document.getElementById('completedCount').textContent = entriesData.filter(entry => entry.is_completed).length;
+}
+
+function renderLectureTable(lectures) {
+  return `
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Lecture</th>
+            <th>Topic</th>
+            <th>Details</th>
+            <th>DPP</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lectures.map(lecture => `
+            <tr>
+              <td class="fw-semibold">L${escapeHtml(lecture.lecture_no)}</td>
+              <td>${escapeHtml(lecture.title)}</td>
+              <td>${escapeHtml(lecture.details)}</td>
+              <td>${escapeHtml(lecture.dpp)}</td>
+              <td>${escapeHtml(lecture.duration)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderSpreadsheetSheets(sheets) {
+  return sheets.map(sheet => `
+    <div class="mb-4">
+      <h6 class="fw-bold mb-2">${escapeHtml(sheet.name)}</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead>
+            <tr>
+              ${sheet.columns.map(column => `<th>${escapeHtml(column)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${sheet.rows.map(row => `
+              <tr>
+                ${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPhaseCards(phases) {
+  return `
+    <div class="row g-3">
+      ${phases.map(phase => `
+        <div class="col-lg-6">
+          <div class="border rounded-4 p-3 h-100">
+            <div class="fw-bold mb-1">${escapeHtml(phase.phase)}</div>
+            <div class="text-muted small mb-3">${escapeHtml(phase.overview)}</div>
+            ${phase.milestones && phase.milestones.length ? `
+              <div class="mb-3">
+                <div class="small fw-semibold text-primary mb-1">Milestones</div>
+                <div class="d-flex flex-wrap gap-2">
+                  ${phase.milestones.map(item => `<span class="badge bg-light text-dark border">${escapeHtml(item)}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+            ${phase.items && phase.items.length ? `
+              <div class="small">
+                ${phase.items.map(item => `<div class="mb-1">${escapeHtml(item)}</div>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderParsedImportBody(item) {
+  if (item.parse_type === 'lecture_plan') {
+    return `
+      ${item.chapters && item.chapters.length ? `
+        <div class="mb-3 d-flex flex-wrap gap-2">
+          ${item.chapters.map(chapter => `
+            <span class="badge bg-light text-dark border">
+              ${escapeHtml(chapter.title)}${chapter.schedule ? ` - ${escapeHtml(chapter.schedule)}` : ''}
+            </span>
+          `).join('')}
+        </div>
+      ` : ''}
+      ${item.lectures && item.lectures.length ? renderLectureTable(item.lectures) : '<div class="text-muted">No lecture rows found.</div>'}
+    `;
+  }
+
+  if (item.parse_type === 'phase_plan') {
+    return item.phases && item.phases.length
+      ? renderPhaseCards(item.phases)
+      : '<div class="text-muted">No phase data found.</div>';
+  }
+
+  if (item.parse_type === 'spreadsheet') {
+    return item.sheets && item.sheets.length
+      ? renderSpreadsheetSheets(item.sheets)
+      : '<div class="text-muted">No sheet data found.</div>';
+  }
+
+  return `
+    <div class="small text-muted">
+      ${(item.text_blocks || []).map(block => `<div class="mb-2">${escapeHtml(block)}</div>`).join('')}
+    </div>
+  `;
+}
+
+function renderParsedImports() {
+  parsedImportsData.sort((a, b) => b.uploaded_at.localeCompare(a.uploaded_at));
+
+  const container = document.getElementById('parsedImportsContent');
+  const counter = document.getElementById('parsedImportsCount');
+  const bulkDeleteButton = document.getElementById('bulkDeleteImportsBtn');
+  const selectAllCheckbox = document.getElementById('selectAllImports');
+  selectedImports = selectedImports.filter(id => parsedImportsData.some(item => String(item.id) === String(id)));
+  counter.textContent = `${parsedImportsData.length} import${parsedImportsData.length === 1 ? '' : 's'}`;
+  bulkDeleteButton.disabled = selectedImports.length === 0;
+  selectAllCheckbox.checked = parsedImportsData.length > 0 && selectedImports.length === parsedImportsData.length;
+  selectAllCheckbox.indeterminate = selectedImports.length > 0 && selectedImports.length < parsedImportsData.length;
+
+  if (!parsedImportsData.length) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+    container.innerHTML = `
+      <div class="text-center text-muted py-4">
+        <i class="bi bi-file-earmark-arrow-up d-block mb-2" style="font-size: 32px;"></i>
+        Import a PDF or Excel file to see parsed content here.
+      </div>
+    `;
+    return;
+  }
+
+  const groupedImports = parsedImportsData.reduce((groups, item) => {
+    const groupKey = item.teacher || 'Unassigned';
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+    }
+    groups[groupKey].push(item);
+    return groups;
+  }, {});
+  const groupNames = Object.keys(groupedImports).sort();
+  openImportFolders = openImportFolders.filter(folderName => groupNames.includes(folderName));
+
+  container.innerHTML = groupNames.map(teacherName => `
+    <div class="import-folder">
+      <button
+        type="button"
+        class="folder-toggle"
+        data-folder-name="${escapeHtml(teacherName)}"
+        aria-expanded="${openImportFolders.includes(teacherName) ? 'true' : 'false'}"
+        onclick="toggleImportFolder(this.dataset.folderName)"
+      >
+        <div>
+          <h5 class="fw-bold mb-1"><i class="bi bi-folder2 me-2 text-primary"></i>${escapeHtml(teacherName)}</h5>
+          <div class="folder-label">Folder: ${escapeHtml(teacherName)} | ${groupedImports[teacherName].length} file(s)</div>
+        </div>
+        <i class="bi bi-chevron-right folder-toggle-icon"></i>
+      </button>
+      <div class="folder-files ${openImportFolders.includes(teacherName) ? 'open' : ''}">
+      ${groupedImports[teacherName].map(item => `
+        <div class="import-file-card">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-start gap-3">
+              <input
+                type="checkbox"
+                class="form-check-input mt-2"
+                value="${item.id}"
+                ${selectedImports.includes(String(item.id)) ? 'checked' : ''}
+                onchange="toggleImportSelection(this)"
+              >
+              <div>
+                <a href="${escapeHtml(item.file_url)}" target="_blank" class="import-file-link">
+                  ${escapeHtml(item.file_name)}
+                </a>
+                <div class="text-muted small">
+                  ${escapeHtml(item.file_type)} | Imported on ${escapeHtml(item.uploaded_at_display)} by ${escapeHtml(item.uploaded_by)}
+                </div>
+                <div class="small text-muted mt-1">Stored at: ${escapeHtml(item.file_path || '')}</div>
+                <div class="small text-primary mt-1">${escapeHtml(item.summary || '')}</div>
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="${escapeHtml(item.file_url)}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye me-1"></i> Open Original
+              </a>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteImportedFile(${item.id})">
+                <i class="bi bi-trash me-1"></i> Delete
+              </button>
+            </div>
+          </div>
+          ${renderParsedImportBody(item)}
+        </div>
+      `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleImportFolder(folderName) {
+  if (openImportFolders.includes(folderName)) {
+    openImportFolders = openImportFolders.filter(name => name !== folderName);
+  } else {
+    openImportFolders.push(folderName);
+  }
+  renderParsedImports();
+}
+
+function focusParsedImports() {
+  document.getElementById('parsedImportSection')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
+
+function renderTable() {
+  sortEntries();
+
+  const tbody = document.getElementById('scheduleTableBody');
+  selectedEntries = selectedEntries.filter(id => entriesData.some(entry => String(entry.id) === String(id)));
+
+  if (!entriesData.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center text-muted py-4">
+          <i class="bi bi-inbox d-block mb-2" style="font-size: 32px;"></i>
+          No schedule entries found. Add one below.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = entriesData.map(entry => `
+    <tr data-id="${entry.id}">
+      <td>${escapeHtml(entry.date_display || formatDisplayDate(entry.date))}</td>
+      <td><span class="badge-subject">${escapeHtml(entry.subject)}</span></td>
+      <td>${escapeHtml(entry.topic)}</td>
+      <td>${escapeHtml(entry.teacher || '-')}</td>
+      <td>${escapeHtml(entry.duration_display || '-')}</td>
+      <td>${
+        entry.dpp_file_url
+          ? `<a href="${escapeHtml(entry.dpp_file_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>Open PDF</a>`
+          : escapeHtml(entry.dpp || entry.lecture_number || '-')
+      }</td>
+      <td>
+        ${entry.is_completed
+          ? '<span class="badge-subject badge-completed"><i class="bi bi-check-circle me-1"></i>COMPLETED</span>'
+          : '<span class="badge-subject badge-pending"><i class="bi bi-clock me-1"></i>PENDING</span>'
+        }
+      </td>
+      <td>${escapeHtml(entry.lecture_time_display || '-')}</td>
+    </tr>
+  `).join('');
+}
+
+// View toggle
+function switchView(view, button) {
+  currentView = view;
+  document.querySelectorAll('.view-toggle button').forEach(btn => btn.classList.remove('active'));
+  button.classList.add('active');
+  
+  document.getElementById('tableView').style.display = view === 'table' ? 'block' : 'none';
+  document.getElementById('calendarView').style.display = view === 'calendar' ? 'block' : 'none';
+  
+  if (view === 'calendar') {
+    renderCalendar();
+  }
+}
+
+// Calendar rendering
+function renderCalendar() {
+  const container = document.getElementById('calendarContainer');
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startPadding = firstDay.getDay();
+  
+  let html = '';
+  
+  // Day headers
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  days.forEach(d => {
+    html += `<div class="text-center fw-bold text-muted small">${d}</div>`;
+  });
+  
+  // Empty cells
+  for (let i = 0; i < startPadding; i++) {
+    html += '<div></div>';
+  }
+  
+  // Days
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const isToday = day === today.getDate();
+    const events = entriesData.filter(e => e.date === dateStr);
+    
+    html += `
+      <div class="calendar-day ${isToday ? 'today' : ''} ${events.length > 0 ? 'has-event' : ''}">
+        <div class="calendar-date">${day}</div>
+        ${events.slice(0, 2).map(e => `
+          <div class="calendar-event">${escapeHtml(e.subject)} - ${escapeHtml((e.topic || '').substring(0, 20))}</div>
+        `).join('')}
+        ${events.length > 2 ? `<div class="small text-muted">+${events.length - 2} more</div>` : ''}
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+}
+
+function toggleEntrySelection(checkbox) {
+  const entryId = checkbox.value;
+  if (checkbox.checked) {
+    if (!selectedEntries.includes(entryId)) {
+      selectedEntries.push(entryId);
+    }
+    return;
+  }
+
+  selectedEntries = selectedEntries.filter(id => id !== entryId);
+}
+
+function toggleImportSelection(checkbox) {
+  const importId = checkbox.value;
+  if (checkbox.checked) {
+    if (!selectedImports.includes(importId)) {
+      selectedImports.push(importId);
+    }
+  } else {
+    selectedImports = selectedImports.filter(id => id !== importId);
+  }
+  renderParsedImports();
+}
+
+function toggleAllImports(source) {
+  selectedImports = source.checked ? parsedImportsData.map(item => String(item.id)) : [];
+  renderParsedImports();
+}
+
+// Form submit
+document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(this);
+  const selectedSubject = this.querySelector('select[name="subject"]')?.selectedOptions[0];
+  formData.set('grade', selectedSubject?.dataset.grade || formData.get('grade') || '10');
+  formData.set('board', selectedSubject?.dataset.board || formData.get('board') || 'CBSE');
+  formData.set('batch', selectedSubject?.dataset.batch || formData.get('batch') || 'B1');
+  formData.set('teacher_id', formData.get('teacher_id') || '');
+
+  const dppFile = formData.get('dpp_file');
+  if (dppFile && dppFile.name) {
+    const fileExtension = dppFile.name.split('.').pop().toLowerCase();
+    if (fileExtension !== 'pdf') {
+      showToast('Only PDF files are allowed for DPP upload', 'error');
+      return;
+    }
+  }
+  
+  try {
+    const response = await fetch('/teacherschedule/add/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
+      body: formData
+    });
+    
+    const responseText = await response.text();
+    let result = {};
+
+    if (responseText) {
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error(`Server returned an unexpected response (${response.status})`);
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(result.error || `Unable to save schedule (${response.status})`);
+    }
+
+    if (result.success) {
+      showToast('Schedule entry added successfully!', 'success');
+      if (result.entry) {
+        entriesData.push(result.entry);
+        renderTable();
+        renderCalendar();
+        updateSummaryStats();
+      }
+      this.reset();
+      const addModal = bootstrap.Modal.getInstance(document.getElementById('addScheduleModal'));
+      if (addModal) {
+        addModal.hide();
+      }
+    } else {
+      showToast(result.error || 'Error adding entry', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+});
+
+// Edit entry
+async function editEntry(id) {
+  const entry = entriesData.find(e => e.id === id);
+  if (!entry) return;
+  
+  document.getElementById('editEntryId').value = id;
+  document.getElementById('editTopic').value = entry.topic;
+  document.getElementById('editChapter').value = entry.chapter || '';
+  document.getElementById('editTeacher').value = entry.teacher_id || '';
+  document.getElementById('editLectureTime').value = entry.lecture_time || '';
+  document.getElementById('editNotes').value = entry.notes || '';
+  
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+// Save edit
+async function saveEdit() {
+  const id = document.getElementById('editEntryId').value;
+  const data = {
+    topic: document.getElementById('editTopic').value,
+    chapter: document.getElementById('editChapter').value,
+    teacher_id: document.getElementById('editTeacher').value || null,
+    lecture_time: document.getElementById('editLectureTime').value,
+    notes: document.getElementById('editNotes').value,
+  };
+  
+  try {
+    const response = await fetch(`/teacherschedule/update/${id}/`, {
+      method: 'POST',
+      headers: getJsonHeaders(),
+      body: JSON.stringify(data)
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+      showToast('Entry updated successfully!', 'success');
+      if (result.entry) {
+        entriesData = entriesData.map(entry => String(entry.id) === String(id) ? result.entry : entry);
+        renderTable();
+        renderCalendar();
+        updateSummaryStats();
+      }
+      bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+    } else {
+      showToast(result.error || 'Error updating entry', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+// Delete entry
+async function deleteEntry(id) {
+  if (!confirm('Are you sure you want to delete this entry?')) return;
+  
+  try {
+    const response = await fetch(`/teacherschedule/delete/${id}/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+      showToast('Entry deleted successfully!', 'success');
+      entriesData = entriesData.filter(entry => String(entry.id) !== String(id));
+      selectedEntries = selectedEntries.filter(entryId => String(entryId) !== String(id));
+      renderTable();
+      renderCalendar();
+      updateSummaryStats();
+    } else {
+      showToast(result.error || 'Error deleting entry', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+// Select all checkbox
+function selectAll(source) {
+  document.querySelectorAll('.entry-checkbox').forEach(cb => {
+    cb.checked = source.checked;
+    if (source.checked) {
+      if (!selectedEntries.includes(cb.value)) {
+        selectedEntries.push(cb.value);
+      }
+    }
+  });
+  if (!source.checked) {
+    selectedEntries = [];
+  }
+}
+
+// Bulk assign
+async function bulkAssign() {
+  const teacherId = document.getElementById('bulkTeacherSelect').value;
+  if (!teacherId || selectedEntries.length === 0) {
+    showToast('Please select entries and a teacher', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/teacherschedule/bulk-assign/', {
+      method: 'POST',
+      headers: getJsonHeaders(),
+      body: JSON.stringify({ entry_ids: selectedEntries, teacher_id: teacherId })
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+      showToast(`Assigned ${selectedEntries.length} entries!`, 'success');
+      const teacherName = document.getElementById('bulkTeacherSelect').selectedOptions[0]?.text || '-';
+      entriesData = entriesData.map(entry =>
+        selectedEntries.includes(String(entry.id))
+          ? { ...entry, teacher_id: teacherId, teacher: teacherName }
+          : entry
+      );
+      selectedEntries = [];
+      renderTable();
+      renderCalendar();
+      updateSummaryStats();
+    } else {
+      showToast(result.error || 'Error assigning entries', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+// Import schedule file
+document.getElementById('scheduleImportForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const formData = new FormData(this);
+  const file = formData.get('schedule_file');
+  const allowedExtensions = ['pdf', 'xls', 'xlsx'];
+  const fileExtension = file && file.name ? file.name.split('.').pop().toLowerCase() : '';
+
+  if (!file || !file.name) {
+    showToast('Please choose a file to import', 'error');
+    return;
+  }
+
+  if (!formData.get('teacher_id')) {
+    showToast('Please select a teacher for this import', 'error');
+    return;
+  }
+
+  if (!allowedExtensions.includes(fileExtension)) {
+    showToast('Only PDF and Excel files are allowed', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('/teacherschedule/import/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
+      body: formData
+    });
+
+    const responseText = await response.text();
+    let result = {};
+
+    if (responseText) {
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error(`Server returned an unexpected response (${response.status})`);
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(result.error || `Import failed (${response.status})`);
+    }
+
+    if (result.success) {
+      showToast(result.message || 'Schedule file imported successfully!', 'success');
+      if (result.parsed_import) {
+        parsedImportsData = [
+          result.parsed_import,
+          ...parsedImportsData.filter(item => String(item.id) !== String(result.parsed_import.id)),
+        ];
+        renderParsedImports();
+        focusParsedImports();
+      }
+      if (result.entries && result.entries.length) {
+        const incomingEntries = result.entries.filter(incoming =>
+          !entriesData.some(existing => String(existing.id) === String(incoming.id))
+        );
+        if (incomingEntries.length) {
+          entriesData = [...incomingEntries, ...entriesData];
+          renderTable();
+          renderCalendar();
+          updateSummaryStats();
+        }
+      }
+      this.reset();
+      const importModal = bootstrap.Modal.getInstance(document.getElementById('importScheduleModal'));
+      if (importModal) {
+        importModal.hide();
+      }
+    } else {
+      showToast(result.error || 'Error importing file', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+});
+
+async function deleteImportedFile(id) {
+  if (!confirm('Are you sure you want to delete this imported file?')) return;
+
+  try {
+    const response = await fetch(`/teacherschedule/import/delete/${id}/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      showToast('Imported file deleted successfully!', 'success');
+      parsedImportsData = parsedImportsData.filter(item => String(item.id) !== String(id));
+      selectedImports = selectedImports.filter(importId => String(importId) !== String(id));
+      if (result.deleted_entry_ids && result.deleted_entry_ids.length) {
+        entriesData = entriesData.filter(entry => !result.deleted_entry_ids.includes(entry.id));
+        selectedEntries = selectedEntries.filter(entryId => !result.deleted_entry_ids.includes(Number(entryId)));
+        renderTable();
+        renderCalendar();
+        updateSummaryStats();
+      }
+      renderParsedImports();
+    } else {
+      showToast(result.error || 'Error deleting imported file', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+async function bulkDeleteImports() {
+  if (!selectedImports.length) {
+    showToast('Please select imported files to delete', 'error');
+    return;
+  }
+
+  if (!confirm(`Delete ${selectedImports.length} imported file(s)?`)) return;
+
+  try {
+    const response = await fetch('/teacherschedule/import/bulk-delete/', {
+      method: 'POST',
+      headers: getJsonHeaders(),
+      body: JSON.stringify({ upload_ids: selectedImports })
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      showToast(`${result.deleted_count || selectedImports.length} imported file(s) deleted!`, 'success');
+      parsedImportsData = parsedImportsData.filter(item => !selectedImports.includes(String(item.id)));
+      if (result.deleted_entry_ids && result.deleted_entry_ids.length) {
+        entriesData = entriesData.filter(entry => !result.deleted_entry_ids.includes(entry.id));
+        selectedEntries = selectedEntries.filter(entryId => !result.deleted_entry_ids.includes(Number(entryId)));
+        renderTable();
+        renderCalendar();
+        updateSummaryStats();
+      }
+      selectedImports = [];
+      renderParsedImports();
+    } else {
+      showToast(result.error || 'Error deleting selected files', 'error');
+    }
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+// Toast notifications
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast show align-items-center text-white ${type === 'success' ? 'bg-success' : 'bg-danger'}`;
+  toast.style.cssText = 'min-width: 250px; margin-bottom: 8px;';
+  toast.innerHTML = `
+    <div class="toast-body d-flex align-items-center">
+      <i class="bi ${type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle'} me-2"></i>
+      ${message}
+    </div>
+  `;
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+{% extends 'base2.html' %} 
+{% load static %} 
+{% load humanize %} 
+{% block content %}
+<div class="container my-4" style="max-width: 93%">
+  <!-- Welcome Banner -->
+  <div
+    class="rounded-4 p-4 text-white mb-4"
+    style="background: linear-gradient(90deg, #7f00ff, #e100ff)"
+  >
+    <h3 class="fw-bold mb-1">Welcome back, {{ teacher_name }}</h3>
+    <p class="mb-0">Here's what's happening with your classes today.</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-4 admin-stats-row">
+    <!-- Total Students -->
+    <div class="col-md-3 admin-stats-col">
+      <div
+        class="card border-0 rounded-4 bg-white shadow-sm admin-stats-card"
+        style="
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+          cursor: pointer;
+        "
+        onmouseenter="
+          this.style.transform = 'translateY(-2px)';
+          this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)';
+        "
+        onmouseleave="
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+        "
+      >
+        <div class="card-body d-flex gap-3 align-items-center admin-stats-card-body">
+          <div
+            class="rounded-3 p-3"
+            style="background: #e8f0ff; color: #2563eb"
+          >
+            <i class="bi bi-people-fill fs-4"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-0 text-dark">{{ total_students }}</h4>
+            <small class="text-muted">Total Students</small>
+            <div class="small text-primary">Across all classes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avg Progress -->
+    <div class="col-md-3 admin-stats-col">
+      <div
+        class="card border-0 rounded-4 bg-white shadow-sm admin-stats-card"
+        style="
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+          cursor: pointer;
+        "
+        onmouseenter="
+          this.style.transform = 'translateY(-2px)';
+          this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)';
+        "
+        onmouseleave="
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+        "
+      >
+        <div class="card-body d-flex gap-3 align-items-center admin-stats-card-body">
+          <div
+            class="rounded-3 p-3"
+            style="background: #eafaf0; color: #16a34a"
+          >
+            <i class="bi bi-graph-up-arrow fs-4"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-0 text-dark">
+              {{ avg_progress|floatformat:2 }}%
+            </h4>
+            <small class="text-muted">Avg Progress</small>
+            <div class="small text-success">Across all students</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Need Attention -->      
+    <div class="col-md-3 admin-stats-col">
+      <div
+        class="card border-0 rounded-4 bg-white shadow-sm admin-stats-card"
+        style="
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+          cursor: pointer;
+        "
+        onmouseenter="
+          this.style.transform = 'translateY(-2px)';
+          this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)';
+        "
+        onmouseleave="
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+        "
+      >
+        <div class="card-body d-flex gap-3 align-items-center admin-stats-card-body">
+          <div
+            class="rounded-3 p-3"
+            style="background: #fff4e5; color: #f97316"
+          >
+            <i class="bi bi-exclamation-circle fs-4"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-0 text-dark">{{ need_attention_count }}</h4>
+            <small class="text-muted">Need Attention</small>
+            <div class="small text-danger">Coverage below 50%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assessments Taken Today -->
+    <div class="col-md-3 admin-stats-col">
+      <div
+        class="card border-0 rounded-4 bg-white shadow-sm admin-stats-card"
+        style="
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+          cursor: pointer;
+        "
+        onmouseenter="
+          this.style.transform = 'translateY(-2px)';
+          this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)';
+        "
+        onmouseleave="
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+        "
+      >
+        <div class="card-body d-flex gap-3 align-items-center admin-stats-card-body">
+          <div
+            class="rounded-3 p-3"
+            style="background: #f3e8ff; color: #9333ea"
+          >
+            <i class="bi bi-clipboard-check fs-4"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-0 text-dark">
+              {{ assessments_taken_today }}
+            </h4>
+            <small class="text-muted">Assessments Taken Today</small>
+            <div class="small text-purple">{{ today|date:"d M, Y" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH BAR -->
+<div class="container my-4" style="max-width: 93%">
+  <div class="bg-white rounded-4 shadow-sm p-3 mb-3" style="width: 425px">
+    <form method="get" class="mb-0" id="adminDashboardSearchForm">
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0">
+          <i class="bi bi-search text-muted"></i>
+        </span>
+        <input
+          type="text"
+          id="adminDashboardSearch"
+          name="search"
+          value="{{ search_query }}"
+          class="form-control border-start-0"
+          placeholder="Search students by name or roll number..."
+          autocomplete="off"
+        />
+      </div>
+      <div class="form-text" id="adminDashboardSearchHelp">
+        Search by name, roll number, phone, or email.
+      </div>
+    </form>
+  </div>
+
+  {% include "dashboard/partials/admin-dashboard-student-table.html" %}
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchForm = document.getElementById("adminDashboardSearchForm");
+    const searchInput = document.getElementById("adminDashboardSearch");
+    if (!searchForm || !searchInput) return;
+
+    let submitTimer = null;
+    let lastSubmittedValue = searchInput.value.trim();
+    let activeRequest = null;
+
+    function buildFetchUrl(pageUrl) {
+      const url = pageUrl ? new URL(pageUrl, window.location.origin) : new URL(window.location.href);
+      const nextValue = searchInput.value.trim();
+
+      if (nextValue) {
+        url.searchParams.set("search", nextValue);
+      } else {
+        url.searchParams.delete("search");
+      }
+
+      return url;
+    }
+
+    function replaceTableSection(htmlText, url) {
+      const parser = new DOMParser();
+      const parsedDocument = parser.parseFromString(htmlText, "text/html");
+      const nextTableSection = parsedDocument.getElementById("adminDashboardTableSection");
+      const currentTableSection = document.getElementById("adminDashboardTableSection");
+
+      if (!nextTableSection || !currentTableSection) return;
+
+      currentTableSection.replaceWith(nextTableSection);
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+
+    function refreshTable(pageUrl) {
+      const url = buildFetchUrl(pageUrl);
+
+      if (!pageUrl) {
+        url.searchParams.delete("students_page");
+      }
+
+      if (activeRequest) {
+        activeRequest.abort();
+      }
+
+      activeRequest = new AbortController();
+
+      fetch(url.toString(), {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        signal: activeRequest.signal,
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error("Failed to refresh student table.");
+          }
+          return response.text();
+        })
+        .then(function (htmlText) {
+          replaceTableSection(htmlText, url);
+          lastSubmittedValue = searchInput.value.trim();
+        })
+        .catch(function (error) {
+          if (error.name !== "AbortError") {
+            console.error(error);
+          }
+        });
+    }
+
+    searchInput.addEventListener("input", function () {
+      this.value = this.value.replace(/[^A-Za-z0-9 @._-]/g, "");
+
+      const nextValue = this.value.trim();
+      window.clearTimeout(submitTimer);
+
+      if (nextValue === lastSubmittedValue) return;
+
+      submitTimer = window.setTimeout(function () {
+        refreshTable();
+      }, 300);
+    });
+
+    searchInput.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter") return;
+
+      event.preventDefault();
+      window.clearTimeout(submitTimer);
+
+      const nextValue = this.value.trim();
+      if (nextValue === lastSubmittedValue) return;
+
+      refreshTable();
+    });
+
+    searchForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      window.clearTimeout(submitTimer);
+      refreshTable();
+    });
+
+    document.addEventListener("click", function (event) {
+      const pageLink = event.target.closest("#adminDashboardTableSection .page-link[href]");
+      if (!pageLink) return;
+
+      event.preventDefault();
+      refreshTable(pageLink.href);
+    });
+  });
+</script>
+
+<!-- LEFT: STUDENTS NEEDING ATTENTION -->
+<div class="container my-4" style="max-width: 93%">
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="bg-white rounded-4 shadow-sm p-4 h-100">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-exclamation-circle-fill text-danger"></i>
+          <h6 class="fw-bold mb-0">Students Needing Attention</h6>
+        </div>
+
+        {% for item in attention_students %}
+        <div
+          class="rounded-3 p-3 mb-3"
+          style="background-color: #fff7ed; border: 1px solid #fed7aa"
+        >
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="fw-semibold">{{ item.student.student_name }}</div>
+              <small class="text-muted">Grade {{ item.student.grade }}</small>
+            </div>
+            <div class="fw-semibold text-danger">
+              {{ item.score|floatformat:0 }}%
+            </div>
+          </div>
+          <div class="text-danger mt-2">
+            Low progress in {{ item.weak_hint }}
+          </div>
+          <a
+            href="{% url 'student-needing-attention' %}"
+            class="text-danger small fw-semibold text-decoration-none"
+          >
+            View Details →
+          </a>
+        </div>
+        {% empty %}
+        <div class="text-muted">No students below 40% right now.</div>
+        {% endfor %}
+
+        <div class="d-flex justify-content-center mt-4">
+          <a
+            href="{% url 'student-needing-attention' %}"
+            class="btn btn-outline-danger fw-semibold"
+            >Show More</a
+          >
+        </div>
+      </div>
+    </div> 
+
+    <!-- RIGHT: RECENT ACTIVITIES -->
+    <div class="col-md-6">
+      <div class="bg-white rounded-4 shadow-sm p-4 h-100">
+        <h6 class="fw-bold mb-3">Recent Activities</h6>
+
+        {% for t in recent_tests %}
+        <div
+          class="d-flex gap-3 align-items-start rounded-3 p-3 mb-3"
+          style="border: 1px solid #e5e7eb"
+        >
+          <div
+            class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center"
+            style="width: 40px; height: 40px"
+          >
+            <i class="bi bi-person"></i>
+          </div>
+          <div>
+            <div class="fw-semibold">{{ t.user.student.student_name }}</div>
+            <div class="small">
+              Took assessment:
+              <span class="fw-semibold">{{ t.subject.name }}</span>
+            </div>
+            <small class="text-muted">{{ t.created_at|timesince }} ago</small>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-muted">No assessments yet!</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/admin-dashboard.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

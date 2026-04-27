@@ -1,0 +1,316 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{{ selected_test_name }} - Result</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/scholarship-success.css' %}" />
+    <style>
+      @media (max-width: 1024px) {
+        .tablet-footer-stack {
+          flex-direction: column !important;
+          align-items: center !important;
+          gap: 4px;
+          text-align: center !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top"
+    >
+      <div class="container-fluid px-4">
+        <div class="d-flex align-items-center">
+          <div class="brand-icon me-2">
+            <i class="bi bi-mortarboard-fill text-white"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold fs-6">{{ selected_test_name }}</h5>
+            <small class="text-muted d-block" style="font-size: 0.7rem"
+              >Student Portal</small
+            >
+          </div>
+        </div>
+        <div class="ms-auto d-flex align-items-center">
+          <div class="text-end me-3 d-none d-md-block">
+            <div class="fw-bold text-dark fs-6">{{ student.name }}</div>
+            <div class="text-muted" style="font-size: 0.75rem">
+              {{ student.grade }} - {{ academic_field_value }}
+            </div>
+          </div>
+          <div class="avatar-circle me-3">{{ student.name|slice:":1" }}</div>
+          <a
+            href="{% url 'login' %}"
+            class="btn btn-light btn-sm rounded-circle"
+          >
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <div class="container">
+        <div class="text-center mt-4 mb-4">
+          <h3 class="text-success fw-bold">🎉 Congratulations!</h3>
+          <p class="text-muted fs-5">
+            {% if is_scholarship_result %}
+            You have successfully completed the {{ selected_test_name }}
+            scholarship assessment
+            {% else %}
+            You have successfully completed the {{ selected_test_name }}
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="card main-card">
+          <div class="gradient-header">
+            <h3>Well Done!</h3>
+            {% if is_scholarship_result %}
+            <div class="scholarship-box">
+              <p class="mb-1">You have secured</p>
+              <h1>{{ attempt.scholarship_percentage }}%</h1>
+              <p>SCHOLARSHIP</p>
+            </div>
+            {% else %}
+            <div class="result-summary-box">
+              <div class="result-summary-item">
+                <span class="result-summary-label">Test Name</span>
+                <strong>{{ selected_test_name }}</strong>
+              </div>
+              <div class="result-summary-item">
+                <span class="result-summary-label">Result Reference</span>
+                <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
+              </div>
+              {% if completed_at_display %}
+              <div class="result-summary-item">
+                <span class="result-summary-label">Completed On</span>
+                <strong>{{ completed_at_display }}</strong>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="details-section">
+            <h6 class="mb-3">Student Details</h6>
+
+            <div class="row mb-4">
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-person-fill text-primary me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Name</small>
+                    <p class="fw-semibold mb-0">{{ student.name }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-telephone-fill text-success me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Phone Number</small>
+                    <p class="fw-semibold mb-0">
+                      +91 {{ student.phone_number }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-book-fill text-warning me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Grade</small>
+                    <p class="fw-semibold mb-0">{{ student.grade }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-building text-info me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">{{ academic_field_label }}</small>
+                    <p class="fw-semibold mb-0">{{ academic_field_value }}</p>
+                  </div>
+                </div>
+              </div>
+
+              {% if not is_scholarship_result and attempt.student_batch %}
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-people-fill text-secondary me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Batch</small>
+                    <p class="fw-semibold mb-0">{{ attempt.student_batch }}</p>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if not is_scholarship_result %}
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-hash text-dark me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Result Reference</small>
+                    <p class="fw-semibold mb-0">
+                      {{ selected_test_reference_prefix }}-{{ attempt.id }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="row g-4">
+              <div class="{% if is_scholarship_result %}col-md-6{% else %}col-12{% endif %}">
+                <div class="info-box score-box">
+                  <i
+                    class="bi bi-trophy-fill text-primary d-block mb-2"
+                    style="font-size: 2rem"
+                  ></i>
+                  <h6>Your Score</h6>
+                  <h4 class="text-primary">
+                    {{ attempt.score }} / {{ attempt.total_questions }}
+                  </h4>
+                </div>
+              </div>
+
+              {% if is_scholarship_result %}
+              <div class="col-md-6">
+                <div class="info-box percent-box">
+                  <i
+                    class="bi bi-percent text-success d-block mb-2"
+                    style="font-size: 2rem"
+                  ></i>
+                  <h6>{% if is_scholarship_result %}Scholarship{% else %}Percentage{% endif %}</h6>
+                  <h4 class="text-success">
+                    {% if is_scholarship_result %}
+                    {{ attempt.scholarship_percentage }}%
+                    {% else %}
+                    {{ result_percentage }}%
+                    {% endif %}
+                  </h4>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            {% if is_scholarship_result %}
+            <div class="claim-box mt-4">
+              <h6>
+                <i class="bi bi-phone-vibrate me-2"></i>Claim Your Scholarship
+              </h6>
+
+              <p class="mb-2">
+                To claim your scholarship and complete the admission process,
+                please contact us at:
+              </p>
+
+              <a
+                href="tel:+919087676545"
+                class="btn w-100 py-2 fw-bold"
+                style="
+                  background-color: #f0d687;
+                  color: #000;
+                  border-radius: 8px;
+                "
+              >
+                <i class="bi bi-telephone me-2"></i> +91 8329100890
+              </a>
+            </div>
+
+            <div class="sms-box mt-4">
+              <h6><i class="bi bi-chat-dots me-2"></i>SMS Notification</h6>
+
+              {% if sms_sent %}
+              <p class="mb-0 text-success">
+                <i class="bi bi-check-circle-fill me-1"></i>
+                A confirmation SMS with your test results has been sent to your
+                registered mobile number
+                <strong>+91 {{ student.phone_number }}</strong>.
+              </p>
+              {% else %}
+              <p class="mb-0 text-warning">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                SMS could not be sent to your mobile number. 
+                {% if sms_error %}Error: {{ sms_error }}
+                {% endif %} 
+                Please note down your result reference:
+                <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
+              </p>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <a
+              href="{% url 'login' %}"
+              class="btn btn-light w-100 mt-4 py-3 border"
+              style="border-radius: 10px"
+            >
+              <i class="bi bi-house-door me-2"></i> Return to Home
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-light border-top py-3 mt-auto">
+      <div class="container">
+        <div
+          class="d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start tablet-footer-stack"
+        >
+          <div>
+            Copyright © 2026
+            <a href="#" class="text-primary text-decoration-none"
+              >The Ranker's Academy</a
+            >, All Rights Reserved
+          </div>
+
+          <div>
+            Designed and Developed by
+            <a href="#" class="text-primary text-decoration-none"
+              >Kavya Infoweb Pvt. Ltd.</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

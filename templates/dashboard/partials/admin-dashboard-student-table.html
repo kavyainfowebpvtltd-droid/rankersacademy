@@ -1,0 +1,119 @@
+<div id="adminDashboardTableSection">
+  <div class="table-responsive rounded-4 bg-white">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr class="text-uppercase text-secondary fw-semibold">
+          <th class="px-4 py-3">Sr. No</th>
+          <th class="px-4 py-3">Student Name</th>
+          <th class="px-4 py-3">Score</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">Weak Areas</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in table_rows %}
+        <tr>
+          <td class="px-4 fw-semibold">{{ row.sr }}</td>
+          <td class="px-4">{{ row.student.student_name }}</td>
+          <td class="px-4 fw-semibold">{{ row.score_text }}</td>
+          <td class="px-4">
+            {% if row.status == "Excellent" %}
+            <span class="badge bg-success-subtle text-success px-3 py-2"
+              >Excellent</span
+            >
+            {% elif row.status == "Good" %}
+            <span class="badge bg-primary-subtle text-primary px-3 py-2"
+              >Good</span
+            >
+            {% else %}
+            <span class="badge bg-danger-subtle text-danger px-3 py-2"
+              >Poor</span
+            >
+            {% endif %}
+          </td>
+          <td class="px-4">
+            {% if row.weak_areas %}
+            <span class="text-danger"> {{ row.weak_areas|join:", " }} </span>
+            {% else %} None {% endif %}
+          </td>
+          <td class="px-4">
+            <a
+              class="btn btn-outline-secondary btn-sm me-2"
+              style="width: 36px; height: 36px"
+              href="{{ row.pdf_url }}"
+              target="_blank"
+              title="Download report"
+            >
+              <i class="bi bi-download"></i>
+            </a>
+
+            <form
+              action="{% url 'delete_student' row.student.id %}"
+              method="post"
+              class="d-inline"
+              onsubmit="
+                return confirm('Are you sure you want to delete this student?');
+              "
+            >
+              {% csrf_token %}
+              <button
+                class="btn btn-outline-danger btn-sm"
+                style="width: 36px; height: 36px"
+                type="submit"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">
+            No students found!
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if students_page.has_other_pages %}
+  <nav aria-label="Student table pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if students_page.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?students_page={{ students_page.previous_page_number }}{% if active_search_query %}&search={{ active_search_query|urlencode }}{% endif %}" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&laquo;</span>
+      </li>
+      {% endif %}
+
+      {% for num in students_page.paginator.page_range %}
+        {% if students_page.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?students_page={{ num }}{% if active_search_query %}&search={{ active_search_query|urlencode }}{% endif %}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if students_page.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?students_page={{ students_page.next_page_number }}{% if active_search_query %}&search={{ active_search_query|urlencode }}{% endif %}" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&raquo;</span>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>

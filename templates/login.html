@@ -1,0 +1,1647 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="shortcut icon"
+      type="image/png"
+      href="{% static 'img/logo.webp' %}"
+    />
+    <title>Student Diagnostic System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/login.css' %}" />
+    <style>
+      .step-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 30px;
+        gap: 10px;
+      }
+
+      .step-indicator .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+
+      .step-indicator .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #6b7280;
+        transition: 0.3s;
+      }
+
+      .step-indicator .step.active .step-number {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .step-indicator .step.completed .step-number {
+        background: #22c55e;
+        color: white;
+      }
+
+      .step-indicator .step-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 6px;
+      }
+
+      .step-indicator .step.active .step-label {
+        color: #667eea;
+        font-weight: 600;
+      }
+
+      .step-indicator .step.completed .step-label {
+        color: #22c55e;
+      }
+
+      .step-indicator .step-connector {
+        width: 40px;
+        height: 2px;
+        background: #e5e7eb;
+        margin-bottom: 20px;
+      }
+
+      .step-indicator .step.completed + .step-connector,
+      .step-indicator .step.completed ~ .step-connector {
+        background: #22c55e;
+      }
+    </style>
+  </head>
+  <body class="{% if test_login_ui %}test-login-ui{% endif %}">
+    <div class="container py-5">
+      <!-- HEADER -->
+      <div class="header mb-5">
+        <div class="logo mb-0">
+          <img
+            src="{% static 'img/logo.webp' %}"
+            alt="SDS Logo"
+            style="
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
+              border-radius: 8px;
+            "
+          />
+        </div>
+        <h4 class="fw-bold">Student Diagnostic System</h4>
+        <p class="text-muted">Smart Learning Analytics Platform</p>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+        <!-- ROLE SELECTION -->
+        <div class="col-lg-5 left-card {% if test_login_ui %}d-none{% endif %}" id="leftCard">
+          <div class="card p-4" style="height: 416px">
+            <h6 class="fw-bold mb-3">Select Your Role</h6>
+
+            <div class="role active mb-3" data-role="Student">
+              <div class="d-flex align-items-center">
+                <div class="role-icon student me-3">
+                  <i class="bi bi-book"></i>
+                </div>
+                <div>
+                  <strong>Student</strong>
+                  <div class="text-muted small">Access dashboard</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="role mb-3" data-role="Teacher/Admin">
+              <div class="d-flex align-items-center">
+                <div class="role-icon teacher-admin me-3">
+                  <i class="bi bi-person"></i>
+                </div>
+                <div>
+                  <strong>Teacher / Admin</strong>
+                  <div class="text-muted small">Manage system</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Download Imp Question and Solutions button commented out
+            <button
+              class="download-btn mb-3"
+              id="downloadBtnCard"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#gradeBoardModal"
+            >
+              <div class="d-flex align-items-center">
+                <div class="role-icon student me-3">
+                  <i class="bi bi-download"></i>
+                </div>
+                <div>
+                  <strong>Download Imp. Question and Solutions</strong>
+                  <div class="text-muted small">
+                    10th (State/CBSE) and 12th (State/CBSE)
+                  </div>
+                </div>
+              </div>
+            </button>
+            -->
+          </div>
+        </div>
+
+        <!-- LOGIN -->
+         <form class="col-lg-5 right-card {% if test_login_ui %}test-login-card mx-auto{% endif %}" id="rightCard" method="post" action="/">
+           {% csrf_token %}
+           <div class="card p-4 {% if test_login_ui %}test-login-surface{% endif %}">
+             <h6 class="fw-bold mb-3">Sign In</h6>
+             
+             <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+
+             <input
+               class="form-control mb-3 {% if test_login_ui %}test-login-input{% endif %}"
+               placeholder="Username"
+               name="username"
+               id="usernameField"
+               required
+             />
+             <div class="input-group mb-3 password-toggle-group {% if test_login_ui %}test-login-password-group{% endif %}">
+               <input
+                 type="password"
+                 class="form-control {% if test_login_ui %}test-login-input test-login-password-input{% endif %}"
+                 placeholder="Password"
+                 name="password"
+                 id="passwordField"
+                 required
+               />
+               <button
+                 class="btn btn-outline-secondary password-toggle {% if test_login_ui %}test-login-eye-btn{% endif %}"
+                 type="button"
+                 data-target="passwordField"
+                 aria-label="Show password"
+               >
+                 <i class="bi bi-eye"></i>
+               </button>
+             </div>
+
+             <input type="hidden" name="role" id="roleInput" value="Student" />
+
+            <div class="text-end small mb-3 {% if test_login_ui %}test-login-forgot-wrap{% endif %}">
+              <a
+                href="#"
+                id="forgotPasswordLink"
+                class="text-dark fw-semibold cr"
+                style="text-decoration: none"
+                >Forgot password?</a
+              >
+            </div>
+            <button
+              class="btn btn-primary w-100 mb-3 {% if test_login_ui %}test-login-submit{% endif %}"
+              id="loginBtn"
+              type="submit"
+            >
+              Sign In as Student
+            </button>
+
+            {% if not hide_otp %}
+            <button
+              class="google-btn otp-btn w-100 mb-3 {% if test_login_ui %}test-login-otp-btn{% endif %}"
+              type="button"
+              id="otpToggleBtn"
+            >
+              <i class="bi bi-shield-lock me-2"></i> Sign In with OTP
+            </button>
+            {% endif %}
+
+            <div id="otpLoginSection" style="display: none">
+              <input
+                class="form-control mb-3"
+                placeholder="Registered Mobile Number"
+                id="otpPhone"
+              />
+
+              <div class="d-flex gap-2 mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary w-50"
+                  id="sendOtpBtn"
+                >
+                  Send OTP
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary w-50"
+                  id="backToPasswordBtn"
+                >
+                  Back
+                </button>
+              </div>
+
+              <input
+                class="form-control mb-3"
+                placeholder="Enter OTP"
+                id="otpInput"
+                style="display: none"
+              />
+
+              <button
+                type="button"
+                class="btn btn-primary w-100 mb-3"
+                id="verifyOtpBtn"
+                style="display: none"
+              >
+                Verify OTP & Login
+              </button>
+            </div>
+
+            <div id="otpResetSection" style="display: none">
+              <input
+                class="form-control mb-3"
+                placeholder="Registered Mobile Number"
+                id="resetPhone"
+              />
+
+              <button
+                type="button"
+                class="btn btn-outline-primary w-100 mb-3"
+                id="sendResetOtpBtn"
+              >
+                Send Reset OTP
+              </button>
+
+              <input
+                class="form-control mb-3"
+                placeholder="Enter Reset OTP"
+                id="resetOtpInput"
+                style="display: none"
+              />
+
+              <button
+                type="button"
+                class="btn btn-outline-success w-100 mb-3"
+                id="verifyResetOtpBtn"
+                style="display: none"
+              >
+                Verify OTP
+              </button>
+
+              <div
+                class="input-group mb-3 password-toggle-group"
+                id="newPassGroup"
+                style="display: none"
+              >
+                <input
+                  class="form-control"
+                  type="password"
+                  placeholder="New Password"
+                  id="newPass"
+                />
+                <button
+                  class="btn btn-outline-secondary password-toggle"
+                  type="button"
+                  data-target="newPass"
+                  aria-label="Show password"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div
+                class="input-group mb-3 password-toggle-group"
+                id="confirmPassGroup"
+                style="display: none"
+              >
+                <input
+                  class="form-control"
+                  type="password"
+                  placeholder="Confirm Password"
+                  id="confirmPass"
+                />
+                <button
+                  class="btn btn-outline-secondary password-toggle"
+                  type="button"
+                  data-target="confirmPass"
+                  aria-label="Show password"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary w-100 mb-3"
+                id="setNewPassBtn"
+                style="display: none"
+              >
+                Update Password
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-secondary w-100"
+                id="resetBackBtn"
+              >
+                Back to Login
+              </button>
+            </div>
+
+            <div class="text-center small mt-2 {% if test_login_ui %}test-login-footer{% endif %}">
+              New user?
+              <a
+                href="{% url 'register' %}"
+                class="text-dark fw-semibold cr"
+                style="text-decoration: none"
+                >Create account</a
+              >
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Scholarship Login Modal -->
+      <!-- <div class="modal fade" id="scholarshipLoginModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px;">
+            <h6 class="modal-title"><i class="bi bi-award me-2"></i>RTSE 2026 - Login</h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" style="padding: 20px;">
+            <div id="scholarshipLoginStep1">
+              <div class="text-center mb-3">
+                <div class="role-icon mx-auto mb-2" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-shield-lock" style="font-size: 18px; color: white;"></i>
+                </div>
+                <h6 class="fw-bold mb-1">Sign In with OTP</h6>
+                <p class="text-muted small mb-0">Enter your mobile number</p>
+              </div>
+              
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Mobile Number</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">+91</span>
+                  <input type="tel" class="form-control" id="scholarshipLoginPhone" 
+                         placeholder="10-digit number" maxlength="10" required>
+                </div>
+              </div>
+              
+              <button type="button" class="btn btn-primary btn-sm w-100 mb-2" id="scholarshipSendOtpBtn">
+                Send OTP <i class="bi bi-send ms-1"></i>
+              </button>
+              
+              <div class="text-center">
+                <span class="text-muted small">New user? </span>
+                <a href="#" class="text-primary fw-semibold small" onclick="showScholarshipRegisterModal(); return false;">Register here</a>
+              </div>
+            </div>
+            
+            <div id="scholarshipLoginStep2" style="display: none;">
+              <div class="text-center mb-3">
+                <div class="role-icon mx-auto mb-2" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-check-circle" style="font-size: 18px; color: white;"></i>
+                </div>
+                <h6 class="fw-bold mb-1">Verify OTP</h6>
+                <p class="text-muted small mb-0">Enter 4-digit OTP sent to <span id="scholarshipLoginMaskedPhone"></span></p>
+              </div>
+              
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Enter OTP</label>
+                <input type="text" class="form-control otp-input" id="scholarshipLoginOtp" 
+                       maxlength="4" placeholder="0000" style="letter-spacing: 8px; font-size: 18px; text-align: center; padding: 8px;" required>
+              </div>
+              
+              <div id="scholarshipLoginError" class="alert alert-danger small py-2" style="display: none;"></div>
+              
+              <div class="d-flex gap-2 mb-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm flex-grow-1" id="scholarshipLoginResendBtn">
+                  Resend OTP
+                </button>
+                <button type="button" class="btn btn-primary btn-sm flex-grow-1" id="scholarshipLoginVerifyBtn">
+                  Verify & Login
+                </button>
+              </div>
+              
+              <div class="text-center">
+                <a href="#" class="text-muted small" onclick="showScholarshipLoginStep1(); return false;">
+                  <i class="bi bi-arrow-left me-1"></i> Change number
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> -->
+
+      <!-- Scholarship Registration Modal -->
+      <!-- <div class="modal fade" id="scholarshipRegisterModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px;">
+            <h6 class="modal-title"><i class="bi bi-award me-2"></i>RTSE 2026 - Registration</h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" style="padding: 20px;"> -->
+      <!-- Step Indicator -->
+      <!-- <div class="step-indicator mb-3">
+              <div class="step" id="scholarshipRegStep1" style="display: flex; flex-direction: column; align-items: center;">
+                <div class="step-number" style="width: 30px; height: 30px; border-radius: 50%; background: #667eea; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">1</div>
+                <span class="step-label small">Details</span>
+              </div>
+              <div style="width: 30px; height: 2px; background: #e5e7eb; margin-bottom: 18px;"></div>
+              <div class="step" id="scholarshipRegStep2" style="display: flex; flex-direction: column; align-items: center;">
+                <div class="step-number" style="width: 30px; height: 30px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #6b7280;">2</div>
+                <span class="step-label small" style="color: #6b7280;">Verify</span>
+              </div>
+            </div> -->
+
+      <!-- Step 1: Registration Details -->
+      <!-- <div class="step-content" id="scholarshipRegContent1">
+              <h6 class="text-center mb-3 fw-semibold">Student Registration</h6>
+              
+              <div class="mb-2">
+                <label class="form-label small mb-1">Grade / Class</label>
+                <select name="grade" id="scholarshipGrade" class="form-select form-select-sm" required>
+                  <option value="">Select grade</option>
+                  <option value="8th">8th</option>
+                  <option value="9th">9th</option>
+                  <option value="10th">10th</option>
+                  <option value="11th">11th</option>
+                  <option value="12th">12th</option>
+                </select>
+              </div>
+              
+              <div class="mb-2">
+                <label class="form-label small mb-1">Board</label>
+                <select name="board" id="scholarshipBoard" class="form-select form-select-sm" required>
+                  <option value="">Select board</option>
+                  <option value="CBSE">CBSE</option>
+                  <option value="State">State Board</option>
+                </select>
+              </div>
+              
+              <div class="mb-2">
+                <label class="form-label small mb-1">Your Name</label>
+                <input type="text" name="name" id="scholarshipName" class="form-control form-select-sm" 
+                       placeholder="Enter your name" required>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label small mb-1">Mobile Number</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">+91</span>
+                  <input type="tel" name="phone_number" id="scholarshipRegPhone" class="form-control" 
+                         placeholder="10-digit number" maxlength="10" required>
+                </div>
+              </div>
+              
+              <button type="button" class="btn btn-primary btn-sm w-100" id="scholarshipRegSubmitBtn">
+                Send OTP <i class="bi bi-send ms-1"></i>
+              </button>
+              
+              <div class="text-center mt-2">
+                <span class="text-muted small">Already registered? </span>
+                <a href="#" class="text-primary fw-semibold small" onclick="showScholarshipLoginModal(); return false;">Login here</a>
+              </div>
+            </div> -->
+
+      <!-- Step 2: OTP Verification -->
+      <!-- <div class="step-content" id="scholarshipRegContent2" style="display: none;">
+              <h6 class="text-center mb-3 fw-semibold">Verify Your Phone</h6>
+              
+              <div class="text-center mb-3">
+                <p class="text-muted small mb-1">We've sent a 4-digit OTP to</p>
+                <div class="d-inline-flex align-items-center bg-light rounded px-2 py-1">
+                  <i class="bi bi-phone me-1 text-primary"></i>
+                  <strong class="small">+91 <span id="scholarshipRegMaskedPhone"></span></strong>
+                </div>
+              </div>
+              
+              <div class="mb-2">
+                <label class="form-label small mb-1">Enter OTP</label>
+                <input type="text" name="otp_code" id="scholarshipRegOtp" class="form-control otp-input" 
+                       maxlength="4" placeholder="0000" style="letter-spacing: 8px; font-size: 18px; text-align: center; padding: 8px;" required>
+              </div>
+              
+              <div id="scholarshipRegError" class="alert alert-danger small py-2" style="display: none;"></div>
+              
+              <div class="d-flex gap-2 mb-3">
+                <button type="button" class="btn btn-outline-secondary btn-sm flex-grow-1" id="scholarshipRegResendBtn">
+                  Resend OTP
+                </button>
+                <button type="button" class="btn btn-primary btn-sm flex-grow-1" id="scholarshipRegVerifyBtn">
+                  Verify & Continue
+                </button>
+              </div>
+              
+              <div class="text-center">
+                <a href="#" class="text-muted small" onclick="showScholarshipRegStep1(); return false;">
+                  <i class="bi bi-arrow-left me-1"></i> Change details
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> -->
+
+      <!-- FEATURES -->
+      <div class="row justify-content-center mt-5 features-row">
+        <div class="col-lg-11 col-xl-10">
+          <div class="row g-4 justify-content-center mb-4">
+            <div class="col-lg-5">
+              <button
+                type="button"
+                id="attemptTestsTrigger"
+                class="card p-3 h-100 w-100 text-start border-0 bg-white"
+                style="cursor: pointer"
+              >
+                <div class="d-flex align-items-center">
+                  <div class="role-icon student me-3">
+                    <i class="bi bi-award"></i>
+                  </div>
+                  <div>
+                    <strong>Attempt Tests</strong>
+                    <div class="text-muted small">
+                      Choose and open scholarship tests
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div class="col-lg-5">
+              <a
+                href="{% url 'bridgecourse:bridge_course_login' %}"
+                class="text-decoration-none"
+              >
+                <div class="card p-3 h-100">
+                  <div class="d-flex align-items-center">
+                    <div class="role-icon teacher-admin me-3">
+                      <i class="bi bi-ladder"></i>
+                    </div>
+                    <div>
+                      <strong>Bridge Course</strong>
+                      <div class="text-muted small">
+                        Enroll in bridge course
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <div class="row g-4 justify-content-center">
+            <div class="col-md-5 col-lg-4">
+              <div class="feature-card">
+                <div class="feature-icon icon-green">
+                  <i class="bi bi-book"></i>
+                </div>
+                <div class="feature-title">Topic-Level Analysis</div>
+                <div class="feature-text">Detailed progress tracking</div>
+              </div>
+            </div>
+
+            <div class="col-md-5 col-lg-4">
+              <div class="feature-card">
+                <div class="feature-icon icon-blue">
+                  <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="feature-title">Smart Diagnostics</div>
+                <div class="feature-text">Gap analysis & insights</div>
+              </div>
+            </div>
+
+            <div class="col-md-5 col-lg-4">
+              <div class="feature-card">
+                <div class="feature-icon icon-purple">
+                  <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="feature-title">Reports & Analytics</div>
+                <div class="feature-text">Performance visualization</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="attemptTestsModal"
+      tabindex="-1"
+      aria-labelledby="attemptTestsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="attemptTestsModalLabel">
+              Select Test
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+           <div class="modal-body">
+             <label for="scholarshipTestSelect" class="form-label fw-semibold">Available Tests</label>
+             <select class="form-select mb-3" id="scholarshipTestSelect">
+               <option value="" selected>Select a test</option>
+               
+               {% for scholarship_test in available_scholarship_tests %}
+               <option
+                 value="{{ scholarship_test.access_url }}"
+                 data-questions="{{ scholarship_test.question_count }}"
+                 data-duration="{{ scholarship_test.duration_display }}"
+                 data-entry-mode="{{ scholarship_test.entry_mode }}"
+                 data-login-mode="{{ scholarship_test.login_mode }}"
+                 data-test-type="scholarship"
+               >
+                 {{ scholarship_test.name }}
+               </option>
+               {% endfor %}
+               
+               {% if has_regular_test %}
+               <option
+                 value="/test/"
+                 data-questions="Multiple Subjects"
+                 data-duration="Varies"
+                 data-entry-mode="standard"
+                 data-test-type="regular"
+               >
+                 Diagnostic Test (Standard)
+               </option>
+               {% endif %}
+             </select>
+
+             <div
+               id="scholarshipTestSummary"
+               class="small text-muted border rounded p-3 bg-light"
+             >
+               Select a test to view its details.
+             </div>
+             
+             {% if not available_scholarship_tests and not has_regular_test %}
+             <div class="alert alert-warning mb-0">
+               No tests are available at the moment.
+             </div>
+             {% elif not available_scholarship_tests and has_regular_test %}
+             <div class="alert alert-info mb-0">
+               Only the Standard Diagnostic Test is available.
+             </div>
+             {% endif %}
+           </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="scholarshipTestContinueBtn"
+              {% if not available_scholarship_tests and not has_regular_test %}disabled{% endif %}
+            >
+              Open Test
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grade/Board Selection Modal commented out
+    <div
+      class="modal fade"
+      id="gradeBoardModal"
+      tabindex="-1"
+      aria-labelledby="gradeBoardModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="gradeBoardModalLabel">
+              Select Grade & Board
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="gradeSelect" class="form-label fw-semibold"
+                >Select Grade/Class</label
+              >
+              <select class="form-select" id="gradeSelect">
+                <option value="" selected disabled>
+                  Choose your Grade/Class
+                </option>
+                <option value="8">8th</option>
+                <option value="9">9th</option>
+                <option value="10">10th</option>
+                <option value="11">11th</option>
+                <option value="12">12th</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="boardSelect" class="form-label fw-semibold"
+                >Select Board</label
+              >
+              <select class="form-select" id="boardSelect">
+                <option value="" selected disabled>Choose your Board</option>
+                <option value="cbse">CBSE</option>
+                <option value="state">State Board</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="nextToLoginBtn"
+              data-bs-toggle="modal"
+              data-bs-target="#otpLoginModal"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    -->
+
+    <!-- OTP Login Modal commented out
+    <div class="modal fade" id="otpLoginModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered otp-modal">
+        <div class="modal-content otp-card">
+
+        
+          <div class="otp-top">
+            <h5 class="otp-title m-0">Sign In</h5>
+          </div>
+
+          
+          <button type="button" class="otp-pill">
+            <span class="otp-pill-icon">
+              <i class="bi bi-shield-check"></i>
+            </span>
+            <span>Sign In with OTP</span>
+          </button>
+
+          <input type="hidden" id="studyGrade" />
+          <input type="hidden" id="studyBoard" />
+
+        
+          <div class="otp-field">
+            <input
+              type="tel"
+              class="form-control otp-input"
+              id="downloadPhone"
+              placeholder="Registered Mobile Number"
+              maxlength="10"
+            />
+          </div>
+
+        
+          <div class="otp-field" id="otpCodeSection" style="display: none">
+            <input
+              type="text"
+              class="form-control otp-input"
+              id="downloadOtp"
+              placeholder="Enter 4-digit OTP"
+              maxlength="4"
+            />
+          </div>
+
+         
+          <div class="otp-actions">
+            <button
+              type="button"
+              class="btn otp-btn otp-btn-primary"
+              id="sendOtpDownloadBtn"
+              onclick="handleSendOtp()"
+            >
+              Send OTP
+            </button>
+
+            <button
+              type="button"
+              class="btn otp-btn otp-btn-secondary"
+              id="backToGradeBtn"
+              data-bs-toggle="modal"
+              data-bs-target="#gradeBoardModal"
+            >
+              Back
+            </button>
+
+          
+            <button
+              type="button"
+              class="btn otp-btn otp-btn-success"
+              id="verifyOtpDownloadBtn"
+              style="display: none"
+            >
+              Verify OTP & Login
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/login.js' %}"></script>
+
+    <!-- <script>
+      // Scholarship Modal Functions
+      let scholarshipLoginPhone = "";
+      let scholarshipRegPhone = "";
+
+      function getCSRF() {
+        return document.querySelector("[name=csrfmiddlewaretoken]").value;
+      }
+
+      function showScholarshipLoginModal() {
+        var loginModal = new bootstrap.Modal.getInstance(
+          document.getElementById("scholarshipLoginModal"),
+        );
+        var registerModal = bootstrap.Modal.getInstance(
+          document.getElementById("scholarshipRegisterModal"),
+        );
+        if (registerModal) registerModal.hide();
+
+        setTimeout(() => {
+          var modal = new bootstrap.Modal(
+            document.getElementById("scholarshipLoginModal"),
+          );
+          modal.show();
+        }, 300);
+      }
+
+      function showScholarshipRegisterModal() {
+        var loginModal = bootstrap.Modal.getInstance(
+          document.getElementById("scholarshipLoginModal"),
+        );
+        if (loginModal) loginModal.hide();
+
+        setTimeout(() => {
+          var modal = new bootstrap.Modal(
+            document.getElementById("scholarshipRegisterModal"),
+          );
+          modal.show();
+        }, 300);
+      }
+
+      function showScholarshipLoginStep1() {
+        document.getElementById("scholarshipLoginStep1").style.display =
+          "block";
+        document.getElementById("scholarshipLoginStep2").style.display = "none";
+        document.getElementById("scholarshipLoginPhone").value = "";
+        document.getElementById("scholarshipLoginOtp").value = "";
+        document.getElementById("scholarshipLoginError").style.display = "none";
+      }
+
+      function showScholarshipRegStep1() {
+        document.getElementById("scholarshipRegContent1").style.display =
+          "block";
+        document.getElementById("scholarshipRegContent2").style.display =
+          "none";
+        document.getElementById("scholarshipRegStep1").classList.add("active");
+        document
+          .getElementById("scholarshipRegStep1")
+          .classList.remove("completed");
+        document
+          .getElementById("scholarshipRegStep2")
+          .classList.remove("active");
+      }
+
+      // Scholarship Login - Send OTP
+      document
+        .getElementById("scholarshipSendOtpBtn")
+        ?.addEventListener("click", async function () {
+          const phone = document.getElementById("scholarshipLoginPhone").value;
+
+          if (phone.length !== 10) {
+            Swal.fire({
+              icon: "error",
+              title: "Invalid Phone",
+              text: "Please enter a valid 10-digit mobile number",
+            });
+            return;
+          }
+
+          // Disable button and show loading
+          const btn = this;
+          btn.disabled = true;
+          btn.innerHTML =
+            'Sending... <span class="spinner-border spinner-border-sm ms-1"></span>';
+
+          scholarshipLoginPhone = phone;
+
+          const formData = new FormData();
+          formData.append("phone_number", phone);
+
+          try {
+            const response = await fetch(
+              '{% url "scholarship_test:scholarship_send_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+              document.getElementById(
+                "scholarshipLoginMaskedPhone",
+              ).textContent = phone.slice(0, 6) + "****";
+              document.getElementById("scholarshipLoginStep1").style.display =
+                "none";
+              document.getElementById("scholarshipLoginStep2").style.display =
+                "block";
+              document.getElementById("scholarshipLoginOtp").focus();
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.error || "Failed to send OTP",
+              });
+              btn.disabled = false;
+              btn.innerHTML = 'Send OTP <i class="bi bi-send ms-1"></i>';
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+            btn.disabled = false;
+            btn.innerHTML = 'Send OTP <i class="bi bi-send ms-1"></i>';
+          }
+        });
+
+      // Scholarship Login - Verify OTP
+      document
+        .getElementById("scholarshipLoginVerifyBtn")
+        ?.addEventListener("click", async function () {
+          const otp = document.getElementById("scholarshipLoginOtp").value;
+          const errorDiv = document.getElementById("scholarshipLoginError");
+
+          if (otp.length !== 4) {
+            errorDiv.textContent = "Please enter a valid 4-digit OTP";
+            errorDiv.style.display = "block";
+            return;
+          }
+
+          // Disable button and show loading
+          const btn = this;
+          btn.disabled = true;
+          btn.textContent = "Verifying...";
+
+          errorDiv.style.display = "none";
+
+          const formData = new FormData();
+          formData.append("phone_number", scholarshipLoginPhone);
+          formData.append("otp_code", otp);
+          formData.append("login", "true");
+
+          try {
+            const response = await fetch(
+              '{% url "scholarship_test:scholarship_verify_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+              const modal = bootstrap.Modal.getInstance(
+                document.getElementById("scholarshipLoginModal"),
+              );
+              if (modal) modal.hide();
+
+              Swal.fire({
+                icon: "success",
+                title: "Logged In!",
+                text: "Redirecting to dashboard...",
+                timer: 1500,
+                showConfirmButton: false,
+              }).then(() => {
+                window.location.href =
+                  '{% url "scholarship_test:scholarship_dashboard" %}';
+              });
+            } else {
+              errorDiv.textContent = data.error || "Invalid OTP";
+              errorDiv.style.display = "block";
+              btn.disabled = false;
+              btn.textContent = "Verify & Login";
+            }
+          } catch (err) {
+            errorDiv.textContent = "An error occurred. Please try again.";
+            errorDiv.style.display = "block";
+            btn.disabled = false;
+            btn.textContent = "Verify & Login";
+          }
+        });
+
+      // Scholarship Login - Resend OTP
+      document
+        .getElementById("scholarshipLoginResendBtn")
+        ?.addEventListener("click", async function () {
+          const btn = this;
+          btn.disabled = true;
+          btn.textContent = "Sending...";
+
+          const formData = new FormData();
+          formData.append("phone_number", scholarshipLoginPhone);
+
+          try {
+            const response = await fetch(
+              '{% url "scholarship_test:scholarship_resend_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+              Swal.fire({
+                icon: "success",
+                title: "OTP Sent",
+                text: "A new OTP has been sent to your phone",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.error || "Failed to send OTP",
+              });
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+          }
+
+          btn.disabled = false;
+          btn.textContent = "Resend OTP";
+        });
+
+      // Scholarship Registration - Submit Details
+      document
+        .getElementById("scholarshipRegSubmitBtn")
+        ?.addEventListener("click", async function () {
+          const grade = document.getElementById("scholarshipGrade").value;
+          const board = document.getElementById("scholarshipBoard").value;
+          const name = document.getElementById("scholarshipName").value;
+          const phone = document.getElementById("scholarshipRegPhone").value;
+
+          if (!grade) {
+            Swal.fire({
+              icon: "error",
+              title: "Required",
+              text: "Please select your grade",
+            });
+            return;
+          }
+          if (!board) {
+            Swal.fire({
+              icon: "error",
+              title: "Required",
+              text: "Please select your board",
+            });
+            return;
+          }
+          if (!name.trim()) {
+            Swal.fire({
+              icon: "error",
+              title: "Required",
+              text: "Please enter your name",
+            });
+            return;
+          }
+          if (phone.length !== 10) {
+            Swal.fire({
+              icon: "error",
+              title: "Invalid Phone",
+              text: "Please enter a valid 10-digit mobile number",
+            });
+            return;
+          }
+
+          scholarshipRegPhone = phone;
+
+          const formData = new FormData();
+          formData.append("grade", grade);
+          formData.append("board", board);
+          formData.append("name", name);
+          formData.append("phone_number", phone);
+
+          try {
+            const response = await fetch(
+              '{% url "scholarship_test:scholarship_register_step2" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            if (response.ok) {
+              document.getElementById("scholarshipRegMaskedPhone").textContent =
+                phone.slice(0, 6) + "****";
+              document.getElementById("scholarshipRegContent1").style.display =
+                "none";
+              document.getElementById("scholarshipRegContent2").style.display =
+                "block";
+              document
+                .getElementById("scholarshipRegStep1")
+                .classList.remove("active");
+              document
+                .getElementById("scholarshipRegStep1")
+                .classList.add("completed");
+              document
+                .getElementById("scholarshipRegStep2")
+                .classList.add("active");
+              document.getElementById("scholarshipRegOtp").focus();
+            } else {
+              const html = await response.text();
+              document.body.innerHTML = html;
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+          }
+        });
+
+      // Scholarship Registration - Verify OTP
+      document
+        .getElementById("scholarshipRegVerifyBtn")
+        ?.addEventListener("click", async function () {
+          const otp = document.getElementById("scholarshipRegOtp").value;
+          const errorDiv = document.getElementById("scholarshipRegError");
+
+          if (otp.length !== 4) {
+            errorDiv.textContent = "Please enter a valid 4-digit OTP";
+            errorDiv.style.display = "block";
+            return;
+          }
+
+          errorDiv.style.display = "none";
+
+          const formData = new FormData();
+          formData.append("phone_number", scholarshipRegPhone);
+          formData.append("otp_code", otp);
+
+          try {
+            const response = await fetch(
+              '{% url "scholarship_test:scholarship_verify_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+              const modal = bootstrap.Modal.getInstance(
+                document.getElementById("scholarshipRegisterModal"),
+              );
+              if (modal) modal.hide();
+
+              Swal.fire({
+                icon: "success",
+                title: "Registered!",
+                text: "Redirecting to dashboard...",
+                timer: 1500,
+                showConfirmButton: false,
+              }).then(() => {
+                window.location.href =
+                  '{% url "scholarship_test:scholarship_dashboard" %}';
+              });
+            } else {
+              errorDiv.textContent = data.error || "Invalid OTP";
+              errorDiv.style.display = "block";
+            }
+          } catch (err) {
+            errorDiv.textContent = "An error occurred. Please try again.";
+            errorDiv.style.display = "block";
+          }
+        });
+
+      // Scholarship Registration - Resend OTP
+      document
+        .getElementById("scholarshipRegResendBtn")
+        ?.addEventListener("click", async function () {
+          const btn = this;
+          btn.disabled = true;
+          btn.textContent = "Sending...";
+
+          const formData = new FormData();
+          formData.append("phone_number", scholarshipRegPhone);
+
+          try {
+            const response = await fetch(
+              '{% url "scholarship_test:scholarship_resend_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+              Swal.fire({
+                icon: "success",
+                title: "OTP Sent",
+                text: "A new OTP has been sent to your phone",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.error || "Failed to send OTP",
+              });
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+          }
+
+          btn.disabled = false;
+          btn.textContent = "Resend OTP";
+        });
+
+      // Input validation - only numbers
+      document
+        .getElementById("scholarshipLoginPhone")
+        ?.addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      document
+        .getElementById("scholarshipLoginOtp")
+        ?.addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      document
+        .getElementById("scholarshipRegPhone")
+        ?.addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      document
+        .getElementById("scholarshipRegOtp")
+        ?.addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      // Reset modals when closed
+      document
+        .getElementById("scholarshipLoginModal")
+        ?.addEventListener("hidden.bs.modal", function () {
+          showScholarshipLoginStep1();
+        });
+
+      document
+        .getElementById("scholarshipRegisterModal")
+        ?.addEventListener("hidden.bs.modal", function () {
+          showScholarshipRegStep1();
+        });
+    </script> -->
+
+    <!-- <script>
+      function clearScholarshipSession() {
+        // Clear scholarship-related session data
+        fetch('{% url "scholarship_test:scholarship_logout" %}', {
+          method: "GET",
+          credentials: "same-origin",
+        })
+          .then(() => {
+            // After clearing session, redirect to registration
+            window.location.href =
+              '{% url "scholarship_test:scholarship_register" %}';
+          })
+          .catch(() => {
+            // Even if fetch fails, redirect to registration
+            window.location.href =
+              '{% url "scholarship_test:scholarship_register" %}';
+          });
+      }
+    </script> -->
+
+    {% if messages %}
+    <script>
+      {% for message in messages %}
+        Swal.fire({
+          toast: true,
+          position: "top",
+          icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}{{ message.tags }}{% endif %}",
+          title: "{{ message|escapejs }}",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+      {% endfor %}
+    </script>
+    {% endif %}
+
+    <!-- Download functionality JavaScript commented out
+    <script>
+      const gradeBoardModalEl = document.getElementById("gradeBoardModal");
+      const otpLoginModalEl = document.getElementById("otpLoginModal");
+
+      const gradeSelect = document.getElementById("gradeSelect");
+      const boardSelect = document.getElementById("boardSelect");
+      const nextToLoginBtn = document.getElementById("nextToLoginBtn");
+
+      const hiddenGrade = document.getElementById("studyGrade");
+      const hiddenBoard = document.getElementById("studyBoard");
+
+      const downloadPhoneInput = document.getElementById("downloadPhone");
+      const otpSection = document.getElementById("otpCodeSection");
+      const downloadOtpInput = document.getElementById("downloadOtp");
+
+      const sendOtpDownloadBtn = document.getElementById("sendOtpDownloadBtn");
+      const verifyOtpDownloadBtn = document.getElementById(
+        "verifyOtpDownloadBtn",
+      );
+
+      function normalizeBoard(boardVal) {
+        if (!boardVal) return "";
+        const b = String(boardVal).toUpperCase();
+        if (b.includes("CBSE")) return "CBSE";
+        if (b.includes("STATE")) return "STATE";
+        return "";
+      }
+
+      function normalizeGrade(gradeVal) {
+        if (!gradeVal) return "";
+
+        return String(gradeVal).replace(/\D/g, "");
+      }
+
+      function validateGradeBoardOrToast() {
+        const grade = normalizeGrade(gradeSelect.value);
+        const board = normalizeBoard(boardSelect.value);
+
+        if (!(grade === "10" || grade === "12")) {
+          Swal.fire({
+            icon: "info",
+            title: "Only for 10th & 12th",
+            text: "Study materials are available for 10th and 12th only.",
+          });
+          return null;
+        }
+        if (!(board === "CBSE" || board === "STATE")) {
+          Swal.fire({
+            icon: "error",
+            title: "Select Board",
+            text: "Please select a board.",
+          });
+          return null;
+        }
+        return { grade, board };
+      }
+
+      function resetOtpModalUI() {
+        otpSection.style.display = "none";
+        verifyOtpDownloadBtn.style.display = "none";
+        downloadOtpInput.value = "";
+      }
+
+      nextToLoginBtn.addEventListener("click", (e) => {
+        const gb = validateGradeBoardOrToast();
+        if (!gb) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        hiddenGrade.value = gb.grade;
+        hiddenBoard.value = gb.board;
+
+        resetOtpModalUI();
+        downloadPhoneInput.value = "";
+      });
+
+      document
+        .getElementById("backToGradeBtn")
+        ?.addEventListener("click", () => {
+          resetOtpModalUI();
+          downloadOtpInput.value = "";
+        });
+
+      function cleanMobile(m) {
+        const digits = String(m || "").replace(/\D/g, "");
+        if (digits.length !== 10) return "";
+        return digits;
+      }
+
+      window.handleSendOtp = async function () {
+        console.log("Send OTP button clicked");
+
+        const gb = { grade: hiddenGrade.value, board: hiddenBoard.value };
+
+        if (
+          !(gb.grade === "10" || gb.grade === "12") ||
+          !(gb.board === "CBSE" || gb.board === "STATE")
+        ) {
+          Swal.fire({
+            icon: "error",
+            title: "Invalid Selection",
+            text: "Please select grade & board again.",
+          });
+          return;
+        }
+
+        const mobile = cleanMobile(downloadPhoneInput.value);
+        if (!mobile) {
+          Swal.fire({
+            icon: "error",
+            title: "Invalid Mobile",
+            text: "Enter a valid 10-digit mobile number.",
+          });
+          return;
+        }
+
+        const otpUrl = "/auth/send-study-download-otp/";
+        console.log("OTP URL:", otpUrl);
+
+        const form = new FormData();
+        form.append("mobile", mobile);
+
+        sendOtpDownloadBtn.disabled = true;
+        sendOtpDownloadBtn.textContent = "Sending...";
+
+        try {
+          const res = await fetch(otpUrl, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken },
+            body: form,
+          });
+
+          console.log("Response status:", res.status);
+          console.log("Response status text:", res.statusText);
+
+          const data = await res.json();
+          console.log("Response data:", data);
+
+          if (data.success === true) {
+            Swal.fire({
+              icon: "success",
+              title: "OTP Sent",
+              text: "OTP sent to your mobile number.",
+            });
+
+            otpSection.style.display = "block";
+            verifyOtpDownloadBtn.style.display = "block";
+            downloadPhoneInput.disabled = true;
+            sendOtpDownloadBtn.style.display = "none";
+            downloadOtpInput.focus();
+          } else {
+            const errorMsg =
+              data.error ||
+              data.message ||
+              "Failed to send OTP. Please try again.";
+            Swal.fire({ icon: "error", title: "OTP Failed", text: errorMsg });
+            console.error("OTP send failed:", errorMsg);
+          }
+        } catch (err) {
+          console.error("Fetch error:", err);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "OTP service error. Please try again. " + err.message,
+          });
+        } finally {
+          sendOtpDownloadBtn.disabled = false;
+          sendOtpDownloadBtn.textContent = "Send OTP";
+        }
+      };
+
+      verifyOtpDownloadBtn.addEventListener("click", async () => {
+        const mobile = cleanMobile(downloadPhoneInput.value);
+        const otp = String(downloadOtpInput.value || "").trim();
+
+        if (!mobile) {
+          Swal.fire({
+            icon: "error",
+            title: "Invalid Mobile",
+            text: "Enter a valid 10-digit mobile number.",
+          });
+          return;
+        }
+        if (!/^\d{4}$/.test(otp)) {
+          Swal.fire({
+            icon: "error",
+            title: "Invalid OTP",
+            text: "Enter a valid 4-digit OTP.",
+          });
+          return;
+        }
+
+        const grade = hiddenGrade.value;
+        const board = hiddenBoard.value;
+
+        const form = new FormData();
+        form.append("mobile", mobile);
+        form.append("otp", otp);
+        form.append("grade", grade);
+        form.append("board", board);
+
+        verifyOtpDownloadBtn.disabled = true;
+        verifyOtpDownloadBtn.textContent = "Verifying...";
+
+        try {
+          const verifyUrl = "/auth/verify-study-download-otp/";
+
+          const res = await fetch(verifyUrl, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken },
+            body: form,
+          });
+          const data = await res.json();
+
+          if (!data.success) {
+            Swal.fire({
+              icon: "error",
+              title: "Verification Failed",
+              text: data.error || "Invalid OTP.",
+            });
+            return;
+          }
+
+          const otpModalInstance = bootstrap.Modal.getInstance(otpLoginModalEl);
+          otpModalInstance?.hide();
+
+          window.location.href = data.redirect_url;
+        } catch (err) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "OTP verification error. Please try again.",
+          });
+        } finally {
+          verifyOtpDownloadBtn.disabled = false;
+          verifyOtpDownloadBtn.textContent = "Verify OTP & Login";
+        }
+      });
+
+      otpLoginModalEl?.addEventListener("shown.bs.modal", () => {
+        if (!downloadPhoneInput.value) {
+          resetOtpModalUI();
+        }
+      });
+    </script>
+    -->
+  </body>
+</html>

@@ -1,0 +1,193 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Student Diagnostic Dashboard</title>
+    <link rel="icon" href="{% static 'img/logo.webp' %}" type="image/webp" />
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/system-management.css' %}" />
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+      // Initialize lucide icons after the library loads
+      lucide.createIcons();
+    </script>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .page-shell {
+        flex: 1 0 auto;
+      }
+    </style>
+  </head>
+
+  <body class="bg-light">
+    <!-- TOP HEADER -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-1 sticky-top"
+    >
+      <div class="container-fluid px-4">
+        <div class="d-flex align-items-center">
+          <img
+            src="{% static 'img/logo.webp' %}"
+            alt="Ranker's Academy Logo"
+            class="me-2"
+            style="height: 60px; width: auto; object-fit: contain"
+          />
+          <div>
+            <h5 class="mb-0 fw-bold fs-5">Student Diagnostic System</h5>
+            <small class="text-muted d-block" style="font-size: 0.8rem"
+              >Admin Portal</small
+            >
+          </div>
+        </div>
+        <div class="ms-auto d-flex align-items-center">
+          <div class="text-end me-3 d-none d-md-block">
+            <div class="fw-bold text-dark fs-6">Admin User</div>
+            <div class="text-muted" style="font-size: 0.75rem">
+              {{teacher_name}}
+            </div>
+          </div>
+          <a
+            href="{% url 'logout' %}"
+            class="btn btn-light btn-sm rounded-circle"
+          >
+            <i class="bi bi-box-arrow-right" style="font-size: 1.4rem"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- NAVBAR BELOW HEADER -->
+    <div class="tabs">
+      <div class="tabs-left">
+        <a
+          href="{% url 'admin-dashboard' %}"
+          class="{% if '/dashboard/admin-dashboard/' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-book"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a
+          href="{% url 'system-management' %}"
+          class="{% if '/system-management' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-gear"></i>
+          <span>System Management</span>
+        </a>
+      </div>
+    </div>
+
+    <style>
+      @media (max-width: 1024px) {
+        .tabs {
+          flex-direction: column;
+          align-items: stretch;
+          padding: 8px 10px;
+          gap: 8px;
+        }
+
+        .tabs-left {
+          overflow-x: auto;
+          scrollbar-width: none;
+          gap: 8px;
+          padding-bottom: 4px;
+        }
+
+        .tabs-left::-webkit-scrollbar {
+          display: none;
+        }
+
+        .tabs-left a {
+          font-size: 12px;
+          padding: 8px 10px;
+          border-radius: 8px;
+          white-space: nowrap;
+        }
+
+        .tabs-left a.active {
+          background: #e6f4fb;
+        }
+
+        .tabs-left a.active::after {
+          display: none;
+        }
+        .navbar .brand-icon i {
+          font-size: 20px;
+        }
+
+        .navbar h5 {
+          font-size: 14px !important;
+        }
+
+        .navbar small {
+          display: none !important;
+        }
+
+        footer .container-fluid {
+          text-align: center;
+          gap: 8px;
+        }
+
+        footer .d-flex {
+          flex-direction: column;
+          align-items: center !important;
+          gap: 4px;
+        }
+      }
+    </style>
+    <main class="page-shell">{% block content %} {% endblock %}</main>
+    <footer class="bg-light py-3 border-top">
+      <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            Copyright © <span id="year"></span>
+            <a
+              href="https://therankersacademy.com"
+              style="text-decoration: none"
+              target="_blank"
+            >
+              Ranker's Academy </a
+            >, All Rights Reserved
+          </div>
+          <div>
+            Designed and Developed by
+            <a
+              href="https://kavyainfoweb.com"
+              target="_blank"
+              style="text-decoration: none"
+            >
+              Kavya Infoweb Pvt. Ltd.
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>

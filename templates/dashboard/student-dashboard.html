@@ -1,0 +1,299 @@
+{% extends 'base.html' %} 
+{% block content %}
+
+<div class="container-fluid my-4">
+  <div
+    class="test-banner d-flex flex-wrap align-items-center justify-content-between"
+  >
+    <div class="banner-curve"></div>
+
+    <!-- Left -->
+    <div class="d-flex align-items-center gap-4 banner-content">
+      <div class="icon-box">
+        <!-- ICON HERE -->
+        <i class="bi bi-bullseye"></i>
+      </div>
+
+      <div>
+        <h3>Ready to Test Your Knowledge?</h3>
+        <p>
+          Take a self-diagnostic test to identify your strengths and areas for
+          improvement
+        </p>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <a href="{% url 'test' %}" class="start-btn">Start Test</a>
+  </div>
+</div>
+
+<div class="mainbody">
+  <div class="container-fluid my-4" style="width: 99%; margin: 0 auto">
+    <div class="row g-4 align-items-stretch">
+      <!-- LEFT : Overall Progress -->
+
+      <div class="col-lg-3 col-md-6">
+        <div class="overall-progress-card h-100 text-center">
+          <div
+            id="circle"
+            class="overall-progress-circle"
+            style="background: conic-gradient(#5bb2e2 {{ overall_angle }}deg, #e5e7eb 0deg);"
+          >
+            <span id="percentText">{{ overall_percent }}%</span>
+          </div>
+
+          <div class="mt-3 overall-title">Overall Progress</div>
+          <small class="overall-sub text-muted">Academic Year 2025–26</small>
+        </div>
+      </div>
+
+      <!-- Strength -->
+      <div class="col-lg-3 col-md-6">
+        <div
+          class="h-100"
+          style="background: #ecfdf5; border-radius: 18px; padding: 24px"
+        >
+          <div class="d-flex align-items-center gap-3">
+            <div
+              style="
+                background: #22c55e;
+                color: #fff;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <i class="fa fa-circle-check"></i>
+            </div>
+            <div>
+              <h4 id="strong" style="margin: 0">
+                {{ strength_chapters_count }}
+              </h4>
+              <small>Strength Areas</small>
+            </div>
+          </div>
+
+          <span
+            style="
+              display: inline-block;
+              margin-top: 14px;
+              background: #dcfce7;
+              color: #15803d;
+              padding: 6px 12px;
+              border-radius: 20px;
+              font-size: 12px;
+            "
+          >
+            Chapters with 70%+ score
+          </span>
+
+          <ul
+            style="
+              list-style: none;
+              padding: 0;
+              margin-top: 10px;
+              font-size: 12px;
+              color: #15803d;
+            "
+          >
+            <!-- Keep UI as-is; list stays as lightweight placeholders -->
+            <li>• Strong chapters count shown above</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Focus -->
+      <div class="col-lg-3 col-md-6">
+        <div
+          class="h-100"
+          style="background: #fff7ed; border-radius: 18px; padding: 24px"
+        >
+          <div class="d-flex align-items-center gap-3">
+            <div
+              style="
+                background: #f97316;
+                color: #fff;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <i class="fa fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <h4 id="focus" style="margin: 0">{{ focus_chapters_count }}</h4>
+              <small>Focus Areas</small>
+            </div>
+          </div>
+
+          <span
+            style="
+              display: inline-block;
+              margin-top: 14px;
+              background: #ffedd5;
+              color: #c2410c;
+              padding: 6px 12px;
+              border-radius: 20px;
+              font-size: 12px;
+            "
+          >
+            Chapters below 50%
+          </span>
+
+          <ul
+            style="
+              list-style: none;
+              padding: 0;
+              margin-top: 10px;
+              font-size: 12px;
+              color: #c2410c;
+            "
+          >
+            <li>• Weak chapters count shown above</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Average -->
+      <div class="col-lg-3 col-md-6">
+        <div
+          class="h-100"
+          style="background: #eff6ff; border-radius: 18px; padding: 24px"
+        >
+          <div class="d-flex align-items-center gap-3">
+            <div
+              style="
+                background: #3b82f6;
+                color: #fff;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <i class="fa fa-chart-line"></i>
+            </div>
+            <div>
+              <h4 id="avg" style="margin: 0">{{ avg_score }}%</h4>
+              <small>Average Score</small>
+            </div>
+          </div>
+
+          <span
+            style="
+              display: inline-block;
+              margin-top: 14px;
+              background: #dbeafe;
+              color: #1d4ed8;
+              padding: 6px 12px;
+              border-radius: 20px;
+              font-size: 12px;
+            "
+          >
+            Across all assessments
+          </span>
+
+          <p style="font-size: 12px; color: #1d4ed8; margin-top: 10px">
+            Based on all Self Diagnostic Tests taken by you
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subject-wise Progress -->
+  <div class="container-fluid my-4" style="width: 99%; margin: 0 auto">
+    <div class="page-title fw-semibold mb-3">📖 Subject-wise Progress</div>
+
+    <div class="row g-4">
+      {% for s in subject_cards %}
+      <div class="col-lg-4 col-md-6">
+        <div class="progress-card subject-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="subject-name fw-semibold">{{ s.name }}</div>
+              <small class="text-muted"
+                >{{ s.covered_topics }} of {{ s.total_topics }} topics</small
+              >
+            </div>
+            <span class="{{ s.badge_class }}">{{ s.badge_text }}</span>
+          </div>
+
+          <div class="mt-3 d-flex justify-content-between align-items-center">
+            <small class="small-text">Progress</small>
+            <strong class="subject-percent">{{ s.percent }}%</strong>
+          </div>
+
+          <div class="progress mt-1">
+            <div
+              class="progress-bar subject-progress-bar {{ s.bar_class }}"
+              style="width: {{ s.percent }}%;"
+            ></div>
+          </div>
+
+          <!-- Completed / Pending -->
+          <div class="d-flex justify-content-between mt-3 small-text">
+            <div class="completed-text">
+              <span class="dot green-dot"></span> Completed: {{ s.covered_topics }}
+            </div>
+            <div class="pending-text">
+              <span class="dot gray-dot"></span> Pending: {{ s.pending_topics }}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="progress-card">
+          <div class="text-muted">No subjects found for your grade/board!</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="container-fluid my-4" style="width: 99%; margin: 0 auto">
+    <!-- This Week's Focus -->
+    <div
+      class="focus-section animation-focus d-flex gap-3 align-items-start"
+      style="background: linear-gradient(135deg, #2563eb, #06b6d4)"
+    >
+      <div class="focus-icon">
+        <i class="fa fa-bullseye"></i>
+      </div>
+
+      <div>
+        <div class="focus-title">This Week’s Focus</div>
+
+        <div class="focus-text">
+          {% if weekly_focus_items %} Based on your progress, we recommend
+          focusing on
+          <!-- {% for item in weekly_focus_items %}
+                <strong>{{ item.subject }} ({{ item.chapter }})</strong>{% if not forloop.last %} and {% endif %}
+              {% endfor %} -->
+          following topics to improve your overall performance. {% else %} Great
+          work! No chapters are currently below 40%. {% endif %}
+        </div>
+
+        <div class="focus-tags">
+          {% for item in weekly_focus_items %}
+          <span class="focus-tag"
+            >{{ item.subject }}: {{ item.chapter }} ({{ item.percent }}%)</span
+          >
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,524 @@
+body {
+  background: #f4f9fc;
+  font-family: "DM Sans", sans-serif;
+  color: #000;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.tabs {
+  background: #ffffff;
+  padding: 0 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tabs-left {
+  display: flex;
+  gap: 20px;
+}
+
+.tabs-left a {
+  padding: 14px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #000;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: 0.3s ease;
+  position: relative;
+}
+.tabs-right {
+  margin-left: auto;
+}
+
+.tabs-left a i {
+  color: #000;
+  transition: 0.3s ease;
+  font-size: 18px;
+}
+
+.tabs-left a.active {
+  color: #2563eb;
+}
+
+.tabs-left a.active i {
+  color: #2563eb;
+}
+
+.tabs-left a.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: #2563eb;
+  border-radius: 10px;
+}
+
+.tabs-left a:hover {
+  color: #2563eb;
+}
+
+.tabs-left a:hover i {
+  color: #2563eb;
+}
+
+.test-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  padding: 18px 26px;
+  min-height: 95px;
+  background: linear-gradient(90deg, #0d6efd, #0891b2);
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.18);
+}
+
+.test-banner::before {
+  content: "";
+  position: absolute;
+  left: -70px;
+  top: 0;
+  width: 260px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 60px;
+  transform: skewX(-14deg);
+}
+
+.test-banner::after {
+  content: "";
+  position: absolute;
+  right: -90px;
+  top: -40px;
+  width: 260px;
+  height: 260px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.banner-curve {
+  position: absolute;
+  right: -40px;
+  bottom: -80px;
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.icon-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  position: relative;
+}
+
+.icon-box i {
+  font-size: 34px;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+}
+
+.banner-content h3 {
+  font-weight: 700;
+  margin-bottom: 2px;
+  font-size: 22px;
+  color: #fff;
+}
+
+.banner-content p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.start-btn {
+  background: #fff;
+  color: #0d6efd;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 16px;
+  font-size: 16px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+  border: none;
+  position: relative;
+  z-index: 1;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.start-btn:hover {
+  background: #f1f5ff;
+  color: #0d6efd;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.progress-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.subject-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.badge-excellent {
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.badge-good {
+  background: #ffedd5;
+  color: #c2410c;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.badge-poor {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.progress {
+  height: 7px !important;
+  border-radius: 10px;
+}
+
+.small-text {
+  font-size: 13px;
+  color: #475569;
+}
+
+.subject-card {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.subject-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.15);
+}
+
+.subject-progress-bar {
+  width: 0%;
+  height: 100%;
+  border-radius: 10px;
+  transition:
+    width 0.3s linear,
+    background 0.3s linear;
+}
+
+.progress-excellent {
+  background: linear-gradient(to right, #38bdf8, #0ea5e9);
+}
+
+.progress-good {
+  background: linear-gradient(to right, #22c55e, #16a34a);
+}
+
+.progress-average {
+  background: linear-gradient(to right, #fb923c, #f97316);
+}
+
+.progress-poor {
+  background: linear-gradient(to right, #ef4444, #dc2626);
+}
+
+.dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.green-dot {
+  background: #22c55e;
+}
+
+.gray-dot {
+  background: #cbd5e1;
+}
+
+.focus-section {
+  border-radius: 16px;
+  padding: 22px 26px;
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.focus-icon {
+  width: 42px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.focus-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.focus-text {
+  font-size: 14px;
+  opacity: 0.95;
+  margin-top: 6px;
+}
+
+.focus-tags {
+  margin-top: 14px;
+}
+
+.focus-tag {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  display: inline-block;
+  margin-right: 8px;
+  margin-top: 6px;
+}
+
+.overall-progress-card {
+  border-radius: 22px;
+  padding: 25px 22px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.overall-progress-circle {
+  width: 125px;
+  height: 125px;
+  margin: auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(#5bb2e2 0deg, #e5e7eb 0deg);
+  position: relative;
+}
+
+.overall-progress-circle::before {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.overall-progress-circle span {
+  position: relative;
+  z-index: 1;
+  font-size: 34px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.overall-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.overall-sub {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .tabs-left {
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 12px;
+  }
+
+  .tabs-left::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabs-left a {
+    font-size: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .tabs-left a.active {
+    background: #e6f4fb;
+  }
+
+  .tabs-left a.active::after {
+    display: none;
+  }
+
+  .test-banner {
+    padding: 16px;
+  }
+
+  .banner-content h3 {
+    font-size: 18px;
+  }
+
+  .start-btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 12px;
+  }
+}
+
+.tabs-left a {
+  font-size: 14px;
+  padding: 12px 14px;
+}
+
+.tabs-left a i {
+  font-size: 16px;
+}
+
+.test-banner {
+  padding: 14px 20px;
+  min-height: 80px;
+}
+
+.icon-box {
+  width: 55px;
+  height: 55px;
+  border-radius: 14px;
+}
+
+.icon-box i {
+  font-size: 26px;
+}
+
+.banner-content h3 {
+  font-size: 18px;
+}
+
+.banner-content p {
+  font-size: 13px;
+}
+
+.start-btn {
+  padding: 8px 18px;
+  font-size: 14px;
+  border-radius: 14px;
+}
+
+.navbar {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+.navbar .brand-icon {
+  width: 70px;
+  height: 60px;
+  border-radius: 12px;
+  background: transparent;
+  padding: 0;
+}
+
+.navbar .brand-icon i {
+  font-size: 24px;
+}
+
+.navbar h5 {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  margin-bottom: 0 !important;
+}
+
+.navbar small {
+  font-size: 0.78rem !important;
+}
+
+.navbar .text-end .fw-bold {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.navbar .text-end .text-muted {
+  font-size: 0.7rem !important;
+}
+
+.navbar .avatar-circle {
+  width: 38px;
+  height: 38px;
+  font-size: 0.85rem;
+}
+
+.navbar .btn.btn-light.btn-sm.rounded-circle {
+  width: 38px;
+  height: 38px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar .btn.btn-light.btn-sm.rounded-circle i {
+  font-size: 18px;
+}

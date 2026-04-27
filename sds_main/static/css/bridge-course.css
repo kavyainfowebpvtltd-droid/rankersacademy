@@ -1,0 +1,352 @@
+:root {
+  --primary-blue: #2563eb;
+  --nav-active: #0d6efd;
+  --text-muted: #64748b;
+  --bg-system: #f8fafc;
+  /* Gradient from your image */
+  --banner-gradient: linear-gradient(90deg, #1d4ed8 0%, #06b6d4 100%);
+}
+
+body {
+  background-color: var(--bg-system);
+  font-family: "Inter", sans-serif;
+  color: #1e293b;
+}
+
+.extra-small {
+  font-size: 0.7rem;
+}
+
+/* HEADER STYLING */
+.system-header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logo-icon {
+  background: var(--primary-blue);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: #8b5cf6; /* Matching the purple in your image */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.logout-icon {
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+/* NAV STYLING */
+.system-nav .nav-link {
+  color: #475569;
+  font-weight: 500;
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  border-bottom: 3px solid transparent;
+}
+
+.system-nav .nav-link.active {
+  color: var(--nav-active);
+  border-bottom: 3px solid var(--nav-active);
+}
+
+/* MODULE BANNER */
+.module-banner {
+  background: var(--banner-gradient);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* TABS */
+.nav-pills .nav-link {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  margin-right: 12px;
+  padding: 10px 24px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+.nav-pills .nav-link.active {
+  background: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+/* TABLE */
+.table-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table thead th {
+  background: #f8fafc;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table tbody td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.bg-soft-primary {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* BUTTONS */
+.btn-watch {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 16px;
+}
+
+.btn-watch:hover {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-download {
+  background: #fff;
+  color: #2563eb;
+  border: 1px solid #e2e8f0;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 16px;
+}
+
+.btn-download:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Video Modal Controls */
+.video-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-maximize,
+.btn-minimize {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+/* Hide minimize button by default - only show maximize */
+.btn-minimize {
+  display: none;
+}
+
+.btn-maximize:hover,
+.btn-minimize:hover {
+  background: #f1f5f9;
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Half screen default modal */
+.video-modal-half {
+  max-width: 50vw;
+  max-height: 50vh;
+}
+
+.video-modal-half .modal-content {
+  height: auto;
+}
+
+.video-modal-half .ratio {
+  max-height: 50vh;
+}
+
+/* Maximized Modal State */
+#videoModal.maximized .modal-dialog {
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0;
+  height: 100vh;
+}
+
+#videoModal.maximized .modal-content {
+  height: 100vh;
+  border-radius: 0;
+}
+
+#videoModal.maximized .modal-header {
+  display: none;
+}
+
+#videoModal.maximized .modal-body {
+  height: 100vh;
+  padding: 0;
+}
+
+#videoModal.maximized .ratio {
+  height: 100%;
+  max-height: 100vh;
+}
+
+#videoModal.maximized .ratio iframe {
+  height: 100%;
+}
+
+/* Minimized Modal State - Show as half screen */
+#videoModal.minimized .modal-dialog {
+  max-width: 50vw;
+  max-height: 50vh;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  top: auto;
+  left: auto;
+  margin: 0;
+}
+
+#videoModal.minimized .modal-content {
+  height: 50vh;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+#videoModal.minimized .modal-header {
+  padding: 8px 12px;
+}
+
+#videoModal.minimized .modal-header .modal-title {
+  font-size: 0.85rem;
+}
+
+#videoModal.minimized .modal-body {
+  padding: 0;
+}
+
+#videoModal.minimized .ratio {
+  height: 100%;
+}
+
+#videoModal.minimized .ratio iframe {
+  height: 100%;
+}
+
+#videoModal.maximized .modal-header {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9998;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+  border: none;
+  padding: 15px 20px;
+}
+
+#videoModal.maximized .video-controls {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 9999;
+  display: flex;
+  gap: 8px;
+}
+
+#videoModal.maximized .btn-maximize {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+#videoModal.maximized .btn-maximize:hover {
+  background: white;
+  color: #2563eb;
+}
+
+#videoModal.maximized .btn-minimize {
+  display: none;
+}
+
+#videoModal.maximized .modal-header .btn-close {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 6px;
+  opacity: 1;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#videoModal.maximized .modal-header .btn-close::before,
+#videoModal.maximized .modal-header .btn-close::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 2px;
+  background-color: #333;
+  left: 50%;
+  top: 50%;
+}
+
+#videoModal.maximized .modal-header .btn-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+#videoModal.maximized .modal-header .btn-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+#videoModal.maximized .modal-header .btn-close:hover {
+  background: white;
+}
+
+/* Hide elements when minimized */
+#videoModal.minimized .btn-maximize,
+#videoModal.minimized .btn-minimize {
+  display: none;
+}
+
+/* Show minimize button only in maximized mode */
+#videoModal.maximized .btn-minimize {
+  display: none;
+}

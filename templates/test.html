@@ -1,0 +1,146 @@
+{% extends 'base.html' %} 
+{% load static %} 
+{% block content %}
+
+<div class="container py-4">
+  <div class="card border-0 shadow-sm mb-4 rounded-4">
+    <div class="card-body p-4 text-center">
+      <h2 class="h6 mb-4 text-uppercase fw-bold text-muted letter-spacing-1">
+        Select Subject to Start
+      </h2>
+
+      <div
+        id="gap-info"
+        class="alert alert-info small text-start mx-auto mb-3"
+        style="max-width: 720px; display: none"
+      >
+        <div class="fw-semibold mb-1">Focus Test Mode</div>
+        <div id="gap-info-text">
+          You are taking a focused test for selected unknown topics.
+        </div>
+      </div>
+
+      <div
+        id="subject-buttons"
+        class="d-flex justify-content-center flex-wrap gap-3"
+      ></div>
+    </div>
+  </div>
+
+  <div id="chapters-container" class="fade-in"></div>
+
+  <div class="d-flex justify-content-center gap-3 my-5">
+    <button
+      class="btn btn-primary btn-lg px-5 rounded-pill shadow"
+      onclick="submitTest()"
+    >
+      <i class="bi bi-check2-circle me-2"></i>Submit Overall Survey
+    </button>
+    <button
+      class="btn btn-outline-secondary btn-lg px-4 rounded-pill"
+      onclick="resetTest()"
+    >
+      <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+    </button>
+  </div>
+</div>
+
+<div class="modal fade" id="quizModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 pb-0 px-4 pt-4">
+        <h5 class="modal-title fw-bold" id="quizTitle">
+          Chapter Proficiency Test
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="quiz-questions-container"></div>
+      </div>
+      <div class="modal-footer border-0 p-4">
+        <button
+          type="button"
+          class="btn btn-primary btn-lg rounded-pill px-5"
+          onclick="submitQuiz()"
+        >
+          Verify My Knowledge
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4 text-center p-5">
+      <div class="mb-4">
+        <i
+          class="bi bi-patch-check-fill text-success"
+          style="font-size: 4.5rem"
+        ></i>
+      </div>
+      <h3 class="fw-bold mb-3">Survey Submitted!</h3>
+      <p class="text-muted mb-2" id="success-msg-1">
+        Your syllabus coverage has been saved to the portal.
+      </p>
+      <p class="text-muted mb-4" id="success-msg-2" style="display: none"></p>
+
+      <button
+        class="btn btn-primary btn-lg rounded-pill w-100"
+        id="success-close-btn"
+        data-bs-dismiss="modal"
+      >
+        Close       
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.TEST_URLS = {
+    loadSubjects: "{% url 'load_subjects' %}",
+    loadChapters: "{% url 'load_chapters' 0 %}".replace(
+      "/0/",
+      "/{subject_id}/",
+    ),
+    loadQuiz: "{% url 'load_quiz' 0 %}".replace("/0/", "/{chapter_id}/"),
+    submitQuiz: "{% url 'submit_quiz' %}",
+    submitSelfDiagnostic: "{% url 'submit_self_diagnostic' %}",
+  };
+  window.CSRF_TOKEN = "{{ csrf_token }}";
+
+  (function () {
+    const url = new URL(window.location.href);
+    const subject = url.searchParams.get("subject");
+    const chapter = url.searchParams.get("chapter");
+    const topics = url.searchParams.get("topics");
+
+    const gapInfo = document.getElementById("gap-info");
+    const gapInfoText = document.getElementById("gap-info-text");
+
+    if (gapInfo && (subject || chapter || topics)) {
+      gapInfo.style.display = "block";
+
+      const parts = [];
+      if (subject) parts.push(`Subject ID: ${subject}`);
+      if (chapter) parts.push(`Chapter ID: ${chapter}`);
+      if (topics) parts.push(`Topics: ${topics}`);
+
+      if (gapInfoText) {
+        gapInfoText.innerText =
+          "You are taking a focused test for selected unknown topics. " +
+          (parts.length ? `(${parts.join(" • ")})` : "");
+      }
+    }
+  })();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/test.js' %}"></script>
+
+{% endblock %}

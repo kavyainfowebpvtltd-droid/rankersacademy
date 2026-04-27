@@ -1,0 +1,162 @@
+{% extends 'base.html' %} 
+{% load static %} 
+{% block content %}
+
+<div class="container-fluid py-4 px-4">
+  <!-- TOP SUMMARY -->
+  <div class="row g-4 mb-4 top-summary-grid">
+    <!-- Known Topics -->
+    <div class="col-md-4">
+      <div class="summary-card known">
+        <div class="icon-circle">
+          <i class="bi bi-check"></i>
+        </div>
+        <div class="content">
+          <h2>{{ summary.known }}</h2>
+          <p class="title">Known Topics</p>
+          <span class="desc">Chapters 100% completed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Partial Understanding -->
+    <div class="col-md-4">
+      <div class="summary-card partial">
+        <div class="icon-circle">
+          <i class="bi bi-circle"></i>
+        </div>
+        <div class="content">
+          <h2>{{ summary.partial }}</h2>
+          <p class="title">Partial Understanding</p>
+          <span class="desc">Chapters between 20% and 60%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unknown Topics -->
+    <div class="col-md-4">
+      <div class="summary-card unknown">
+        <div class="icon-circle">
+          <i class="bi bi-x"></i>
+        </div>
+        <div class="content">
+          <h2>{{ summary.unknown }}</h2>
+          <p class="title">Unknown Topics</p>
+          <span class="desc">Chapters 0% covered</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBJECT SELECT -->
+  <div class="chapter-card mb-4">
+    <h6 class="mb-3">Select Subject</h6>
+
+    <div class="d-md-none mb-2">
+      <select
+        class="form-select"
+        onchange="
+          if (this.value) {
+            window.location = '?subject=' + this.value;
+          }
+        "
+      >
+        <option value="">Select Subject</option>
+        {% for s in subjects %}
+        <option
+          value="{{ s.id }}"
+          {%
+          if
+          selected_subject
+          and
+          s.id=""
+          ="selected_subject.id"
+          %}selected{%
+          endif
+          %}
+        >
+          {{ s.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="d-none d-md-flex gap-2 flex-wrap">
+      {% for s in subjects %}
+      <button
+        class="subject-btn {% if selected_subject and s.id == selected_subject.id %}active{% endif %}"
+        onclick="window.location='?subject={{ s.id }}'"
+      >
+        {{ s.name }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- CHAPTER PROGRESS -->
+  <div id="content" class="fade-in">
+    {% if not chapters_data %}
+    <div class="chapter-card">
+      <div class="text-muted">No chapters found for this subject!</div>
+    </div>
+    {% endif %} {% for chap in chapters_data %}
+    <div class="chapter-card">
+      <div class="chapter-header" onclick="toggleChapter(this)">
+        <div class="chapter-title fw-bold">{{ chap.name }}</div>
+        <div class="d-flex align-items-center gap-3">
+          <span class="fw-bold">{{ chap.percent }}%</span>
+          <button
+            class="arrow-btn"
+            onclick="
+              event.stopPropagation();
+              toggleChapter(this.closest('.chapter-header'));
+            "
+          >
+            <i class="bi bi-chevron-down"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="progress my-2">
+        <div
+          class="progress-bar"
+          style="background: var(--color-green-500)"
+          data-progress="{{ chap.percent }}"
+        ></div>
+      </div>
+
+      <div class="chapter-divider"></div>
+
+      <div class="topics-section">
+        {% for t in chap.topics %}
+        <div class="topic-row">
+          <div class="topic-content">
+            <i class="bi bi-check-circle-fill topic-icon"></i>
+            <span>{{ t.name }}</span>
+          </div>
+
+          {% if t.status == "Mastered" %}
+          <span class="badge badge-mastered">Mastered</span>
+          {% else %}
+          <span
+            class="badge"
+            style="
+              background: #f8d7da;
+              color: #721c24;
+              border-radius: 20px;
+              padding: 4px 12px;
+              font-weight: 500;
+            "
+            >Unknown</span
+          >
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script src="{% static 'js/subject-analysis.js' %}"></script>
+{% endblock %}

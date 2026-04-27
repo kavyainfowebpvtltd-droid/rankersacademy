@@ -1,0 +1,221 @@
+body {
+  background: #f4f9fc;
+  font-family: "Segoe UI", sans-serif;
+  color: #000;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-bottom: 20px;
+}
+
+/* Navbar Brand Icon */
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #0ea5e9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+/* ===== Top Header ===== */
+.top-header {
+  background: #fff;
+  padding: 14px 24px;
+  border-bottom: 2px solid #5bb2e2;
+}
+.brand {
+  font-weight: 600;
+  font-size: 18px;
+  color: #000;
+}
+.subtext {
+  font-size: 12px;
+  color: #444;
+}
+.main-card {
+  max-width: 850px;
+  margin: auto;
+  margin-top: 40px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.gradient-header {
+  background: linear-gradient(135deg, #528bc3, #06b6d4);
+  color: white;
+  padding: 50px 30px;
+  text-align: center;
+}
+
+.gradient-header h3 {
+  font-weight: 700;
+  font-size: 2rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.gradient-header h1 {
+  font-size: 4rem;
+  font-weight: 800;
+  margin: 15px 0;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.scholarship-box {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.scholarship-box p {
+  font-size: 1.1rem;
+}
+
+.result-summary-box {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+  text-align: left;
+}
+
+.result-summary-item {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 16px 18px;
+  backdrop-filter: blur(10px);
+}
+
+.result-summary-label {
+  display: block;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.result-summary-item strong {
+  font-size: 1rem;
+  color: #fff;
+}
+
+.details-section {
+  background: white;
+  padding: 35px;
+}
+
+.details-section h6 {
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.info-box {
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.info-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.info-box h6 {
+  font-size: 1rem;
+  color: #666;
+}
+
+.info-box h4 {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.score-box {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+}
+
+.percent-box {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.claim-box {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.claim-box h6 {
+  font-size: 1.1rem;
+  color: #c2410c;
+}
+
+.sms-box {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.sms-box h6 {
+  font-size: 1rem;
+  color: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .gradient-header h3 {
+    font-size: 1.5rem;
+  }
+
+  .gradient-header h1 {
+    font-size: 3rem;
+  }
+
+  .details-section {
+    padding: 24px 18px;
+  }
+
+  .result-summary-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+.notes {
+  max-width: 650px;
+  margin: auto;
+  margin-top: 20px;
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  font-size: 14px;
+}

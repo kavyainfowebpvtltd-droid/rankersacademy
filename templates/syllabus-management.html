@@ -1,0 +1,985 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="{% static 'img/logo.webp' %}" />
+    <title>Syllabus Management</title>
+    <link rel="stylesheet" href="{% static 'css/syllabus-management.css' %}" />
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1 class="page-title">Syllabus Structure</h1>
+
+        {% if can_manage_all %}
+        <button class="btn-primary" onclick="openAddSubjectModal()">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Add Subject
+        </button>
+        {% endif %}
+      </div>
+
+      <div id="syllabusContainer">
+        {% for subject in subjects %}
+        <div class="subject-card">
+          <div class="subject-header">
+            <div class="subject-info" onclick="toggleSubject(this)">
+              <svg class="icon chevron" viewBox="0 0 24 24">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+              <span class="subject-name">{{ subject.name }}</span>
+              <span class="badge">Grade {{ subject.grade }}</span>
+              <span class="badge blue">{{ subject.board }}</span>
+              <span class="badge" style="background: #ede9fe; color: #6d28d9">
+                Batch {{ subject.batch }}
+              </span>
+              <span class="badge"
+                >{{ subject.chapters.all|length }} chapters</span
+              >
+            </div>
+
+            <div class="subject-actions">
+              <button
+                class="btn-icon success"
+                onclick="event.stopPropagation(); openChapterModal({{ subject.id }})"
+              >
+                <svg class="icon icon-green" viewBox="0 0 24 24">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+
+              {% if can_manage_all %}
+              <button
+                class="btn-icon icon-blue"
+                onclick="event.stopPropagation(); openEditSubjectModal('{{ subject.id }}','{{ subject.name|escapejs }}','{{ subject.grade|escapejs }}','{{ subject.board|escapejs }}','{{ subject.batch|escapejs }}')"
+              >
+                <svg class="icon icon-blue" viewBox="0 0 24 24">
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
+              </button>
+
+              <form
+                method="POST"
+                action="{% url 'delete_subject' subject.id %}"
+              >
+                {% csrf_token %}
+                <button
+                  class="btn-icon icon-red"
+                  onclick="return confirm('Delete this subject?');"
+                >
+                  <svg class="icon icon-red" viewBox="0 0 24 24">
+                    <path
+                      d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
+                    />
+                  </svg>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="chapters-container">
+            {% for chapter in subject.chapters.all %}
+            <div class="chapter-card">
+              <div class="chapter-header">
+                <div class="chapter-info" onclick="toggleChapter(this)">
+                  <svg class="icon chevron" viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                  <span class="chapter-name">{{ chapter.name }}</span>
+                  <span class="badge"
+                    >{{ chapter.topics.all|length }} topics</span
+                  >
+                </div>
+
+                <div class="subject-actions">
+                  <button
+                    class="btn-icon success"
+                    onclick="event.stopPropagation(); openTopicModal({{ chapter.id }})"
+                  >
+                    <svg class="icon icon-green" viewBox="0 0 24 24">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+
+                  <button
+                    class="btn-icon icon-blue"
+                    onclick="event.stopPropagation(); openEditChapterModal('{{ chapter.id }}','{{ chapter.name|escapejs }}')"
+                  >
+                    <svg class="icon icon-blue" viewBox="0 0 24 24">
+                      <path
+                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                      />
+                      <path
+                        d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                      />
+                    </svg>
+                  </button>
+
+                  <form
+                    method="POST"
+                    action="{% url 'delete_chapter' chapter.id %}"
+                  >
+                    {% csrf_token %}
+                    <button
+                      class="btn-icon icon-red"
+                      onclick="return confirm('Delete this chapter?');"
+                    >
+                      <svg class="icon icon-red" viewBox="0 0 24 24">
+                        <path
+                          d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
+                        />
+                      </svg>
+                    </button>
+                  </form>
+
+                  <button
+                    class="btn-icon"
+                    style="background: #f59e0b; color: white"
+                    onclick="event.stopPropagation(); openImpQuestionsModal('{{ chapter.id }}', '{{ chapter.name|escapejs }}')"
+                    title="Upload Important Questions & Solutions"
+                  >
+                    <svg class="icon" style="color: white" viewBox="0 0 24 24">
+                      <path
+                        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="topics-container">
+                {% for topic in chapter.topics.all %}
+                <div class="topic-card">
+                  <div class="topic-header" onclick="toggleTopic(this)">
+                    <div class="topic-info">
+                      <svg class="icon chevron" viewBox="0 0 24 24">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                      <span class="topic-name">{{ topic.name }}</span>
+                      <span class="badge green"
+                        >{{ topic.mcqs.all|length }} MCQs</span
+                      >
+                    </div>
+
+                    <div class="subject-actions">
+                      <button
+                        class="btn-icon success"
+                        onclick="event.stopPropagation(); openMcqModal({{ topic.id }})"
+                      >
+                        <svg class="icon icon-green" viewBox="0 0 24 24">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                      </button>
+
+                      <button
+                        class="btn-icon icon-blue"
+                        onclick="event.stopPropagation(); openEditTopicModal('{{ topic.id }}','{{ topic.name|escapejs }}')"
+                      >
+                        <svg class="icon icon-blue" viewBox="0 0 24 24">
+                          <path
+                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                          />
+                          <path
+                            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                          />
+                        </svg>
+                      </button>
+
+                      <form
+                        method="POST"
+                        action="{% url 'delete_topic' topic.id %}"
+                      >
+                        {% csrf_token %}
+                        <button
+                          class="btn-icon icon-red"
+                          onclick="return confirm('Delete this topic?');"
+                        >
+                          <svg class="icon icon-red" viewBox="0 0 24 24">
+                            <path
+                              d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
+                            />
+                          </svg>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <!-- MCQs Container -->
+                  <div class="mcqs-container">
+                    {% for mcq in topic.mcqs.all %}
+                    <div class="mcq-card">
+                      <div class="mcq-content">
+                        <div class="mcq-question">{{ mcq.question }}</div>
+                        {% if mcq.question_image %}
+                        <div style="margin: 12px 0">
+                          <img
+                            src="{{ mcq.question_image.url }}"
+                            alt="Question image"
+                            style="
+                              max-width: 100%;
+                              max-height: 240px;
+                              border-radius: 10px;
+                              border: 1px solid #e5e7eb;
+                            "
+                          />
+                        </div>
+                        {% endif %}
+                        <div class="mcq-options">
+                          <div
+                            class="mcq-option {% if mcq.correct_answer == 'A' %}correct{% endif %}"
+                          >
+                            <span class="option-key">A.</span> {{ mcq.option_a }} 
+                            {% if mcq.correct_answer == 'A' %}
+                            <span class="correct-badge">Correct</span>
+                            {% endif %}
+                          </div>
+
+                          <div
+                            class="mcq-option {% if mcq.correct_answer == 'B' %}correct{% endif %}"
+                          >
+                            <span class="option-key">B.</span> {{ mcq.option_b }} 
+                            {% if mcq.correct_answer == 'B' %}
+                            <span class="correct-badge">Correct</span>
+                            {% endif %}
+                          </div>
+
+                          <div
+                            class="mcq-option {% if mcq.correct_answer == 'C' %}correct{% endif %}"
+                          >
+                            <span class="option-key">C.</span> {{ mcq.option_c }} 
+                            {% if mcq.correct_answer == 'C' %}
+                            <span class="correct-badge">Correct</span>
+                            {% endif %}
+                          </div>
+
+                          {% if mcq.option_d != "N/A" %}
+                          <div
+                            class="mcq-option {% if mcq.correct_answer == 'D' %}correct{% endif %}"
+                          >
+                            <span class="option-key">D.</span> {{ mcq.option_d}}
+                            {% if mcq.correct_answer == 'D' %}
+                            <span class="correct-badge">Correct</span>
+                            {% endif %}
+                          </div>
+                          {% endif %}
+                        </div>
+                      </div>
+
+                      <!-- Actions -->
+                      <div class="mcq-actions">
+                        <button
+                          class="btn-icon icon-blue"
+                          onclick="openEditMcqModal('{{ mcq.id }}','{{ mcq.question|escapejs }}','{{ mcq.option_a|escapejs }}','{{ mcq.option_b|escapejs }}','{{ mcq.option_c|escapejs }}','{{ mcq.option_d|escapejs }}','{{ mcq.correct_answer }}','{% if mcq.question_image %}{{ mcq.question_image.url|escapejs }}{% endif %}')"
+                        >
+                          <svg class="icon icon-blue" viewBox="0 0 24 24">
+                            <path
+                              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                            />
+                            <path
+                              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                            />
+                          </svg>
+                        </button>
+
+                        <form
+                          method="POST"
+                          action="{% url 'delete_mcq' mcq.id %}"
+                        >
+                          {% csrf_token %}
+                          <button
+                            type="submit"
+                            class="btn-icon icon-red"
+                            onclick="return confirm('Delete this MCQ?');"
+                          >
+                            <svg class="icon icon-red" viewBox="0 0 24 24">
+                              <path
+                                d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
+                              />
+                            </svg>
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% empty %}
+                <p class="muted-text">No topics added yet!</p>
+                {% endfor %}
+              </div>
+            </div>
+            {% empty %}
+            <p class="muted-text">No chapters added yet!</p>
+            {% endfor %}
+          </div>
+        </div>
+        {% empty %}
+        <p class="muted-text">No subjects added yet!</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ADD SUBJECT MODAL -->
+
+    {% if can_manage_all %}
+    <div class="modal-overlay" id="addSubjectModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal()">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 class="modal-title">Add New Subject</h2>
+
+        <form method="POST" action="{% url 'add_subject' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">Subject Name</label>
+            <input
+              type="text"
+              class="form-input"
+              name="name"
+              id="subjectName"
+              placeholder="e.g., Mathematics"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Class / Grade (Optional)</label>
+            <select name="grade" class="form-input form-select">
+              <option value="">Select</option>
+              <option value="8">Grade 8</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Board</label>
+            <select name="board" class="form-input form-select" required>
+              <option value="CBSE">CBSE</option>
+              <option value="State">State</option>
+              <option value="JEE">JEE</option>
+              <option value="NEET">NEET</option>
+              <option value="MHTCET">MHTCET</option>
+            </select>
+          </div>
+
+          <!--  Batch -->
+          <div class="form-group">
+            <label class="form-label">Batch</label>
+            <input
+              type="text"
+              class="form-input"
+              name="batch"
+              placeholder="e.g., B1 / Batch A / 2026"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeModal()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Add Subject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ADD CHAPTER MODAL -->
+
+    <div class="modal-overlay" id="addChapterModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeChapterModal()">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 class="modal-title">Add Chapter</h2>
+
+        <form method="POST" action="{% url 'add_chapter' %}">
+          {% csrf_token %}
+          <input type="hidden" name="subject_id" id="chapterSubjectId" />
+
+          <div class="form-group">
+            <label class="form-label">Chapter Name</label>
+            <input
+              type="text"
+              name="name"
+              class="form-input"
+              placeholder="e.g., Ch 3: Linear Equations"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeChapterModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Add Chapter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADD TOPIC MODAL -->
+
+    <div class="modal-overlay" id="addTopicModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeTopicModal()">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 class="modal-title">Add Topic</h2>
+
+        <form method="POST" action="{% url 'add_topic' %}">
+          {% csrf_token %}
+          <input type="hidden" name="chapter_id" id="topicChapterId" />
+
+          <div class="form-group">
+            <label class="form-label">Topic Name</label>
+            <input
+              type="text"
+              name="name"
+              class="form-input"
+              placeholder="e.g., Algebra"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeTopicModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Add Topic</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADD MCQ MODAL -->
+
+    <div class="modal-overlay" id="addMcqModal">
+      <div class="modal mcq-modal">
+        <button class="modal-close" onclick="closeMcqModal()">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 class="modal-title">Add MCQ Questions</h2>
+
+        <form
+          method="POST"
+          action="{% url 'add_mcq' %}"
+          enctype="multipart/form-data"
+          id="addMcqForm"
+          class="mcq-form"
+        >
+          {% csrf_token %}
+          <input type="hidden" name="topic_id" id="mcqTopicId" />
+
+          <div class="form-group">
+            <label class="form-label">Question</label>
+            <div class="question-editor-box mcq-simple-question-box">
+              <textarea
+                name="question"
+                class="form-input question-editor-textarea"
+                id="addMcqQuestion"
+                rows="4"
+                placeholder="Enter your question here..."
+                required
+              ></textarea>
+              <div
+                class="question-image-inline-preview"
+                id="addMcqImagePreview"
+              >
+                <img
+                  id="addMcqImagePreviewTag"
+                  src=""
+                  alt="Question image preview"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Options</label>
+            <div class="mcq-simple-options-grid">
+              <input
+                name="option_a"
+                type="text"
+                class="form-input"
+                placeholder="First option"
+                required
+              />
+              <input
+                name="option_b"
+                type="text"
+                class="form-input"
+                placeholder="Second option"
+                required
+              />
+              <input
+                name="option_c"
+                type="text"
+                class="form-input"
+                placeholder="Third option"
+                required
+              />
+              <input
+                name="option_d"
+                type="text"
+                class="form-input"
+                placeholder="Fourth option"
+                value="N/A"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Correct Answer</label>
+            <select
+              name="correct_answer"
+              class="form-input form-select"
+              required
+            >
+              <option value="">Select correct answer</option>
+              <option value="A">Option A</option>
+              <option value="B">Option B</option>
+              <option value="C">Option C</option>
+              <option value="D">Option D</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Question Image</label>
+            <input
+              type="file"
+              id="addQuestionImage"
+              name="question_image"
+              class="form-input"
+              accept="image/*"
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeMcqModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Add Question</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- EDIT SUBJECT -->
+
+    {% if can_manage_all %}
+    <div class="modal-overlay" id="editSubjectModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeEditSubjectModal()">
+          &times;
+        </button>
+        <h2 class="modal-title">Edit Subject</h2>
+
+        <form
+          method="POST"
+          id="editSubjectForm"
+          data-url-template="{% url 'edit_subject' 0 %}"
+        >
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label class="form-label">Subject Name</label>
+            <input
+              type="text"
+              name="name"
+              class="form-input"
+              id="editSubjectName"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Class / Grade (Optional)</label>
+            <select
+              name="grade"
+              class="form-input form-select"
+              id="editSubjectGrade"
+            >
+              <option value="">Select</option>
+              <option value="8">Grade 8</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Board</label>
+            <select
+              name="board"
+              class="form-input form-select"
+              id="editSubjectBoard"
+              required
+            >
+              <option value="CBSE">CBSE</option>
+              <option value="State">State</option>
+              <option value="JEE">JEE</option>
+              <option value="NEET">NEET</option>
+              <option value="MHTCET">MHTCET</option>
+            </select>
+          </div>
+
+          <!-- Batch -->
+          <div class="form-group">
+            <label class="form-label">Batch</label>
+            <input
+              type="text"
+              name="batch"
+              class="form-input"
+              id="editSubjectBatch"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeEditSubjectModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Update Subject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- EDIT CHAPTER -->
+    <div class="modal-overlay" id="editChapterModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeEditChapterModal()">
+          &times;
+        </button>
+        <h2 class="modal-title">Edit Chapter</h2>
+
+        <form method="POST" id="editChapterForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">Chapter Name</label>
+            <input
+              type="text"
+              name="name"
+              class="form-input"
+              id="editChapterName"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeEditChapterModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Update Chapter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- EDIT TOPIC -->
+    <div class="modal-overlay" id="editTopicModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeEditTopicModal()">
+          &times;
+        </button>
+        <h2 class="modal-title">Edit Topic</h2>
+
+        <form method="POST" id="editTopicForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">Topic Name</label>
+            <input
+              type="text"
+              name="name"
+              class="form-input"
+              id="editTopicName"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeEditTopicModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Update Topic</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- EDIT MCQ -->
+    <div class="modal-overlay" id="editMcqModal">
+      <div class="modal mcq-modal">
+        <button class="modal-close" onclick="closeEditMcqModal()">
+          &times;
+        </button>
+        <h2 class="modal-title">Edit MCQ Question</h2>
+
+        <form
+          method="POST"
+          id="editMcqForm"
+          enctype="multipart/form-data"
+          class="mcq-form"
+        >
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">Question</label>
+            <div class="question-editor-box mcq-simple-question-box">
+              <textarea
+                name="question"
+                class="form-input question-editor-textarea"
+                id="editMcqQuestion"
+                rows="4"
+                required
+              ></textarea>
+              <div
+                class="question-image-inline-preview"
+                id="editMcqImagePreview"
+              >
+                <img
+                  id="editMcqImagePreviewTag"
+                  src=""
+                  alt="Question image preview"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Options</label>
+            <div class="mcq-simple-options-grid">
+              <input
+                type="text"
+                name="option_a"
+                class="form-input"
+                id="editOptionA"
+                placeholder="First option"
+                required
+              />
+              <input
+                type="text"
+                name="option_b"
+                class="form-input"
+                id="editOptionB"
+                placeholder="Second option"
+                required
+              />
+              <input
+                type="text"
+                name="option_c"
+                class="form-input"
+                id="editOptionC"
+                placeholder="Third option"
+                required
+              />
+              <input
+                type="text"
+                name="option_d"
+                class="form-input"
+                id="editOptionD"
+                placeholder="Fourth option"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Correct Answer</label>
+            <select
+              name="correct_answer"
+              class="form-input form-select"
+              id="editCorrectAnswer"
+              required
+            >
+              <option value="">Select correct answer</option>
+              <option value="A">Option A</option>
+              <option value="B">Option B</option>
+              <option value="C">Option C</option>
+              <option value="D">Option D</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Question Image</label>
+            <input
+              type="file"
+              name="question_image"
+              class="form-input"
+              id="editQuestionImage"
+              accept="image/*"
+            />
+            <label class="mcq-inline-check">
+              <input
+                type="checkbox"
+                name="remove_question_image"
+                value="1"
+                id="removeQuestionImage"
+              />
+              <span>Remove current image</span>
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeEditMcqModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Update Question</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- UPLOAD IMP QUESTIONS MODAL -->
+    <div class="modal-overlay" id="uploadImpQuestionsModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeImpQuestionsModal()">
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 class="modal-title">Upload Important Questions & Solutions</h2>
+        <p id="impChapterName" class="modal-subtitle"></p>
+
+        <form
+          method="POST"
+          id="uploadImpQuestionsForm"
+          enctype="multipart/form-data"
+        >
+          {% csrf_token %}
+          <input type="hidden" name="chapter_id" id="impChapterId" />
+
+          <div class="form-group">
+            <label class="form-label">Important Questions File (PDF)</label>
+            <input
+              type="file"
+              name="imp_questions"
+              class="form-input"
+              accept=".pdf,.doc,.docx"
+            />
+            <small class="form-hint"
+              >Upload PDF containing important questions (optional)</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Important Solutions File (PDF)</label>
+            <input
+              type="file"
+              name="imp_solutions"
+              class="form-input"
+              accept=".pdf,.doc,.docx"
+            />
+            <small class="form-hint"
+              >Upload PDF containing solutions (optional)</small
+            >
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeImpQuestionsModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Upload Files</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="{% static 'js/syllabus-management.js' %}"></script>
+
+    <script>
+      function openEditSubjectModal(id, name, grade, board, batch) {
+        document.getElementById("editSubjectName").value = name;
+        document.getElementById("editSubjectGrade").value = grade;
+        document.getElementById("editSubjectBoard").value = board;
+        document.getElementById("editSubjectBatch").value = batch;
+
+        const form = document.getElementById("editSubjectForm");
+        const tpl = form.getAttribute("data-url-template");
+        form.action = tpl.replace("/0/", `/${id}/`);
+
+        document.getElementById("editSubjectModal").classList.add("active");
+      }
+
+      // Imp Questions Modal Functions
+      function openImpQuestionsModal(chapterId, chapterName) {
+        document.getElementById("impChapterId").value = chapterId;
+        document.getElementById("impChapterName").textContent =
+          "Chapter: " + chapterName;
+
+        // Set form action
+        const form = document.getElementById("uploadImpQuestionsForm");
+        form.action = "/upload-imp-questions/" + chapterId + "/";
+
+        document
+          .getElementById("uploadImpQuestionsModal")
+          .classList.add("active");
+      }
+
+      function closeImpQuestionsModal() {
+        document
+          .getElementById("uploadImpQuestionsModal")
+          .classList.remove("active");
+        // Reset form
+        document.getElementById("uploadImpQuestionsForm").reset();
+      }
+    </script>
+  </body>
+</html>

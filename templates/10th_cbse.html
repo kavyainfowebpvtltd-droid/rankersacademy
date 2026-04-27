@@ -1,0 +1,140 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" type="image/png" href="{% static 'img/logo.webp' %}" />
+    <title>10th CBSE Board Study Material</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/10th_cbse.css'%}">
+  </head>
+  <body>
+    <div class="container-fluid container-lg">
+      <div class="card main-card">
+        <div class="header-dark">
+          <h1 class="h5 mb-0 fw-bold">Study Material</h1>
+          <span class="badge-state-small">10th CBSE</span>
+        </div>
+
+        {% if study_material %}
+        <div class="nav-scroller d-flex overflow-auto">
+          <div
+            class="nav nav-pills flex-nowrap"
+            id="subject-tab"
+            role="tablist"
+          >
+            {% for subject_name in study_material.keys %}
+            <button
+              class="nav-link{% if forloop.first %} active{% endif %}"
+              data-bs-toggle="pill"
+              data-bs-target="#{{ subject_name|lower|slugify }}"
+            >
+              {{ subject_name }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="tab-content">
+          {% for subject_name, chapters in study_material.items %}
+          <div
+            class="tab-pane fade{% if forloop.first %} show active{% endif %}"
+            id="{{ subject_name|lower|slugify }}"
+          >
+            <div class="table-section">
+              <table class="table align-middle">
+                <thead>
+                  <tr class="all-chapters-row">
+                    <td class="sr-no">#</td>
+                    <td class="chapter-title fw-bold">All Chapters Bundle</td>
+                    <td class="text-end btn-group-responsive">
+                      <span
+                        class="btn btn-custom btn-blue-bg"
+                        style="cursor: default"
+                      >
+                        Download All Qs
+                      </span>
+                      <span
+                        class="btn btn-custom btn-blue-bg"
+                        style="cursor: default"
+                      >
+                        Download All Solutions
+                      </span>
+                    </td>
+                  </tr>
+                  <tr class="label-row">
+                    <td class="sr-no label-text">No.</td>
+                    <td class="label-text">Chapters</td>
+                    <td class="text-end label-text">
+                      Important Questions PDF & Solutions PDF
+                    </td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for chapter in chapters %}
+                  <tr>
+                    <td class="sr-no">
+                      {{ forloop.counter|stringformat:"02d" }}
+                    </td>
+                    <td class="chapter-title">{{ chapter.name }}</td>
+                    <td class="text-end btn-group-responsive">
+                      {% if chapter.imp_questions_url %}
+                      <a
+                        class="btn btn-custom btn-outline-custom"
+                        href="{{ chapter.imp_questions_url }}"
+                        download
+                      >
+                        Download
+                      </a>
+                      {% else %}
+                      <span
+                        class="btn btn-custom btn-outline-custom"
+                        style="opacity: 0.5; cursor: not-allowed"
+                      >
+                        N/A
+                      </span>
+                      {% endif %} {% if chapter.imp_solutions_url %}
+                      <a
+                        class="btn btn-custom btn-solution-custom"
+                        href="{{ chapter.imp_solutions_url }}"
+                        download
+                      >
+                        Download
+                      </a>
+                      {% else %}
+                      <span
+                        class="btn btn-custom btn-solution-custom"
+                        style="opacity: 0.5; cursor: not-allowed"
+                      >
+                        N/A
+                      </span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-data-message">
+          <h4>No study material available!</h4>
+          <p>Please check back later for updated study materials.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

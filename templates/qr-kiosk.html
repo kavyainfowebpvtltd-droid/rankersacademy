@@ -1,0 +1,294 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiosk Attendance System UI</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <link href="{% static 'css/scan.css' %}" rel="stylesheet" />
+    <style>
+      :root {
+        --brand-sky: #59afe4;
+        --brand-cyan: #8fd3fb;
+        --brand-deep: #0f2d47;
+        --brand-panel: #163a59;
+        --brand-gold: #ffca28;
+      }
+
+      .app-container {
+        min-height: 100vh;
+        height: auto;
+        padding: 2rem 1.5rem;
+        flex-direction: column;
+        gap: 1.75rem;
+        background:
+          radial-gradient(circle at top, rgba(143, 211, 251, 0.22), transparent 34%),
+          linear-gradient(160deg, #051421 0%, var(--brand-deep) 48%, #081826 100%);
+      }
+
+      .kiosk-header {
+        width: 100%;
+        max-width: 42rem;
+        padding: 1.5rem 1.5rem 0;
+        text-align: center;
+      }
+
+      .kiosk-brand {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border: 1px solid rgba(143, 211, 251, 0.25);
+        border-radius: 1.5rem;
+        background: rgba(7, 25, 39, 0.78);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(12px);
+      }
+
+      .kiosk-logo-shell {
+        width: 5.5rem;
+        height: 5.5rem;
+        border-radius: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, rgba(143, 211, 251, 0.18), rgba(89, 175, 228, 0.1));
+        border: 1px solid rgba(143, 211, 251, 0.18);
+      }
+
+      .kiosk-logo {
+        width: 100%;
+        max-width: 4.25rem;
+        height: auto;
+      }
+
+      .kiosk-copy {
+        text-align: left;
+      }
+
+      .kiosk-eyebrow {
+        margin: 0 0 0.35rem;
+        color: var(--brand-gold);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+      }
+
+      .kiosk-title {
+        margin: 0;
+        color: #ffffff;
+        font-size: clamp(1.42rem, 2vw, 2.25rem) !important;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .kiosk-title span {
+        background: linear-gradient(90deg, var(--brand-cyan), var(--brand-sky));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .kiosk-subtitle {
+        margin: 0.5rem 0 0;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 1rem;
+      }
+
+      .main-card {
+        max-width: 46rem;
+      }
+
+      .state-container {
+        border: 1px solid rgba(143, 211, 251, 0.16);
+        background:
+          linear-gradient(180deg, rgba(143, 211, 251, 0.06), rgba(143, 211, 251, 0) 18%),
+          rgba(22, 58, 89, 0.92);
+        box-shadow: 0 24px 55px rgba(0, 0, 0, 0.28);
+      }
+
+      .state-title {
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+      }
+
+      .state-subtitle {
+        color: rgba(143, 211, 251, 0.9);
+      }
+
+      .spinner {
+        border-color: var(--brand-cyan);
+        border-top-color: transparent;
+      }
+
+      .online-indicator {
+        color: rgba(143, 211, 251, 0.88);
+      }
+
+      .pending-badge {
+        background-color: rgba(255, 202, 40, 0.16);
+        color: var(--brand-gold);
+      }
+
+      @media (max-width: 768px) {
+        .app-container {
+          padding-top: 5.5rem;
+        }
+
+        .kiosk-brand {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .kiosk-copy {
+          text-align: center;
+        }
+
+        .state-container {
+          padding: 2.5rem 1.5rem;
+        }
+
+        .state-title {
+          font-size: 2.2rem;
+        }
+
+        .state-subtitle {
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+    <!-- 
+      QR/Barcode Data Format Supported:
+      
+      Option 1 - JSON format:
+      {"name":"John Doe","class":"Class 12 - Science","batch":"Morning Batch","photo":"https://...","action":"checkin"}
+      
+      Option 2 - Key-Value pairs:
+      name=John Doe;class=Class 12 - Science;batch=Morning Batch
+      
+      Option 3 - Plain text:
+      John Doe,Class 12 - Science,Morning Batch
+      
+      The scanner toggles between check-in and check-out on repeat scans.
+    -->
+  </head>
+
+  <body>
+    <div id="app" class="app-container">
+      <input
+        type="text"
+        id="barcode-input"
+        class="hidden-input"
+        autocomplete="off"
+        autofocus
+      />
+
+      <audio id="success-audio" preload="auto">
+        <source
+          src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE"
+          type="audio/wav"
+        />
+      </audio>
+      <audio id="error-audio" preload="auto">
+        <source
+          src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE"
+          type="audio/wav"
+        />
+      </audio>
+
+      <div id="online-indicator" class="online-indicator">
+        <i id="wifi-icon" class="bi bi-wifi"></i>
+        <span id="status-text">Online</span>
+        <span id="pending-badge" class="pending-badge d-none">
+          <span id="pending-count">0</span> pending
+        </span>
+      </div>
+
+      <header class="kiosk-header">
+        <div class="kiosk-brand">
+          <div class="kiosk-logo-shell">
+            <img
+              src="{% static 'img/logo-crop.png' %}"
+              alt="Rankers Academy logo"
+              class="kiosk-logo"
+            />
+          </div>
+          <div class="kiosk-copy">
+            <h1 class="kiosk-title">WELCOME TO <span>THE RANKERS ACADEMY</span></h1>
+            <p class="kiosk-subtitle">
+              Scan your ID card to record attendance quickly and securely.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div class="main-card">
+        <div id="idle-state" class="state-container">
+          <div class="state-icon">📱</div>
+          <h1 class="state-title">Scan ID Card</h1>
+          <p class="state-subtitle">Please present your card</p>
+        </div>
+
+        <div id="loading-state" class="state-container d-none">
+          <div class="spinner"></div>
+          <h1 class="state-title">Processing...</h1>
+        </div>
+
+        <div id="success-state" class="state-container d-none state-success">
+          <div class="student-photo-container">
+            <img
+              id="student-photo"
+              src=""
+              alt="Student"
+              class="student-photo d-none"
+            />
+            <div id="photo-fallback" class="photo-fallback d-none">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+          </div>
+          <h1 id="student-name" class="state-title">Student Name</h1>
+          <p id="student-class" class="state-subtitle">Class</p>
+          <p id="student-batch" class="state-subtitle-light">Batch</p>
+          <div class="action-badge">
+            <i id="action-icon" class="bi bi-check-circle-fill"></i>
+            <span id="action-text">Checked In</span>
+          </div>
+          <p id="scan-timestamp" class="timestamp">Time</p>
+        </div>
+
+        <div id="error-state" class="state-container d-none state-error">
+          <div class="error-icon">
+            <i class="bi bi-x-circle-fill"></i>
+          </div>
+          <h1 class="state-title">Scan Failed</h1>
+          <p id="error-message" class="state-subtitle">Invalid Card</p>
+        </div>
+
+        <div id="offline-state" class="state-container d-none state-offline">
+          <div class="offline-icon">
+            <i class="bi bi-wifi-off"></i>
+          </div>
+          <h1 class="state-title">Offline Mode</h1>
+          <p class="state-subtitle">Scan saved locally</p>
+          <p class="state-subtitle-light">Will sync when online</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.qrKioskConfig = {
+        scanUrl: "{% url 'kiosk_scan_api' %}"
+      };
+    </script>
+    <script src="{% static 'js/scan.js' %}"></script>
+  </body>
+</html>

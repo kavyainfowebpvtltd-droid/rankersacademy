@@ -1,0 +1,369 @@
+{% load static %}
+
+<!doctype html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Bridge Course Management</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/bridgecourse-management.css' %}" />
+  </head>
+
+  <body>
+
+
+    <main class="container-fluid px-4 py-4">
+      <div class="sub-menu mb-4">
+        
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold">Bridge Course Structure</h6>
+
+            <div>
+              <button
+                class="btn btn-primary me-2"
+                data-bs-toggle="modal"
+                data-bs-target="#addSubjectModal"
+              >
+                <i class="bi bi-plus-circle"></i> Add Subject
+              </button>
+
+              <button
+                class="btn btn-success"
+                data-bs-toggle="modal"
+                data-bs-target="#addLectureModal"
+              >
+                <i class="bi bi-plus-circle"></i> Add Lecture
+              </button>
+            </div>
+          </div>
+
+          <div id="subjectContainer">
+            <div class="empty-state" id="emptyState">
+              <i class="bi bi-journal-bookmark"></i>
+              <h5>No Subjects Yet!</h5>
+              <p>
+                Start by adding your first subject using the "Add Subject"
+                button above.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ADD SUBJECT MODAL -->
+ 
+    <div class="modal fade" id="addSubjectModal">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+          <div class="modal-header border-0">
+            <h5 class="fw-bold">Add New Subject</h5>
+ 
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+ 
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold"
+                >Subject Name <span class="text-danger">*</span></label
+              >
+              <input
+                id="subjectName"
+                class="form-control"
+                placeholder="e.g., Mathematics, Physics, Chemistry"
+                pattern="^[A-Za-z0-9\s]+$"
+                maxlength="50"
+              />
+              <div class="invalid-feedback" id="subjectNameError">
+                Please enter a valid subject name (only letters, spaces, hyphens allowed)
+              </div>
+            </div>
+ 
+            <div class="mb-3">
+              <label class="form-label fw-semibold"
+                >Class / Grade <span class="text-danger">*</span></label
+              >
+              <select id="classSelect" class="form-select">
+                <option value="">Select Grade/Class</option>
+                <option>8th</option>
+                <option>9th</option>
+                <option>10th</option>
+                <option>11th</option>
+                <option>12th</option>
+              </select>
+              <div class="invalid-feedback" id="classSelectError">
+                Please select a grade
+              </div>
+            </div>
+ 
+            <div class="mb-3">
+              <label class="form-label fw-semibold"
+                >Board <span class="text-danger">*</span></label
+              >
+              <select id="boardSelect" class="form-select">
+                <option value="">Select Board</option>
+                <option>State Board</option>
+                <option>CBSE</option>
+                <option>ICSE</option>
+              </select>
+              <div class="invalid-feedback" id="boardSelectError">
+                Please select a board
+              </div>
+            </div>
+          </div>
+ 
+          <div class="modal-footer border-0">
+            <button class="btn btn-light" data-bs-dismiss="modal">
+              <i class="bi bi-x-lg"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="addSubject()">
+              <i class="bi bi-plus-lg"></i> Add Subject
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD LECTURE MODAL -->
+
+    <div class="modal fade" id="addLectureModal">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+          <div class="modal-header border-0">
+            <h5 class="fw-bold">Add Lecture</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold"
+                  >Select Subject <span class="text-danger">*</span></label
+                >
+                <select id="lectureSubject" class="form-select"></select>
+                <div class="invalid-feedback" id="lectureSubjectError">
+                  Please select a subject
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold"
+                  >Lecture Day <span class="text-danger">*</span></label
+                >
+                <input
+                  id="lectureDay"
+                  class="form-control"
+                  placeholder="e.g., Day 1, Day 2"
+                />
+                <div class="invalid-feedback" id="lectureDayError">
+                  Please enter lecture day
+                </div>
+              </div>
+
+             <div class="col-md-6">
+  <label class="form-label fw-semibold">
+    Lecture Number <span class="text-danger">*</span>
+  </label>
+  <input id="lectureNumber" class="form-control" placeholder="e.g., L1, L2" />
+  <div class="invalid-feedback" id="lectureNumberError">
+    Only letters and numbers allowed
+  </div>
+</div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold"
+                  >Topic Name <span class="text-danger">*</span></label
+                >
+                <input
+                  id="lectureTopic"
+                  class="form-control"
+                  placeholder="e.g., Algebra Basics"
+                />
+                <div class="invalid-feedback" id="lectureTopicError">
+                  Please enter topic name
+                </div>
+              </div>
+
+            <div class="col-md-6">
+  <label class="form-label fw-semibold">
+    Watch Now Link <span class="text-danger">*</span>
+  </label>
+  <input id="lectureVideo" class="form-control" placeholder="YouTube link" />
+  <div class="invalid-feedback" id="lectureVideoError">
+    Please enter valid video link
+  </div>
+</div>
+
+              <div class="col-md-6">
+  <label class="form-label fw-semibold">
+    Upload Notes <span class="text-danger">*</span>
+  </label>
+  <input id="lectureNotes" type="file" class="form-control" />
+  <div class="invalid-feedback" id="lectureNotesError">
+    Upload PDF file (max 2MB)
+  </div>
+</div>
+            </div>
+          </div>
+
+          <div class="modal-footer border-0">
+            <button class="btn btn-light" data-bs-dismiss="modal">
+              <i class="bi bi-x-lg"></i> Cancel
+            </button>
+            <button class="btn btn-success" onclick="addLecture()">
+              <i class="bi bi-plus-lg"></i> Add Lecture
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDIT LECTURE MODAL -->
+
+    <div class="modal fade" id="editLectureModal">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+          <div class="modal-header border-0">
+            <h5 class="fw-bold">Edit Lecture</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <input type="hidden" id="editSubjectIndex" />
+            <input type="hidden" id="editLectureIndex" />
+            <input type="hidden" id="editLectureId" />
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold"
+                  >Lecture Day <span class="text-danger">*</span></label
+                >
+                <input
+                  id="editLectureDay"
+                  class="form-control"
+                  placeholder="e.g., Day 1, Day 2"
+                />
+                <div class="invalid-feedback" id="editLectureDayError">
+                  Please enter lecture day
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Lecture Number</label>
+                <input
+                  id="editLectureNumber"
+                  class="form-control"
+                  placeholder="e.g., L1, L2"
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold"
+                  >Topic Name <span class="text-danger">*</span></label
+                >
+                <input
+                  id="editLectureTopic"
+                  class="form-control"
+                  placeholder="e.g., Algebra Basics"
+                />
+                <div class="invalid-feedback" id="editLectureTopicError">
+                  Please enter topic name
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Watch Now Link</label>
+                <input
+                  id="editLectureVideo"
+                  class="form-control"
+                  placeholder="YouTube link"
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Upload Notes</label>
+                <input id="editLectureNotes" type="file" class="form-control" />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer border-0">
+            <button class="btn btn-light" data-bs-dismiss="modal">
+              <i class="bi bi-x-lg"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="updateLecture()">
+              <i class="bi bi-check-lg"></i> Update Lecture
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEO PLAYER MODAL -->
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 shadow border-0">
+          <div class="modal-header border-0">
+            <h5 class="fw-bold" id="videoModalTitle">Video Player</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-0">
+            <div class="ratio ratio-16x9">
+              <iframe id="videoFrame" src="" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var subjectNameInput = document.getElementById('subjectName');
+        if (subjectNameInput) {
+          subjectNameInput.addEventListener('keydown', function(e) {
+            // Allow letters (A-Z, a-z), numbers (0-9), backspace, delete, tab, escape, enter, space
+            var allowed = [8, 46, 9, 27, 13, 32];
+            if (allowed.indexOf(e.keyCode) !== -1) return;
+            // Allow letters A-Z and a-z
+            if ((e.keyCode >= 65 && e.keyCode <= 90) || (e.keyCode >= 97 && e.keyCode <= 122)) return;
+            // Allow numbers 0-9
+            if ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105)) return;
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].indexOf(e.keyCode) !== -1) return;
+            e.preventDefault();
+          });
+          subjectNameInput.addEventListener('input', function() {
+            // Allow only letters and numbers
+            this.value = this.value.replace(/[^A-Za-z0-9\s]/g, '');
+            if (this.value.length > 50) this.value = this.value.substring(0, 50);
+          });
+        }
+      });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="{% static 'js/bridgecourse-management.js' %}"></script>
+  </body>
+
+</html>

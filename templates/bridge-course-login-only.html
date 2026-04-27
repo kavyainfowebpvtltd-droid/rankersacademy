@@ -1,0 +1,97 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Bridge Course Login | Student Diagnostic System</title>
+
+    <!-- Inter Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/bridge-course-login.css' %}" />
+  </head>
+
+  <body>
+    {% csrf_token %}
+
+    <div class="page">
+      <!-- HEADER -->
+
+      <div class="header">
+        <div class="logo">
+          <i class="bi bi-mortarboard-fill"></i>
+        </div>
+
+        <h2>Student Diagnostic System</h2>
+        <p>Smart Learning Analytics Platform</p>
+      </div>
+
+      <!-- LOGIN CARD -->
+
+      <div class="login-card">
+        <h3>Bridge Course Login</h3>
+
+        <!-- STEP 1 - Mobile Number -->
+
+        <div id="step1">
+          <div class="input-box">
+            <i class="bi bi-phone icon"></i>
+            <input
+              type="text"
+              id="mobile"
+              placeholder="Enter Registered Mobile Number"
+              maxlength="10"
+            />
+          </div>
+
+          <button class="btn-main" onclick="sendOTP()">Send OTP</button>
+
+          <div class="text-center mt-3">
+            <span class="small text-muted">New user? </span>
+            <a
+              href="{% url 'bridgecourse:bridge_course_register' %}"
+              class="small text-primary text-decoration-none"
+              >Register here</a
+            >
+          </div>
+        </div>
+
+        <!-- STEP 2 - OTP Verification -->
+
+        <div id="step2">
+          <div class="input-box">
+            <i class="bi bi-shield-lock icon"></i>
+            <input type="text" id="otp" placeholder="Enter OTP" />
+          </div>
+
+          <button class="btn-main" onclick="verifyOTP()">Verify OTP</button>
+
+          <div class="text-center mt-3">
+            <a
+              href="#"
+              onclick="
+                goBack();
+                return false;
+              "
+              class="small text-muted text-decoration-none"
+            >
+              <i class="bi bi-arrow-left me-1"></i>Change mobile number
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{% static 'js/bridge-course-login-only.js' %}"></script>
+  </body>
+</html>

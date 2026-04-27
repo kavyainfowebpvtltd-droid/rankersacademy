@@ -1,0 +1,308 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Student Diagnostic System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="{% static 'img/logo.webp' %}" />
+
+    <link rel="stylesheet" href="{% static 'css/student-dashboard.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/gap-analysis.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/subject-analysis.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/report.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/test.css' %}" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- jsPDF and autoTable for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+      // Initialize lucide icons after the library loads
+      lucide.createIcons();
+    </script>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .page-shell {
+        flex: 1 0 auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Header -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-1 sticky-top"
+    >
+      <div class="container-fluid px-4">
+        <div class="d-flex align-items-center">
+          <div class="brand-icon me-2">
+            <img
+              src="{% static 'img/logo.webp' %}"
+              alt="Logo"
+              style="height: 60px; width: auto"
+            />
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold fs-6">Student Diagnostic System</h5>
+            <small class="text-muted d-block" style="font-size: 0.7rem"
+              >Student Portal</small
+            >
+          </div>
+        </div>
+        <div class="ms-auto d-flex align-items-center">
+          <div class="text-end me-3 d-none d-md-block">
+            <div class="fw-bold text-dark fs-6">{{student.student_name}}</div>
+            <div class="text-muted" style="font-size: 0.75rem">
+              Grade {{student.grade}} ({{student.board}})
+            </div>
+          </div>
+          <!-- <div class="avatar-circle me-3">JS</div> -->
+          <a
+            href="{% url 'logout' %}"
+            class="btn btn-light btn-sm rounded-circle"
+          >
+            <i class="bi bi-box-arrow-right" style="font-size: 1.4rem"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tabs-left">
+        <a
+          href="{% url 'student-dashboard' %}"
+          class="{% if '/dashboard/student-dashboard/' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-book"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a
+          href="{% url 'subject_analysis' %}"
+          class="{% if '/subject-analysis/' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-bar-chart"></i>
+          <span>Subject Analysis</span>
+        </a>
+
+        <a
+          href="{% url 'gap_analysis' %}"
+          class="{% if '/gap-analysis/' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-file-text"></i>
+          <span>Gap Analysis</span>
+        </a>
+
+        <a
+          href="{% url 'reports' %}"
+          class="{% if '/reports/' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-mortarboard"></i>
+          <span>Reports</span>
+        </a>
+
+
+
+        <a
+          href="{% url 'my_attendance' %}"
+          class="{% if '/my-attendance/' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-calendar-check"></i>
+          <span>My Attendance</span>
+        </a>
+
+
+
+
+
+      </div>
+
+      <!-- Right corner download button -->
+      <div class="tabs-right ms-auto">
+        <a
+          href="{% url 'study_material' %}"
+          class="btn btn-sm d-flex align-items-center gap-2 download-btn"
+          style="
+            background: linear-gradient(90deg, #0d6efd, #0891b2);
+            color: white;
+            border-radius: 14px;
+          "
+          target="_blank"
+        >
+          <i class="bi bi-download"></i>
+          <span class="btn-text">Download Imp. Questions and Solutions</span>
+        </a>
+      </div>
+    </div>
+
+    <style>
+      @media (max-width: 1024px) {
+        .tabs {
+          flex-direction: column;
+          align-items: stretch;
+          padding: 8px 10px;
+          gap: 8px;
+        }
+
+        .tabs-left {
+          overflow-x: auto;
+          scrollbar-width: none;
+          gap: 8px;
+          padding-bottom: 4px;
+        }
+
+        .tabs-left::-webkit-scrollbar {
+          display: none;
+        }
+
+        .tabs-left a {
+          font-size: 12px;
+          padding: 8px 10px;
+          border-radius: 8px;
+          white-space: nowrap;
+        }
+
+        .tabs-left a.active {
+          background: #e6f4fb;
+        }
+
+        .tabs-left a.active::after {
+          display: none;
+        }
+
+        .tabs-right {
+          width: 100%;
+        }
+
+        .tabs-right .btn {
+          width: 100%;
+          justify-content: center;
+          padding: 10px 14px;
+        }
+
+        .tabs-right .btn-text {
+          display: none;
+        }
+
+        .tabs-right .btn::after {
+          content: "Download";
+        }
+
+        .navbar .brand-icon img {
+          height: 45px !important;
+        }
+
+        .navbar h5 {
+          font-size: 14px !important;
+        }
+
+        .navbar small {
+          display: none !important;
+        }
+
+        footer .container-fluid {
+          text-align: center;
+          gap: 8px;
+        }
+
+        footer .d-flex {
+          flex-direction: column;
+          align-items: center !important;
+          gap: 4px;
+        }
+      }
+
+      @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+        .tabs-right .btn {
+          white-space: nowrap;
+        }
+
+        .tabs-right .btn-text {
+          display: inline !important;
+        }
+
+        .tabs-right .btn::after {
+          content: none;
+        }
+      }
+    </style>
+
+    <main class="page-shell">{% block content %} {% endblock %}</main>
+
+    <footer class="bg-light py-3 border-top">
+      <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            Copyright © <span id="year"></span>
+            <a
+              href="https://therankersacademy.com"
+              style="text-decoration: none"
+              target="_blank"
+            >
+              Ranker's Academy </a
+            >, All Rights Reserved
+          </div>
+          <div>
+            Designed and Developed by
+            <a
+              href="https://kavyainfoweb.com"
+              target="_blank"
+              style="text-decoration: none"
+            >
+              Kavya Infoweb Pvt. Ltd.
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+
+    <script>
+      // Initialize lucide icons
+      lucide.createIcons();
+    </script>
+
+    <script src="{% static 'js/student-dashboard.js' %}"></script>
+  </body>
+</html>

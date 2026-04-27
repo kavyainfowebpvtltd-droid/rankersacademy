@@ -1,0 +1,519 @@
+{% extends 'base.html' %} 
+{% load static %} 
+{% block content %}
+
+<div class="container-fluid px-4 py-4">
+  <div
+    class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border-0"
+  >
+    <div>
+      <h4 class="fw-bold mb-1 fs-5">Consolidated Performance Report</h4>
+    </div>
+    <div class="d-flex gap-2">
+      <button
+        class="btn btn-outline-dark btn-sm rounded-pill px-3 hover-lift"
+        onclick="printReport()"
+      >
+        <i class="bi bi-printer me-2"></i>Print
+      </button>
+      <button
+        class="btn btn-outline-dark btn-sm rounded-pill px-3 hover-lift"
+        onclick="sendReportByEmail(this)"
+      >
+        <i class="bi bi-envelope me-2"></i>Send Report
+      </button>
+     
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div
+        class="card bg-primary text-white h-100 border-0 shadow-sm hover-card"
+        style="background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)"
+      >
+        <div
+          class="card-body d-flex flex-column align-items-center justify-content-center py-4"
+        >
+          <div
+            class="circular-progress mb-3"
+            style="--p: {{ overall_percent }};"
+          >
+            <div class="inner-circle">{{ overall_percent }}%</div>
+          </div>
+          <h6 class="mb-0 fw-bold">Overall Average</h6>
+          <small class="opacity-75" style="font-size: 0.8rem"
+            >Across all subjects</small
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card h-100 border-0 shadow-sm hover-card">
+        <div class="card-body d-flex align-items-center p-4">
+          <div
+            class="icon-square bg-success-subtle text-success rounded-3 me-3"
+          >
+            <i class="bi bi-award-fill fs-4"></i>
+          </div>
+          <div>
+            <h3 class="mb-0 fw-bold">{{ top_count }}</h3>
+            <div class="fw-bold small text-muted text-uppercase ls-1">
+              Top Performers
+            </div>
+            <small class="text-success fw-semibold">Subjects above 85%</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card h-100 border-0 shadow-sm hover-card">
+        <div class="card-body d-flex align-items-center p-4">
+          <div
+            class="icon-square bg-warning-subtle text-warning rounded-3 me-3"
+          >
+            <i class="bi bi-graph-up-arrow fs-4"></i>
+          </div>
+          <div>
+            <h3 class="mb-0 fw-bold">{{ good_count }}</h3>
+            <div class="fw-bold small text-muted text-uppercase ls-1">
+              Good Progress
+            </div>
+            <small class="text-warning fw-semibold">Subjects 60-85%</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card h-100 border-0 shadow-sm hover-card">
+        <div class="card-body d-flex align-items-center p-4">
+          <div class="icon-square bg-danger-subtle text-danger rounded-3 me-3">
+            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+          </div>
+          <div>
+            <h3 class="mb-0 fw-bold">{{ focus_count }}</h3>
+            <div class="fw-bold small text-muted text-uppercase ls-1">
+              Needs Focus
+            </div>
+            <small class="text-danger fw-semibold">Subjects below 60%</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4 rounded-4">
+    <div class="card-body p-4">
+      <h6 class="fw-bold mb-4">Subject-wise Performance Comparison</h6>
+      <div class="chart-container" style="height: 320px">
+        <canvas id="mainBarChart"></canvas>
+      </div>
+
+      <div class="d-flex justify-content-center gap-4 mt-3 small">
+        <div class="d-flex align-items-center">
+          <span class="legend-dot bg-blue me-2"></span> Current Progress
+        </div>
+        <div class="d-flex align-items-center">
+          <span class="legend-dot bg-teal me-2"></span> Latest Score
+        </div>
+        <div class="d-flex align-items-center">
+          <span class="legend-dot bg-green me-2"></span> Remaining
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personalized Learning Recommendations -->
+  <div
+    class="card border-0 shadow-sm mb-4 rounded-4 personalized-recommendations"
+  >
+    <div class="card-body p-4">
+      <h5 class="fw-bold mb-4 text-white text-center">
+        Personalized Learning Recommendations
+      </h5>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="inner-card h-100">
+            <div class="card-body p-4">
+              <h6 class="fw-bold mb-4 text-white">Immediate Focus Areas</h6>
+              <div id="weak-points-container">
+                {% if focus_recs %} {% for rec in focus_recs %}
+                <div class="mb-3">
+                  <div
+                    class="d-flex justify-content-between align-items-center mb-2"
+                  >
+                    <div class="fw-semibold">{{ rec.subject }}</div>
+                    <span
+                      class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3"
+                    >
+                      {{ rec.percent }}%
+                    </span>
+                  </div>
+                  {% if rec.topics %}
+                  <ul class="recommendation-list">
+                    {% for t in rec.topics %}
+                    <li class="small text-white">{{ t }}</li>
+                    {% endfor %}
+                  </ul>
+                  {% else %}
+                  <div class="small text-white-50">
+                    No remaining topics found!
+                  </div>
+                  {% endif %}
+                </div>
+                {% endfor %} {% else %}
+                <div class="small text-white-50">
+                  No immediate focus subjects (below 50%) found!
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="inner-card h-100">
+            <div class="card-body p-4">
+              <h6 class="fw-bold mb-4 text-white">Strengths to Maintain</h6>
+              <div id="strong-points-container">
+                {% if strength_recs %} {% for rec in strength_recs %}
+                <div class="mb-3">
+                  <div
+                    class="d-flex justify-content-between align-items-center mb-2"
+                  >
+                    <div class="fw-semibold">{{ rec.subject }}</div>
+                    <span
+                      class="badge bg-success-subtle text-success border border-success rounded-pill px-3"
+                    >
+                      {{ rec.percent }}%
+                    </span>
+                  </div>
+                  {% if rec.topics %}
+                  <ul class="recommendation-list">
+                    {% for t in rec.topics %}
+                    <li class="small text-white">{{ t }}</li>
+                    {% endfor %}
+                  </ul>
+                  {% else %}
+                  <div class="small text-white-50">
+                    No covered topics found!
+                  </div>
+                  {% endif %}
+                </div>
+                {% endfor %} {% else %}
+                <div class="small text-white-50">
+                  No strengths (above 85%) found!
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item bg-transparent border-0 text-white">
+    <h2 class="accordion-header">
+      <button
+        class="accordion-button collapsed bg-transparent text-white fw-bold"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#bioFull"
+      >
+        Biology
+      </button>
+    </h2>
+
+    <div id="bioFull" class="accordion-collapse collapse">
+      <div class="accordion-body small">
+        <div class="mb-3">
+          <h6 class="text-danger fw-bold">❌ Weak Topics</h6>
+
+          <div class="accordion" id="bioWeakAccordion">
+            <div class="accordion-item bg-transparent border-0">
+              <h2 class="accordion-header">
+                <button
+                  class="accordion-button collapsed bg-transparent text-white small"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#bioWeak1"
+                >
+                  Photosynthesis
+                </button>
+              </h2>
+              <div id="bioWeak1" class="accordion-collapse collapse">
+                <div class="accordion-body small">
+                  <ul>
+                    <li>Light Reaction</li>
+                    <li>Dark Reaction</li>
+                    <li>Chlorophyll Process</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item bg-transparent border-0">
+              <h2 class="accordion-header">
+                <button
+                  class="accordion-button collapsed bg-transparent text-white small"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#bioWeak2"
+                >
+                  Heredity
+                </button>
+              </h2>
+              <div id="bioWeak2" class="accordion-collapse collapse">
+                <div class="accordion-body small">
+                  <ul>
+                    <li>Mendel Laws</li>
+                    <li>Genetics Basics</li>
+                    <li>DNA & Genes</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h6 class="text-success fw-bold">✅ Strong Topics</h6>
+          <ul>
+            <li>Cell Structure</li>
+            <li>Human Digestive System</li>
+            <li>Plant Tissues</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ chart_payload|json_script:'chart-payload' }} 
+{# ✅ IMPORTANT: pass student_id for redirect-to-pdf-report printing #}
+<script id="student-meta" type="application/json">
+  {"student_id": {{ request.user.student.id }}}
+</script>
+
+<!-- jsPDF Libraries (loaded from base.html) -->
+
+<!-- Chart.js FIRST -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- PDF Generator -->
+<script src="{% static 'js/pdf-generator.js' %}"></script>
+
+<!-- Your JS LAST -->
+<script src="{% static 'js/report.js' %}"></script>
+
+<script>
+function printReport() {
+    var studentId = document.querySelector('#student-meta').textContent;
+    var meta = JSON.parse(studentId);
+    var url = '/dashboard/students/' + meta.student_id + '/print-report/';
+    var hasPrinted = false;
+    
+    var iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    function triggerPrint() {
+        if (hasPrinted) {
+            return;
+        }
+        hasPrinted = true;
+
+        try {
+            iframe.contentWindow.print();
+        } catch(e) {
+            console.log('Iframe print failed:', e);
+            window.open(url, '_blank');
+        }
+    }
+    
+    iframe.onload = function() {
+        setTimeout(function() {
+            triggerPrint();
+        }, 1000);
+    };
+    
+    setTimeout(function() {
+        if (document.body.contains(iframe)) {
+            triggerPrint();
+        }
+    }, 3000);
+}
+
+// Function to send report by email
+async function sendReportByEmail(btn) {
+    var studentId = document.querySelector('#student-meta').textContent;
+    var meta = JSON.parse(studentId);
+    var studentIdNum = meta.student_id;
+    
+    // Show confirmation
+    if (!confirm('Are you sure you want to send the report to your email address?')) {
+        return;
+    }
+    
+    // Show loading
+    var originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
+    btn.disabled = true;
+    
+    try {
+        var response = await fetch('/api/send-report-email/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                student_id: studentIdNum
+            })
+        });
+        
+        var data = await response.json();
+        
+        if (data.success) {
+            alert('Report sent successfully to your email address!');
+        } else {
+            alert('Error: ' + (data.msg || 'Failed to send report'));
+        }
+    } catch (error) {
+        console.error('Error sending report:', error);
+        alert('Error sending report. Please try again.');
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Function to generate PDF from API data
+async function generateProfessionalPDFFromAPI() {
+    const studentMetaEl = document.getElementById('student-meta');
+    const studentMeta = JSON.parse(studentMetaEl.textContent);
+    const studentId = studentMeta.student_id;
+
+    // Show loading indicator
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
+    btn.disabled = true;
+
+    try {
+        // Get logo URL from the page
+        const logoUrl = document.querySelector('nav img')?.src || '';
+
+        // Get student data from page
+        const studentData = {
+            name: '{{ student.student_name|default:"Student" }}',
+            username: '{{ request.user.username }}',
+            school: '{{ student.school|default:"-" }}',
+            class: '{{ student.grade|default:"-" }}',
+            board: '{{ student.board|default:"-" }}',
+            gender: '{{ student.gender|default:"-" }}',
+            testNo: '1',
+            testDate: new Date().toLocaleDateString('en-GB')
+        };
+
+        // Get performance data from page
+        const overallPercent = document.querySelector('.circular-progress .inner-circle')?.textContent || '0%';
+        const performanceData = {
+            totalScore: overallPercent,
+            previousScore: '0%'
+        };
+
+        // Build subject data from the API response
+        const response = await fetch(`/api/student-progress/`);
+        const apiData = await response.json();
+
+        const subjectData = [];
+        if (apiData.success && apiData.data) {
+            const subjects = apiData.data.subjects || [];
+            
+            for (const subject of subjects) {
+                const chapters = [];
+                const weakTopics = [];
+                
+                for (const chapter of subject.chapters || []) {
+                    const total = chapter.total_topics;
+                    const covered = chapter.covered_topics;
+                    const unknown = total - covered;
+                    const coverage = chapter.percent.toFixed(0) + '%';
+                    
+                    chapters.push({
+                        name: chapter.name,
+                        total: total,
+                        correct: covered,
+                        unknown: unknown,
+                        coverage: coverage
+                    });
+                    
+                    // Add to weak topics if below 50%
+                    if (chapter.percent < 50) {
+                        weakTopics.push(chapter.name);
+                    }
+                }
+                
+                subjectData.push({
+                    name: subject.name,
+                    chapters: chapters,
+                    weakTopics: weakTopics
+                });
+            }
+        } else {
+            // Fallback sample data if API fails
+            subjectData.push(
+                {
+                    name: 'MATHS 1',
+                    chapters: [
+                        { name: 'Linear equation in two variables', total: 4, correct: 2, unknown: 2, coverage: '50%' },
+                        { name: 'Quadratic Equations', total: 2, correct: 2, unknown: 0, coverage: '100%' }
+                    ],
+                    weakTopics: []
+                },
+                {
+                    name: 'MATHS 2',
+                    chapters: [
+                        { name: 'Similarity', total: 2, correct: 1, unknown: 1, coverage: '50%' },
+                        { name: 'Pythagoras theorem', total: 2, correct: 1, unknown: 1, coverage: '50%' }
+                    ],
+                    weakTopics: ['Similarity', 'Pythagoras theorem']
+                }
+            );
+        }
+
+        // Generate the PDF
+        window.generateProfessionalPDF(studentData, performanceData, subjectData, logoUrl);
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please try again.');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,729 @@
+{% load static %}
+<!doctype html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ selected_test_name }} - Scholarship Test</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/scholarship-test.css' %}" />
+    <style>
+      @media (max-width: 1024px) {
+        .tablet-footer-stack {
+          flex-direction: column !important;
+          align-items: center !important;
+          gap: 4px;
+          text-align: center !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top"
+    >
+      <div class="container-fluid px-4">
+        <div class="d-flex align-items-center">
+          <div class="brand-icon me-2">
+            <i class="bi bi-mortarboard-fill text-white"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold fs-6">{{ selected_test_name }}</h5>
+            <small class="text-muted d-block" style="font-size: 0.7rem"
+              >Scholarship Assessment Test</small
+            >
+          </div>
+        </div>
+        <div class="ms-auto d-flex align-items-center">
+          <div class="text-end me-3 d-none d-md-block">
+            <div class="fw-bold text-dark fs-6">{{ student.name }}</div>
+            <div class="text-muted" style="font-size: 0.75rem">
+              {{ student.grade }} - {{ student.board }}
+            </div>
+          </div>
+          <a href="{% url 'login' %}" class="btn btn-light btn-sm rounded-circle">
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <div class="question-panel">
+        <div class="glass-panel">
+          <div class="question-header">
+            <div class="question-label" id="currentQuestionNum">Question 01 of {{ total_questions }}</div>
+            <div class="timer-badge">
+              <span id="timerDisplay">Timer: --:--</span>
+            </div>
+          </div>
+          <div class="question-body">
+            <div class="question-context" id="questionContext" hidden>
+              <div class="question-section" id="questionSection"></div>
+              <div class="question-type-chip" id="questionType"></div>
+            </div>
+            <div class="section-instructions" id="sectionInstructions"></div>
+            <div class="question-title question-richtext" id="questionText">
+              Loading question...
+            </div>
+            <div class="answer-input-wrap" id="answerInputWrap"></div>
+            <div class="options-grid" id="optionsGrid"></div>
+          </div>
+          <div class="question-footer">
+            <button class="btn-custom btn-prev">← Previous</button>
+            <button class="btn-custom btn-next">Next Question →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div class="navigator-panel">
+          <h3 class="navigator-title">Questions Navigator</h3>
+
+          <div class="question-grid" id="questionGrid"></div>
+
+          <div class="progress-section">
+            <div class="progress-row">
+              <span class="progress-label">Progress</span>
+              <span class="progress-value"><span id="answeredCount">0</span> / {{ total_questions }}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+          </div>
+
+          <div class="legend-container">
+            <div class="legend-item">
+              <div class="legend-dot dot-answered"></div>
+              Answered
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot dot-not-answered"></div>
+              Not Answered
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot dot-current"></div>
+              Current
+            </div>
+          </div>
+
+          <button class="submit-btn">Submit Test</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-light border-top py-3 mt-auto">
+      <div class="container">
+        <div
+          class="d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start tablet-footer-stack"
+        >
+          <div>
+            Copyright © 2026
+            <a href="#" class="text-primary text-decoration-none"
+              >Ranker's Academy</a
+            >, All Rights Reserved
+          </div>
+          <div>
+            Designed and Developed by
+            <a href="#" class="text-primary text-decoration-none"
+              >Kavya Infoweb Pvt. Ltd.</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+
+
+
+
+
+    <div class="modal-overlay" id="warningModal">
+      <div class="modal-content">
+        <div class="modal-icon warning">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h3 class="modal-title">Incomplete Exam!</h3>
+        <p class="modal-message">
+          You have only answered <span id="warningAnsweredCount">0</span> out of
+          <span id="warningTotalCount">{{ total_questions }}</span> questions. Are you sure you want to
+          submit?
+        </p>
+        <div class="modal-buttons">
+          <button class="modal-btn cancel" onclick="closeWarningModal()">
+            Cancel
+          </button>
+          <button class="modal-btn submit-now" onclick="submitExam()">
+            Submit Anyway
+          </button>
+        </div>
+      </div>
+    </div>
+
+   <div class="modal-overlay" id="timeUpModal">
+      <div class="modal-content">
+        <div class="modal-icon success">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h3 class="modal-title">Time's Up!</h3>
+        <p class="modal-message">
+          Your exam has been automatically submitted. You answered
+          <span id="finalCount">0</span> out of {{ total_questions }} questions.
+        </p>
+        <div class="modal-buttons">
+          <button class="modal-btn confirm" onclick="goToSuccess()">
+            View Results
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="tabSwitchModal">
+      <div class="modal-content">
+        <div class="modal-icon warning">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h3 class="modal-title">Tab Switch Detected!</h3>
+        <p class="modal-message">
+          You have switched away from the exam tab. This is warning <span id="tabSwitchCount">1</span> of 3.
+          <br/><br/>
+          On the <strong>third</strong> tab switch, your test will be automatically submitted.
+        </p>
+        <div class="modal-buttons">
+          <button class="modal-btn confirm" onclick="closeTabSwitchModal()">
+            I Understand
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {{ questions|json_script:"scholarship-questions-data" }}
+    <script>
+      const questions = JSON.parse(document.getElementById('scholarship-questions-data').textContent);
+      const totalQuestions = {{ total_questions }};
+      let timeRemaining = {{ time_remaining_seconds }};
+      const attemptId = {{ attempt.id }};
+
+      let currentQuestionIndex = 0;
+      let answers = {};
+      let timerInterval;
+      let isSubmitted = false;
+      let tabSwitchCount = 0;
+      let tabSwitchWarningShown = false;
+
+      function getQuestionByIndex(index) {
+        return questions[index] || null;
+      }
+
+      function isQuestionAnswered(question) {
+        if (!question) return false;
+        const value = answers[question.id];
+
+        if (Array.isArray(value)) {
+          return value.length > 0;
+        }
+
+        return value != null && String(value).trim() !== '';
+      }
+
+      function getAnsweredCount() {
+        return questions.filter(isQuestionAnswered).length;
+      }
+
+      function initializeTest() {
+        if (questions && questions.length > 0) {
+          loadQuestion(0);
+          buildQuestionNavigator();
+          startTimer();
+
+          const prevBtn = document.querySelector('.btn-prev');
+          const nextBtn = document.querySelector('.btn-next');
+
+          if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+              if (currentQuestionIndex > 0) {
+                loadQuestion(currentQuestionIndex - 1);
+              }
+            });
+          }
+
+          if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+              if (currentQuestionIndex < questions.length - 1) {
+                loadQuestion(currentQuestionIndex + 1);
+              }
+            });
+          }
+
+          const submitBtn = document.querySelector('.submit-btn');
+          if (submitBtn) {
+            submitBtn.onclick = function() {
+              if (timeRemaining > 0 || getAnsweredCount() === 0) {
+                showWarningModal();
+              } else {
+                submitTest();
+              }
+            };
+          }
+
+          updateNavigator();
+          updateTimerDisplay();
+          updateNavButtons();
+        } else {
+          document.querySelector('.question-body').innerHTML = '<div class="alert alert-warning">No questions available. Please contact admin.</div>';
+        }
+      }
+
+      function loadQuestion(index) {
+        const question = getQuestionByIndex(index);
+        if (!question) return;
+
+        currentQuestionIndex = index;
+
+        const questionText = document.getElementById('questionText');
+        const questionContext = document.getElementById('questionContext');
+        const questionSection = document.getElementById('questionSection');
+        const questionType = document.getElementById('questionType');
+        const sectionInstructions = document.getElementById('sectionInstructions');
+        const answerInputWrap = document.getElementById('answerInputWrap');
+        const optionsGrid = document.getElementById('optionsGrid');
+
+        questionText.innerHTML = question.question_html || '';
+        answerInputWrap.innerHTML = '';
+        optionsGrid.innerHTML = '';
+
+        if (question.section_name || question.type) {
+          questionContext.hidden = false;
+          questionSection.textContent = question.section_name || 'Scholarship Test';
+          questionType.textContent = getTypeLabel(question);
+        } else {
+          questionContext.hidden = true;
+        }
+
+        sectionInstructions.innerHTML = question.section_instructions || '';
+        sectionInstructions.style.display = question.section_instructions ? 'block' : 'none';
+
+        renderQuestionInput(question, answerInputWrap, optionsGrid);
+
+        const questionLabel = document.getElementById('currentQuestionNum');
+        if (questionLabel) {
+          questionLabel.textContent = `Question ${String(index + 1).padStart(2, '0')} of ${totalQuestions}`;
+        }
+
+        updateNavigator();
+      }
+
+      function getTypeLabel(question) {
+        const labels = {
+          mcq: question.multi_select ? 'Multiple Select' : 'Multiple Choice',
+          tf: 'True / False',
+          fitb: 'Fill in the Blank',
+          int: 'Integer Type'
+        };
+        return labels[question.type] || 'Question';
+      }
+
+      function renderQuestionInput(question, answerInputWrap, optionsGrid) {
+        if (question.type === 'fitb' || question.type === 'int') {
+          const value = answers[question.id] || '';
+          answerInputWrap.innerHTML = `
+            <input
+              type="${question.type === 'int' ? 'number' : 'text'}"
+              class="answer-input"
+              id="questionAnswerInput"
+              placeholder="${question.input_placeholder || 'Type your answer'}"
+              value="${escapeHtml(value)}"
+            />
+          `;
+
+          const input = document.getElementById('questionAnswerInput');
+          if (input) {
+            input.addEventListener('input', function(event) {
+              answers[question.id] = event.target.value;
+              updateNavigator();
+            });
+          }
+          return;
+        }
+
+        const selectedValue = answers[question.id];
+        const selectedValues = Array.isArray(selectedValue) ? selectedValue : [];
+        const inputType = question.multi_select ? 'checkbox' : 'radio';
+
+        (question.options || []).forEach(option => {
+          const checked = question.multi_select
+            ? selectedValues.includes(option.value)
+            : selectedValue === option.value;
+
+          const wrapper = document.createElement('label');
+          wrapper.className = 'option-label';
+          wrapper.innerHTML = `
+            <input
+              type="${inputType}"
+              name="question-${question.id}"
+              class="option-input"
+              value="${option.value}"
+              ${checked ? 'checked' : ''}
+            />
+            <div class="option-card ${checked ? 'selected' : ''}">
+              <span class="option-bullet">${option.label}</span>
+              <span class="option-text">${option.text_html || ''}</span>
+            </div>
+          `;
+
+          const input = wrapper.querySelector('input');
+          input.addEventListener('change', function(event) {
+            updateAnswer(question, option.value, event.target.checked);
+          });
+
+          const optionText = wrapper.querySelector('.option-text');
+          if (optionText) {
+            optionText.innerHTML = option.text_html || '';
+          }
+
+          optionsGrid.appendChild(wrapper);
+        });
+      }
+
+      function updateAnswer(question, value, checked) {
+        if (question.multi_select) {
+          const currentValues = Array.isArray(answers[question.id]) ? [...answers[question.id]] : [];
+          const nextValues = checked
+            ? Array.from(new Set(currentValues.concat(value)))
+            : currentValues.filter(function(item) { return item !== value; });
+          answers[question.id] = nextValues;
+        } else {
+          answers[question.id] = value;
+        }
+
+        loadQuestion(currentQuestionIndex);
+      }
+
+      function buildQuestionNavigator() {
+        const grid = document.getElementById('questionGrid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        for (let i = 0; i < totalQuestions; i++) {
+          const btn = document.createElement('div');
+          btn.className = 'q-btn';
+          btn.id = 'qdot-' + i;
+          btn.textContent = i + 1;
+          btn.onclick = function() { loadQuestion(i); };
+          grid.appendChild(btn);
+        }
+      }
+
+      function updateNavigator() {
+        for (let i = 0; i < totalQuestions; i++) {
+          const dot = document.getElementById('qdot-' + i);
+          const question = getQuestionByIndex(i);
+          if (!dot || !question) continue;
+
+          dot.classList.remove('answered', 'not-answered', 'current');
+          dot.classList.add(isQuestionAnswered(question) ? 'answered' : 'not-answered');
+
+          if (i === currentQuestionIndex) {
+            dot.classList.add('current');
+          }
+        }
+
+        const answered = getAnsweredCount();
+        const answeredCountEl = document.getElementById('answeredCount');
+        if (answeredCountEl) {
+          answeredCountEl.textContent = answered;
+        }
+
+        const progressFill = document.querySelector('.progress-fill');
+        if (progressFill) {
+          progressFill.style.width = totalQuestions ? ((answered / totalQuestions) * 100) + '%' : '0%';
+        }
+
+        updateNavButtons();
+      }
+
+      function updateNavButtons() {
+        const prevBtn = document.querySelector('.btn-prev');
+        const nextBtn = document.querySelector('.btn-next');
+
+        if (prevBtn) {
+          prevBtn.disabled = currentQuestionIndex === 0;
+          prevBtn.style.opacity = currentQuestionIndex === 0 ? '0.5' : '1';
+          prevBtn.style.pointerEvents = currentQuestionIndex === 0 ? 'none' : 'auto';
+        }
+
+        if (nextBtn) {
+          nextBtn.disabled = currentQuestionIndex === questions.length - 1;
+          nextBtn.style.opacity = currentQuestionIndex === questions.length - 1 ? '0.5' : '1';
+          nextBtn.style.pointerEvents = currentQuestionIndex === questions.length - 1 ? 'none' : 'auto';
+        }
+      }
+
+      function updateTimerDisplay() {
+        const minutes = Math.max(0, Math.floor(timeRemaining / 60));
+        const seconds = Math.max(0, timeRemaining % 60);
+        const timerDisplay = document.getElementById('timerDisplay');
+        if (timerDisplay) {
+          timerDisplay.textContent =
+            'Timer: ' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+        }
+      }
+
+      function startTimer() {
+        updateTimerDisplay();
+
+        timerInterval = setInterval(() => {
+          timeRemaining--;
+          updateTimerDisplay();
+
+          if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            autoSubmit();
+          }
+        }, 1000);
+      }
+
+      function autoSubmit() {
+        if (isSubmitted) return;
+
+        const finalCountEl = document.getElementById('finalCount');
+        if (finalCountEl) {
+          finalCountEl.textContent = getAnsweredCount();
+        }
+
+        submitTest(true);
+      }
+
+      function showWarningModal() {
+        const answered = getAnsweredCount();
+        const warningAnsweredCountEl = document.getElementById('warningAnsweredCount');
+        const warningTotalCountEl = document.getElementById('warningTotalCount');
+        const warningModal = document.getElementById('warningModal');
+        const modalTitle = warningModal.querySelector('.modal-title');
+        const modalMessage = warningModal.querySelector('.modal-message');
+
+        if (warningAnsweredCountEl) {
+          warningAnsweredCountEl.textContent = answered;
+        }
+        if (warningTotalCountEl) {
+          warningTotalCountEl.textContent = totalQuestions;
+        }
+
+        if (answered === 0) {
+          modalTitle.textContent = 'No Questions Attempted!';
+          modalMessage.innerHTML = 'You have not attempted any question. Are you sure you want to submit the test?';
+        } else if (timeRemaining > 0) {
+          const minutes = Math.floor(timeRemaining / 60);
+          const seconds = timeRemaining % 60;
+          const timeLeft = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+          modalTitle.textContent = 'Time Remaining!';
+          modalMessage.innerHTML = `You still have <strong>${timeLeft}</strong> remaining and have answered <strong>${answered}</strong> out of <strong>${totalQuestions}</strong> questions. Are you sure you want to submit?`;
+        } else {
+          modalTitle.textContent = 'Submit Test?';
+          modalMessage.innerHTML = `You have answered <strong>${answered}</strong> out of <strong>${totalQuestions}</strong> questions. Are you sure you want to submit?`;
+        }
+
+        if (warningModal) {
+          warningModal.classList.add('active');
+        }
+      }
+
+      function closeWarningModal() {
+        const warningModal = document.getElementById('warningModal');
+        if (warningModal) {
+          warningModal.classList.remove('active');
+        }
+      }
+
+      window.submitExam = function() {
+        closeWarningModal();
+        submitTest();
+      };
+
+      async function submitTest(isAutoSubmit) {
+        if (isSubmitted) return;
+        isSubmitted = true;
+
+        if (timerInterval) {
+          clearInterval(timerInterval);
+        }
+
+        try {
+          const response = await fetch('/scholarship/test/' + attemptId + '/submit/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ answers: answers })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            window.location.href = data.redirect;
+          } else {
+            alert('Error: ' + data.error);
+            isSubmitted = false;
+            if (!timerInterval && timeRemaining > 0) {
+              startTimer();
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          alert(isAutoSubmit ? 'Auto-submit failed. Please submit again.' : 'Error submitting test');
+          isSubmitted = false;
+          if (isAutoSubmit) {
+            const timeUpModal = document.getElementById('timeUpModal');
+            if (timeUpModal) {
+              timeUpModal.classList.add('active');
+            }
+          } else if (!timerInterval && timeRemaining > 0) {
+            startTimer();
+          }
+        }
+      }
+
+      function goToSuccess() {
+        window.location.href = '/scholarship/success/' + attemptId + '/';
+      }
+
+      function getCSRFToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden && !isSubmitted) {
+          tabSwitchCount++;
+          
+          if (tabSwitchCount >= 3) {
+            showTabSwitchFinalModal();
+          } else {
+            showTabSwitchWarning();
+          }
+        }
+      });
+
+      function showTabSwitchWarning() {
+        const tabSwitchModal = document.getElementById('tabSwitchModal');
+        const tabSwitchCountEl = document.getElementById('tabSwitchCount');
+        
+        if (tabSwitchCountEl) {
+          tabSwitchCountEl.textContent = tabSwitchCount;
+        }
+        
+        if (tabSwitchModal) {
+          tabSwitchModal.classList.add('active');
+        }
+      }
+
+      function closeTabSwitchModal() {
+        const tabSwitchModal = document.getElementById('tabSwitchModal');
+        if (tabSwitchModal) {
+          tabSwitchModal.classList.remove('active');
+        }
+      }
+
+      function showTabSwitchFinalModal() {
+        if (isSubmitted) return;
+        isSubmitted = true;
+
+        if (timerInterval) {
+          clearInterval(timerInterval);
+        }
+
+        const finalCountEl = document.getElementById('finalCount');
+        if (finalCountEl) {
+          finalCountEl.textContent = getAnsweredCount();
+        }
+
+        fetch('/scholarship/test/' + attemptId + '/submit/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+          },
+          body: JSON.stringify({ answers: answers })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = data.redirect;
+          } else {
+            alert('Auto-submit failed due to tab switching. Please submit again.');
+            isSubmitted = false;
+            if (timerInterval) startTimer();
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Auto-submit failed due to tab switching. Please submit again.');
+          isSubmitted = false;
+          if (timerInterval) startTimer();
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeTest);
+      } else {
+        initializeTest();
+      }
+    </script>
+    
+   
+  </body>
+</html>
