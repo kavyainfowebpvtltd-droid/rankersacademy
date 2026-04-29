@@ -1,0 +1,9 @@
+Django==4.2
+gunicorn
+mysqlclient
+requests
+reportlab
+pandas
+openpyxl
+Pillow
+pypdf

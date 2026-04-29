@@ -12,7 +12,18 @@ SECRET_KEY = 'django-insecure-)-#wj42wfm88kx+@@_pc2++83-7f9yls%kw2l+n8kfq6fas6u*
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-ALLOWED_HOSTS = ['10.249.166.15']
+ALLOWED_HOSTS = [
+"147.93.29.224",
+"rankersonlinetest.com",
+"www.rankersonlinetest.com"
+]
+CSRF_TRUSTED_ORIGINS = [
+"https://rankersonlinetest.com",
+"https://www.rankersonlinetest.com"
+]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Application definition
 
@@ -76,8 +87,8 @@ DATABASES = {
         'NAME': 'rankers_db',
         'USER': 'root',
         'PASSWORD': 'Vishal@2026',
-        'HOST': 'localhost',
-        'PORT': '3307',
+        'HOST': 'db',
+        'PORT': '3306',
     }
 }
 

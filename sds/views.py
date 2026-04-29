@@ -1120,7 +1120,7 @@ def register_student(request):
 
         # For AJAX request, return success JSON
         if is_ajax:
-            return JsonResponse({"ok": True, "msg": "Registration successful", "redirect": "/auth/login/"})
+            return JsonResponse({"ok": True, "msg": "Registration successful", "redirect": "/accounts/login/"})
         
         messages.success(request, "Account created successfully")
         return redirect("login")
