@@ -1,10 +1,6 @@
 pipeline {
 agent any
 
-environment {
-APP_NAME="rankersacademy"
-}
-
 stages {
 
 stage('Clone'){
@@ -23,9 +19,15 @@ sh 'docker compose build --no-cache'
 stage('Deploy'){
 steps{
 sh '''
-docker compose down
-docker compose up -d
+docker compose up -d --build
+docker image prune -f
 '''
+}
+}
+
+stage('Health Check'){
+steps{
+sh 'curl -I https://rankersonlinetest.com'
 }
 }
 
@@ -33,7 +35,10 @@ docker compose up -d
 
 post {
 success {
-echo "Deployment Success"
+echo 'Deployment Successful'
+}
+failure {
+echo 'Build Failed'
 }
 }
 }
