@@ -16,6 +16,7 @@ class AttendanceKioskServiceTests(TestCase):
         self.student = Student.objects.create(
             user=self.student_user,
             student_name="Nayan Dakhole",
+            username="S0101",
             contact="7410545815",
             email="nayan@example.com",
             school="Rankers Academy",
@@ -75,6 +76,28 @@ class AttendanceKioskServiceTests(TestCase):
         attendance = Attendance.objects.get(student=self.student, date="2026-04-24")
         self.assertEqual(attendance.status, "Present")
         self.assertEqual(result["student_id"], self.student.id)
+        mocked_sms.assert_called_once()
+
+    @patch("attendance.services.send_attendance_sms", return_value=True)
+    def test_qr_with_multiline_label_format_returns_student_photo(self, mocked_sms):
+        self.student.profile_photo = "student_profiles/nayan.jpg"
+        self.student.save(update_fields=["profile_photo"])
+
+        qr_value = (
+            "Name : Nayan Dakhole\n"
+            "Username : S0101\n"
+            "Stream : NEET\n"
+            "Batch : Star 01\n"
+            "Contact No : 7410545815\n"
+            "Email ID : nayan@example.com"
+        )
+
+        result = record_kiosk_scan(qr_value, scanned_at="2026-04-24T03:10:00Z")
+
+        self.assertEqual(result["student_id"], self.student.id)
+        self.assertEqual(result["studentName"], self.student.student_name)
+        self.assertEqual(result["studentBatch"], self.student.batch)
+        self.assertEqual(result["photoUrl"], "/media/student_profiles/nayan.jpg")
         mocked_sms.assert_called_once()
 
 

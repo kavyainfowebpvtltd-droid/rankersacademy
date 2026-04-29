@@ -6,6 +6,7 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
+from django.db import models
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -157,7 +158,10 @@ def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
         "admission_number",
     )
     if username:
-        student = base_qs.filter(user__username__iexact=username.strip()).first()
+        student = base_qs.filter(
+            models.Q(user__username__iexact=username.strip())
+            | models.Q(username__iexact=username.strip())
+        ).first()
         if student:
             return student, parsed
 
@@ -196,7 +200,9 @@ def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
         if student:
             return student, parsed
 
-    student = base_qs.filter(user__username__iexact=raw).first()
+    student = base_qs.filter(
+        models.Q(user__username__iexact=raw) | models.Q(username__iexact=raw)
+    ).first()
     if student:
         return student, parsed
 
@@ -417,13 +423,20 @@ def record_kiosk_scan(raw_value: str, scanned_at: str | None = None) -> dict:
     if sms_event and send_attendance_sms(student, sms_event, attendance_date, scan_time):
         _mark_sms_timestamp(attendance, sms_event, local_dt)
 
+    photo_url = ""
+    if student.profile_photo:
+        try:
+            photo_url = student.profile_photo.url
+        except Exception:
+            photo_url = ""
+
     return {
         "success": True,
         "student_id": student.id,
         "studentName": student.student_name,
         "studentClass": f"Grade {student.grade} ({student.board})",
         "studentBatch": student.batch,
-        "photoUrl": "",
+        "photoUrl": photo_url,
         "action": action,
         "actionText": {
             "checkin": "Checked In",
