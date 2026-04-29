@@ -1,42 +1,54 @@
 pipeline {
-agent any
+    agent any
 
-stages {
+    stages {
 
-stage('Checkout'){
-steps{
-git branch: 'main',
-url: 'https://github.com/kavyainfowebpvtltd-droid/rankersacademy.git'
-}
-}
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/kavyainfowebpvtltd-droid/rankersacademy.git'
+            }
+        }
 
-stage('Deploy'){
-steps{
-sh '''
-docker compose build web
-docker compose up -d --no-deps --force-recreate web
-docker image prune -f
-'''
-}
-}
+        stage('Build Image') {
+            steps {
+                sh '''
+                docker compose -p rankersacademy build web
+                '''
+            }
+        }
 
-stage('Health Check'){
-steps{
-sh '''
-sleep 10
-curl -f https://rankersonlinetest.com
-'''
-}
-}
+        stage('Deploy') {
+            steps {
+                sh '''
+                docker compose -p rankersacademy up -d --no-deps --force-recreate web
+                docker image prune -f
+                '''
+            }
+        }
 
-}
+        stage('Health Check') {
+            steps {
+                sh '''
+                sleep 15
+                curl -f https://rankersonlinetest.com
+                '''
+            }
+        }
+    }
 
-post {
-success {
-echo 'Deployment Successful'
-}
-failure {
-echo 'Deployment Failed'
-}
-}
+    post {
+
+        success {
+            echo 'Deployment Successful'
+        }
+
+        failure {
+            echo 'Deployment Failed'
+        }
+
+        always {
+            sh 'docker ps'
+        }
+    }
 }
