@@ -17,13 +17,13 @@ cd /root/rankersacademy
 
 git pull origin main
 
-# rebuild latest image
+echo "Building latest image..."
 docker compose build web
 
-# recreate only app container (db untouched)
+echo "Deploying new container..."
 docker compose up -d --no-deps --force-recreate web
 
-# cleanup old dangling images
+echo "Cleaning old images..."
 docker image prune -f
 '''
 }
@@ -31,7 +31,10 @@ docker image prune -f
 
 stage('Health Check'){
 steps{
-sh 'curl -I http://127.0.0.1:8081'
+sh '''
+sleep 10
+curl -f https://rankersonlinetest.com
+'''
 }
 }
 
@@ -39,10 +42,10 @@ sh 'curl -I http://127.0.0.1:8081'
 
 post {
 success {
-echo "New container deployed successfully"
+echo "Deployment Successful"
 }
 failure {
-echo "Deployment failed"
+echo "Deployment Failed"
 }
 }
 }
