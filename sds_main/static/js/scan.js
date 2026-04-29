@@ -241,17 +241,8 @@
     };
     actionIcon.className = iconMap[result.action] || "bi bi-check-circle-fill";
 
-    if (result.photoUrl) {
-      studentPhoto.src = result.photoUrl;
-      studentPhoto.classList.remove("d-none");
-      photoFallback.classList.add("d-none");
-    } else {
-      studentPhoto.classList.add("d-none");
-      photoFallback.classList.remove("d-none");
-    }
-
     playSuccessAudio();
-    resetAfterDelay();
+    renderStudentPhoto(result.photoUrl, resetAfterDelay);
   }
 
   function showError(message) {
@@ -279,8 +270,52 @@
   function resetUI() {
     setState(ScanState.IDLE);
     isProcessing = false;
+    studentPhoto.src = "";
+    studentPhoto.classList.add("d-none");
+    photoFallback.classList.add("d-none");
     inputRef.value = "";
     inputRef.focus();
+  }
+
+  function showPhotoFallback() {
+    studentPhoto.src = "";
+    studentPhoto.classList.add("d-none");
+    photoFallback.classList.remove("d-none");
+  }
+
+  function renderStudentPhoto(photoUrl, onReady) {
+    studentPhoto.onload = null;
+    studentPhoto.onerror = null;
+
+    if (!photoUrl) {
+      showPhotoFallback();
+      if (typeof onReady === "function") {
+        onReady();
+      }
+      return;
+    }
+
+    photoFallback.classList.remove("d-none");
+    studentPhoto.classList.add("d-none");
+
+    const preloader = new Image();
+    preloader.onload = function () {
+      studentPhoto.onload = null;
+      studentPhoto.onerror = null;
+      studentPhoto.src = photoUrl;
+      studentPhoto.classList.remove("d-none");
+      photoFallback.classList.add("d-none");
+      if (typeof onReady === "function") {
+        onReady();
+      }
+    };
+    preloader.onerror = function () {
+      showPhotoFallback();
+      if (typeof onReady === "function") {
+        onReady();
+      }
+    };
+    preloader.src = photoUrl;
   }
 
   function setState(newState) {

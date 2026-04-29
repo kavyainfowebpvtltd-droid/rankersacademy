@@ -3,6 +3,7 @@ import json
 import logging
 import re
 from datetime import date, datetime, time, timedelta
+from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -237,6 +238,20 @@ def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
     )
 
 
+def get_student_photo_url(student: Student) -> str:
+    if not getattr(student, "profile_photo", None):
+        return ""
+
+    try:
+        return student.profile_photo.url
+    except Exception:
+        photo_name = getattr(student.profile_photo, "name", "") or ""
+        if not photo_name:
+            return ""
+        media_url = getattr(settings, "MEDIA_URL", "/media/")
+        return urljoin(media_url, photo_name.replace("\\", "/"))
+
+
 def _attendance_sms_template(event: str) -> str:
     templates = {
         "checkin": getattr(
@@ -423,20 +438,13 @@ def record_kiosk_scan(raw_value: str, scanned_at: str | None = None) -> dict:
     if sms_event and send_attendance_sms(student, sms_event, attendance_date, scan_time):
         _mark_sms_timestamp(attendance, sms_event, local_dt)
 
-    photo_url = ""
-    if student.profile_photo:
-        try:
-            photo_url = student.profile_photo.url
-        except Exception:
-            photo_url = ""
-
     return {
         "success": True,
         "student_id": student.id,
         "studentName": student.student_name,
         "studentClass": f"Grade {student.grade} ({student.board})",
         "studentBatch": student.batch,
-        "photoUrl": photo_url,
+        "photoUrl": get_student_photo_url(student),
         "action": action,
         "actionText": {
             "checkin": "Checked In",
