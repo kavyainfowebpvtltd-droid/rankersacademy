@@ -186,6 +186,11 @@ td {
   vertical-align: middle;
 }
 
+.student-table-nowrap th,
+.student-table-nowrap td {
+  white-space: nowrap;
+}
+
 tbody tr:last-child td {
   border-bottom: none;
 }

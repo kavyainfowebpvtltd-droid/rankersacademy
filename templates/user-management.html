@@ -42,12 +42,19 @@
       <div class="card mb-5">
         <div class="card-header fw-bold">Students</div>
         <div class="card-body table-responsive">
-          <table class="table table-hover align-middle">
+          <table class="table table-hover align-middle student-table-nowrap">
             <thead>
                <tr>
                  <th>ID</th>
+                 <th>Photo</th>
                  <th>Name</th>
+                 <th>Father's Name</th>
                  <th>Contact</th>
+                 <th>Emergency Contact Name</th>
+                 <th>Emergency Contact</th>
+                 <th>Stream</th>
+                 <th>Grade</th>
+                 <th>Blood Group</th>
                  <th>Email</th>
                  <th>Board</th>
                  <th>Username</th>
@@ -60,8 +67,21 @@
               {% for student in students %}
                <tr>
                  <td>STU{{ student.id }}</td>
+                 <td>
+                   {% if student.profile_photo %}
+                     <img src="{{ student.profile_photo.url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
+                   {% else %}
+                     <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
+                   {% endif %}
+                 </td>
                  <td class="fw-semibold">{{ student.student_name }}</td>
+                 <td>{{ student.father_name|default:"-" }}</td>
                  <td>{{ student.contact }}</td>
+                 <td>{{ student.emergency_contact_name|default:"-" }}</td>
+                 <td>{{ student.emergency_contact|default:"-" }}</td>
+                 <td>{{ student.stream|default:"-" }}</td>
+                 <td>{{ student.grade|default:"-" }}</td>
+                 <td>{{ student.blood_group|default:"-" }}</td>
                  <td>{{ student.email }}</td>
                  <td><span class="badge bg-info">{{ student.board }}</span></td>
                  <td>{{ student.username }}</td>
@@ -101,7 +121,7 @@
               </tr>
               {% empty %}
                <tr>
-                 <td colspan="8" class="text-center text-muted">
+                 <td colspan="15" class="text-center text-muted">
                    No students found!
                  </td>
                </tr>
@@ -332,80 +352,97 @@
               />
             </div>
 
-            <div class="row g-3" id="commonFieldsRow">
-              <!-- Full Name -->
-              <div class="col-md-6 field-name-col">
+            <div id="studentFields" class="row g-3 mt-2">
+              <div class="col-md-6">
                 <input
                   class="form-control alpha-only"
+                  id="studentNameInput"
                   name="name"
                   placeholder="Full Name"
                   required
                   maxlength="100"
                 />
-                <div class="invalid-feedback" id="nameError"></div>
+                <div class="invalid-feedback" id="studentNameError"></div>
               </div>
-               <!-- Batch (common for student) -->
-               <div class="col-md-6 field-batch-col" id="commonBatchCol">
-                 <input
-                   class="form-control"
-                   name="batch"
-                   id="batchInputCommon"
-                   placeholder="Batch (ex: B1, B2)"
-                   oninput="generateUsernameFromBatch(this)"
-                   onchange="generateUsernameFromBatch(this)"
-                   onblur="generateUsernameFromBatch(this)"
-                 />
-                 <div class="invalid-feedback" id="batchError"></div>
-               </div>
-               <!-- Username -->
-               <div class="col-md-6 field-username-col">
-                 <input
-                   class="form-control"
-                   name="username"
-                   id="commonUsername"
-                   placeholder="Username"
-                   required
-                   maxlength="50"
-                 />
-                 <div class="invalid-feedback" id="usernameError"></div>
-                 <small class="text-muted" id="usernameHint" style="display:none;">Auto-generated from batch</small>
-               </div>
-              <!-- Contact -->
-              <div class="col-md-6 field-contact-col">
+              <div class="col-md-6">
+                <label class="form-label">Profile Photo</label>
+                <input
+                  class="form-control"
+                  type="file"
+                  id="studentProfilePhotoInput"
+                  name="profile_photo"
+                  accept="image/*"
+                />
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  name="batch"
+                  id="batchInputCommon"
+                  placeholder="Batch (ex: B1, B2)"
+                  oninput="generateUsernameFromBatch(this)"
+                  onchange="generateUsernameFromBatch(this)"
+                  onblur="generateUsernameFromBatch(this)"
+                />
+                <div class="invalid-feedback" id="batchError"></div>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control readonly-bg"
+                  name="username"
+                  id="commonUsername"
+                  placeholder="Username"
+                  required
+                  maxlength="50"
+                  readonly
+                />
+                <div class="invalid-feedback" id="studentUsernameError"></div>
+                <small class="text-muted" id="usernameHint" style="display:none;">Auto-generated from batch</small>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control alpha-only"
+                  id="studentFatherNameInput"
+                  name="father_name"
+                  placeholder="Father's Name"
+                  maxlength="100"
+                />
+              </div>
+              <div class="col-md-6">
                 <input
                   type="tel"
                   class="form-control number-only"
+                  id="studentContactInput"
                   name="contact"
                   placeholder="Contact (10-digit number)"
                   required
                   maxlength="10"
                   minlength="10"
                 />
-                <div class="invalid-feedback" id="contactError"></div>
+                <div class="invalid-feedback" id="studentContactError"></div>
               </div>
-              <!-- Email -->
-              <div class="col-md-6 field-email-col">
+              <div class="col-md-6">
                 <input
-                  class="form-control"
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  required
+                  class="form-control alpha-only"
+                  id="studentEmergencyContactNameInput"
+                  name="emergency_contact_name"
+                  placeholder="Emergency Contact Name"
                   maxlength="100"
                 />
-                <div class="invalid-feedback" id="emailError"></div>
               </div>
-              <!-- Gender -->
-              <div class="col-md-6 field-gender-col">
-                <select class="form-select" name="gender" required>
-                  <option value="">Gender</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
-                </select>
+              <div class="col-md-6">
+                <input
+                  type="tel"
+                  class="form-control number-only"
+                  id="studentEmergencyContactInput"
+                  name="emergency_contact"
+                  placeholder="Emergency Contact"
+                  maxlength="10"
+                  minlength="10"
+                />
+                <div class="invalid-feedback" id="studentEmergencyContactError"></div>
               </div>
-              <!-- Password (full width) -->
-              <div class="col-12 field-password-col">
+              <div class="col-md-6">
                 <div class="input-group password-toggle-group">
                   <input
                     class="form-control"
@@ -426,22 +463,25 @@
                   </button>
                 </div>
               </div>
-            </div>
-
-            <!-- STUDENT ONLY -->
-            <div id="studentFields" class="row g-3 mt-2">
               <div class="col-md-6">
-                <select class="form-select" name="board" required>
-                  <option value="">Select Board / Exam</option>
-                  <option value="State">State</option>
-                  <option value="CBSE">CBSE</option>
-                  <option value="MHTCET">MHTCET</option>
+                <select class="form-select" id="studentStreamInput" name="stream" required>
+                  <option value="">Stream</option>
                   <option value="JEE">JEE</option>
                   <option value="NEET">NEET</option>
+                  <option value="MHTCET">MHTCET</option>
                 </select>
+                <div class="invalid-feedback" id="studentStreamError"></div>
               </div>
               <div class="col-md-6">
-                <select class="form-select" name="grade">
+                <select class="form-select" id="studentBoardInput" name="board" required>
+                  <option value="">Board</option>
+                  <option value="State">State</option>
+                  <option value="CBSE">CBSE</option>
+                </select>
+                <div class="invalid-feedback" id="studentBoardError"></div>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select" id="studentGradeInput" name="grade">
                   <option value="">Grade</option>
                   <option value="8th">8th</option>
                   <option value="9th">9th</option>
@@ -449,6 +489,114 @@
                   <option value="11th">11th</option>
                   <option value="12th">12th</option>
                 </select>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  id="studentBloodGroupInput"
+                  name="blood_group"
+                  placeholder="Blood Group"
+                  maxlength="10"
+                />
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  id="studentEmailInput"
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="studentEmailError"></div>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select" id="studentGenderInput" name="gender" required>
+                  <option value="">Gender</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2" id="teacherCommonFieldsRow" style="display: none">
+              <div class="col-md-6">
+                <input
+                  class="form-control alpha-only"
+                  id="teacherNameInput"
+                  name="name"
+                  placeholder="Full Name"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="teacherNameError"></div>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  name="username"
+                  id="teacherUsernameInput"
+                  placeholder="Username"
+                  required
+                  maxlength="50"
+                />
+                <div class="invalid-feedback" id="teacherUsernameError"></div>
+              </div>
+              <div class="col-md-6">
+                <input
+                  type="tel"
+                  class="form-control number-only"
+                  id="teacherContactInput"
+                  name="contact"
+                  placeholder="Contact (10-digit number)"
+                  required
+                  maxlength="10"
+                  minlength="10"
+                />
+                <div class="invalid-feedback" id="teacherContactError"></div>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  id="teacherEmailInput"
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="teacherEmailError"></div>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select" id="teacherGenderInput" name="gender" required>
+                  <option value="">Gender</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group password-toggle-group">
+                  <input
+                    class="form-control"
+                    name="password"
+                    id="teacherAddUserPassword"
+                    type="password"
+                    placeholder="Password"
+                    value="Tra@2026"
+                    required
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle"
+                    type="button"
+                    data-target="teacherAddUserPassword"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
               </div>
             </div>
 

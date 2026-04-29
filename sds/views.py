@@ -1220,6 +1220,11 @@ def add_user(request):
         return values[-1] if prefer_last else values[0]
 
     batch = _pick_post_value("batch")
+    father_name = (request.POST.get("father_name") or "").strip()
+    emergency_contact_name = (request.POST.get("emergency_contact_name") or "").strip()
+    emergency_contact = _normalize_phone(request.POST.get("emergency_contact"))
+    stream = (request.POST.get("stream") or "").strip()
+    blood_group = (request.POST.get("blood_group") or "").strip()
 
     # Determine username based on user type
     if user_type == "student":
@@ -1271,6 +1276,19 @@ def add_user(request):
         messages.error(request, "Please enter a valid 10-digit phone number.")
         return redirect("user-management")
 
+    if user_type == "student":
+        if father_name and not _is_valid_person_name(father_name):
+            messages.error(request, "Father's name should contain only letters and spaces.")
+            return redirect("user-management")
+
+        if emergency_contact_name and not _is_valid_person_name(emergency_contact_name):
+            messages.error(request, "Emergency contact name should contain only letters and spaces.")
+            return redirect("user-management")
+
+        if emergency_contact and len(emergency_contact) != 10:
+            messages.error(request, "Please enter a valid 10-digit emergency contact number.")
+            return redirect("user-management")
+
     if _is_email_taken(email):
         messages.error(request, "This email is already registered.")
         return redirect("user-management")
@@ -1295,6 +1313,7 @@ def add_user(request):
         student_grade = _pick_post_value("grade")
         student_board = _pick_post_value("board")
         student_batch = _pick_post_value("batch", default="B1") or "B1"
+        profile_photo = request.FILES.get("profile_photo")
         
        
         if hasattr(request.user, "teacheradmin") and request.user.teacheradmin.role == "Teacher":
@@ -1326,13 +1345,19 @@ def add_user(request):
         Student.objects.create(
             user=user,
             student_name=request.POST.get("name"),
+            profile_photo=profile_photo,
             username=username,
+            father_name=father_name,
             contact=contact,
+            emergency_contact_name=emergency_contact_name,
+            emergency_contact=emergency_contact,
             email=email,
             school="",
+            stream=stream,
             board=student_board,
             grade=student_grade,
             batch=student_batch,
+            blood_group=blood_group,
             gender=request.POST.get("gender"),
             is_external=False,
             must_change_password=True,

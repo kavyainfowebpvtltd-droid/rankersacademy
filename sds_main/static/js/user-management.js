@@ -14,6 +14,25 @@ function getCommonUsernameInput() {
   return document.getElementById("commonUsername");
 }
 
+function getTeacherUsernameInput() {
+  return document.getElementById("teacherUsernameInput");
+}
+
+function getCurrentUserType() {
+  const userTypeSelect = document.getElementById("userTypeSelect");
+  return userTypeSelect ? userTypeSelect.value : "student";
+}
+
+function setValidationError(input, errorId, message) {
+  if (input) {
+    input.classList.add("is-invalid");
+  }
+  const errorDiv = document.getElementById(errorId);
+  if (errorDiv) {
+    errorDiv.textContent = message;
+  }
+}
+
 function extractBatchPrefix(batch) {
   const normalizedBatch = String(batch || "").trim();
   if (!normalizedBatch) {
@@ -116,77 +135,52 @@ function generateUsernameFromBatch(sourceInput = null) {
 
 function openAddUserModal() {
   if (addUserModal) addUserModal.show();
-  // Reset form when opening modal
-  const form = document.querySelector("#addUserModal form");
+  const form = getAddUserForm();
   if (form) {
     form.reset();
-    // Reset user type to student
     document.getElementById("userTypeSelect").value = "student";
     document.getElementById("userTypeHidden").value = "student";
-    const passwordInput = document.getElementById("addUserPassword");
-    if (passwordInput) {
-      passwordInput.value = defaultOneTimePassword;
-    }
+    const studentPasswordInput = document.getElementById("addUserPassword");
+    const teacherPasswordInput = document.getElementById("teacherAddUserPassword");
+    if (studentPasswordInput) studentPasswordInput.value = defaultOneTimePassword;
+    if (teacherPasswordInput) teacherPasswordInput.value = defaultOneTimePassword;
     toggleFields();
-    // Clear any error styling
     clearAllAddUserErrors();
-    // Remove dynamically created error divs for board/grade/batch
-    const boardError = document.getElementById("boardError");
-    if (boardError && boardError.parentNode) {
-      boardError.parentNode.removeChild(boardError);
-    }
-    const gradeError = document.getElementById("gradeError");
-    if (gradeError && gradeError.parentNode) {
-      gradeError.parentNode.removeChild(gradeError);
-    }
-    const batchError = document.getElementById("batchError");
-    if (batchError && batchError.parentNode) {
-      batchError.parentNode.removeChild(batchError);
-    }
-    // Remove is-invalid class from board, grade, batch selects
-    const boardSelect = form.querySelector('[name="board"]');
-    const gradeSelect = form.querySelector('[name="grade"]');
-    const batchSelect = form.querySelector('[name="batch"]');
-    if (boardSelect) boardSelect.classList.remove("is-invalid");
-    if (gradeSelect) gradeSelect.classList.remove("is-invalid");
-    if (batchSelect) batchSelect.classList.remove("is-invalid");
-    // Hide username hint
-    const usernameHint = document.getElementById('usernameHint');
-    if (usernameHint) usernameHint.style.display = 'none';
+    const usernameHint = document.getElementById("usernameHint");
+    if (usernameHint) usernameHint.style.display = "none";
   }
 }
 
 function toggleFields() {
-  const type = document.getElementById("userTypeSelect").value;
-
+  const type = getCurrentUserType();
   document.getElementById("userTypeHidden").value = type;
 
   const studentFields = document.getElementById("studentFields");
+  const teacherCommonFields = document.getElementById("teacherCommonFieldsRow");
   const teacherFields = document.getElementById("teacherFields");
-  const studentInputs = studentFields.querySelectorAll("input, select, textarea");
-  const teacherInputs = teacherFields.querySelectorAll("input, select, textarea");
-
-  // Handle username field readonly state and hint
-  const usernameInput = document.getElementById('commonUsername');
-  const usernameCol = document.querySelector('.field-username-col');
-  const usernameHint = document.getElementById('usernameHint');
+  const studentInputs = studentFields ? studentFields.querySelectorAll("input, select, textarea") : [];
+  const teacherCommonInputs = teacherCommonFields ? teacherCommonFields.querySelectorAll("input, select, textarea") : [];
+  const teacherInputs = teacherFields ? teacherFields.querySelectorAll("input, select, textarea") : [];
+  const usernameInput = getCommonUsernameInput();
+  const usernameHint = document.getElementById("usernameHint");
 
   if (type === "student") {
-    studentFields.style.display = "flex";
-    teacherFields.style.display = "none";
+    if (studentFields) studentFields.style.display = "flex";
+    if (teacherCommonFields) teacherCommonFields.style.display = "none";
+    if (teacherFields) teacherFields.style.display = "none";
     studentInputs.forEach((input) => {
       input.disabled = false;
+    });
+    teacherCommonInputs.forEach((input) => {
+      input.disabled = true;
     });
     teacherInputs.forEach((input) => {
       input.disabled = true;
     });
-    // Make username readonly for students
     if (usernameInput) {
       usernameInput.readOnly = true;
-      usernameInput.classList.add('readonly-bg');
-      if (usernameCol) usernameCol.style.display = ''; // show
+      usernameInput.classList.add("readonly-bg");
     }
-    // Clear and regenerate based on batch
     if (usernameInput) usernameInput.value = '';
     if (usernameHint) usernameHint.style.display = 'none';
     const batchInput = getCommonBatchInput();
@@ -194,100 +188,48 @@ function toggleFields() {
       generateUsernameFromBatch(batchInput);
     }
   } else {
-    studentFields.style.display = "none";
-    teacherFields.style.display = "flex";
+    if (studentFields) studentFields.style.display = "none";
+    if (teacherCommonFields) teacherCommonFields.style.display = "flex";
+    if (teacherFields) teacherFields.style.display = "flex";
     studentInputs.forEach((input) => {
       input.disabled = true;
+    });
+    teacherCommonInputs.forEach((input) => {
+      input.disabled = false;
     });
     teacherInputs.forEach((input) => {
       input.disabled = false;
     });
-    // Make username editable for teachers
     if (usernameInput) {
-      usernameInput.readOnly = false;
-      usernameInput.classList.remove('readonly-bg');
+      usernameInput.classList.remove("readonly-bg");
       if (usernameHint) usernameHint.style.display = 'none';
-    }
-  }
-
-  // Toggle common batch field visibility and disabled state
-  const commonBatchCol = document.getElementById("commonBatchCol");
-  if (commonBatchCol) {
-    const batchInput = commonBatchCol.querySelector('input[name="batch"]');
-    if (batchInput) {
-      // When student: enabled; when teacher: disabled/hide
-      batchInput.disabled = (type !== "student");
-    }
-    commonBatchCol.style.display = (type === "student") ? "" : "none";
-  }
-
-  // Reorder common fields and adjust password column width
-  const commonRow = document.getElementById("commonFieldsRow");
-  if (!commonRow) return;
-
-  const nameCol = commonRow.querySelector('.field-name-col');
-  const batchCol = commonRow.querySelector('.field-batch-col');
-  const contactCol = commonRow.querySelector('.field-contact-col');
-  const emailCol = commonRow.querySelector('.field-email-col');
-  const genderCol = commonRow.querySelector('.field-gender-col');
-  const passwordCol = commonRow.querySelector('.field-password-col');
-
-  if (type === "student") {
-    // Student mode: natural DOM order (name, batch, username, contact, email, gender, password)
-    [nameCol, batchCol, usernameCol, contactCol, emailCol, genderCol, passwordCol].forEach(col => {
-      if (col) col.style.order = '';
-    });
-    // Ensure password full width
-    if (passwordCol) {
-      passwordCol.classList.remove('col-md-6');
-      passwordCol.classList.add('col-12');
-    }
-  } else {
-    // Teacher mode: order: name, username, email, contact, password, gender
-    if (nameCol) nameCol.style.order = '0';
-    if (usernameCol) usernameCol.style.order = '1';
-    if (emailCol) emailCol.style.order = '2';
-    if (contactCol) contactCol.style.order = '3';
-    if (passwordCol) {
-      passwordCol.style.order = '4';
-      passwordCol.classList.remove('col-12');
-      passwordCol.classList.add('col-md-6');
-    }
-    if (genderCol) genderCol.style.order = '5';
-    if (batchCol) batchCol.style.order = '-1';
-  }
-}
-
-function showFieldError(inputId, message) {
-  const input = document.getElementById(inputId);
-  if (input) {
-    input.classList.add("is-invalid");
-    const errorDiv = document.getElementById(inputId + "Error");
-    if (errorDiv) {
-      errorDiv.textContent = message;
-    }
-  }
-}
-
-function clearFieldError(inputId) {
-  const input = document.getElementById(inputId);
-  if (input) {
-    input.classList.remove("is-invalid");
-    const errorDiv = document.getElementById(inputId + "Error");
-    if (errorDiv) {
-      errorDiv.textContent = "";
     }
   }
 }
 
 function clearAllAddUserErrors() {
-  const fields = ["name", "username", "email", "contact"];
-  fields.forEach((fieldId) => {
-    const input = document.querySelector(`#addUserModal [name="${fieldId}"]`);
-    if (input) {
-      input.classList.remove("is-invalid");
-    }
-    const errorDiv = document.getElementById(fieldId + "Error");
+  const form = getAddUserForm();
+  if (!form) return;
+
+  form.querySelectorAll(".is-invalid").forEach((input) => {
+    input.classList.remove("is-invalid");
+  });
+
+  [
+    "studentNameError",
+    "teacherNameError",
+    "studentUsernameError",
+    "teacherUsernameError",
+    "studentEmailError",
+    "teacherEmailError",
+    "studentContactError",
+    "teacherContactError",
+    "studentEmergencyContactError",
+    "studentStreamError",
+    "studentBoardError",
+    "batchError",
+  ].forEach((errorId) => {
+    const errorDiv = document.getElementById(errorId);
     if (errorDiv) {
       errorDiv.textContent = "";
     }
@@ -296,143 +238,136 @@ function clearAllAddUserErrors() {
 
 function validateAndSubmitAddUser() {
   const form = getAddUserForm();
-  const nameInput = form.querySelector('[name="name"]');
-  const usernameInput = getCommonUsernameInput();
-  const emailInput = form.querySelector('[name="email"]');
-  const contactInput = form.querySelector('[name="contact"]');
   const batchInput = getCommonBatchInput();
+  const userType = getCurrentUserType();
+  const nameInput = document.getElementById(
+    userType === "student" ? "studentNameInput" : "teacherNameInput",
+  );
+  const usernameInput =
+    userType === "student" ? getCommonUsernameInput() : getTeacherUsernameInput();
+  const emailInput = document.getElementById(
+    userType === "student" ? "studentEmailInput" : "teacherEmailInput",
+  );
+  const contactInput = document.getElementById(
+    userType === "student" ? "studentContactInput" : "teacherContactInput",
+  );
 
-  // Get the user type to determine which fields to validate
-  const userType = document.getElementById("userTypeSelect").value;
+  clearAllAddUserErrors();
 
-   // Clear previous errors
-   clearAllAddUserErrors();
-   // Clear batch error manually (since not in clearAll)
-   if (batchInput) {
-     batchInput.classList.remove("is-invalid");
-     const batchErrorDiv = document.getElementById("batchError");
-     if (batchErrorDiv) batchErrorDiv.textContent = "";
-   }
-
-   let isValid = true;
-
-  // Validate name - only alphabets and spaces
-  const nameValue = nameInput.value.trim();
+  let isValid = true;
   const nameRegex = /^[a-zA-Z\s]+$/;
+  const nameValue = nameInput ? nameInput.value.trim() : "";
   if (!nameValue) {
-    nameInput.classList.add("is-invalid");
-    const errorDiv = document.getElementById("nameError");
-    if (errorDiv) errorDiv.textContent = "Name is required";
+    setValidationError(
+      nameInput,
+      userType === "student" ? "studentNameError" : "teacherNameError",
+      "Name is required",
+    );
     isValid = false;
   } else if (!nameRegex.test(nameValue)) {
-    nameInput.classList.add("is-invalid");
-    const errorDiv = document.getElementById("nameError");
-    if (errorDiv) errorDiv.textContent = "Name should contain only letters and spaces";
+    setValidationError(
+      nameInput,
+      userType === "student" ? "studentNameError" : "teacherNameError",
+      "Name should contain only letters and spaces",
+    );
     isValid = false;
   }
 
-  // Validate batch for students (required)
   if (userType === "student") {
     if (!batchInput || !batchInput.value.trim()) {
-      if (batchInput) batchInput.classList.add("is-invalid");
-      const errorDiv = document.getElementById("batchError");
-      if (errorDiv) errorDiv.textContent = "Batch is required for students";
+      setValidationError(batchInput, "batchError", "Batch is required for students");
       isValid = false;
     }
   }
 
-  // Validate contact - only 10 digits
-  const contactValue = contactInput.value.trim();
   const contactRegex = /^\d{10}$/;
+  const contactValue = contactInput ? contactInput.value.trim() : "";
   if (!contactValue) {
-    contactInput.classList.add("is-invalid");
-    const errorDiv = document.getElementById("contactError");
-    if (errorDiv) errorDiv.textContent = "Contact number is required";
+    setValidationError(
+      contactInput,
+      userType === "student" ? "studentContactError" : "teacherContactError",
+      "Contact number is required",
+    );
     isValid = false;
   } else if (!contactRegex.test(contactValue)) {
-    contactInput.classList.add("is-invalid");
-    const errorDiv = document.getElementById("contactError");
-    if (errorDiv) errorDiv.textContent = "Contact must be exactly 10 digits";
+    setValidationError(
+      contactInput,
+      userType === "student" ? "studentContactError" : "teacherContactError",
+      "Contact must be exactly 10 digits",
+    );
     isValid = false;
   }
 
-  // Validate email
-  const emailValue = emailInput.value.trim();
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const emailValue = emailInput ? emailInput.value.trim() : "";
   if (!emailValue) {
-    emailInput.classList.add("is-invalid");
-    const errorDiv = document.getElementById("emailError");
-    if (errorDiv) errorDiv.textContent = "Email is required";
+    setValidationError(
+      emailInput,
+      userType === "student" ? "studentEmailError" : "teacherEmailError",
+      "Email is required",
+    );
     isValid = false;
   } else if (!emailRegex.test(emailValue)) {
-    emailInput.classList.add("is-invalid");
-    const errorDiv = document.getElementById("emailError");
-    if (errorDiv) errorDiv.textContent = "Please enter a valid email address";
+    setValidationError(
+      emailInput,
+      userType === "student" ? "studentEmailError" : "teacherEmailError",
+      "Please enter a valid email address",
+    );
     isValid = false;
   }
 
-  // For students, ensure username is auto-generated if batch provided
   if (userType === "student") {
-    // Auto-generate username from batch if empty
-    if (!usernameInput.value.trim() && batchInput && batchInput.value.trim()) {
+    if (usernameInput && !usernameInput.value.trim() && batchInput && batchInput.value.trim()) {
       generateUsernameFromBatch(batchInput);
     }
   }
 
-  // Validate username (required for both types)
-  const usernameValue = usernameInput.value.trim();
+  const usernameValue = usernameInput ? usernameInput.value.trim() : "";
   if (!usernameValue) {
-    usernameInput.classList.add("is-invalid");
-    const errorDiv = document.getElementById("usernameError");
-    if (errorDiv) errorDiv.textContent = "Username is required";
+    setValidationError(
+      usernameInput,
+      userType === "student" ? "studentUsernameError" : "teacherUsernameError",
+      "Username is required",
+    );
     isValid = false;
   }
 
-   // For students, validate board (grade optional)
-   if (userType === "student") {
-     const boardSelect = form.querySelector('[name="board"]');
-     const gradeSelect = form.querySelector('[name="grade"]');
-     const boardErrorId = "boardError";
+  if (userType === "student") {
+    const emergencyContactInput = document.getElementById("studentEmergencyContactInput");
+    const emergencyContactValue = emergencyContactInput
+      ? emergencyContactInput.value.trim()
+      : "";
+    const streamSelect = document.getElementById("studentStreamInput");
+    const boardSelect = document.getElementById("studentBoardInput");
 
-     // Create error div for board if it doesn't exist
-     if (boardSelect && !document.getElementById(boardErrorId)) {
-       const errorDiv = document.createElement("div");
-       errorDiv.id = boardErrorId;
-       errorDiv.className = "invalid-feedback";
-       errorDiv.style.display = "block";
-       boardSelect.parentNode.appendChild(errorDiv);
-     }
+    if (emergencyContactValue && !contactRegex.test(emergencyContactValue)) {
+      setValidationError(
+        emergencyContactInput,
+        "studentEmergencyContactError",
+        "Emergency contact must be exactly 10 digits",
+      );
+      isValid = false;
+    }
 
-     if (boardSelect && !boardSelect.value) {
-       boardSelect.classList.add("is-invalid");
-       const errorDiv = document.getElementById(boardErrorId);
-       if (errorDiv) errorDiv.textContent = "Board is required";
-       isValid = false;
-     } else if (boardSelect) {
-       boardSelect.classList.remove("is-invalid");
-       const errorDiv = document.getElementById(boardErrorId);
-       if (errorDiv) errorDiv.textContent = "";
-     }
+    if (streamSelect && !streamSelect.value) {
+      setValidationError(streamSelect, "studentStreamError", "Stream is required");
+      isValid = false;
+    }
 
-     // Grade is optional - just clear any previous error if present
-     if (gradeSelect) {
-       gradeSelect.classList.remove("is-invalid");
-       const gradeErrorDiv = document.getElementById("gradeError");
-       if (gradeErrorDiv) gradeErrorDiv.textContent = "";
-     }
-   }
+    if (boardSelect && !boardSelect.value) {
+      setValidationError(boardSelect, "studentBoardError", "Board is required");
+      isValid = false;
+    }
+  }
 
   if (!isValid) {
     return;
   }
 
-  // All validations passed, submit the form
-  // Hide modal before submitting to prevent any timing issues
   if (addUserModal) {
     addUserModal.hide();
   }
 
-  // All validations passed, submit the form
   form.submit();
 }
 

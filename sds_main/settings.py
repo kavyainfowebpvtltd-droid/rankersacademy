@@ -12,6 +12,7 @@ SECRET_KEY = 'django-insecure-)-#wj42wfm88kx+@@_pc2++83-7f9yls%kw2l+n8kfq6fas6u*
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
 ALLOWED_HOSTS = [
 "147.93.29.224",
 "rankersonlinetest.com",
@@ -24,6 +25,7 @@ CSRF_TRUSTED_ORIGINS = [
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
 
 # Application definition
 
