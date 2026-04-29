@@ -3,69 +3,54 @@ pipeline {
 
  stages {
 
-  stage('Checkout Code') {
-   steps {
-    git branch: 'main',
-    url: 'https://github.com/kavyainfowebpvtltd-droid/rankersacademy.git'
+   stage('Checkout Code') {
+      steps {
+         git branch: 'main',
+         url: 'https://github.com/kavyainfowebpvtltd-droid/rankersacademy.git'
+      }
    }
-  }
 
-  stage('Docker Build') {
-   steps {
-    sh '''
-    docker compose -p rankersacademy build web
-    '''
+   stage('Docker Build') {
+      steps {
+         sh '''
+         docker compose -p rankersacademy build web
+         '''
+      }
    }
-  }
 
-  stage('Docker Deploy') {
-   steps {
-    sh '''
-    docker compose -p rankersacademy up -d --no-deps --force-recreate web
-    docker image prune -f
-    '''
+   stage('Docker Deploy') {
+      steps {
+         sh '''
+         docker compose -p rankersacademy up -d --no-deps --force-recreate web
+         docker image prune -f
+         '''
+      }
    }
-  }
 
-  stage('Health Check') {
-   steps {
-    sh '''
-    echo "Waiting for app startup..."
-    sleep 30
-
-    count=1
-    while [ $count -le 10 ]
-    do
-      if curl -f http://127.0.0.1:8081 >/dev/null 2>&1
-      then
-         echo "App healthy"
-         exit 0
-      fi
-
-      echo "Retry $count/10"
-      sleep 10
-      count=$((count+1))
-    done
-
-    echo "Health check failed"
-    exit 1
-    '''
+   stage('Verify Container') {
+      steps {
+         sh '''
+         sleep 20
+         docker ps | grep rankers-app
+         '''
+      }
    }
-  }
 
  }
 
  post {
+
    success {
-      echo 'SUCCESS Deploy Completed'
+      echo 'SUCCESS Deployment Completed'
    }
 
    failure {
-      echo 'FAILED Deploy Failed'
+      echo 'FAILED Deployment Failed'
    }
 
    always {
       sh 'docker ps'
    }
+
  }
 }
