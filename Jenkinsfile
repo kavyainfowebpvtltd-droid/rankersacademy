@@ -3,23 +3,27 @@ agent any
 
 stages {
 
-stage('Clone'){
-steps{
+stage('Checkout') {
+steps {
 git branch: 'main',
 url: 'https://github.com/kavyainfowebpvtltd-droid/rankersacademy.git'
 }
 }
 
-stage('Build'){
-steps{
-sh 'docker compose build --no-cache'
-}
-}
-
-stage('Deploy'){
-steps{
+stage('Deploy') {
+steps {
 sh '''
-docker compose up -d --build
+cd /root/rankersacademy
+
+git pull origin main
+
+# rebuild latest image
+docker compose build web
+
+# recreate only app container (db untouched)
+docker compose up -d --no-deps --force-recreate web
+
+# cleanup old dangling images
 docker image prune -f
 '''
 }
@@ -27,7 +31,7 @@ docker image prune -f
 
 stage('Health Check'){
 steps{
-sh 'curl -I https://rankersonlinetest.com'
+sh 'curl -I http://127.0.0.1:8081'
 }
 }
 
@@ -35,10 +39,10 @@ sh 'curl -I https://rankersonlinetest.com'
 
 post {
 success {
-echo 'Deployment Successful'
+echo "New container deployed successfully"
 }
 failure {
-echo 'Build Failed'
+echo "Deployment failed"
 }
 }
 }
