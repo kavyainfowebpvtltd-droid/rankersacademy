@@ -45,7 +45,7 @@
           <table class="table table-hover align-middle student-table-nowrap">
             <thead>
                <tr>
-                 <th>ID</th>
+                 <th>Sr.No.</th>
                  <th>Photo</th>
                  <th>Name</th>
                  <th>Father's Name</th>
@@ -66,7 +66,7 @@
             <tbody>
               {% for student in students %}
                <tr>
-                 <td>STU{{ student.id }}</td>
+                 <td>{{ students_page.start_index|add:forloop.counter0 }}</td>
                  <td>
                    {% if student.profile_photo %}
                      <img src="{{ student.profile_photo.url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
@@ -187,7 +187,7 @@
           <table class="table table-hover align-middle">
             <thead>
                <tr>
-                 <th>ID</th>
+                 <th>Sr.No.</th>
                  <th>Name</th>
                  <th>Photo</th>
                  <th>Gender</th>
@@ -203,7 +203,7 @@
             <tbody>
               {% for teacher in teachers %}
                <tr>
-                 <td>TCH{{ teacher.id }}</td>
+                 <td>{{ teachers_page.start_index|add:forloop.counter0 }}</td>
                  <td class="fw-semibold">{{ teacher.name }}</td>
                  <td>
                    {% if teacher.profile_picture %}
