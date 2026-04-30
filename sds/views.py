@@ -1140,10 +1140,38 @@ def user_management(request):
         return HttpResponseForbidden("Only admins can access user management.")
     
     # Order by student_name to ensure consistent ordering
-    students = Student.objects.select_related("user").order_by("-id")
+    all_students = Student.objects.select_related("user").order_by("-id")
+
+    student_search = (request.GET.get("student_search") or "").strip()
+    student_batch_filter = (request.GET.get("student_batch") or "").strip()
+    student_stream_filter = (request.GET.get("student_stream") or "").strip()
+    student_board_filter = (request.GET.get("student_board") or "").strip()
+    student_grade_filter = (request.GET.get("student_grade") or "").strip()
+
+    students = all_students
+    if student_search:
+        students = students.filter(
+            Q(student_name__icontains=student_search)
+            | Q(username__icontains=student_search)
+            | Q(contact__icontains=student_search)
+            | Q(email__icontains=student_search)
+            | Q(father_name__icontains=student_search)
+            | Q(batch__icontains=student_search)
+            | Q(stream__icontains=student_search)
+            | Q(board__icontains=student_search)
+            | Q(grade__icontains=student_search)
+        )
+    if student_batch_filter:
+        students = students.filter(batch__iexact=student_batch_filter)
+    if student_stream_filter:
+        students = students.filter(stream__iexact=student_stream_filter)
+    if student_board_filter:
+        students = students.filter(board__iexact=student_board_filter)
+    if student_grade_filter:
+        students = students.filter(grade__iexact=student_grade_filter)
 
     grouped = {}
-    for s in students:
+    for s in all_students:
         grouped.setdefault(s.batch or "Unassigned", []).append(s)
     
     # Build batch_counts: {batch_name: count_of_students_in_batch}
@@ -1152,6 +1180,27 @@ def user_management(request):
         batch_counts[batch] = len(student_list)
 
     teachers = TeacherAdmin.objects.select_related("user").order_by("role", "name")
+
+    student_batch_options = [
+        batch
+        for batch in all_students.values_list("batch", flat=True).distinct()
+        if batch
+    ]
+    student_stream_options = [
+        stream
+        for stream in all_students.values_list("stream", flat=True).distinct()
+        if stream
+    ]
+    student_board_options = [
+        board
+        for board in all_students.values_list("board", flat=True).distinct()
+        if board
+    ]
+    student_grade_options = [
+        grade
+        for grade in all_students.values_list("grade", flat=True).distinct()
+        if grade
+    ]
 
     # Pagination for students
     student_items_per_page = 6
@@ -1175,6 +1224,14 @@ def user_management(request):
     except EmptyPage:
         teachers_page = teacher_paginator.page(teacher_paginator.num_pages)
 
+    student_pagination_params = request.GET.copy()
+    student_pagination_params.pop("student_page", None)
+    student_pagination_query = student_pagination_params.urlencode()
+
+    teacher_pagination_params = request.GET.copy()
+    teacher_pagination_params.pop("teacher_page", None)
+    teacher_pagination_query = teacher_pagination_params.urlencode()
+
     return render(
         request,
         "user-management.html",
@@ -1184,9 +1241,20 @@ def user_management(request):
             "teachers": teachers_page.object_list,
             "students_page": students_page,
             "teachers_page": teachers_page,
-            "total_students": students.count(),
+            "total_students": all_students.count(),
             "total_teachers": teachers.count(),
             "batch_counts_json": json.dumps(batch_counts),
+            "student_search": student_search,
+            "student_batch_filter": student_batch_filter,
+            "student_stream_filter": student_stream_filter,
+            "student_board_filter": student_board_filter,
+            "student_grade_filter": student_grade_filter,
+            "student_batch_options": student_batch_options,
+            "student_stream_options": student_stream_options,
+            "student_board_options": student_board_options,
+            "student_grade_options": student_grade_options,
+            "student_pagination_query": student_pagination_query,
+            "teacher_pagination_query": teacher_pagination_query,
         },
     )
 

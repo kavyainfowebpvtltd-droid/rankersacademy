@@ -191,6 +191,14 @@ td {
   white-space: nowrap;
 }
 
+.student-filter-form {
+  min-width: 56rem;
+}
+
+.student-filter-btn {
+  min-width: 7rem;
+}
+
 tbody tr:last-child td {
   border-bottom: none;
 }

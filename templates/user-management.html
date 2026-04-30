@@ -42,6 +42,62 @@
       <div class="card mb-5">
         <div class="card-header fw-bold">Students</div>
         <div class="card-body table-responsive">
+          <form method="get" class="row g-2 align-items-end mb-3 student-filter-form">
+            <div class="col-md-3">
+              <label class="form-label mb-1">Search</label>
+              <input
+                type="text"
+                class="form-control"
+                name="student_search"
+                value="{{ student_search }}"
+                placeholder="Name, username, contact..."
+              />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label mb-1">Batch</label>
+              <select class="form-select" name="student_batch">
+                <option value="">All</option>
+                {% for batch in student_batch_options %}
+                <option value="{{ batch }}" {% if student_batch_filter == batch %}selected{% endif %}>{{ batch }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label mb-1">Stream</label>
+              <select class="form-select" name="student_stream">
+                <option value="">All</option>
+                {% for stream in student_stream_options %}
+                <option value="{{ stream }}" {% if student_stream_filter == stream %}selected{% endif %}>{{ stream }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label mb-1">Board</label>
+              <select class="form-select" name="student_board">
+                <option value="">All</option>
+                {% for board in student_board_options %}
+                <option value="{{ board }}" {% if student_board_filter == board %}selected{% endif %}>{{ board }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label mb-1">Grade</label>
+              <select class="form-select" name="student_grade">
+                <option value="">All</option>
+                {% for grade in student_grade_options %}
+                <option value="{{ grade }}" {% if student_grade_filter == grade %}selected{% endif %}>{{ grade }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+              <button type="submit" class="btn btn-primary w-100 student-filter-btn">
+                Filter
+              </button>
+              <a href="{% url 'user-management' %}" class="btn btn-outline-secondary w-100">
+                Reset
+              </a>
+            </div>
+          </form>
           <table class="table table-hover align-middle student-table-nowrap">
             <thead>
                <tr>
@@ -145,7 +201,7 @@
             <li class="page-item">
               <a
                 class="page-link"
-                href="?student_page={{ students_page.previous_page_number }}"
+                href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.previous_page_number }}"
                 aria-label="Previous"
               >
                 <span aria-hidden="true">&laquo;</span>
@@ -163,7 +219,7 @@
             </li>
            {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
             <li class="page-item">
-              <a class="page-link" href="?student_page={{ num }}">{{ num }}</a>
+              <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ num }}">{{ num }}</a>
             </li>
             {% endif %} 
             {% endfor %} 
@@ -171,7 +227,7 @@
             <li class="page-item">
               <a
                 class="page-link"
-                href="?student_page={{ students_page.next_page_number }}"
+                href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.next_page_number }}"
                 aria-label="Next"
               >
                 <span aria-hidden="true">&raquo;</span>
@@ -283,7 +339,7 @@
             <li class="page-item">
               <a
                 class="page-link"
-                href="?teacher_page={{ teachers_page.previous_page_number }}"
+                href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.previous_page_number }}"
                 aria-label="Previous"
               >
                 <span aria-hidden="true">&laquo;</span>
@@ -301,7 +357,7 @@
             </li>
          {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
             <li class="page-item">
-              <a class="page-link" href="?teacher_page={{ num }}">{{ num }}</a>
+              <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ num }}">{{ num }}</a>
             </li>
             {% endif %} 
             {% endfor %} 
@@ -309,7 +365,7 @@
             <li class="page-item">
               <a
                 class="page-link"
-                href="?teacher_page={{ teachers_page.next_page_number }}"
+                href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.next_page_number }}"
                 aria-label="Next"
               >
                 <span aria-hidden="true">&raquo;</span>
