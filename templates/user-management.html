@@ -93,12 +93,19 @@
                      data-bs-target="#editStudentModal"
                      data-id="{{ student.id }}"
                      data-name="{{ student.student_name }}"
+                     data-username="{{ student.username }}"
                      data-contact="{{ student.contact }}"
                      data-email="{{ student.email }}"
+                     data-father-name="{{ student.father_name }}"
+                     data-emergency-contact-name="{{ student.emergency_contact_name }}"
+                     data-emergency-contact="{{ student.emergency_contact }}"
+                     data-stream="{{ student.stream }}"
                      data-board="{{ student.board }}"
                      data-grade="{{ student.grade }}"
+                     data-blood-group="{{ student.blood_group }}"
                      data-gender="{{ student.gender }}"
                      data-batch="{{ student.batch }}"
+                     data-profile-photo="{% if student.profile_photo %}{{ student.profile_photo.url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
                   </button>
@@ -677,7 +684,7 @@
     <!--  EDIT STUDENT MODAL  -->
     <div class="modal fade" id="editStudentModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
-        <form method="post" id="editStudentForm" class="modal-content">
+        <form method="post" id="editStudentForm" class="modal-content" enctype="multipart/form-data">
           {% csrf_token %}
           <div class="modal-header">
             <h5 class="modal-title">Edit Student</h5>
@@ -701,23 +708,119 @@
               <div class="invalid-feedback" id="editStudentNameError"></div>
             </div>
             <div class="col-md-6">
+              <label class="form-label">Profile Photo</label>
               <input
                 class="form-control"
-                name="email"
-                id="editStudentEmail"
-                required
+                type="file"
+                name="profile_photo"
+                id="editStudentProfilePhoto"
+                accept="image/*"
               />
-              <div class="invalid-feedback" id="editStudentEmailError"></div>
+              <div id="currentStudentProfilePhoto" style="margin-top: 0.5rem;"></div>
+            </div>
+
+            <div class="col-md-6">
+              <input
+                class="form-control"
+                name="batch"
+                id="editStudentBatch"
+                placeholder="Batch (ex: B1, B2)"
+                oninput="generateEditStudentUsernameFromBatch(this)"
+                onchange="generateEditStudentUsernameFromBatch(this)"
+                onblur="generateEditStudentUsernameFromBatch(this)"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                class="form-control readonly-bg"
+                name="username"
+                id="editStudentUsername"
+                placeholder="Username"
+                required
+                maxlength="50"
+                readonly
+              />
+              <div class="invalid-feedback" id="editStudentUsernameError"></div>
+              <small class="text-muted" id="editStudentUsernameHint" style="display:none;">Auto-generated from batch</small>
+            </div>
+
+            <div class="col-md-6">
+              <input
+                class="form-control alpha-only"
+                name="father_name"
+                id="editStudentFatherName"
+                placeholder="Father's Name"
+                maxlength="100"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="tel"
+                class="form-control number-only"
+                name="contact"
+                id="editStudentContact"
+                maxlength="10"
+                minlength="10"
+                placeholder="Contact (10-digit number)"
+              />
+              <div class="invalid-feedback" id="editStudentContactError"></div>
+            </div>
+
+            <div class="col-md-6">
+              <input
+                class="form-control alpha-only"
+                name="emergency_contact_name"
+                id="editStudentEmergencyContactName"
+                placeholder="Emergency Contact Name"
+                maxlength="100"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="tel"
+                class="form-control number-only"
+                name="emergency_contact"
+                id="editStudentEmergencyContact"
+                maxlength="10"
+                minlength="10"
+                placeholder="Emergency Contact"
+              />
+              <div class="invalid-feedback" id="editStudentEmergencyContactError"></div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-group password-toggle-group">
+                <input
+                  class="form-control"
+                  name="password"
+                  id="editStudentPassword"
+                  type="password"
+                  placeholder="Password (leave blank to keep current)"
+                />
+                <button
+                  class="btn btn-outline-secondary password-toggle"
+                  type="button"
+                  data-target="editStudentPassword"
+                  aria-label="Show password"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <select class="form-select" name="stream" id="editStudentStream">
+                <option value="">Stream</option>
+                <option value="JEE">JEE</option>
+                <option value="NEET">NEET</option>
+                <option value="MHTCET">MHTCET</option>
+              </select>
             </div>
 
             <div class="col-md-6">
               <select class="form-select" name="board" id="editStudentBoard">
-                <option value="">Select Board / Exam</option>
+                <option value="">Board</option>
                 <option value="State">State</option>
                 <option value="CBSE">CBSE</option>
-                <option value="MHTCET">MHTCET</option>
-                <option value="JEE">JEE</option>
-                <option value="NEET">NEET</option>
               </select>
             </div>
 
@@ -734,30 +837,31 @@
 
             <div class="col-md-6">
               <input
-                type="tel"
-                class="form-control number-only"
-                name="contact"
-                id="editStudentContact"
+                class="form-control"
+                name="blood_group"
+                id="editStudentBloodGroup"
+                placeholder="Blood Group"
                 maxlength="10"
-                minlength="10"
               />
-              <div class="invalid-feedback" id="editStudentContactError"></div>
             </div>
 
             <div class="col-md-6">
+              <input
+                class="form-control"
+                name="email"
+                id="editStudentEmail"
+                required
+                placeholder="Email"
+              />
+              <div class="invalid-feedback" id="editStudentEmailError"></div>
+            </div>
+            <div class="col-md-6">
               <select class="form-select" name="gender" id="editStudentGender">
+                <option value="">Gender</option>
                 <option>Male</option>
                 <option>Female</option>
                 <option>Other</option>
               </select>
-            </div>
-            <div class="col-md-6">
-              <input
-                class="form-control"
-                name="batch"
-                id="editStudentBatch"
-                placeholder="Batch (ex: B1, B2)"
-              />
             </div>
           </div>
 
@@ -804,28 +908,31 @@
             </div>
             <div class="col-md-6">
               <input
-                class="form-control"
-                name="email"
-                id="editTeacherEmail"
-                required
-              />
-              <div class="invalid-feedback" id="editTeacherEmailError"></div>
-            </div>
-
-            <div class="col-md-6">
-              <input
-                type="tel"
                 class="form-control number-only"
+                type="tel"
                 name="contact"
                 id="editTeacherContact"
                 maxlength="10"
                 minlength="10"
+                placeholder="Contact (10-digit number)"
               />
               <div class="invalid-feedback" id="editTeacherContactError"></div>
             </div>
 
             <div class="col-md-6">
+              <input
+                class="form-control"
+                name="email"
+                id="editTeacherEmail"
+                required
+                placeholder="Email"
+              />
+              <div class="invalid-feedback" id="editTeacherEmailError"></div>
+            </div>
+
+            <div class="col-md-6">
               <select class="form-select" name="gender" id="editTeacherGender">
+                <option value="">Gender</option>
                 <option>Male</option>
                 <option>Female</option>
                 <option>Other</option>
@@ -833,9 +940,29 @@
             </div>
 
             <div class="col-md-6">
+              <div class="input-group password-toggle-group">
+                <input
+                  class="form-control"
+                  name="password"
+                  id="editTeacherPassword"
+                  type="password"
+                  placeholder="Password (leave blank to keep current)"
+                />
+                <button
+                  class="btn btn-outline-secondary password-toggle"
+                  type="button"
+                  data-target="editTeacherPassword"
+                  aria-label="Show password"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="col-md-6">
               <select class="form-select" name="role" id="editTeacherRole">
-                <option>Teacher</option>
-                <option>Admin</option>
+                <option value="Teacher">Teacher</option>
+                <option value="Admin">Admin</option>
               </select>
             </div>
 
@@ -844,6 +971,7 @@
                  class="form-control"
                  name="subjects"
                  id="editTeacherSubjects"
+                 placeholder="Subjects"
                />
              </div>
              <div class="col-md-6">

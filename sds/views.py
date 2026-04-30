@@ -1411,27 +1411,94 @@ def edit_student(request, id):
         return HttpResponseForbidden("Only admins can edit students.")
     
     student = get_object_or_404(Student, id=id)
+    new_username = (request.POST.get("username") or "").strip()
+    new_email = _normalize_email(request.POST.get("email"))
+    new_contact = _normalize_phone(request.POST.get("contact"))
+    father_name = (request.POST.get("father_name") or "").strip()
+    emergency_contact_name = (request.POST.get("emergency_contact_name") or "").strip()
+    emergency_contact = _normalize_phone(request.POST.get("emergency_contact"))
+    password = (request.POST.get("password") or "").strip()
 
-    
     student_name = (request.POST.get("name") or "").strip()
     if not _is_valid_person_name(student_name):
         messages.error(request, "Name should contain only letters and spaces.")
         return redirect("user-management")
 
+    if father_name and not _is_valid_person_name(father_name):
+        messages.error(request, "Father's name should contain only letters and spaces.")
+        return redirect("user-management")
+
+    if emergency_contact_name and not _is_valid_person_name(emergency_contact_name):
+        messages.error(request, "Emergency contact name should contain only letters and spaces.")
+        return redirect("user-management")
+
+    if not new_username:
+        messages.error(request, "Username is required.")
+        return redirect("user-management")
+
+    if new_username != student.user.username:
+        if User.objects.filter(username=new_username).exclude(id=student.user.id).exists():
+            messages.error(request, "Username already exists")
+            return redirect("user-management")
+
+    if not new_email:
+        messages.error(request, "Email is required.")
+        return redirect("user-management")
+
+    if (
+        User.objects.filter(Q(username__iexact=new_email) | Q(email__iexact=new_email))
+        .exclude(id=student.user.id)
+        .exists()
+        or Student.objects.filter(email__iexact=new_email).exclude(id=student.id).exists()
+        or TeacherAdmin.objects.filter(email__iexact=new_email).exists()
+    ):
+        messages.error(request, "Email already exists")
+        return redirect("user-management")
+
+    if len(new_contact) != 10:
+        messages.error(request, "Please enter a valid 10-digit phone number.")
+        return redirect("user-management")
+
+    if (
+        Student.objects.filter(contact__regex=new_contact + r"$").exclude(id=student.id).exists()
+        or TeacherAdmin.objects.filter(contact__regex=new_contact + r"$").exists()
+    ):
+        messages.error(request, "Phone number already exists")
+        return redirect("user-management")
+
+    if emergency_contact and len(emergency_contact) != 10:
+        messages.error(request, "Please enter a valid 10-digit emergency contact number.")
+        return redirect("user-management")
+
     student.student_name = student_name
-    student.username = student.user.username
-    student.contact = request.POST.get("contact")
-    student.email = request.POST.get("email")
+    student.username = new_username
+    student.father_name = father_name
+    student.contact = new_contact
+    student.emergency_contact_name = emergency_contact_name
+    student.emergency_contact = emergency_contact
+    student.email = new_email
+    student.stream = (request.POST.get("stream") or "").strip()
     student.board = request.POST.get("board")
     student.grade = request.POST.get("grade")
     student.batch = request.POST.get("batch") or student.batch  
+    student.blood_group = (request.POST.get("blood_group") or "").strip()
     student.gender = request.POST.get("gender")
+
+    if "profile_photo" in request.FILES:
+        student.profile_photo = request.FILES["profile_photo"]
+
+    if password:
+        student.must_change_password = True
+
     student.save()
 
     
     if student.user:
+        student.user.username = new_username
         student.user.email = student.email
-        student.user.save(update_fields=["email"])
+        if password:
+            student.user.set_password(password)
+        student.user.save()
 
     messages.success(request, "Student updated successfully")
     return redirect("user-management")
@@ -1449,7 +1516,9 @@ def edit_teacher(request, id):
     teacher = get_object_or_404(TeacherAdmin, id=id)
 
     new_username = (request.POST.get("username") or "").strip()
-    new_email = (request.POST.get("email") or "").strip().lower()
+    new_email = _normalize_email(request.POST.get("email"))
+    new_contact = _normalize_phone(request.POST.get("contact"))
+    password = (request.POST.get("password") or "").strip()
 
    
     if new_username and new_username != teacher.user.username:
@@ -1458,9 +1527,26 @@ def edit_teacher(request, id):
             return redirect("user-management")
 
     if new_email and new_email != teacher.user.email:
-        if User.objects.filter(email=new_email).exclude(id=teacher.user.id).exists():
+        if (
+            User.objects.filter(Q(username__iexact=new_email) | Q(email__iexact=new_email))
+            .exclude(id=teacher.user.id)
+            .exists()
+            or Student.objects.filter(email__iexact=new_email).exists()
+            or TeacherAdmin.objects.filter(email__iexact=new_email).exclude(id=teacher.id).exists()
+        ):
             messages.error(request, "Email already exists")
             return redirect("user-management")
+
+    if len(new_contact) != 10:
+        messages.error(request, "Please enter a valid 10-digit phone number.")
+        return redirect("user-management")
+
+    if (
+        Student.objects.filter(contact__regex=new_contact + r"$").exists()
+        or TeacherAdmin.objects.filter(contact__regex=new_contact + r"$").exclude(id=teacher.id).exists()
+    ):
+        messages.error(request, "Phone number already exists")
+        return redirect("user-management")
 
   
     teacher_name = (request.POST.get("name") or "").strip()
@@ -1471,7 +1557,7 @@ def edit_teacher(request, id):
     teacher.name = teacher_name
     teacher.username = new_username or teacher.username
     teacher.email = new_email or teacher.email
-    teacher.contact = request.POST.get("contact")
+    teacher.contact = new_contact
     teacher.gender = request.POST.get("gender")
     teacher.role = request.POST.get("role")
     teacher.grade = request.POST.get("grade")
@@ -1482,6 +1568,9 @@ def edit_teacher(request, id):
     # Handle profile picture upload
     if "profile_picture" in request.FILES:
         teacher.profile_picture = request.FILES["profile_picture"]
+
+    if password:
+        teacher.must_change_password = True
     
     teacher.save()
 
@@ -1492,6 +1581,8 @@ def edit_teacher(request, id):
         if new_email:
             teacher.user.email = new_email
         teacher.user.is_staff = True
+        if password:
+            teacher.user.set_password(password)
         teacher.user.save()
 
     messages.success(request, "User updated successfully")
