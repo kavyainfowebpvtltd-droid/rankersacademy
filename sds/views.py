@@ -1148,6 +1148,56 @@ def user_management(request):
     student_board_filter = (request.GET.get("student_board") or "").strip()
     student_grade_filter = (request.GET.get("student_grade") or "").strip()
 
+    fixed_stream_options = ["JEE", "NEET", "MHTCET"]
+    fixed_board_options = ["State", "CBSE"]
+    fixed_grade_options = ["9th", "10th", "11th", "12th"]
+
+    preferred_batch_labels = ["Star 01", "Star 02"]
+    preferred_batch_map = {label.lower(): label for label in preferred_batch_labels}
+
+    raw_batch_values = [
+        batch.strip()
+        for batch in all_students.values_list("batch", flat=True).distinct()
+        if (batch or "").strip()
+    ]
+    batch_seen = set()
+    student_batch_options = []
+    for raw_batch in preferred_batch_labels + raw_batch_values:
+        normalized_batch = raw_batch.strip()
+        if not normalized_batch:
+            continue
+        normalized_key = normalized_batch.lower()
+        if normalized_key in batch_seen:
+            continue
+        batch_seen.add(normalized_key)
+        student_batch_options.append(
+            preferred_batch_map.get(normalized_key, normalized_batch)
+        )
+
+    if student_batch_filter:
+        student_batch_filter = preferred_batch_map.get(
+            student_batch_filter.lower(),
+            student_batch_filter,
+        )
+    if student_stream_filter:
+        stream_map = {value.lower(): value for value in fixed_stream_options}
+        student_stream_filter = stream_map.get(
+            student_stream_filter.lower(),
+            student_stream_filter,
+        )
+    if student_board_filter:
+        board_map = {value.lower(): value for value in fixed_board_options}
+        student_board_filter = board_map.get(
+            student_board_filter.lower(),
+            student_board_filter,
+        )
+    if student_grade_filter:
+        grade_map = {value.lower(): value for value in fixed_grade_options}
+        student_grade_filter = grade_map.get(
+            student_grade_filter.lower(),
+            student_grade_filter,
+        )
+
     students = all_students
     if student_search:
         students = students.filter(
@@ -1181,26 +1231,9 @@ def user_management(request):
 
     teachers = TeacherAdmin.objects.select_related("user").order_by("role", "name")
 
-    student_batch_options = [
-        batch
-        for batch in all_students.values_list("batch", flat=True).distinct()
-        if batch
-    ]
-    student_stream_options = [
-        stream
-        for stream in all_students.values_list("stream", flat=True).distinct()
-        if stream
-    ]
-    student_board_options = [
-        board
-        for board in all_students.values_list("board", flat=True).distinct()
-        if board
-    ]
-    student_grade_options = [
-        grade
-        for grade in all_students.values_list("grade", flat=True).distinct()
-        if grade
-    ]
+    student_stream_options = fixed_stream_options
+    student_board_options = fixed_board_options
+    student_grade_options = fixed_grade_options
 
     # Pagination for students
     student_items_per_page = 6

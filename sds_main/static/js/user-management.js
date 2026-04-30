@@ -88,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   toggleFields();
+  setupStudentFilters();
 
   document.querySelectorAll(".password-toggle").forEach((toggleBtn) => {
     toggleBtn.addEventListener("click", () => {
@@ -113,6 +114,44 @@ document.addEventListener("DOMContentLoaded", () => {
     batchInput.addEventListener("blur", () => generateUsernameFromBatch());
   }
 });
+
+function setupStudentFilters() {
+  const filterForm = document.getElementById("studentFilterForm");
+  const searchInput = document.getElementById("studentSearchInput");
+  const filterSelects = document.querySelectorAll(".student-filter-select");
+
+  if (!filterForm) {
+    return;
+  }
+
+  let searchTimeout = null;
+
+  filterSelects.forEach((select) => {
+    select.addEventListener("change", () => {
+      filterForm.submit();
+    });
+  });
+
+  if (!searchInput) {
+    return;
+  }
+
+  searchInput.addEventListener("input", () => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const value = (searchInput.value || "").trim();
+    if (!value) {
+      filterForm.submit();
+      return;
+    }
+
+    searchTimeout = setTimeout(() => {
+      filterForm.submit();
+    }, 350);
+  });
+}
 
 function generateUsernameFromBatch(sourceInput = null) {
   const batchInput = sourceInput || getCommonBatchInput();

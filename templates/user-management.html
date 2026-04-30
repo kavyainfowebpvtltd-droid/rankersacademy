@@ -42,12 +42,13 @@
       <div class="card mb-5">
         <div class="card-header fw-bold">Students</div>
         <div class="card-body table-responsive">
-          <form method="get" class="row g-2 align-items-end mb-3 student-filter-form">
+          <form method="get" class="row g-2 align-items-end mb-3 student-filter-form" id="studentFilterForm">
             <div class="col-md-3">
               <label class="form-label mb-1">Search</label>
               <input
                 type="text"
                 class="form-control"
+                id="studentSearchInput"
                 name="student_search"
                 value="{{ student_search }}"
                 placeholder="Name, username, contact..."
@@ -55,7 +56,7 @@
             </div>
             <div class="col-md-2">
               <label class="form-label mb-1">Batch</label>
-              <select class="form-select" name="student_batch">
+              <select class="form-select student-filter-select" name="student_batch">
                 <option value="">All</option>
                 {% for batch in student_batch_options %}
                 <option value="{{ batch }}" {% if student_batch_filter == batch %}selected{% endif %}>{{ batch }}</option>
@@ -64,7 +65,7 @@
             </div>
             <div class="col-md-2">
               <label class="form-label mb-1">Stream</label>
-              <select class="form-select" name="student_stream">
+              <select class="form-select student-filter-select" name="student_stream">
                 <option value="">All</option>
                 {% for stream in student_stream_options %}
                 <option value="{{ stream }}" {% if student_stream_filter == stream %}selected{% endif %}>{{ stream }}</option>
@@ -73,7 +74,7 @@
             </div>
             <div class="col-md-2">
               <label class="form-label mb-1">Board</label>
-              <select class="form-select" name="student_board">
+              <select class="form-select student-filter-select" name="student_board">
                 <option value="">All</option>
                 {% for board in student_board_options %}
                 <option value="{{ board }}" {% if student_board_filter == board %}selected{% endif %}>{{ board }}</option>
@@ -82,7 +83,7 @@
             </div>
             <div class="col-md-1">
               <label class="form-label mb-1">Grade</label>
-              <select class="form-select" name="student_grade">
+              <select class="form-select student-filter-select" name="student_grade">
                 <option value="">All</option>
                 {% for grade in student_grade_options %}
                 <option value="{{ grade }}" {% if student_grade_filter == grade %}selected{% endif %}>{{ grade }}</option>
@@ -90,9 +91,6 @@
               </select>
             </div>
             <div class="col-md-2 d-flex gap-2">
-              <button type="submit" class="btn btn-primary w-100 student-filter-btn">
-                Filter
-              </button>
               <a href="{% url 'user-management' %}" class="btn btn-outline-secondary w-100">
                 Reset
               </a>
