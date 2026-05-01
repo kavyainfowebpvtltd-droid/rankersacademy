@@ -1,12 +1,14 @@
 import json
 import io
 from zipfile import ZipFile
+from unittest.mock import patch
 
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from scholarship_test.models import (
+    RankPredictorLead,
     ScholarshipStudent,
     ScholarshipTest,
     ScholarshipTestAttempt,
@@ -213,6 +215,53 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['is_guest'])
         self.assertEqual(response.context['selected_test'].id, runtime_test.id)
+
+
+class RankPredictorFlowTests(TestCase):
+    def test_rank_predictor_view_starts_locked(self):
+        response = self.client.get(reverse('scholarship_test:rank_predictor'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['rank_predictor_unlocked'])
+
+    @patch('scholarship_test.views.otp_service.send_otp', return_value=(True, 'OTP sent successfully'))
+    def test_rank_predictor_send_otp_creates_pending_lead(self, mocked_send_otp):
+        response = self.client.post(
+            reverse('scholarship_test:rank_predictor_send_otp'),
+            {'phone_number': '9876543210'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(RankPredictorLead.objects.filter(phone_number='9876543210').exists())
+        lead = RankPredictorLead.objects.get(phone_number='9876543210')
+        self.assertFalse(lead.is_verified)
+        self.assertIsNotNone(lead.last_otp_requested_at)
+        mocked_send_otp.assert_called_once_with('9876543210')
+
+    @patch('scholarship_test.views.otp_service.verify_otp')
+    def test_rank_predictor_verify_otp_unlocks_session_and_marks_lead_verified(self, mocked_verify_otp):
+        student = ScholarshipStudent.objects.create(
+            name='Rank Predictor User',
+            phone_number='9876543210',
+            grade='',
+            board='',
+            otp_verified=True,
+        )
+        RankPredictorLead.objects.create(phone_number='9876543210')
+        mocked_verify_otp.return_value = (True, 'OTP verified successfully', student)
+
+        response = self.client.post(
+            reverse('scholarship_test:rank_predictor_verify_otp'),
+            {'phone_number': '9876543210', 'otp_code': '1234'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        lead = RankPredictorLead.objects.get(phone_number='9876543210')
+        self.assertTrue(lead.is_verified)
+        self.assertEqual(lead.scholarship_student_id, student.id)
+        self.assertIsNotNone(lead.verified_at)
+        self.assertTrue(self.client.session.get('rank_predictor_unlocked'))
+        self.assertEqual(self.client.session.get('rank_predictor_phone'), '9876543210')
 
 
 class ScholarshipWordImportTests(TestCase):
@@ -495,4 +544,3 @@ class ScholarshipSectionApiTests(TestCase):
             response.json()['error'],
             'A section with this name already exists in this test',
         )
-

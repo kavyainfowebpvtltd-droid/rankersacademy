@@ -117,6 +117,29 @@ class ScholarshipOTP(models.Model):
         return timezone.now() > self.expires_at
 
 
+class RankPredictorLead(models.Model):
+    scholarship_student = models.ForeignKey(
+        ScholarshipStudent,
+        on_delete=models.SET_NULL,
+        related_name='rank_predictor_leads',
+        null=True,
+        blank=True,
+    )
+    phone_number = models.CharField(max_length=15, unique=True)
+    is_verified = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    last_otp_requested_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        status = 'Verified' if self.is_verified else 'Pending'
+        return f"Rank Predictor Lead {self.phone_number} - {status}"
+
+
 class ScholarshipTestAttempt(models.Model):
    
     STATUS_CHOICES = [

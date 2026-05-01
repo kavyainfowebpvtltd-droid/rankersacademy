@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError
 
 from scholarship_test.models import (
+    RankPredictorLead,
     ScholarshipStudent,
     ScholarshipSubject,
     ScholarshipQuestion,
@@ -45,11 +46,34 @@ logger = logging.getLogger(__name__)
 TEST_DURATION_MINUTES = 20
 TOTAL_QUESTIONS = 20
 SELECTED_TEST_SESSION_KEY = 'scholarship_selected_test_id'
+RANK_PREDICTOR_UNLOCKED_SESSION_KEY = 'rank_predictor_unlocked'
+RANK_PREDICTOR_PHONE_SESSION_KEY = 'rank_predictor_phone'
 
 
 def _is_valid_person_name(name: str) -> bool:
     cleaned = (name or '').strip()
     return bool(cleaned) and bool(re.fullmatch(r'[A-Za-z ]+', cleaned))
+
+
+def _normalize_mobile_number(phone: str) -> str:
+    digits = re.sub(r'\D', '', str(phone or ''))
+    if len(digits) > 10:
+        digits = digits[-10:]
+    return digits
+
+
+def _is_valid_mobile_number(phone: str) -> bool:
+    return len(phone) == 10 and phone.isdigit()
+
+
+def _set_rank_predictor_session(request, phone: str):
+    request.session[RANK_PREDICTOR_UNLOCKED_SESSION_KEY] = True
+    request.session[RANK_PREDICTOR_PHONE_SESSION_KEY] = phone
+
+
+def _clear_rank_predictor_session(request):
+    request.session.pop(RANK_PREDICTOR_UNLOCKED_SESSION_KEY, None)
+    request.session.pop(RANK_PREDICTOR_PHONE_SESSION_KEY, None)
 
 
 def _is_rtse_test(test):
@@ -260,6 +284,17 @@ def scholarship_landing(request):
     context = _build_test_display_context(selected_test)
     return render(request, "scholarship-landing.html", context)
 
+
+def rank_predictor(request):
+    is_unlocked = bool(request.session.get(RANK_PREDICTOR_UNLOCKED_SESSION_KEY))
+    phone_number = request.session.get(RANK_PREDICTOR_PHONE_SESSION_KEY, '')
+
+    context = {
+        'rank_predictor_unlocked': is_unlocked,
+        'rank_predictor_phone': phone_number,
+    }
+    return render(request, 'rank-predictor.html', context)
+
 def scholarship_home(request):
     return redirect('scholarship_test:scholarship_register')
 
@@ -457,6 +492,62 @@ def scholarship_resend_otp(request):
         return JsonResponse({'success': True, 'message': message})
     else:
         return JsonResponse({'success': False, 'error': message}, status=400)
+
+
+@csrf_exempt
+@require_POST
+def rank_predictor_send_otp(request):
+    phone = _normalize_mobile_number(request.POST.get('phone_number', ''))
+
+    if not _is_valid_mobile_number(phone):
+        return JsonResponse(
+            {'success': False, 'error': 'Please enter a valid 10-digit mobile number'},
+            status=400,
+        )
+
+    lead, _ = RankPredictorLead.objects.get_or_create(phone_number=phone)
+    lead.last_otp_requested_at = timezone.now()
+    lead.save(update_fields=['last_otp_requested_at', 'updated_at'])
+
+    success, message = otp_service.send_otp(phone)
+    if not success:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    _clear_rank_predictor_session(request)
+    return JsonResponse({'success': True, 'message': message})
+
+
+@csrf_exempt
+@require_POST
+def rank_predictor_verify_otp(request):
+    phone = _normalize_mobile_number(request.POST.get('phone_number', ''))
+    otp = (request.POST.get('otp_code', '') or '').strip()
+
+    if not _is_valid_mobile_number(phone):
+        return JsonResponse(
+            {'success': False, 'error': 'Please enter a valid 10-digit mobile number'},
+            status=400,
+        )
+
+    if len(otp) != 4 or not otp.isdigit():
+        return JsonResponse(
+            {'success': False, 'error': 'Please enter a valid 4-digit OTP'},
+            status=400,
+        )
+
+    success, message, student = otp_service.verify_otp(phone, otp)
+    if not success or not student:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    lead, _ = RankPredictorLead.objects.get_or_create(phone_number=phone)
+    lead.scholarship_student = student
+    lead.is_verified = True
+    lead.verified_at = timezone.now()
+    lead.last_otp_requested_at = lead.last_otp_requested_at or timezone.now()
+    lead.save()
+
+    _set_rank_predictor_session(request, phone)
+    return JsonResponse({'success': True, 'message': 'OTP verified successfully'})
 
 
 def scholarship_dashboard(request):

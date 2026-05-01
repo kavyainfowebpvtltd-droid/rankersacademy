@@ -8,6 +8,7 @@ app_name = 'scholarship_test'
 urlpatterns = [
     # Student URLs
     path('', views.scholarship_home, name='scholarship_home'),
+    path('rank-predictor/', views.rank_predictor, name='rank_predictor'),
     path('launch/<int:test_id>/', views.scholarship_launch_test, name='scholarship_launch_test'),
 
     path('scholarship-landing-page/', views.scholarship_landing, name="scholarship_landing"),
@@ -51,6 +52,8 @@ urlpatterns = [
     path('api/send-otp/', views.scholarship_send_otp, name='scholarship_send_otp'),
     path('api/verify-otp/', views.scholarship_verify_otp, name='scholarship_verify_otp'),
     path('api/resend-otp/', views.scholarship_resend_otp, name='scholarship_resend_otp'),
+    path('api/rank-predictor/send-otp/', views.rank_predictor_send_otp, name='rank_predictor_send_otp'),
+    path('api/rank-predictor/verify-otp/', views.rank_predictor_verify_otp, name='rank_predictor_verify_otp'),
     
     # Dashboard and Test
     path('dashboard/', views.scholarship_dashboard, name='scholarship_dashboard'),
