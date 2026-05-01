@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 
 <html lang="en">
@@ -15,23 +16,23 @@
     />
     <style>
       :root{
-        --bg:#0A0D12;
-        --bg-2:#101620;
-        --panel:#161D29;
-        --panel-2:#1C2532;
-        --line:#283142;
-        --line-soft:#1F2735;
-        --orange:#FF7A1A;
-        --orange-2:#FF5A00;
-        --orange-soft:#FFB37A;
-        --gold:#F2C94C;
+        --bg:#060B12;
+        --bg-2:#0C1522;
+        --panel:#111E30;
+        --panel-2:#17263A;
+        --line:#26415E;
+        --line-soft:#1A3048;
+        --orange:#51ACE3;
+        --orange-2:#2E8DCD;
+        --orange-soft:#9CD8FF;
+        --gold:#FFC928;
         --green:#30A46C;
         --red:#E5484D;
-        --blue:#4FA3FF;
-        --purple:#A78BFA;
+        --blue:#7FD5FF;
+        --purple:#90B9FF;
         --white:#F5F7FA;
-        --grey:#8C97A8;
-        --grey-2:#5C6678;
+        --grey:#95A7BE;
+        --grey-2:#617791;
       }
 
       *{box-sizing:border-box;margin:0;padding:0}
@@ -75,15 +76,17 @@
       }
       .logo{display:flex;align-items:center;gap:12px}
       .logo-mark{
-      width:42px;height:42px;border-radius:10px;
-      background:linear-gradient(135deg, var(--orange), var(--orange-2));
-      display:grid;place-items:center;
-      font-family:'Bebas Neue';font-size:22px;color:#0A0D12;
-      box-shadow: 0 6px 18px rgba(255,90,0,.45), inset 0 1px 0 rgba(255,255,255,.3);
-      letter-spacing:1px;
+      width:52px;height:52px;border-radius:14px;
+      background:linear-gradient(180deg, rgba(81,172,227,.12), rgba(81,172,227,.04));
+      border:1px solid rgba(127,213,255,.24);
+      display:grid;place-items:center;padding:6px;
+      box-shadow: 0 8px 22px rgba(81,172,227,.18), inset 0 1px 0 rgba(255,255,255,.08);
+      }
+      .logo-mark img{
+      width:100%;height:100%;object-fit:contain;display:block;
       }
       .logo-txt{display:flex;flex-direction:column;line-height:1}
-      .logo-txt b{font-family:'Bebas Neue';letter-spacing:2.5px;font-size:16px;color:var(--orange)}
+      .logo-txt b{font-family:'Bebas Neue';letter-spacing:2.5px;font-size:16px;color:var(--blue)}
       .logo-txt span{font-size:10.5px;color:var(--grey);letter-spacing:1.4px;margin-top:3px;text-transform:uppercase}
       .brand-meta{display:flex;gap:18px;align-items:center;font-size:11.5px;color:var(--grey);letter-spacing:1.2px;text-transform:uppercase}
       .brand-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
@@ -202,9 +205,9 @@
       }
       .marks-bar-fill{
       position:absolute;left:0;top:0;bottom:0;
-      background:linear-gradient(90deg, var(--red) 0%, var(--orange) 50%, var(--gold) 80%, var(--green) 100%);
+      background:linear-gradient(90deg, #2E8DCD 0%, var(--orange) 42%, var(--gold) 78%, #8AD9FF 100%);
       width:0%;transition:width .4s cubic-bezier(.34,1.56,.64,1);
-      box-shadow:0 0 18px rgba(255,122,26,.5);
+      box-shadow:0 0 18px rgba(81,172,227,.45);
       }
       .marks-bar-zones{
       position:absolute;inset:0;display:grid;
@@ -452,10 +455,10 @@
       }
       .spotlight{
       margin-bottom:18px;padding:18px 20px;border-radius:16px;
-      border:1px solid rgba(255,122,26,.18);
+      border:1px solid rgba(81,172,227,.22);
       background:
-      radial-gradient(circle at right top, rgba(255,122,26,.16), transparent 35%),
-      linear-gradient(180deg, rgba(255,122,26,.08), rgba(255,255,255,.02));
+      radial-gradient(circle at right top, rgba(81,172,227,.16), transparent 35%),
+      linear-gradient(180deg, rgba(81,172,227,.08), rgba(255,255,255,.02));
       }
       .spotlight-label{
       font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.5px;color:var(--orange-soft);text-transform:uppercase;margin-bottom:8px;
@@ -641,7 +644,9 @@
 
       <header class="brand">
         <div class="logo">
-          <div class="logo-mark">RA</div>
+          <div class="logo-mark">
+            <img src="{% static 'img/logo-crop.png' %}" alt="The Rankers Academy logo" />
+          </div>
           <div class="logo-txt">
             <b>THE RANKERS ACADEMY</b>
             <span>NAGPUR | JEE | NEET | MHT-CET</span>
