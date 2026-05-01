@@ -631,8 +631,8 @@ body {
   flex-shrink: 0;
 }
 .mcq-opt-check.correct {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--green);
+  border-color: var(--green);
 }
 .mcq-opt-check.correct::after {
   content: "✓";
@@ -650,13 +650,13 @@ body {
   justify-content: center;
 }
 .mcq-opt-radio.correct {
-  border-color: var(--blue);
+  border-color: var(--green);
 }
 .mcq-opt-radio.correct::after {
   content: "";
   width: 8px;
   height: 8px;
-  background: var(--blue);
+  background: var(--green);
   border-radius: 50%;
 }
 .section-body-wrapper {
@@ -955,8 +955,8 @@ input:checked + .toggle-slider::before {
   transition: all 0.2s;
 }
 .option-check.checked {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--green);
+  border-color: var(--green);
   color: #fff;
   font-size: 12px;
 }

@@ -759,12 +759,7 @@ def _parse_multiple_choice(lines, index, question_lines):
         if not option_lines:
             continue
 
-        status = _normalize_status(option_lines[-1])
-        if status in {'correct', 'incorrect'}:
-            option_text = '\n'.join(option_lines[:-1]).strip()
-        else:
-            status = 'incorrect'
-            option_text = '\n'.join(option_lines).strip()
+        option_text, status = _split_option_text_and_status(option_lines)
 
         options.append(option_text)
         if status == 'correct':
@@ -941,7 +936,21 @@ def _normalize_type(value):
 
 
 def _normalize_status(value):
-    return str(value or '').strip().lower()
+    normalized = str(value or '').strip().lower()
+    normalized = re.sub(r'[\s\.\,\:\;\-\–\—\(\)\[\]\{\}]+$', '', normalized)
+    return normalized
+
+
+def _split_option_text_and_status(option_lines):
+    cleaned_lines = [str(line).strip() for line in option_lines if str(line).strip()]
+    if not cleaned_lines:
+        return '', 'incorrect'
+
+    status = _normalize_status(cleaned_lines[-1])
+    if status in {'correct', 'incorrect'}:
+        return '\n'.join(cleaned_lines[:-1]).strip(), status
+
+    return '\n'.join(cleaned_lines).strip(), 'incorrect'
 
 
 def _to_number(value):

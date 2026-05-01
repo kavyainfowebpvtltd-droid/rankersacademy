@@ -519,6 +519,37 @@ class ScholarshipWordImportTests(TestCase):
         self.assertIn('हिन्दी', imported['questions'][5]['text'])
         self.assertEqual(len(imported['questions'][5]['sub_questions']), 2)
 
+    def test_word_import_service_strips_trailing_correct_incorrect_labels_from_options(self):
+        upload = self.build_docx_upload(
+            [
+                'Question',
+                'Pick the correct statement',
+                'Type',
+                'multiple_choice',
+                'Option',
+                'First option',
+                'incorrect.',
+                'Option',
+                'Second option',
+                'Correct',
+                'Option',
+                'Third option',
+                'incorrect)',
+                'Marks',
+                '4',
+                '1',
+            ],
+            name='status-strip.docx',
+        )
+
+        imported = word_import_service.import_questions_from_docx(upload)
+
+        self.assertEqual(
+            imported['questions'][0]['options'],
+            ['First option', 'Second option', 'Third option'],
+        )
+        self.assertEqual(imported['questions'][0]['correct_options'], [1])
+
     def test_word_import_service_parses_full_test_exam_format(self):
         upload = self.build_docx_upload(
             [
