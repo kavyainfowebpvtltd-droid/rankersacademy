@@ -22,7 +22,15 @@ DOCX_REL_NAMESPACE = {
 }
 BLOCK_MARKERS = {'question', 'type', 'option', 'answer', 'solution', 'marks'}
 OPTION_LABELS = ('a', 'b', 'c', 'd')
-SUBJECT_HEADINGS = {'PHYSICS', 'CHEMISTRY', 'MATHEMATICS'}
+SUBJECT_HEADINGS = {
+    'PHYSICS',
+    'CHEMISTRY',
+    'BIOLOGY',
+    'BOTANY',
+    'ZOOLOGY',
+    'MATHEMATICS',
+    'MATHS',
+}
 QUESTION_TYPE_HEADINGS = {
     'MULTIPLE CHOICE QUESTIONS': 'mcq',
     'NUMERICAL TYPE QUESTIONS': 'int',
@@ -115,7 +123,7 @@ def _extract_docx_paragraphs(root):
 
 
 def _looks_like_marker_format(lines):
-    normalized = [_normalize_marker(line) for line in lines[:24]]
+    normalized = [_normalize_marker(line) for line in lines[:80]]
     return 'question' in normalized and 'type' in normalized
 
 
@@ -364,7 +372,7 @@ def _extract_exam_metadata(blocks, uploaded_file):
     header_blocks = blocks[:first_section_index]
     for block in header_blocks:
         text = block['text']
-        if re.search(r'full\s*test', text, re.IGNORECASE):
+        if _looks_like_test_title(text):
             metadata['test_name'] = text
             metadata['section_name'] = text
 
@@ -373,6 +381,29 @@ def _extract_exam_metadata(blocks, uploaded_file):
             metadata['duration_hours'], metadata['duration_minutes'] = duration
 
     return metadata
+
+
+def _looks_like_test_title(value):
+    text = _normalize_space(value)
+    if not text:
+        return False
+
+    upper_text = text.upper()
+    if 'RANKERS ACADEMY' in upper_text:
+        return False
+    if upper_text.startswith('DATE'):
+        return False
+    if upper_text.startswith('TIME'):
+        return False
+    if upper_text.startswith('BATCH'):
+        return False
+    if 'SESSION' in upper_text and 'TEST' not in upper_text and 'EXAM' not in upper_text:
+        return False
+
+    return bool(
+        re.search(r'\b(TEST|EXAM|MOCK)\b', text, re.IGNORECASE)
+        or re.search(r'\bCLASS\s+TEST\b', text, re.IGNORECASE)
+    )
 
 
 def _parse_duration(value):

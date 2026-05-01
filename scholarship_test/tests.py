@@ -390,6 +390,135 @@ class ScholarshipWordImportTests(TestCase):
         self.assertEqual(payload['imported']['section_name'], 'api-import')
         self.assertEqual(payload['imported']['questions'][0]['type'], 'tf')
 
+    def test_word_import_service_parses_marker_template_with_unicode_and_comprehension(self):
+        upload = self.build_docx_upload(
+            [
+                'Question',
+                'The hybridization of the central carbon in CH3C≡N and the bond angle CCN are',
+                'Type',
+                'multiple_choice',
+                'Option',
+                'sp2 , 180°',
+                'incorrect',
+                'Option',
+                'Sp, 180°',
+                'correct',
+                'Option',
+                'sp2 , 120°.',
+                'incorrect',
+                'Option',
+                'sp3 , 109°.',
+                'incorrect',
+                'Solution',
+                'Sp, 180°',
+                'Marks',
+                '4',
+                '1',
+                'Question',
+                'How many vovels are there?',
+                'Type',
+                'integer',
+                'Answer',
+                '5',
+                'Solution',
+                'a e i o u, they are 5',
+                'Marks',
+                '2',
+                '4',
+                'Question',
+                'Ashwin is a/an _________ reader and he can read upto _________ chapter(s) a day',
+                'Type',
+                'fill_ups',
+                'Option',
+                'good, awesome',
+                'Option',
+                'range(5:10)',
+                'Solution',
+                '',
+                'Marks',
+                '4',
+                '1',
+                'Question',
+                'Is Taj Mahal Awesome?',
+                'Type',
+                'true_false',
+                'Answer',
+                'true',
+                'Solution',
+                'because it is',
+                'Marks',
+                '2',
+                '0',
+                'Question',
+                'Is Taj Mahal Awesome?',
+                'Type',
+                'true_false',
+                'Answer',
+                'false',
+                'Solution',
+                'because it’s not',
+                'Marks',
+                '2',
+                '5',
+                'Question',
+                '',
+                'Type in Hindi | Easy Hindi Typing (हिन्दी में टाइप करें)',
+                'इंग्लिश में टाइप करे स्पेस दबाये यह हिन्दी में परिवर्तित हो जाएगा',
+                'Many educationalists consider it a weak and woolly field, too far removed from the practical applications of the real world to be useful.',
+                'Type',
+                'comprehension',
+                'Question',
+                'The hybridization of the central carbon in CH3C≡N and the bond angle CCN are',
+                'Type',
+                'multiple_choice',
+                'Option',
+                'sp2 , 180°',
+                'incorrect',
+                'Option',
+                'Sp, 180°',
+                'correct',
+                'Option',
+                'sp2 , 120°.',
+                'incorrect',
+                'Option',
+                'sp3 , 109°.',
+                'incorrect',
+                'Solution',
+                'any explanation for the same',
+                'Marks',
+                '4',
+                '1',
+                'Question',
+                'Ashwin is a/an _________ reader and he can read upto _________ chapter(s) a day',
+                'Type',
+                'fill_ups',
+                'Option',
+                'good, awesome',
+                'Option',
+                'range(5:10)',
+                'Solution',
+                '',
+                'Marks',
+                '4',
+                '1',
+            ],
+            name='marker-template-sample.docx',
+        )
+
+        imported = word_import_service.import_questions_from_docx(upload)
+
+        self.assertEqual(imported['section_name'], 'marker-template-sample')
+        self.assertEqual(len(imported['questions']), 6)
+        self.assertEqual(imported['questions'][0]['type'], 'mcq')
+        self.assertEqual(imported['questions'][0]['correct_options'], [1])
+        self.assertEqual(imported['questions'][1]['type'], 'int')
+        self.assertEqual(imported['questions'][2]['correct_answer'], 'good, awesome | range(5:10)')
+        self.assertEqual(imported['questions'][3]['correct_answer'], 'true')
+        self.assertEqual(imported['questions'][4]['correct_answer'], 'false')
+        self.assertEqual(imported['questions'][5]['type'], 'comp')
+        self.assertIn('हिन्दी', imported['questions'][5]['text'])
+        self.assertEqual(len(imported['questions'][5]['sub_questions']), 2)
+
     def test_word_import_service_parses_full_test_exam_format(self):
         upload = self.build_docx_upload(
             [
@@ -436,6 +565,56 @@ class ScholarshipWordImportTests(TestCase):
         self.assertEqual(imported['sections'][2]['questions'][0]['type'], 'mcq')
         self.assertEqual(imported['sections'][2]['questions'][1]['type'], 'int')
         self.assertTrue(imported['warnings'])
+
+    def test_word_import_service_parses_class_test_title_and_biology_section(self):
+        upload = self.build_docx_upload(
+            [
+                'THE RANKERS ACADEMY',
+                'NEET/JEE (Main & Advance)/ MHTCET/11th + 12th (CBSE/STATE)',
+                'Class Test - 02 (PCMB)',
+                'Batch: ALPHA BATCH Session: 202527',
+                'Date: 19/02/2026',
+                'TIME :45 Min.',
+                'PHYSICS',
+                '1. Physics question?',
+                '(a) A',
+                '(b) B',
+                '(c) C',
+                '(d) D',
+                'CHEMISTRY',
+                '11. Chemistry question?',
+                '(a) A1',
+                '(b) B1',
+                '(c) C1',
+                '(d) D1',
+                'BIOLOGY',
+                '21. Biology question?',
+                '(a) A2',
+                '(b) B2',
+                '(c) C2',
+                '(d) D2',
+                'MATHEMATICS',
+                '21. Mathematics question?',
+                '(a) A3',
+                '(b) B3',
+                '(c) C3',
+                '(d) D3',
+            ],
+            name='alpha-batch-test-02-pcmb.docx',
+        )
+
+        imported = word_import_service.import_questions_from_docx(upload)
+
+        self.assertEqual(imported['test_name'], 'Class Test - 02 (PCMB)')
+        self.assertEqual(imported['section_name'], 'Class Test - 02 (PCMB)')
+        self.assertEqual(imported['duration_hours'], 0)
+        self.assertEqual(imported['duration_minutes'], 45)
+        self.assertEqual(
+            [section['name'] for section in imported['sections']],
+            ['Physics', 'Chemistry', 'Biology', 'Mathematics'],
+        )
+        self.assertEqual(len(imported['sections'][2]['questions']), 1)
+        self.assertEqual(imported['sections'][2]['questions'][0]['options'][2], 'C2')
 
 
 class ScholarshipSectionApiTests(TestCase):
