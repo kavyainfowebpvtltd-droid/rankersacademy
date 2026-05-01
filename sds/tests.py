@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -96,6 +97,109 @@ class ForcedPasswordChangeTests(TestCase):
         self.user.refresh_from_db()
         self.assertFalse(self.teacher.must_change_password)
         self.assertTrue(self.user.check_password("StrongPass@2026"))
+
+
+@override_settings(ROOT_URLCONF="sds.urls", MAX_LOGIN_ATTEMPTS=5)
+class LoginThrottleTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+
+        self.first_user = User.objects.create_user(
+            username="student01",
+            email="student01@example.com",
+            password="StudentPass@2026",
+        )
+        self.second_user = User.objects.create_user(
+            username="student02",
+            email="student02@example.com",
+            password="AnotherPass@2026",
+        )
+
+        Student.objects.create(
+            user=self.first_user,
+            student_name="Student One",
+            username="student01",
+            contact="9876543214",
+            email="student01@example.com",
+            school="Rankers School",
+            board="CBSE",
+            grade="10th",
+            batch="B1",
+            gender="Male",
+        )
+        Student.objects.create(
+            user=self.second_user,
+            student_name="Student Two",
+            username="student02",
+            contact="9876543215",
+            email="student02@example.com",
+            school="Rankers School",
+            board="CBSE",
+            grade="10th",
+            batch="B1",
+            gender="Female",
+        )
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_failed_attempts_do_not_lock_other_users_on_same_ip(self):
+        shared_ip = "203.0.113.10"
+
+        for _ in range(5):
+            response = self.client.post(
+                reverse("login"),
+                {
+                    "username": "unknown-user",
+                    "password": "wrong-password",
+                    "role": "Student",
+                },
+                REMOTE_ADDR=shared_ip,
+            )
+            self.assertRedirects(response, reverse("login"))
+
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "student02",
+                "password": "AnotherPass@2026",
+                "role": "Student",
+            },
+            REMOTE_ADDR=shared_ip,
+        )
+
+        self.assertRedirects(response, reverse("student-dashboard"))
+
+    def test_account_lock_still_applies_after_repeated_failures(self):
+        for _ in range(5):
+            response = self.client.post(
+                reverse("login"),
+                {
+                    "username": "student01",
+                    "password": "wrong-password",
+                    "role": "Student",
+                },
+                REMOTE_ADDR="198.51.100.25",
+            )
+            self.assertRedirects(response, reverse("login"))
+
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "student01",
+                "password": "StudentPass@2026",
+                "role": "Student",
+            },
+            REMOTE_ADDR="198.51.100.25",
+            follow=True,
+        )
+
+        self.assertEqual(response.resolver_match.view_name, "login")
+        self.assertContains(
+            response,
+            "Account temporarily locked due to too many failed attempts.",
+        )
 
 
 @override_settings(ROOT_URLCONF="sds.urls")

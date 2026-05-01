@@ -108,21 +108,6 @@ def login_view(request):
             messages.error(request, "All fields are required")
             return redirect("login")
 
-        ip_key = f"login_ip:{request.META.get('REMOTE_ADDR', 'unknown')}"
-        ip_data = _cache_get(ip_key)
-        if ip_data and ip_data.get('locked', False):
-            lockout_end = ip_data.get('lockout_end', 0)
-            from django.utils import timezone
-            now = timezone.now().timestamp()
-            if lockout_end > now:
-                remaining = int(lockout_end - now)
-                minutes = remaining // 60
-                seconds = remaining % 60
-                messages.error(request, f"Too many failed attempts. Please try again in {minutes} minutes {seconds} seconds.")
-                return redirect("login")
-            else:
-                cache.delete(ip_key)
-
         username_key = f"login_attempts:{identifier.lower()}"
         attempt_data = _cache_get(username_key)
         if attempt_data and attempt_data.get('locked', False):
@@ -142,19 +127,18 @@ def login_view(request):
         try:
             user_obj = User.objects.get(Q(username=identifier) | Q(email=identifier))
         except User.DoesNotExist:
-            _increment_failed_attempts(request, identifier, ip_key, ip_data, username_key, attempt_data)
+            _increment_failed_attempts(request, identifier, username_key, attempt_data)
             messages.error(request, "Invalid credentials")
             return redirect("login")
 
         user = authenticate(request, username=user_obj.username, password=password)
 
         if not user or not user.is_active:
-            _increment_failed_attempts(request, identifier, ip_key, ip_data, username_key, attempt_data)
+            _increment_failed_attempts(request, identifier, username_key, attempt_data)
             messages.error(request, "Invalid credentials")
             return redirect("login")
 
         cache.delete(username_key)
-        cache.delete(ip_key)
         
         # Get intended redirect URL (if any)
         next_url = request.POST.get('next', '').strip()
@@ -252,31 +236,21 @@ def login_view(request):
     )
 
 
-def _increment_failed_attempts(request, identifier, ip_key, ip_data, username_key, attempt_data):
-    """Increment failed login attempts and lock if threshold exceeded."""
-    MAX_LOGIN_ATTEMPTS = getattr(request, 'MAX_LOGIN_ATTEMPTS', 5)
-    LOCKOUT_DURATION_SECONDS = getattr(request, 'LOGIN_LOCKOUT_SECONDS', 900)
+def _increment_failed_attempts(request, identifier, username_key, attempt_data):
+    """Increment failed login attempts and lock per submitted account identifier."""
+    MAX_LOGIN_ATTEMPTS = getattr(settings, 'MAX_LOGIN_ATTEMPTS', 5)
+    LOCKOUT_DURATION_SECONDS = getattr(settings, 'LOGIN_LOCKOUT_SECONDS', 900)
     
     from django.utils import timezone
     now = timezone.now().timestamp()
     
-    # Get current attempt counts
-    ip_attempts = ip_data.get('attempts', 0) if ip_data else 0
     username_attempts = attempt_data.get('attempts', 0) if attempt_data else 0
     
     # Increment attempts
-    ip_attempts += 1
     username_attempts += 1
     
     # Check if should lock
-    ip_locked = ip_attempts >= MAX_LOGIN_ATTEMPTS
     username_locked = username_attempts >= MAX_LOGIN_ATTEMPTS
-    
-    if ip_locked:
-        lockout_end = now + LOCKOUT_DURATION_SECONDS
-        _cache_set(ip_key, {'attempts': ip_attempts, 'locked': True, 'lockout_end': lockout_end}, LOCKOUT_DURATION_SECONDS)
-    else:
-        _cache_set(ip_key, {'attempts': ip_attempts, 'locked': False}, LOCKOUT_DURATION_SECONDS)
     
     if username_locked:
         lockout_end = now + LOCKOUT_DURATION_SECONDS
