@@ -22,6 +22,16 @@ pipeline {
       steps {
          sh '''
          docker compose -p rankersacademy up -d --no-deps --force-recreate web
+
+         echo "Waiting for container..."
+         sleep 15
+
+         echo "Running migrations..."
+         docker exec rankers-app python manage.py migrate
+
+         echo "Collecting static files..."
+         docker exec rankers-app python manage.py collectstatic --noinput
+
          docker image prune -f
          '''
       }
@@ -30,7 +40,7 @@ pipeline {
    stage('Verify Container') {
       steps {
          sh '''
-         sleep 20
+         sleep 10
          docker ps | grep rankers-app
          '''
       }
@@ -41,11 +51,11 @@ pipeline {
  post {
 
    success {
-      echo 'SUCCESS Deployment Completed'
+      echo 'Deployment + Migration Successful'
    }
 
    failure {
-      echo 'FAILED Deployment Failed'
+      echo 'Deployment Failed'
    }
 
    always {
