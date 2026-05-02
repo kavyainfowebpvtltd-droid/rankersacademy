@@ -69,6 +69,11 @@
             </div>
           </div>
           <div class="question-body">
+            <div
+              id="syncStatusBanner"
+              class="alert alert-warning py-2 px-3 mb-3"
+              style="display: none"
+            ></div>
             <div class="question-context" id="questionContext" hidden>
               <div class="question-section" id="questionSection"></div>
               <div class="question-type-chip" id="questionType"></div>
@@ -231,21 +236,36 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
     {{ questions|json_script:"scholarship-questions-data" }}
+    {{ saved_progress|json_script:"scholarship-progress-data" }}
     <script>
       const questions = JSON.parse(document.getElementById('scholarship-questions-data').textContent);
-      const totalQuestions = {{ total_questions }};
+      const savedProgress = JSON.parse(document.getElementById('scholarship-progress-data').textContent);
+      const totalQuestions = questions.length || {{ total_questions }};
       let timeRemaining = {{ time_remaining_seconds }};
       const attemptId = {{ attempt.id }};
+      const submitUrl = '/scholarship/test/' + attemptId + '/submit/';
+      const progressUrl = '/scholarship/test/' + attemptId + '/progress/';
+      const successUrl = '/scholarship/success/' + attemptId + '/';
+      const localProgressKey = 'scholarship-test-progress:' + attemptId;
 
       let currentQuestionIndex = 0;
       let answers = {};
-      let timerInterval;
+      let timerInterval = null;
+      let syncTimer = null;
+      let syncInFlight = false;
       let isSubmitted = false;
+      let pendingAutoSubmit = false;
       let tabSwitchCount = 0;
-      let tabSwitchWarningShown = false;
 
       function getQuestionByIndex(index) {
         return questions[index] || null;
+      }
+
+      function clampQuestionIndex(index) {
+        if (!questions.length) {
+          return 0;
+        }
+        return Math.min(Math.max(Number(index) || 0, 0), questions.length - 1);
       }
 
       function isQuestionAnswered(question) {
@@ -263,55 +283,175 @@
         return questions.filter(isQuestionAnswered).length;
       }
 
-      function initializeTest() {
-        if (questions && questions.length > 0) {
-          loadQuestion(0);
-          buildQuestionNavigator();
-          startTimer();
-
-          const prevBtn = document.querySelector('.btn-prev');
-          const nextBtn = document.querySelector('.btn-next');
-
-          if (prevBtn) {
-            prevBtn.addEventListener('click', function() {
-              if (currentQuestionIndex > 0) {
-                loadQuestion(currentQuestionIndex - 1);
-              }
-            });
-          }
-
-          if (nextBtn) {
-            nextBtn.addEventListener('click', function() {
-              if (currentQuestionIndex < questions.length - 1) {
-                loadQuestion(currentQuestionIndex + 1);
-              }
-            });
-          }
-
-          const submitBtn = document.querySelector('.submit-btn');
-          if (submitBtn) {
-            submitBtn.onclick = function() {
-              if (timeRemaining > 0 || getAnsweredCount() === 0) {
-                showWarningModal();
-              } else {
-                submitTest();
-              }
-            };
-          }
-
-          updateNavigator();
-          updateTimerDisplay();
-          updateNavButtons();
-        } else {
-          document.querySelector('.question-body').innerHTML = '<div class="alert alert-warning">No questions available. Please contact admin.</div>';
+      function readLocalProgress() {
+        try {
+          const raw = localStorage.getItem(localProgressKey);
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          console.error('Unable to read local progress', error);
+          return null;
         }
       }
 
-      function loadQuestion(index) {
+      function getProgressTimestamp(progress) {
+        if (!progress || !progress.saved_at) {
+          return 0;
+        }
+        const parsed = Date.parse(progress.saved_at);
+        return Number.isNaN(parsed) ? 0 : parsed;
+      }
+
+      function getProgressPayload() {
+        return {
+          answers: answers,
+          current_question_index: currentQuestionIndex,
+          tab_switch_count: tabSwitchCount
+        };
+      }
+
+      function persistDraftLocally() {
+        try {
+          const payload = Object.assign({}, getProgressPayload(), {
+            saved_at: new Date().toISOString()
+          });
+          localStorage.setItem(localProgressKey, JSON.stringify(payload));
+        } catch (error) {
+          console.error('Unable to persist local progress', error);
+        }
+      }
+
+      function clearPersistedDraft() {
+        try {
+          localStorage.removeItem(localProgressKey);
+        } catch (error) {
+          console.error('Unable to clear local progress', error);
+        }
+      }
+
+      function mergeInitialProgress() {
+        const localProgress = readLocalProgress();
+        const preferredProgress =
+          getProgressTimestamp(localProgress) > getProgressTimestamp(savedProgress)
+            ? localProgress
+            : savedProgress;
+
+        answers = preferredProgress && typeof preferredProgress.answers === 'object'
+          ? preferredProgress.answers
+          : {};
+        currentQuestionIndex = clampQuestionIndex(
+          preferredProgress ? preferredProgress.current_question_index : 0
+        );
+        tabSwitchCount = Number(preferredProgress && preferredProgress.tab_switch_count) || 0;
+      }
+
+      function setSyncBanner(message, type) {
+        const banner = document.getElementById('syncStatusBanner');
+        if (!banner) return;
+
+        if (!message) {
+          banner.style.display = 'none';
+          banner.textContent = '';
+          banner.className = 'alert py-2 px-3 mb-3';
+          return;
+        }
+
+        banner.style.display = 'block';
+        banner.textContent = message;
+        banner.className = 'alert py-2 px-3 mb-3 alert-' + (type || 'warning');
+      }
+
+      function updateConnectionBanner() {
+        if (!navigator.onLine) {
+          setSyncBanner('Internet connection lost. Your test is saved in this browser and will sync automatically when the network returns.', 'warning');
+        } else if (pendingAutoSubmit) {
+          setSyncBanner('Time is up. Waiting to reconnect so the test can be submitted automatically.', 'danger');
+        } else {
+          setSyncBanner('', '');
+        }
+      }
+
+      function normalizeStoredAnswer(question, value) {
+        if (!question) return value;
+        if (question.multi_select) {
+          return Array.isArray(value)
+            ? value.filter(function(item) { return item != null && String(item).trim() !== ''; })
+            : [];
+        }
+        return value == null ? '' : value;
+      }
+
+      function setAnswerValue(question, value) {
+        const normalizedValue = normalizeStoredAnswer(question, value);
+        const shouldDelete = Array.isArray(normalizedValue)
+          ? normalizedValue.length === 0
+          : String(normalizedValue).trim() === '';
+
+        if (shouldDelete) {
+          delete answers[question.id];
+        } else {
+          answers[question.id] = normalizedValue;
+        }
+      }
+
+      function initializeTest() {
+        if (!questions || questions.length === 0) {
+          document.querySelector('.question-body').innerHTML = '<div class="alert alert-warning">No questions available. Please contact admin.</div>';
+          return;
+        }
+
+        mergeInitialProgress();
+        buildQuestionNavigator();
+        loadQuestion(currentQuestionIndex, false);
+        startTimer();
+        bindStaticActions();
+        updateNavigator();
+        updateTimerDisplay();
+        updateNavButtons();
+        persistDraftLocally();
+        updateConnectionBanner();
+
+        if (navigator.onLine) {
+          scheduleProgressSync(300);
+        }
+      }
+
+      function bindStaticActions() {
+        const prevBtn = document.querySelector('.btn-prev');
+        const nextBtn = document.querySelector('.btn-next');
+        const submitBtn = document.querySelector('.submit-btn');
+
+        if (prevBtn) {
+          prevBtn.addEventListener('click', function() {
+            if (currentQuestionIndex > 0) {
+              loadQuestion(currentQuestionIndex - 1);
+            }
+          });
+        }
+
+        if (nextBtn) {
+          nextBtn.addEventListener('click', function() {
+            if (currentQuestionIndex < questions.length - 1) {
+              loadQuestion(currentQuestionIndex + 1);
+            }
+          });
+        }
+
+        if (submitBtn) {
+          submitBtn.onclick = function() {
+            if (timeRemaining > 0 || getAnsweredCount() === 0) {
+              showWarningModal();
+            } else {
+              submitTest();
+            }
+          };
+        }
+      }
+
+      function loadQuestion(index, shouldSync) {
         const question = getQuestionByIndex(index);
         if (!question) return;
 
-        currentQuestionIndex = index;
+        currentQuestionIndex = clampQuestionIndex(index);
 
         const questionText = document.getElementById('questionText');
         const questionContext = document.getElementById('questionContext');
@@ -340,10 +480,14 @@
 
         const questionLabel = document.getElementById('currentQuestionNum');
         if (questionLabel) {
-          questionLabel.textContent = `Question ${String(index + 1).padStart(2, '0')} of ${totalQuestions}`;
+          questionLabel.textContent = `Question ${String(currentQuestionIndex + 1).padStart(2, '0')} of ${totalQuestions}`;
         }
 
         updateNavigator();
+        persistDraftLocally();
+        if (shouldSync !== false) {
+          scheduleProgressSync(400);
+        }
       }
 
       function getTypeLabel(question) {
@@ -372,8 +516,10 @@
           const input = document.getElementById('questionAnswerInput');
           if (input) {
             input.addEventListener('input', function(event) {
-              answers[question.id] = event.target.value;
+              setAnswerValue(question, event.target.value);
               updateNavigator();
+              persistDraftLocally();
+              scheduleProgressSync(500);
             });
           }
           return;
@@ -383,7 +529,7 @@
         const selectedValues = Array.isArray(selectedValue) ? selectedValue : [];
         const inputType = question.multi_select ? 'checkbox' : 'radio';
 
-        (question.options || []).forEach(option => {
+        (question.options || []).forEach(function(option) {
           const checked = question.multi_select
             ? selectedValues.includes(option.value)
             : selectedValue === option.value;
@@ -405,6 +551,13 @@
           `;
 
           const input = wrapper.querySelector('input');
+          input.addEventListener('click', function(event) {
+            if (!question.multi_select && answers[question.id] === option.value) {
+              event.preventDefault();
+              setAnswerValue(question, '');
+              loadQuestion(currentQuestionIndex);
+            }
+          });
           input.addEventListener('change', function(event) {
             updateAnswer(question, option.value, event.target.checked);
           });
@@ -420,13 +573,13 @@
 
       function updateAnswer(question, value, checked) {
         if (question.multi_select) {
-          const currentValues = Array.isArray(answers[question.id]) ? [...answers[question.id]] : [];
+          const currentValues = Array.isArray(answers[question.id]) ? answers[question.id].slice() : [];
           const nextValues = checked
             ? Array.from(new Set(currentValues.concat(value)))
             : currentValues.filter(function(item) { return item !== value; });
-          answers[question.id] = nextValues;
+          setAnswerValue(question, nextValues);
         } else {
-          answers[question.id] = value;
+          setAnswerValue(question, value);
         }
 
         loadQuestion(currentQuestionIndex);
@@ -437,7 +590,6 @@
         if (!grid) return;
 
         grid.innerHTML = '';
-
         for (let i = 0; i < totalQuestions; i++) {
           const btn = document.createElement('div');
           btn.className = 'q-btn';
@@ -506,20 +658,108 @@
       function startTimer() {
         updateTimerDisplay();
 
-        timerInterval = setInterval(() => {
-          timeRemaining--;
+        timerInterval = setInterval(function() {
+          timeRemaining = Math.max(0, timeRemaining - 1);
           updateTimerDisplay();
+
+          if (timeRemaining > 0 && timeRemaining % 15 === 0) {
+            persistDraftLocally();
+            scheduleProgressSync(0);
+          }
 
           if (timeRemaining <= 0) {
             clearInterval(timerInterval);
+            timerInterval = null;
             autoSubmit();
           }
         }, 1000);
       }
 
+      function scheduleProgressSync(delay) {
+        if (isSubmitted && !pendingAutoSubmit) {
+          return;
+        }
+
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(function() {
+          flushProgress({ silent: true });
+        }, delay == null ? 600 : delay);
+      }
+
+      async function flushProgress(options) {
+        const opts = options || {};
+        if (syncInFlight || !navigator.onLine || (isSubmitted && !pendingAutoSubmit)) {
+          return false;
+        }
+
+        syncInFlight = true;
+        persistDraftLocally();
+
+        try {
+          const response = await fetch(progressUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(getProgressPayload()),
+            keepalive: !!opts.keepalive
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            if (!pendingAutoSubmit) {
+              setSyncBanner('', '');
+            }
+            if (typeof data.time_remaining_seconds === 'number') {
+              timeRemaining = Math.min(timeRemaining, data.time_remaining_seconds);
+              updateTimerDisplay();
+            }
+            if (data.saved_at) {
+              persistDraftLocally();
+            }
+            return true;
+          }
+
+          if (response.status === 409 && data.redirect) {
+            clearPersistedDraft();
+            window.location.href = data.redirect;
+            return false;
+          }
+
+          if (data.error === 'Test time has expired') {
+            pendingAutoSubmit = true;
+            updateConnectionBanner();
+            autoSubmit();
+            return false;
+          }
+
+          if (!opts.silent) {
+            setSyncBanner(data.error || 'Unable to save progress right now. Your latest answers remain stored in this browser.', 'warning');
+          }
+          return false;
+        } catch (error) {
+          console.error('Progress sync failed', error);
+          if (!opts.silent) {
+            setSyncBanner('Unable to reach the server. Your latest answers remain stored in this browser and will sync automatically.', 'warning');
+          }
+          return false;
+        } finally {
+          syncInFlight = false;
+        }
+      }
+
       function autoSubmit() {
+        if (pendingAutoSubmit && !navigator.onLine) {
+          persistDraftLocally();
+          updateConnectionBanner();
+          return;
+        }
+
         if (isSubmitted) return;
 
+        pendingAutoSubmit = true;
         const finalCountEl = document.getElementById('finalCount');
         if (finalCountEl) {
           finalCountEl.textContent = getAnsweredCount();
@@ -578,12 +818,16 @@
         if (isSubmitted) return;
         isSubmitted = true;
 
+        clearTimeout(syncTimer);
+        persistDraftLocally();
+
         if (timerInterval) {
           clearInterval(timerInterval);
+          timerInterval = null;
         }
 
         try {
-          const response = await fetch('/scholarship/test/' + attemptId + '/submit/', {
+          const response = await fetch(submitUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -595,31 +839,48 @@
           const data = await response.json();
 
           if (data.success) {
+            clearPersistedDraft();
+            pendingAutoSubmit = false;
             window.location.href = data.redirect;
-          } else {
-            alert('Error: ' + data.error);
-            isSubmitted = false;
-            if (!timerInterval && timeRemaining > 0) {
-              startTimer();
-            }
+            return;
           }
-        } catch (err) {
-          console.error(err);
-          alert(isAutoSubmit ? 'Auto-submit failed. Please submit again.' : 'Error submitting test');
+
+          if (data.redirect) {
+            clearPersistedDraft();
+            window.location.href = data.redirect;
+            return;
+          }
+
+          throw new Error(data.error || 'Unable to submit the test');
+        } catch (error) {
+          console.error(error);
           isSubmitted = false;
+
           if (isAutoSubmit) {
-            const timeUpModal = document.getElementById('timeUpModal');
-            if (timeUpModal) {
-              timeUpModal.classList.add('active');
-            }
-          } else if (!timerInterval && timeRemaining > 0) {
+            pendingAutoSubmit = true;
+            setSyncBanner(
+              navigator.onLine
+                ? 'Time is up, but the submission could not be completed yet. We will keep trying automatically.'
+                : 'Time is up and the internet connection is unavailable. Submission will happen automatically when the connection returns.',
+              'danger'
+            );
+          } else {
+            setSyncBanner(
+              navigator.onLine
+                ? 'Unable to submit right now. Your latest answers are still saved.'
+                : 'You are offline. Your latest answers are still saved in this browser.',
+              'warning'
+            );
+          }
+
+          if (!timerInterval && timeRemaining > 0 && !pendingAutoSubmit) {
             startTimer();
           }
         }
       }
 
       function goToSuccess() {
-        window.location.href = '/scholarship/success/' + attemptId + '/';
+        window.location.href = successUrl;
       }
 
       function getCSRFToken() {
@@ -641,23 +902,50 @@
       document.addEventListener('visibilitychange', function() {
         if (document.hidden && !isSubmitted) {
           tabSwitchCount++;
-          
+          persistDraftLocally();
+          scheduleProgressSync(0);
+
           if (tabSwitchCount >= 3) {
             showTabSwitchFinalModal();
           } else {
             showTabSwitchWarning();
           }
+        } else if (!document.hidden && navigator.onLine) {
+          if (pendingAutoSubmit && timeRemaining <= 0) {
+            submitTest(true);
+          } else {
+            scheduleProgressSync(0);
+          }
         }
+      });
+
+      window.addEventListener('offline', function() {
+        persistDraftLocally();
+        updateConnectionBanner();
+      });
+
+      window.addEventListener('online', function() {
+        updateConnectionBanner();
+        if (pendingAutoSubmit && timeRemaining <= 0) {
+          submitTest(true);
+        } else {
+          scheduleProgressSync(0);
+        }
+      });
+
+      window.addEventListener('beforeunload', function() {
+        persistDraftLocally();
+        flushProgress({ keepalive: true, silent: true });
       });
 
       function showTabSwitchWarning() {
         const tabSwitchModal = document.getElementById('tabSwitchModal');
         const tabSwitchCountEl = document.getElementById('tabSwitchCount');
-        
+
         if (tabSwitchCountEl) {
           tabSwitchCountEl.textContent = tabSwitchCount;
         }
-        
+
         if (tabSwitchModal) {
           tabSwitchModal.classList.add('active');
         }
@@ -672,41 +960,14 @@
 
       function showTabSwitchFinalModal() {
         if (isSubmitted) return;
-        isSubmitted = true;
-
-        if (timerInterval) {
-          clearInterval(timerInterval);
-        }
+        closeTabSwitchModal();
 
         const finalCountEl = document.getElementById('finalCount');
         if (finalCountEl) {
           finalCountEl.textContent = getAnsweredCount();
         }
 
-        fetch('/scholarship/test/' + attemptId + '/submit/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
-          },
-          body: JSON.stringify({ answers: answers })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            window.location.href = data.redirect;
-          } else {
-            alert('Auto-submit failed due to tab switching. Please submit again.');
-            isSubmitted = false;
-            if (timerInterval) startTimer();
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Auto-submit failed due to tab switching. Please submit again.');
-          isSubmitted = false;
-          if (timerInterval) startTimer();
-        });
+        autoSubmit();
       }
 
       function escapeHtml(value) {

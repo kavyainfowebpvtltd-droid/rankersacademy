@@ -6,6 +6,9 @@ from unittest.mock import patch
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
+
+from datetime import timedelta
 
 from scholarship_test.models import (
     RankPredictorLead,
@@ -48,12 +51,24 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         )
         return test, section
 
-    def add_mcq_question(self, section, *, text='2 + 2 = ?', correct_index=1):
+    def add_mcq_question(
+        self,
+        section,
+        *,
+        text='2 + 2 = ?',
+        correct_index=1,
+        pos_marks=2,
+        neg_marks=1,
+        neg_unattempted=0,
+    ):
         question = ScholarshipTestQuestion.objects.create(
             section=section,
             question_type='mcq',
             question_text=text,
             order=0,
+            pos_marks=pos_marks,
+            neg_marks=neg_marks,
+            neg_unattempted=neg_unattempted,
         )
         for index, option_text in enumerate(['3', '4', '5', '6']):
             ScholarshipTestOption.objects.create(
@@ -87,6 +102,8 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
             question_type='fitb',
             question_text='Capital of France is ______.',
             order=1,
+            pos_marks=2,
+            neg_marks=1,
         )
         ScholarshipTestAnswer.objects.create(question=fitb, correct_answer='Paris')
 
@@ -106,9 +123,60 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
 
         self.assertTrue(success)
         self.assertEqual(updated_attempt.status, 'completed')
-        self.assertEqual(updated_attempt.score, 2)
+        self.assertEqual(updated_attempt.score, 4)
         self.assertEqual(updated_attempt.total_questions, 2)
+        self.assertEqual(updated_attempt.total_marks, 4)
         self.assertEqual(updated_attempt.test_id, runtime_test.id)
+
+    def test_submit_runtime_test_applies_negative_and_unattempted_marks(self):
+        runtime_test, section = self.create_runtime_test()
+        correct_question = self.add_mcq_question(
+            section,
+            text='Correct question',
+            correct_index=1,
+            pos_marks=4,
+            neg_marks=1,
+            neg_unattempted=0,
+        )
+        wrong_question = self.add_mcq_question(
+            section,
+            text='Wrong question',
+            correct_index=2,
+            pos_marks=3,
+            neg_marks=2,
+            neg_unattempted=0,
+        )
+        unattempted_question = self.add_mcq_question(
+            section,
+            text='Unattempted question',
+            correct_index=0,
+            pos_marks=2,
+            neg_marks=1,
+            neg_unattempted=1,
+        )
+
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='started',
+        )
+
+        success, _, updated_attempt = test_service.submit_runtime_test(
+            attempt.id,
+            {
+                str(correct_question.id): '1',
+                str(wrong_question.id): '1',
+            },
+        )
+
+        self.assertTrue(success)
+        self.assertEqual(updated_attempt.score, 1)
+        self.assertEqual(updated_attempt.total_marks, 9)
+        self.assertEqual(updated_attempt.scholarship_percentage, 20)
+        self.assertEqual(
+            updated_attempt.progress_state['answers'][str(unattempted_question.id)],
+            '',
+        )
 
     def test_scholarship_test_view_renders_builder_questions(self):
         runtime_test, section = self.create_runtime_test()
@@ -200,6 +268,146 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         )
         self.assertEqual(latest_attempt.test_id, selected_test.id)
         self.assertEqual(latest_attempt.student_id, self.student.id)
+
+    def test_start_test_reuses_existing_in_progress_attempt(self):
+        runtime_test, section = self.create_runtime_test(name='Resume Test')
+        self.add_mcq_question(section)
+
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='in_progress',
+            progress_state={
+                'answers': {},
+                'current_question_index': 0,
+                'tab_switch_count': 0,
+                'saved_at': '2026-05-02T00:00:00Z',
+            },
+        )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session['scholarship_selected_test_id'] = runtime_test.id
+        session.save()
+
+        response = client.get(reverse('scholarship_test:scholarship_start_test'))
+
+        self.assertRedirects(
+            response,
+            reverse('scholarship_test:scholarship_test', args=[attempt.id]),
+        )
+        self.assertEqual(
+            ScholarshipTestAttempt.objects.filter(student=self.student, test=runtime_test).count(),
+            1,
+        )
+
+    def test_save_progress_persists_answers_and_current_question(self):
+        runtime_test, section = self.create_runtime_test()
+        question = self.add_mcq_question(section)
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='started',
+        )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.post(
+            reverse('scholarship_test:scholarship_save_test_progress', args=[attempt.id]),
+            data=json.dumps({
+                'answers': {str(question.id): '1'},
+                'current_question_index': 0,
+                'tab_switch_count': 2,
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.status, 'in_progress')
+        self.assertEqual(attempt.progress_state['answers'][str(question.id)], '1')
+        self.assertEqual(attempt.progress_state['current_question_index'], 0)
+        self.assertEqual(attempt.progress_state['tab_switch_count'], 2)
+
+    def test_scholarship_test_view_restores_saved_progress(self):
+        runtime_test, section = self.create_runtime_test()
+        question = self.add_mcq_question(section)
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='in_progress',
+            progress_state={
+                'answers': {str(question.id): '1'},
+                'current_question_index': 0,
+                'tab_switch_count': 1,
+                'saved_at': '2026-05-02T00:00:00Z',
+            },
+        )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.get(
+            reverse('scholarship_test:scholarship_test', args=[attempt.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['saved_progress']['answers'][str(question.id)], '1')
+        self.assertEqual(response.context['saved_progress']['current_question_index'], 0)
+
+    def test_finalize_expired_attempts_stores_results_for_selected_test(self):
+        target_test, target_section = self.create_runtime_test(name='Target Test')
+        target_question = self.add_mcq_question(
+            target_section,
+            correct_index=1,
+            pos_marks=4,
+            neg_marks=1,
+        )
+        other_test, other_section = self.create_runtime_test(name='Other Test')
+        self.add_mcq_question(other_section)
+
+        expired_attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=target_test,
+            status='in_progress',
+            progress_state={
+                'answers': {str(target_question.id): '1'},
+                'current_question_index': 0,
+                'tab_switch_count': 0,
+                'saved_at': timezone.now().isoformat(),
+            },
+        )
+        ScholarshipTestAttempt.objects.filter(id=expired_attempt.id).update(
+            test_started_at=timezone.now() - timedelta(minutes=31)
+        )
+        expired_attempt.refresh_from_db()
+
+        other_attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=other_test,
+            status='in_progress',
+        )
+        ScholarshipTestAttempt.objects.filter(id=other_attempt.id).update(
+            test_started_at=timezone.now() - timedelta(minutes=31)
+        )
+
+        finalized = test_service.finalize_expired_attempts(target_test)
+
+        expired_attempt.refresh_from_db()
+        other_attempt.refresh_from_db()
+
+        self.assertEqual(len(finalized), 1)
+        self.assertEqual(finalized[0].id, expired_attempt.id)
+        self.assertEqual(expired_attempt.status, 'expired')
+        self.assertEqual(expired_attempt.score, 4)
+        self.assertEqual(expired_attempt.total_marks, 4)
+        self.assertEqual(other_attempt.status, 'in_progress')
 
     def test_dashboard_renders_guest_view_for_non_rtse_selected_test(self):
         runtime_test, section = self.create_runtime_test(name='Scholarship Mock 2')

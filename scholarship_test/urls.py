@@ -59,6 +59,7 @@ urlpatterns = [
     path('dashboard/', views.scholarship_dashboard, name='scholarship_dashboard'),
     path('test/start/', views.scholarship_start_test, name='scholarship_start_test'),
     path('test/<int:attempt_id>/', views.scholarship_test, name='scholarship_test'),
+    path('test/<int:attempt_id>/progress/', views.scholarship_save_test_progress, name='scholarship_save_test_progress'),
     path('test/<int:attempt_id>/submit/', views.scholarship_submit_test, name='scholarship_submit_test'),
     
     # Result

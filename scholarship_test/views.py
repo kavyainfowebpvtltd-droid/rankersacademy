@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-from datetime import timedelta
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -140,6 +139,42 @@ def _get_completed_attempt_for_test(student, selected_test):
         attempts = attempts.filter(test=selected_test)
 
     return attempts.order_by('-test_started_at').first()
+
+
+def _get_active_attempt_for_test(student, selected_test):
+    attempts = ScholarshipTestAttempt.objects.filter(
+        student=student,
+        status__in=['started', 'in_progress']
+    )
+
+    if selected_test:
+        attempts = attempts.filter(test=selected_test)
+
+    return attempts.order_by('-test_started_at').first()
+
+
+def _expire_attempt_if_needed(attempt):
+    if not attempt or attempt.status in ['completed', 'expired']:
+        return attempt
+
+    if not test_service.is_attempt_expired(attempt):
+        return attempt
+
+    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+    if runtime_test and runtime_questions:
+        _success, _message, attempt = test_service.auto_submit_runtime_test(attempt.id)
+    else:
+        _success, _message, attempt = test_service.auto_submit_expired_test(attempt.id)
+
+    return attempt
+
+
+def _finalize_expired_attempts_for_test(selected_test):
+    try:
+        test_service.finalize_expired_attempts(selected_test)
+    except Exception:
+        logger.exception("Failed to finalize expired scholarship attempts")
 
 
 def _build_test_display_context(selected_test):
@@ -281,6 +316,7 @@ def scholarship_landing(request):
     selected_test = _get_effective_selected_test(request)
     if selected_test:
         _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
     context = _build_test_display_context(selected_test)
     return render(request, "scholarship-landing.html", context)
 
@@ -311,6 +347,7 @@ def scholarship_launch_test(request, test_id):
         return redirect('login')
 
     _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
     if _requires_otp_login(selected_test):
         return redirect('scholarship_test:scholarship_landing')
 
@@ -554,6 +591,7 @@ def scholarship_dashboard(request):
     selected_test = _get_effective_selected_test(request)
     if selected_test:
         _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
 
     scholarship_student, _ = _sync_portal_student_session(request, selected_test)
 
@@ -575,6 +613,12 @@ def scholarship_dashboard(request):
     request.session['scholarship_grade'] = student.grade
     request.session['scholarship_board'] = student.board
 
+    active_attempt = _expire_attempt_if_needed(
+        _get_active_attempt_for_test(student, selected_test)
+    )
+    if active_attempt and active_attempt.status in ['completed', 'expired']:
+        return redirect('scholarship_test:scholarship_success', attempt_id=active_attempt.id)
+
     completed_attempt = _get_completed_attempt_for_test(student, selected_test)
     if completed_attempt:
         return redirect('scholarship_test:scholarship_success', attempt_id=completed_attempt.id)
@@ -587,6 +631,7 @@ def scholarship_dashboard(request):
         'message': message,
         'completed': completed_attempt is not None,
         'attempt': completed_attempt,
+        'active_attempt': active_attempt,
         'is_guest': False,
     }
     context.update(_build_test_display_context(selected_test))
@@ -597,6 +642,7 @@ def scholarship_start_test(request):
     selected_test = _get_effective_selected_test(request)
     if selected_test:
         _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
 
     scholarship_student, portal_student = _sync_portal_student_session(request, selected_test)
 
@@ -618,6 +664,12 @@ def scholarship_start_test(request):
     request.session['scholarship_grade'] = student.grade
     request.session['scholarship_board'] = student.board
 
+    active_attempt = _expire_attempt_if_needed(
+        _get_active_attempt_for_test(student, selected_test)
+    )
+    if active_attempt and active_attempt.status in ['started', 'in_progress']:
+        return redirect('scholarship_test:scholarship_test', attempt_id=active_attempt.id)
+
     completed_attempt = _get_completed_attempt_for_test(student, selected_test)
     if completed_attempt:
         return redirect('scholarship_test:scholarship_success', attempt_id=completed_attempt.id)
@@ -638,7 +690,14 @@ def scholarship_start_test(request):
             student_batch=(portal_student.batch if portal_student else ''),
             status='started',
             total_questions=total_questions,
-            total_marks=total_questions
+            total_marks=sum(int(question.pos_marks or 0) for question in active_runtime_questions)
+            if active_runtime_questions else total_questions,
+            progress_state={
+                'answers': {},
+                'current_question_index': 0,
+                'tab_switch_count': 0,
+                'saved_at': timezone.now().isoformat(),
+            },
         )
 
     return redirect('scholarship_test:scholarship_test', attempt_id=attempt.id)
@@ -646,6 +705,7 @@ def scholarship_start_test(request):
 
 def scholarship_test(request, attempt_id):
     selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
     scholarship_student, _ = _sync_portal_student_session(request, selected_test)
 
     student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
@@ -675,18 +735,18 @@ def scholarship_test(request, attempt_id):
     if attempt.status in ['completed', 'expired']:
         return redirect('scholarship_test:scholarship_success', attempt_id=attempt.id)
     
+    attempt = _expire_attempt_if_needed(attempt)
+    if attempt.status in ['completed', 'expired']:
+        return redirect('scholarship_test:scholarship_success', attempt_id=attempt.id)
+
     runtime_test = test_service.get_runtime_test_for_attempt(attempt)
     runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
     time_limit_minutes = test_service.get_test_duration_minutes(runtime_test) if runtime_test else TEST_DURATION_MINUTES
-    time_limit = timedelta(minutes=time_limit_minutes)
-    time_remaining = (attempt.test_started_at + time_limit) - timezone.now()
-    
-    if time_remaining.total_seconds() <= 0:
-        if runtime_test and runtime_questions:
-            test_service.auto_submit_runtime_test(attempt.id)
-        else:
-            test_service.auto_submit_expired_test(attempt.id)
-        return redirect('scholarship_test:scholarship_success', attempt_id=attempt.id)
+    time_remaining_seconds = test_service.get_attempt_time_remaining_seconds(attempt)
+
+    if attempt.status == 'started':
+        attempt.status = 'in_progress'
+        attempt.save(update_fields=['status'])
 
     if runtime_test and runtime_questions:
         questions_data = [
@@ -729,7 +789,8 @@ def scholarship_test(request, attempt_id):
         'questions': questions_data,
         'total_questions': len(questions_data),
         'time_limit': time_limit_minutes,
-        'time_remaining_seconds': int(time_remaining.total_seconds())
+        'time_remaining_seconds': time_remaining_seconds,
+        'saved_progress': test_service.get_saved_progress(attempt),
     }
     context.update(_build_test_display_context(runtime_test))
     
@@ -740,6 +801,7 @@ def scholarship_test(request, attempt_id):
 @csrf_exempt
 def scholarship_submit_test(request, attempt_id):
     selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
     scholarship_student, _ = _sync_portal_student_session(request, selected_test)
 
     student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
@@ -786,6 +848,74 @@ def scholarship_submit_test(request, attempt_id):
         return JsonResponse({'success': False, 'error': message}, status=400)
 
 
+@require_POST
+@csrf_exempt
+def scholarship_save_test_progress(request, attempt_id):
+    selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
+
+    try:
+        attempt = ScholarshipTestAttempt.objects.get(id=attempt_id, student=student)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
+
+    if attempt.status in ['completed', 'expired']:
+        return JsonResponse({
+            'success': False,
+            'error': 'Test already submitted',
+            'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id]),
+        }, status=409)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        data = {}
+
+    answers = data.get('answers', {})
+    current_question_index = data.get('current_question_index', 0)
+    tab_switch_count = data.get('tab_switch_count', 0)
+
+    success, message, updated_attempt = test_service.save_runtime_test_progress(
+        attempt.id,
+        answers=answers,
+        current_question_index=current_question_index,
+        tab_switch_count=tab_switch_count,
+    )
+
+    if not success:
+        if message == 'Test time has expired':
+            runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+            runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+            if runtime_test and runtime_questions:
+                _submit_success, _submit_message, updated_attempt = test_service.auto_submit_runtime_test(attempt.id)
+            else:
+                _submit_success, _submit_message, updated_attempt = test_service.auto_submit_expired_test(attempt.id)
+
+            return JsonResponse({
+                'success': False,
+                'error': message,
+                'redirect': reverse('scholarship_test:scholarship_success', args=[updated_attempt.id]),
+            }, status=409)
+
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'saved_at': test_service.get_saved_progress(updated_attempt).get('saved_at'),
+        'time_remaining_seconds': test_service.get_attempt_time_remaining_seconds(updated_attempt),
+    })
+
+
 def scholarship_success(request, attempt_id):
     
     student_id = request.session.get('scholarship_student_id')
@@ -822,7 +952,7 @@ def scholarship_success(request, attempt_id):
     is_scholarship_result = _requires_otp_login(attempt.test)
     score_percentage = test_service.calculate_score_percentage(
         attempt.score,
-        attempt.total_questions,
+        attempt.total_marks,
     )
     completed_at_display = (
         timezone.localtime(attempt.test_completed_at).strftime('%d %b %Y, %I:%M %p')
@@ -841,7 +971,7 @@ def scholarship_success(request, attempt_id):
                 sms_result, sms_message = test_service._send_attempt_result_sms(
                     attempt=attempt,
                     score=attempt.score,
-                    total_questions=attempt.total_questions,
+                    total_questions=attempt.total_marks,
                     scholarship_percentage=attempt.scholarship_percentage,
                 )
                 attempt.sms_sent = sms_result

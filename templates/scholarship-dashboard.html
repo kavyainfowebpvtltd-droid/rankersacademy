@@ -148,6 +148,14 @@
                   Already Registered? Login
                 </a>
               </div>
+              {% elif active_attempt %}
+              <p>Your previous attempt is still in progress. Resume it from where you left off.</p>
+              <a
+                href="{% url 'scholarship_test:scholarship_test' active_attempt.id %}"
+                class="cta-button-sch"
+              >
+                Resume {{ selected_test_name }}
+              </a>
               {% elif can_attempt %}
               <p>Please ensure you have a stable internet connection.</p>
               <a

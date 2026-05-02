@@ -14,7 +14,7 @@ SUPPORTED_RUNTIME_QUESTION_TYPES = {"mcq", "tf", "fitb", "int"}
 def calculate_score_percentage(score: int, total: int) -> int:
     if total <= 0:
         return 0
-    return round((score * 100) / total)
+    return max(0, round((score * 100) / total))
 
 
 def _send_attempt_result_sms(attempt, score: int, total_questions: int, scholarship_percentage: int):
@@ -195,6 +195,47 @@ def serialize_runtime_question(question, sequence):
     return payload
 
 
+def get_attempt_end_time(attempt):
+    runtime_test = get_runtime_test_for_attempt(attempt)
+    time_limit = timedelta(minutes=get_test_duration_minutes(runtime_test))
+    return attempt.test_started_at + time_limit
+
+
+def get_attempt_time_remaining_seconds(attempt) -> int:
+    remaining = get_attempt_end_time(attempt) - timezone.now()
+    return max(0, int(remaining.total_seconds()))
+
+
+def is_attempt_expired(attempt) -> bool:
+    return get_attempt_time_remaining_seconds(attempt) <= 0
+
+
+def get_saved_progress(attempt):
+    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    answers = state.get('answers', {})
+    if not isinstance(answers, dict):
+        answers = {}
+
+    current_question_index = state.get('current_question_index', 0)
+    try:
+        current_question_index = int(current_question_index)
+    except (TypeError, ValueError):
+        current_question_index = 0
+
+    tab_switch_count = state.get('tab_switch_count', 0)
+    try:
+        tab_switch_count = int(tab_switch_count)
+    except (TypeError, ValueError):
+        tab_switch_count = 0
+
+    return {
+        'answers': answers,
+        'current_question_index': max(0, current_question_index),
+        'tab_switch_count': max(0, tab_switch_count),
+        'saved_at': state.get('saved_at'),
+    }
+
+
 def _normalize_text_answer(value):
     if value is None:
         return ''
@@ -210,7 +251,135 @@ def _normalize_integer_answer(value):
         return None
 
 
+def _allowed_runtime_option_values(question):
+    return {
+        str(index)
+        for index, _option in enumerate(question.options.all())
+    }
+
+
+def normalize_runtime_answer(question, submitted_answer):
+    if question.question_type == 'mcq':
+        allowed_values = _allowed_runtime_option_values(question)
+
+        if question.is_multi_select:
+            if submitted_answer in (None, ''):
+                return []
+            if not isinstance(submitted_answer, list):
+                submitted_answer = [submitted_answer]
+
+            cleaned_values = []
+            seen_values = set()
+            for value in submitted_answer:
+                normalized_value = str(value).strip()
+                if normalized_value in allowed_values and normalized_value not in seen_values:
+                    cleaned_values.append(normalized_value)
+                    seen_values.add(normalized_value)
+            return cleaned_values
+
+        if isinstance(submitted_answer, list):
+            submitted_answer = submitted_answer[0] if submitted_answer else ''
+        normalized_value = str(submitted_answer).strip() if submitted_answer is not None else ''
+        return normalized_value if normalized_value in allowed_values else ''
+
+    if question.question_type == 'tf':
+        normalized_value = _normalize_text_answer(submitted_answer)
+        if normalized_value == 'true':
+            return 'True'
+        if normalized_value == 'false':
+            return 'False'
+        return ''
+
+    if question.question_type == 'fitb':
+        return str(submitted_answer or '').strip()
+
+    if question.question_type == 'int':
+        normalized_integer = _normalize_integer_answer(submitted_answer)
+        return '' if normalized_integer is None else str(normalized_integer)
+
+    return submitted_answer
+
+
+def normalize_runtime_answers(runtime_questions, submitted_answers):
+    normalized_answers = {}
+    raw_answers = submitted_answers if isinstance(submitted_answers, dict) else {}
+
+    for question in runtime_questions:
+        submitted_answer = raw_answers.get(str(question.id))
+        if submitted_answer is None:
+            submitted_answer = raw_answers.get(question.id)
+
+        normalized_answers[str(question.id)] = normalize_runtime_answer(
+            question,
+            submitted_answer,
+        )
+
+    return normalized_answers
+
+
+def is_runtime_answer_provided(question, selected_answer) -> bool:
+    normalized_answer = normalize_runtime_answer(question, selected_answer)
+    if question.question_type == 'mcq' and question.is_multi_select:
+        return len(normalized_answer) > 0
+    return normalized_answer not in (None, '')
+
+
+@transaction.atomic
+def save_runtime_test_progress(
+    attempt_id: int,
+    *,
+    answers: dict,
+    current_question_index: int = 0,
+    tab_switch_count: int = 0,
+):
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    try:
+        attempt = ScholarshipTestAttempt.objects.select_related(
+            'student',
+            'test',
+        ).get(id=attempt_id)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return False, "Test attempt not found", None
+
+    if attempt.status in ['completed', 'expired']:
+        return False, "Test already submitted", attempt
+
+    runtime_test = get_runtime_test_for_attempt(attempt)
+    runtime_questions = get_runtime_questions_for_test(runtime_test)
+    if not runtime_test or not runtime_questions:
+        return False, "No configured scholarship test is available", attempt
+
+    if is_attempt_expired(attempt):
+        return False, "Test time has expired", attempt
+
+    normalized_answers = normalize_runtime_answers(runtime_questions, answers)
+
+    try:
+        current_question_index = int(current_question_index or 0)
+    except (TypeError, ValueError):
+        current_question_index = 0
+
+    try:
+        tab_switch_count = int(tab_switch_count or 0)
+    except (TypeError, ValueError):
+        tab_switch_count = 0
+
+    attempt.progress_state = {
+        'answers': normalized_answers,
+        'current_question_index': max(0, current_question_index),
+        'tab_switch_count': max(0, tab_switch_count),
+        'saved_at': timezone.now().isoformat(),
+    }
+    if attempt.status == 'started':
+        attempt.status = 'in_progress'
+    attempt.save(update_fields=['progress_state', 'status'])
+    return True, "Progress saved", attempt
+
+
 def is_runtime_answer_correct(question, selected_answer) -> bool:
+    selected_answer = normalize_runtime_answer(question, selected_answer)
+
     if question.question_type == 'mcq':
         correct_indexes = {
             str(index)
@@ -270,24 +439,32 @@ def submit_runtime_test(attempt_id: int, answers: dict):
     if not runtime_test or not runtime_questions:
         return False, "No configured scholarship test is available", attempt
 
-    time_limit = timedelta(minutes=get_test_duration_minutes(runtime_test))
     final_status = 'completed'
-    if timezone.now() > attempt.test_started_at + time_limit:
+    if is_attempt_expired(attempt):
         final_status = 'expired'
 
-    normalized_answers = answers if isinstance(answers, dict) else {}
+    saved_progress = get_saved_progress(attempt)
+    combined_answers = dict(saved_progress.get('answers', {}))
+    combined_answers.update(answers if isinstance(answers, dict) else {})
+    normalized_answers = normalize_runtime_answers(runtime_questions, combined_answers)
+    correct_answers = 0
     score = 0
+    total_marks = 0
 
     for question in runtime_questions:
         submitted_answer = normalized_answers.get(str(question.id))
-        if submitted_answer is None:
-            submitted_answer = normalized_answers.get(question.id)
+        total_marks += int(question.pos_marks or 0)
 
         if is_runtime_answer_correct(question, submitted_answer):
-            score += 1
+            correct_answers += 1
+            score += int(question.pos_marks or 0)
+        elif is_runtime_answer_provided(question, submitted_answer):
+            score -= int(question.neg_marks or 0)
+        else:
+            score -= int(question.neg_unattempted or 0)
 
     scholarship_percentage = calculate_scholarship_percentage(
-        score, len(runtime_questions)
+        score, total_marks
     )
 
     attempt.score = score
@@ -295,8 +472,16 @@ def submit_runtime_test(attempt_id: int, answers: dict):
     attempt.test_completed_at = timezone.now()
     attempt.status = final_status
     attempt.total_questions = len(runtime_questions)
-    attempt.total_marks = len(runtime_questions)
+    attempt.total_marks = total_marks
     attempt.test = runtime_test
+    attempt.progress_state = {
+        'answers': normalized_answers,
+        'current_question_index': max(0, len(runtime_questions) - 1),
+        'tab_switch_count': saved_progress.get('tab_switch_count', 0),
+        'saved_at': timezone.now().isoformat(),
+        'submitted_at': timezone.now().isoformat(),
+        'correct_answers': correct_answers,
+    }
     attempt.save()
 
     sms_sent = False
@@ -306,7 +491,7 @@ def submit_runtime_test(attempt_id: int, answers: dict):
             sms_sent, sms_error = _send_attempt_result_sms(
                 attempt=attempt,
                 score=score,
-                total_questions=len(runtime_questions),
+                total_questions=total_marks,
                 scholarship_percentage=scholarship_percentage,
             )
         except Exception as e:
@@ -324,7 +509,46 @@ def submit_runtime_test(attempt_id: int, answers: dict):
 
 
 def auto_submit_runtime_test(attempt_id: int):
-    return submit_runtime_test(attempt_id, {})
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    try:
+        attempt = ScholarshipTestAttempt.objects.get(id=attempt_id)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return False, "Test attempt not found", None
+
+    saved_progress = get_saved_progress(attempt)
+    return submit_runtime_test(attempt_id, saved_progress.get('answers', {}))
+
+
+def finalize_expired_attempts(selected_test=None):
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    attempts = ScholarshipTestAttempt.objects.select_related(
+        'student',
+        'test',
+    ).filter(
+        status__in=['started', 'in_progress']
+    ).order_by('test_started_at')
+
+    if selected_test:
+        attempts = attempts.filter(test=selected_test)
+
+    finalized_attempts = []
+    for attempt in attempts:
+        if not is_attempt_expired(attempt):
+            continue
+
+        runtime_test = get_runtime_test_for_attempt(attempt)
+        runtime_questions = get_runtime_questions_for_test(runtime_test)
+        if runtime_test and runtime_questions:
+            success, _message, updated_attempt = auto_submit_runtime_test(attempt.id)
+        else:
+            success, _message, updated_attempt = auto_submit_expired_test(attempt.id)
+
+        if success and updated_attempt:
+            finalized_attempts.append(updated_attempt)
+
+    return finalized_attempts
 
 
 def get_test_questions(grade: str, board: str, subject_id: int = None, count: int = TOTAL_QUESTIONS):
@@ -363,22 +587,19 @@ def get_test_questions(grade: str, board: str, subject_id: int = None, count: in
 
 
 def calculate_scholarship_percentage(score: int, total: int = TOTAL_QUESTIONS) -> int:
-   
-   
-    if score < 0:
-        score = 0
-    
-    if score == 20:
+    score_percentage = calculate_score_percentage(score, total)
+
+    if score_percentage == 100:
         return 50
-    elif score >= 18:
+    elif score_percentage >= 90:
         return 45
-    elif score >= 16:
+    elif score_percentage >= 80:
         return 40
-    elif score >= 14:
+    elif score_percentage >= 70:
         return 35
-    elif score >= 12:
+    elif score_percentage >= 60:
         return 30
-    elif score >= 10:
+    elif score_percentage >= 50:
         return 25
     else:
         return 20 
@@ -479,8 +700,7 @@ def check_test_expired(attempt_id: int) -> bool:
     except ScholarshipTestAttempt.DoesNotExist:
         return True 
     
-    time_limit = timedelta(minutes=TEST_DURATION_MINUTES)
-    return timezone.now() > attempt.test_started_at + time_limit
+    return is_attempt_expired(attempt)
 
 
 def auto_submit_expired_test(attempt_id: int):

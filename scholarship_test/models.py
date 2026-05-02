@@ -176,6 +176,7 @@ class ScholarshipTestAttempt(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='started')
     total_questions = models.IntegerField(default=20)
     total_marks = models.IntegerField(default=20)
+    progress_state = models.JSONField(default=dict, blank=True)
     sms_sent = models.BooleanField(default=False, help_text="Whether result SMS was sent successfully")
     sms_error = models.TextField(null=True, blank=True, help_text="Error message if SMS failed")
 
