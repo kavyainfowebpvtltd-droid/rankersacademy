@@ -409,6 +409,58 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(expired_attempt.total_marks, 4)
         self.assertEqual(other_attempt.status, 'in_progress')
 
+    def test_success_page_shows_top_five_leaderboard_and_current_student_rank(self):
+        runtime_test, section = self.create_runtime_test(name='Leaderboard Test')
+        self.add_mcq_question(section)
+
+        current_attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='completed',
+            score=15,
+            total_questions=1,
+            total_marks=20,
+            scholarship_percentage=30,
+            test_completed_at=timezone.now(),
+        )
+
+        for index, score in enumerate([20, 19, 18, 17, 16, 14], start=1):
+            other_student = ScholarshipStudent.objects.create(
+                name=f'Student {index}',
+                phone_number=f'90000000{index:02d}',
+                grade='10th',
+                board='CBSE',
+                otp_verified=True,
+            )
+            ScholarshipTestAttempt.objects.create(
+                student=other_student,
+                test=runtime_test,
+                status='completed',
+                score=score,
+                total_questions=1,
+                total_marks=20,
+                scholarship_percentage=40,
+                test_completed_at=timezone.now() + timedelta(seconds=index),
+            )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.get(
+            reverse('scholarship_test:scholarship_success', args=[current_attempt.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['leaderboard_top_entries']), 5)
+        self.assertEqual(response.context['leaderboard_top_entries'][0]['student_name'], 'Student 1')
+        self.assertEqual(response.context['leaderboard_top_entries'][0]['score'], 20)
+        self.assertEqual(response.context['leaderboard_current_entry']['rank'], 7)
+        self.assertEqual(response.context['leaderboard_current_entry']['score'], 15)
+        self.assertContains(response, 'Leaderboard')
+        self.assertContains(response, 'Your Rank: <strong>#7</strong>', html=True)
+
     def test_dashboard_renders_guest_view_for_non_rtse_selected_test(self):
         runtime_test, section = self.create_runtime_test(name='Scholarship Mock 2')
         self.add_mcq_question(section)

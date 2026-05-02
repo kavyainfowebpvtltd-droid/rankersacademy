@@ -551,6 +551,43 @@ def finalize_expired_attempts(selected_test=None):
     return finalized_attempts
 
 
+def get_test_leaderboard(test, current_attempt=None, limit: int = 5):
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    if not test:
+        return {
+            'top_entries': [],
+            'current_entry': None,
+        }
+
+    attempts = ScholarshipTestAttempt.objects.select_related('student').filter(
+        test=test,
+        status__in=['completed', 'expired'],
+    ).order_by('-score', 'test_completed_at', 'test_started_at', 'id')
+
+    leaderboard_entries = []
+    current_entry = None
+
+    for index, attempt in enumerate(attempts, start=1):
+        entry = {
+            'rank': index,
+            'attempt_id': attempt.id,
+            'student_name': attempt.student.name,
+            'score': attempt.score,
+            'total_marks': attempt.total_marks,
+            'is_current_student': bool(current_attempt and attempt.id == current_attempt.id),
+        }
+        leaderboard_entries.append(entry)
+
+        if current_attempt and attempt.id == current_attempt.id:
+            current_entry = entry
+
+    return {
+        'top_entries': leaderboard_entries[:limit],
+        'current_entry': current_entry,
+    }
+
+
 def get_test_questions(grade: str, board: str, subject_id: int = None, count: int = TOTAL_QUESTIONS):
 
     from scholarship_test.models import ScholarshipQuestion

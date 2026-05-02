@@ -230,6 +230,51 @@
               {% endif %}
             </div>
 
+            {% if leaderboard_top_entries %}
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>
+                  <h6 class="mb-0 fw-bold">Leaderboard</h6>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th scope="col">Rank</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for entry in leaderboard_top_entries %}
+                      <tr{% if entry.is_current_student %} class="table-primary"{% endif %}>
+                        <td class="fw-bold">#{{ entry.rank }}</td>
+                        <td>
+                          {{ entry.student_name }}
+                          {% if entry.is_current_student %}
+                          <span class="badge bg-primary ms-2">You</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ entry.score }} / {{ entry.total_marks }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                {% if leaderboard_current_entry %}
+                <div class="alert alert-info mt-3 mb-0">
+                  Your Rank: <strong>#{{ leaderboard_current_entry.rank }}</strong>
+                  |
+                  Your Score: <strong>{{ leaderboard_current_entry.score }} / {{ leaderboard_current_entry.total_marks }}</strong>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
             {% if is_scholarship_result %}
             <div class="claim-box mt-4">
               <h6>

@@ -963,6 +963,7 @@ def scholarship_success(request, attempt_id):
     academic_field_value = (
         student.board if is_scholarship_result else _get_non_scholarship_stream(attempt)
     )
+    leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
 
     if is_scholarship_result and not attempt.sms_sent and attempt.status in ['completed', 'expired']:
         try:
@@ -996,6 +997,8 @@ def scholarship_success(request, attempt_id):
         'completed_at_display': completed_at_display,
         'academic_field_label': academic_field_label,
         'academic_field_value': academic_field_value,
+        'leaderboard_top_entries': leaderboard['top_entries'],
+        'leaderboard_current_entry': leaderboard['current_entry'],
     }
     context.update(_build_test_display_context(attempt.test))
     return render(request, 'scholarship-success.html', context)
