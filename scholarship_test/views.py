@@ -328,6 +328,7 @@ def rank_predictor(request):
     context = {
         'rank_predictor_unlocked': is_unlocked,
         'rank_predictor_phone': phone_number,
+        'rank_predictor_default_difficulty': 'hard',
     }
     return render(request, 'rank-predictor.html', context)
 

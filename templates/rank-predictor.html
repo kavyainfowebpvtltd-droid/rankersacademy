@@ -90,8 +90,19 @@
       .logo-txt span{font-size:10.5px;color:var(--grey);letter-spacing:1.4px;margin-top:3px;text-transform:uppercase}
       .brand-meta{display:flex;gap:18px;align-items:center;font-size:11.5px;color:var(--grey);letter-spacing:1.2px;text-transform:uppercase}
       .brand-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+      .brand-contact{
+      display:inline-flex;align-items:center;gap:8px;
+      color:var(--white);text-transform:none;letter-spacing:.6px;
+      }
+      .brand-contact svg{
+      width:14px;height:14px;color:var(--orange);flex-shrink:0;
+      }
 
       /* â”€â”€â”€ HERO â”€â”€â”€ */
+      @media (max-width:680px){
+      header.brand{flex-direction:column;align-items:flex-start;gap:12px}
+      .brand-meta{flex-wrap:wrap;gap:10px}
+      }
       .hero{
       position:relative;
       border:1px solid var(--line);
@@ -286,7 +297,7 @@
       margin-top:24px;padding:18px;
       border:1px solid rgba(255,255,255,.06);border-radius:16px;
       background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+      display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
       }
       .preview-card{
       padding:16px;border-radius:14px;
@@ -653,8 +664,18 @@
           </div>
         </div>
         <div class="brand-meta">
-          <span><span class="dot"></span> LIVE TOOL</span>
-          <span style="display: none" class="d-show">v2.1 | 2026</span>
+          <span class="brand-contact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.23a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            8329100890
+          </span>
+          <span class="brand-contact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.23a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            7821814102
+          </span>
         </div>
       </header>
 
@@ -747,13 +768,6 @@
               <button data-quota="STATE">State (85%)</button>
             </div>
 
-            <label class="field-label">Expected Paper Difficulty</label>
-            <div class="seg" id="diffSeg">
-              <button data-diff="easy">Easier</button>
-              <button class="active" data-diff="similar">Similar</button>
-              <button data-diff="hard">Harder</button>
-            </div>
-
             <div class="toggle-row" id="mhRow">
               <span style="font-size: 12.5px; color: var(--grey)"
                 >Maharashtra Resident</span
@@ -769,13 +783,6 @@
             <div class="v" id="liveBand">-</div>
             <div class="sub" id="liveBandSub">
               Choose marks to see the current score band.
-            </div>
-          </div>
-          <div class="preview-card">
-            <div class="k">Base AIR 2025</div>
-            <div class="v" id="liveBaseAir">-</div>
-            <div class="sub">
-              Interpolated directly from the 2025 marks-to-rank curve.
             </div>
           </div>
           <div class="preview-card">
@@ -795,15 +802,6 @@
         </div>
 
         <div class="predict-row">
-          <div>
-            <div class="predict-info">
-              MODEL | 2025 NTA DATA x INFLATION x DIFFICULTY x CATEGORY
-            </div>
-            <div class="input-hint">
-              Inputs update live. Use the main button any time you want to jump
-              straight to the result cards below.
-            </div>
-          </div>
           <div class="predict-actions">
             <button class="btn-secondary" id="btnReset" type="button">
               RESET
@@ -2224,7 +2222,7 @@
         marks: 600,
         cat: "UR",
         quota: "AIQ",
-        diff: "similar",
+        diff: "{{ rank_predictor_default_difficulty|default:'hard'|escapejs }}",
         mh: false,
       };
       const rankPredictor = {
@@ -2432,7 +2430,6 @@
 
         $("liveBand").textContent = band.title;
         $("liveBandSub").textContent = band.detail;
-        $("liveBaseAir").textContent = "AIR " + fmt(baseAIR);
         $("liveProjectedAir").textContent = "AIR " + fmt(projectedAIR);
         $("liveMode").textContent = modeBits.join(" | ");
         $("liveModeSub").textContent =
