@@ -93,10 +93,14 @@
       .brand-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
       .brand-contact{
       display:inline-flex;align-items:center;gap:8px;
-      color:var(--orange);text-transform:none;letter-spacing:.6px;font-weight:700;font-size:23px;
+      color:#f85808;text-transform:none;letter-spacing:.6px;font-weight:700;font-size:23px;
+      }
+      .brand-contact-label{
+      font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
+      color:#ffb36c;
       }
       .brand-contact svg{
-      width:16px;height:16px;color:var(--orange);flex-shrink:0;
+      width:16px;height:16px;color:#f85808;flex-shrink:0;
       }
 
       /* â”€â”€â”€ HERO â”€â”€â”€ */
@@ -573,6 +577,21 @@
       background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
       border-bottom:1px solid rgba(127,213,255,.14);
       }
+      .method-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:12px 22px;border-radius:999px;border:1px solid rgba(255,201,40,.55);
+      background:linear-gradient(135deg, rgba(255,201,40,.96), rgba(248,88,8,.98));
+      color:#2a1200;
+      font-family:'JetBrains Mono';font-size:12px;font-weight:800;letter-spacing:1.5px;
+      text-transform:uppercase;
+      box-shadow:0 14px 34px rgba(248,88,8,.34), 0 0 0 4px rgba(255,201,40,.10), inset 0 1px 0 rgba(255,255,255,.35);
+      position:relative;isolation:isolate;transform:translateY(-2px);
+      }
+      .method-badge::before{
+      content:"";position:absolute;inset:1px;border-radius:999px;
+      background:linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+      z-index:-1;
+      }
       .promo-chip{
       display:inline-flex;align-items:center;justify-content:center;
       padding:8px 14px;border-radius:999px;border:1px solid rgba(255,201,40,.28);
@@ -704,6 +723,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.23a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z"/>
             </svg>
+            <span class="brand-contact-label">Call For Free Counselling</span>
             8329100890
           </span>
         </div>
@@ -966,7 +986,7 @@
       </div>
       <div class="method gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="method">
         <div class="method-h" id="methodH">
-          <span>TAKE ADVANTAGE OF HUGE EARLY BIRD DISCOUNT...</span>
+          <span class="method-badge">TAKE ADVANTAGE OF HUGE EARLY BIRD DISCOUNT...</span>
           <span class="promo-chip">ONLY 30 SEATS</span>
         </div>
         
