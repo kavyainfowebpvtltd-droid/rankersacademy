@@ -87,13 +87,13 @@
       width:100%;height:100%;object-fit:contain;display:block;
       }
       .logo-txt{display:flex;flex-direction:column;line-height:1}
-      .logo-txt b{font-family:'Bebas Neue';letter-spacing:2.8px;font-size:22px;color:var(--blue)}
+      .logo-txt b{font-family:'Bebas Neue';letter-spacing:2.8px;font-size:30px;color:var(--blue)}
       .logo-txt span{font-size:12px;color:var(--grey);letter-spacing:1.5px;margin-top:5px;text-transform:uppercase}
       .brand-meta{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--grey);letter-spacing:1.1px;text-transform:uppercase}
       .brand-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
       .brand-contact{
       display:inline-flex;align-items:center;gap:8px;
-      color:var(--white);text-transform:none;letter-spacing:.6px;font-weight:600;
+      color:var(--white);text-transform:none;letter-spacing:.6px;font-weight:700;font-size:18px;
       }
       .brand-contact svg{
       width:16px;height:16px;color:var(--orange);flex-shrink:0;
@@ -706,12 +706,6 @@
             </svg>
             8329100890
           </span>
-          <span class="brand-contact">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.23a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            7821814102
-          </span>
         </div>
       </header>
 
@@ -727,10 +721,8 @@
           <span class="a">+ MAP YOUR</span>
           <span class="c">DREAM COLLEGE</span>
         </h1>
-        <p class="sub">
-          Built on the official NTA NEET 2025 marks-vs-rank data, scaled for the
-          projected 26-lakh candidate pool of 2026, calibrated for paper
-          difficulty and category reservations. Get your rank range, college
+        <p class="sub" style="color: #ff7504;">
+          Get your rank range, college
           list, and admission probability in one click.
         </p>
       </section>
@@ -738,10 +730,9 @@
       <!--  INPUT  -->
 
       <div class="section-head">
-        <div class="num">01</div>
-        <div class="ttl">YOUR INPUTS</div>
+        <div class="num" style="color: #ff7504;">01</div>
+        <div class="ttl" style="color: #ff7504;">YOUR INPUTS (Submit Details)</div>
         <div class="line"></div>
-        <div class="meta">3 fields | 30 sec</div>
       </div>
 
       <div class="input-card">
@@ -848,10 +839,9 @@
       <div class="results gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="results">
         <!-- RANK PANEL -->
         <div class="section-head">
-          <div class="num">02</div>
-          <div class="ttl">YOUR PREDICTED RANK</div>
+          <div class="num" style="color: #ff7504;">02</div>
+          <div class="ttl" style="color: #ff7504;">YOUR PREDICTED RANK</div>
           <div class="line"></div>
-          <div class="meta">+/-12% confidence band</div>
         </div>
 
         <div class="rank-panel">
@@ -910,8 +900,8 @@
 
         <!-- COLLEGES -->
         <div class="section-head">
-          <div class="num">03</div>
-          <div class="ttl">COLLEGES YOU CAN TARGET</div>
+          <div class="num" style="color: #ff7504;">03</div>
+          <div class="ttl" style="color: #ff7504;">COLLEGES YOU CAN TARGET</div>
           <div class="line"></div>
           <div class="meta" id="collMeta">- colleges matched</div>
         </div>
@@ -970,8 +960,8 @@
       <!--  METHOD  -->
 
       <div class="section-head gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="methodSectionHead" style="margin-top: 48px">
-        <div class="num">04</div>
-        <div class="ttl">THE RANKERS ACADEMY | NEET REPEATERS 2026</div>
+        <div class="num" style="color: #ff7504;">04</div>
+        <div class="ttl" style="color: #ff7504;">THE RANKERS ACADEMY | NEET REPEATERS 2026</div>
         <div class="line"></div>
       </div>
       <div class="method gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="method">
@@ -1003,20 +993,15 @@
               <span>Call For Admission</span>
               <b>8329100890</b>
             </div>
-            <div class="promo-contact-card">
-              <span>Alternate Contact</span>
-              <b>7821814102</b>
-            </div>
           </div>
         </div>
       </div>
 
       <footer class="foot gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="pageFooter">
         <div>
-          (c) <b>The Rankers Academy</b> | Nagpur | Built for our students with care
-          + coffee
+          The Rankers Academy, Plot No. 10, RPTS Rd, Buty Layout, Laxminagar,
+          Nagpur, Maharashtra 440022
         </div>
-        <div>Data: NTA NEET 2025 | Updated April 2026</div>
       </footer>
     </div>
 
