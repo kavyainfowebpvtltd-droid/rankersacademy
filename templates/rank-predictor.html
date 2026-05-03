@@ -92,8 +92,14 @@
       .brand-meta{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--grey);letter-spacing:1.1px;text-transform:uppercase}
       .brand-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
       .brand-contact{
-      display:inline-flex;align-items:center;gap:8px;
-      color:#f85808;text-transform:none;letter-spacing:.6px;font-weight:700;font-size:23px;
+      display:inline-flex;align-items:center;gap:10px;
+      text-transform:none;
+      }
+      .brand-contact-text{
+      display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.05;
+      }
+      .brand-contact-number{
+      color:#f85808;font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:700;letter-spacing:.6px;
       }
       .brand-contact-label{
       font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
@@ -723,8 +729,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.23a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z"/>
             </svg>
-            <span class="brand-contact-label">Call For Free Counselling</span>
-            8329100890
+            <span class="brand-contact-text">
+              <span class="brand-contact-number">8329100890</span>
+              <span class="brand-contact-label">Call For Free Counselling</span>
+            </span>
           </span>
         </div>
       </header>
