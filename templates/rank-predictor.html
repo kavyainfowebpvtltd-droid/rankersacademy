@@ -492,7 +492,7 @@
 
       .coll-table{width:100%;border-collapse:collapse;font-size:13px}
       .coll-table thead tr{
-      background:linear-gradient(180deg, rgba(81,172,227,.2), rgba(12,21,34,.96));
+      background:linear-gradient(180deg, rgba(255,145,64,.98), rgba(230,106,0,.98));
       }
       .coll-table th{
       font-family:'JetBrains Mono';font-size:12px;letter-spacing:1.7px;
@@ -777,9 +777,6 @@
               max="720"
               value="600"
             />
-            <div class="input-hint" id="marksHint">
-              Higher marks compress ranks sharply near the top bands.
-            </div>
           </div>
 
           <!-- CATEGORY -->
@@ -911,34 +908,6 @@
           </div>
         </div>
 
-        <div class="breakdown">
-          <h3>HOW THIS PREDICTION IS CALCULATED</h3>
-          <table class="calc-table">
-            <tbody>
-              <tr>
-                <td>Expected marks entered</td>
-                <td id="cMarks">-</td>
-              </tr>
-              <tr>
-                <td>2025 baseline estimate</td>
-                <td id="cBase">-</td>
-              </tr>
-              <tr>
-                <td>2026 candidate inflation</td>
-                <td id="cInfl">-</td>
-              </tr>
-              <tr>
-                <td>Difficulty calibration</td>
-                <td id="cDiff">-</td>
-              </tr>
-              <tr>
-                <td>Projected final AIR</td>
-                <td id="cFinal">-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
         <!-- COLLEGES -->
         <div class="section-head">
           <div class="num">03</div>
@@ -1000,12 +969,12 @@
 
       <!--  METHOD  -->
 
-      <div class="section-head" id="methodSectionHead" style="margin-top: 48px">
+      <div class="section-head gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="methodSectionHead" style="margin-top: 48px">
         <div class="num">04</div>
         <div class="ttl">THE RANKERS ACADEMY | NEET REPEATERS 2026</div>
         <div class="line"></div>
       </div>
-      <div class="method" id="method">
+      <div class="method gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="method">
         <div class="method-h" id="methodH">
           <span>ADMISSION OPEN | EARLY-BIRD DISCOUNT TIERS</span>
           <span class="promo-chip">ONLY 30 SEATS</span>
@@ -2421,10 +2390,7 @@
         }
       }
 
-      function updateLivePreview() {
-        const band = getScoreBand(state.marks);
-        $("marksHint").textContent = band.hint;
-      }
+      function updateLivePreview() {}
 
       function autoPredict() {
         if (!rankPredictor.unlocked) return;
@@ -2711,14 +2677,6 @@
         $("actionS").textContent = actionS;
 
         // â”€â”€ Breakdown â”€â”€
-        $("cMarks").textContent = state.marks + " / 720";
-        $("cBase").textContent = "AIR " + fmt(baseAIR);
-        $("cInfl").textContent =
-          "x " + INFLATION.toFixed(3) + "  (26 L / 22.09 L)";
-        $("cDiff").textContent =
-          "x " + diffFactor.toFixed(2) + "  (" + state.diff.toUpperCase() + ")";
-        $("cFinal").textContent =
-          "AIR " + fmt(mid) + "  (range: " + fmt(low) + " to " + fmt(high) + ")";
 
         // â”€â”€ College list â”€â”€
         renderColleges(mid, catMult);
