@@ -67,35 +67,36 @@
       /* â”€â”€â”€ HEADER â”€â”€â”€ */
       header.brand{
       display:flex;align-items:center;justify-content:space-between;
-      padding:14px 18px;
+      padding:20px 24px;
+      min-height:96px;
       border:1px solid var(--line);
       background:linear-gradient(180deg, rgba(28,37,50,.7), rgba(16,22,32,.5));
       backdrop-filter:blur(8px);
       border-radius:14px;
       margin-bottom:36px;
       }
-      .logo{display:flex;align-items:center;gap:12px}
+      .logo{display:flex;align-items:center;gap:16px}
       .logo-mark{
-      width:52px;height:52px;border-radius:14px;
+      width:68px;height:68px;border-radius:18px;
       background:linear-gradient(180deg, rgba(81,172,227,.12), rgba(81,172,227,.04));
       border:1px solid rgba(127,213,255,.24);
-      display:grid;place-items:center;padding:6px;
-      box-shadow: 0 8px 22px rgba(81,172,227,.18), inset 0 1px 0 rgba(255,255,255,.08);
+      display:grid;place-items:center;padding:8px;
+      box-shadow: 0 10px 26px rgba(81,172,227,.18), inset 0 1px 0 rgba(255,255,255,.08);
       }
       .logo-mark img{
       width:100%;height:100%;object-fit:contain;display:block;
       }
       .logo-txt{display:flex;flex-direction:column;line-height:1}
-      .logo-txt b{font-family:'Bebas Neue';letter-spacing:2.5px;font-size:16px;color:var(--blue)}
-      .logo-txt span{font-size:10.5px;color:var(--grey);letter-spacing:1.4px;margin-top:3px;text-transform:uppercase}
-      .brand-meta{display:flex;gap:18px;align-items:center;font-size:11.5px;color:var(--grey);letter-spacing:1.2px;text-transform:uppercase}
+      .logo-txt b{font-family:'Bebas Neue';letter-spacing:2.8px;font-size:22px;color:var(--blue)}
+      .logo-txt span{font-size:12px;color:var(--grey);letter-spacing:1.5px;margin-top:5px;text-transform:uppercase}
+      .brand-meta{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--grey);letter-spacing:1.1px;text-transform:uppercase}
       .brand-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
       .brand-contact{
       display:inline-flex;align-items:center;gap:8px;
-      color:var(--white);text-transform:none;letter-spacing:.6px;
+      color:var(--white);text-transform:none;letter-spacing:.6px;font-weight:600;
       }
       .brand-contact svg{
-      width:14px;height:14px;color:var(--orange);flex-shrink:0;
+      width:16px;height:16px;color:var(--orange);flex-shrink:0;
       }
 
       /* â”€â”€â”€ HERO â”€â”€â”€ */
@@ -490,11 +491,17 @@
       .fchip.active{background:var(--orange);color:#0A0D12;border-color:var(--orange);font-weight:700}
 
       .coll-table{width:100%;border-collapse:collapse;font-size:13px}
-      .coll-table th{
-      font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.5px;
-      color:var(--grey-2);text-transform:uppercase;font-weight:500;
-      text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);
+      .coll-table thead tr{
+      background:linear-gradient(180deg, rgba(81,172,227,.2), rgba(12,21,34,.96));
       }
+      .coll-table th{
+      font-family:'JetBrains Mono';font-size:12px;letter-spacing:1.7px;
+      color:var(--white);text-transform:uppercase;font-weight:700;
+      text-align:left;padding:14px 12px;border-bottom:1px solid rgba(127,213,255,.24);
+      border-right:1px solid rgba(255,255,255,.06);
+      text-shadow:0 1px 0 rgba(0,0,0,.25);
+      }
+      .coll-table th:last-child{border-right:none}
       .coll-table td{padding:14px 12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
       .coll-table tr:hover td{background:rgba(255,122,26,.03)}
       .coll-name{font-weight:600;color:var(--white);font-size:13.5px}
@@ -553,28 +560,57 @@
 
       /* â”€â”€â”€ METHODOLOGY ACCORDION â”€â”€â”€ */
       .method{
-      border:1px solid var(--line);border-radius:18px;
-      background:var(--panel);overflow:hidden;
-      box-shadow:0 20px 50px rgba(0,0,0,.18);
+      border:1px solid var(--line);border-radius:22px;
+      background:
+      radial-gradient(circle at top right, rgba(81,172,227,.16), transparent 28%),
+      linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+      overflow:hidden;
+      box-shadow:0 24px 56px rgba(0,0,0,.22);
       }
       .method-h{
-      padding:20px 28px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;
-      font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:var(--orange);
-      transition:background .2s;
+      padding:24px 28px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+      font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;color:var(--orange);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+      border-bottom:1px solid rgba(127,213,255,.14);
       }
-      .method-h:hover{background:rgba(255,122,26,.04)}
-      .method-h .arr{transition:transform .25s;color:var(--grey)}
-      .method.open .method-h .arr{transform:rotate(180deg)}
+      .promo-chip{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:8px 14px;border-radius:999px;border:1px solid rgba(255,201,40,.28);
+      background:rgba(255,201,40,.08);color:var(--gold);
+      font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.2px;
+      }
       .method-body{
-      max-height:0;overflow:hidden;transition:max-height .4s ease;
-      padding:0 28px;
+      padding:24px 28px 30px;
       }
-      .method.open .method-body{max-height:1200px;padding:8px 28px 28px}
-      .method-body p{font-size:13px;color:var(--grey);line-height:1.65;margin-bottom:12px}
-      .method-body p b{color:var(--white)}
-      .method-body code{
-      font-family:'JetBrains Mono';font-size:12px;color:var(--gold);
-      background:var(--bg-2);padding:2px 6px;border-radius:4px;
+      .promo-intro{
+      font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:18px;
+      }
+      .promo-media{
+      border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;
+      background:rgba(255,255,255,.02);box-shadow:0 18px 40px rgba(0,0,0,.22);
+      }
+      .promo-image{
+      display:block;width:100%;height:auto;
+      }
+      .promo-note{
+      margin-top:16px;font-size:13px;color:var(--grey);line-height:1.6;
+      }
+      .promo-contact-row{
+      margin-top:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
+      }
+      .promo-contact-card{
+      padding:16px 18px;border-radius:16px;border:1px solid rgba(81,172,227,.16);
+      background:linear-gradient(180deg, rgba(81,172,227,.08), rgba(255,255,255,.02));
+      }
+      .promo-contact-card span{
+      display:block;font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.4px;color:var(--orange-soft);text-transform:uppercase;margin-bottom:8px;
+      }
+      .promo-contact-card b{
+      font-family:'Bebas Neue';font-size:28px;letter-spacing:1.4px;color:var(--white);font-weight:400;
+      }
+      @media (max-width:760px){
+      .promo-contact-row{grid-template-columns:1fr}
+      .method-h{font-size:20px}
       }
 
       /* â”€â”€â”€ FOOTER â”€â”€â”€ */
@@ -679,7 +715,7 @@
         </div>
       </header>
 
-      <!-- â”€â”€â”€ HERO â”€â”€â”€ -->
+      
 
       <section class="hero">
         <span class="hero-tag"
@@ -699,7 +735,7 @@
         </p>
       </section>
 
-      <!-- â”€â”€â”€ INPUT â”€â”€â”€ -->
+      <!--  INPUT  -->
 
       <div class="section-head">
         <div class="num">01</div>
@@ -821,7 +857,7 @@
         </div>
       </div>
 
-      <!-- â”€â”€â”€ EMPTY â”€â”€â”€ -->
+      <!--  EMPTY  -->
 
       <div class="empty gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="emptyState" style="margin-top: 32px">
         <div class="ic">!</div>
@@ -834,7 +870,7 @@
         </p>
       </div>
 
-      <!-- â”€â”€â”€ RESULTS â”€â”€â”€ -->
+      <!--  RESULTS  -->
 
       <div class="results gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="results">
         <!-- RANK PANEL -->
@@ -899,33 +935,6 @@
           </div>
         </div>
 
-        <!-- BREAKDOWN -->
-        <div class="breakdown">
-          <h3>HOW WE GOT THIS NUMBER | TRANSPARENT MATH</h3>
-          <table class="calc-table" id="calcTable">
-            <tr>
-              <td>Your marks</td>
-              <td id="cMarks">-</td>
-            </tr>
-            <tr>
-              <td>Base AIR (from NEET 2025 official data)</td>
-              <td id="cBase">-</td>
-            </tr>
-            <tr>
-              <td>x Candidate inflation (2026 / 2025)</td>
-              <td id="cInfl">-</td>
-            </tr>
-            <tr>
-              <td>x Difficulty adjustment factor</td>
-              <td id="cDiff">-</td>
-            </tr>
-            <tr>
-              <td>= Predicted AIR (mid-band)</td>
-              <td id="cFinal">-</td>
-            </tr>
-          </table>
-        </div>
-
         <!-- COLLEGES -->
         <div class="section-head">
           <div class="num">03</div>
@@ -985,60 +994,45 @@
         </div>
       </div>
 
-      <!-- â”€â”€â”€ METHOD â”€â”€â”€ -->
+      <!--  METHOD  -->
 
-      <div class="section-head gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="methodSectionHead" style="margin-top: 48px">
+      <div class="section-head" id="methodSectionHead" style="margin-top: 48px">
         <div class="num">04</div>
-        <div class="ttl">METHODOLOGY | WHAT'S UNDER THE HOOD</div>
+        <div class="ttl">THE RANKERS ACADEMY | NEET REPEATERS 2026</div>
         <div class="line"></div>
       </div>
-      <div class="method gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="method">
+      <div class="method" id="method">
         <div class="method-h" id="methodH">
-          <span>READ THE FULL METHODOLOGY</span>
-          <span class="arr">v</span>
+          <span>ADMISSION OPEN | EARLY-BIRD DISCOUNT TIERS</span>
+          <span class="promo-chip">ONLY 30 SEATS</span>
         </div>
         <div class="method-body">
-          <p>
-            <b>Step 1 - Anchor on NEET 2025 official data.</b> The base
-            marks-to-rank curve is built from NTA's published NEET 2025 result
-            PDF. The top score was 686 (Mahesh Kumar, AIR 1) - the lowest topper
-            in recent NTA history because the paper was unusually tough.
+          <p class="promo-intro">
+            If you want structured mentorship after using this predictor, here is
+            the current admission offer for our NEET Repeaters 2026 program at
+            The Rankers Academy.
           </p>
-          <p>
-            <b>Step 2 - Apply candidate-pool inflation.</b> NEET 2025 had ~22.09
-            L candidates. 2026 is projected at ~26 L. Every 2025 rank is scaled
-            by the ratio <code>26 / 22.09 approx 1.177</code> to estimate the 2026
-            rank for the same percentile.
+          <div class="promo-media">
+            <img
+              class="promo-image"
+              src="{% static 'img/neet-repeaters-2026-admission-open.png' %}"
+              alt="The Rankers Academy NEET Repeaters 2026 admission open poster with early-bird discount tiers and free engagement options"
+            />
+          </div>
+          <p class="promo-note">
+            Visit the campus, talk to the faculty, and lock the best available
+            discount tier early if you are planning a dedicated repeaters year.
           </p>
-          <p>
-            <b>Step 3 - Apply difficulty adjustment.</b> If the 2026 paper is
-            easier than 2025, top scores rise to 700+ and the rank curve shifts
-            (factor 1.10). If harder, the curve compresses (factor 0.92). For
-            "similar" difficulty, factor = 1.00.
-          </p>
-          <p>
-            <b>Step 4 - Category adjustment.</b> Reservation pulls your
-            effective rank significantly: OBC -> ~3.5x base AIR for
-            category-rank; SC -> ~5x; ST -> ~6.5x; EWS -> ~1.1x. UR uses base AIR.
-            These multipliers are derived from 2024-2025 MCC counselling data.
-          </p>
-          <p>
-            <b>Step 5 - College mapping.</b> Each college's 2025 R-1 closing
-            rank (AIQ General) is scaled forward by the same inflation factor to
-            give a 2026 estimated closing rank. Your chance of getting that
-            college = function of (predicted rank / estimated closing rank).
-          </p>
-          <p>
-            <b>Confidence band.</b> A +/-12% band is applied to the mid prediction
-            to account for paper-difficulty variance, candidate cohort mix, and
-            seat-matrix changes. <b>Use the band, not the point estimate.</b>
-          </p>
-          <p style="color: var(--orange)">
-            <b>Important:</b> This is a planning tool. Final allotments depend
-            on counselling round, seat-matrix changes, state-quota domicile
-            rules, and tie-breaker logic. Always cross-check with MCC and your
-            state CET cell during counselling.
-          </p>
+          <div class="promo-contact-row">
+            <div class="promo-contact-card">
+              <span>Call For Admission</span>
+              <b>8329100890</b>
+            </div>
+            <div class="promo-contact-card">
+              <span>Alternate Contact</span>
+              <b>7821814102</b>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2880,9 +2874,6 @@
       }
 
       /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ METHOD ACCORDION â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-      $("methodH").addEventListener("click", () =>
-        $("method").classList.toggle("open"),
-      );
 
       /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ FIRE â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
       $("btnPredict").addEventListener("click", predict);
