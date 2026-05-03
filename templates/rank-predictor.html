@@ -813,30 +813,6 @@
           </div>
         </div>
 
-        <div class="live-preview" aria-label="Live preview">
-          <div class="preview-card">
-            <div class="k">Current Band</div>
-            <div class="v" id="liveBand">-</div>
-            <div class="sub" id="liveBandSub">
-              Choose marks to see the current score band.
-            </div>
-          </div>
-          <div class="preview-card">
-            <div class="k">Projected AIR 2026</div>
-            <div class="v" id="liveProjectedAir">-</div>
-            <div class="sub">
-              Inflation and difficulty are applied before final ranking.
-            </div>
-          </div>
-          <div class="preview-card">
-            <div class="k">Current Mode</div>
-            <div class="v" id="liveMode">-</div>
-            <div class="sub" id="liveModeSub">
-              Category, quota, and difficulty stack here.
-            </div>
-          </div>
-        </div>
-
         <div class="predict-row">
           <div class="predict-actions">
             <button class="btn-secondary" id="btnReset" type="button">
@@ -935,6 +911,34 @@
           </div>
         </div>
 
+        <div class="breakdown">
+          <h3>HOW THIS PREDICTION IS CALCULATED</h3>
+          <table class="calc-table">
+            <tbody>
+              <tr>
+                <td>Expected marks entered</td>
+                <td id="cMarks">-</td>
+              </tr>
+              <tr>
+                <td>2025 baseline estimate</td>
+                <td id="cBase">-</td>
+              </tr>
+              <tr>
+                <td>2026 candidate inflation</td>
+                <td id="cInfl">-</td>
+              </tr>
+              <tr>
+                <td>Difficulty calibration</td>
+                <td id="cDiff">-</td>
+              </tr>
+              <tr>
+                <td>Projected final AIR</td>
+                <td id="cFinal">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- COLLEGES -->
         <div class="section-head">
           <div class="num">03</div>
@@ -1017,6 +1021,8 @@
               class="promo-image"
               src="{% static 'img/neet-repeaters-2026-admission-open.png' %}"
               alt="The Rankers Academy NEET Repeaters 2026 admission open poster with early-bird discount tiers and free engagement options"
+              loading="lazy"
+              decoding="async"
             />
           </div>
           <p class="promo-note">
@@ -2417,21 +2423,6 @@
 
       function updateLivePreview() {
         const band = getScoreBand(state.marks);
-        const baseAIR = marksToBaseAIR(state.marks);
-        const projectedAIR = Math.round(baseAIR * INFLATION * DIFF[state.diff]);
-        const modeBits = [state.cat, state.quota];
-        if (state.quota === "STATE" && state.mh) modeBits.push("MH");
-
-        $("liveBand").textContent = band.title;
-        $("liveBandSub").textContent = band.detail;
-        $("liveProjectedAir").textContent = "AIR " + fmt(projectedAIR);
-        $("liveMode").textContent = modeBits.join(" | ");
-        $("liveModeSub").textContent =
-          "Difficulty: " +
-          state.diff.toUpperCase() +
-          (state.quota === "STATE" && state.mh
-            ? " | home-state boost enabled"
-            : "");
         $("marksHint").textContent = band.hint;
       }
 
