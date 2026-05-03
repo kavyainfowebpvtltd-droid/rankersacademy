@@ -483,6 +483,7 @@ class RankPredictorFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context['rank_predictor_unlocked'])
+        self.assertEqual(response.context['rank_predictor_default_difficulty'], 'similar')
 
     @patch('scholarship_test.views.otp_service.send_otp', return_value=(True, 'OTP sent successfully'))
     def test_rank_predictor_send_otp_creates_pending_lead(self, mocked_send_otp):

@@ -1139,7 +1139,7 @@
       const INFLATION = TOTAL_2026 / TOTAL_2025; // 1.177
 
       const CAT_MULT = { UR: 1, EWS: 1.1, OBC: 3.5, SC: 5.0, ST: 6.5 };
-      const DIFF = { easy: 1.1, similar: 1.0, hard: 0.92 };
+      const DIFF = { easy: 1.1, medium: 1.0, similar: 1.0, hard: 0.92 };
 
       // â”€â”€ COLLEGE DATABASE â”€â”€
       // 2025 R-1 closing rank (AIQ General) + tier + state
@@ -2205,7 +2205,7 @@
         marks: 600,
         cat: "UR",
         quota: "AIQ",
-        diff: "{{ rank_predictor_default_difficulty|default:'medium'|escapejs }}",
+        diff: "{{ rank_predictor_default_difficulty|default:'similar'|escapejs }}",
         mh: false,
       };
       const rankPredictor = {
@@ -2219,7 +2219,15 @@
 
       /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ INPUT WIRING â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
       const $ = (id) => document.getElementById(id);
-      const fmt = (n) => n.toLocaleString("en-IN");
+      const fmt = (n) =>
+        Number.isFinite(Number(n)) ? Number(n).toLocaleString("en-IN") : "-";
+
+      function normalizeDifficulty(value) {
+        const key = String(value || "").toLowerCase().trim();
+        return Object.prototype.hasOwnProperty.call(DIFF, key) ? key : "similar";
+      }
+
+      state.diff = normalizeDifficulty(state.diff);
 
       const marksInput = $("marksInput"),
         marksSlider = $("marksSlider"),
@@ -2465,7 +2473,7 @@
             .querySelectorAll("#diffSeg button")
             .forEach((x) => x.classList.remove("active"));
           b.classList.add("active");
-          state.diff = b.dataset.diff;
+          state.diff = normalizeDifficulty(b.dataset.diff);
           updateLivePreview();
           autoPredict();
         }),
@@ -2609,17 +2617,17 @@
           return;
         }
         const baseAIR = marksToBaseAIR(state.marks);
-        const diffFactor = DIFF[state.diff];
-        const mid = Math.round(baseAIR * INFLATION * diffFactor);
-        const low = Math.round(mid * 0.88);
-        const high = Math.round(mid * 1.12);
+        const diffFactor = DIFF[normalizeDifficulty(state.diff)] || DIFF.similar;
+        const mid = Math.max(1, Math.round(baseAIR * INFLATION * diffFactor));
+        const low = Math.max(1, Math.round(mid * 0.88));
+        const high = Math.min(TOTAL_2026, Math.round(mid * 1.12));
 
         // Category rank
-        const catMult = CAT_MULT[state.cat];
-        const catRankMid = Math.round(mid / catMult);
+        const catMult = CAT_MULT[state.cat] || 1;
+        const catRankMid = Math.max(1, Math.round(mid / catMult));
 
         // Percentile (UR-equivalent)
-        const pct = (1 - mid / TOTAL_2026) * 100;
+        const pct = Math.max(0, Math.min(99.999, (1 - mid / TOTAL_2026) * 100));
 
         // â”€â”€ Render rank panel â”€â”€
         $("rankMid").textContent = fmt(mid);
@@ -2641,7 +2649,7 @@
         $("percentile").textContent = pct.toFixed(3);
         $("percentileS").textContent =
           pct >= 99 ? "Top " + (100 - pct).toFixed(2) + "%" : "";
-        $("beats").textContent = fmt(TOTAL_2026 - mid);
+        $("beats").textContent = fmt(Math.max(0, TOTAL_2026 - mid));
         // Govt MBBS odds (roughly ~110000 govt MBBS seats nationally)
         let govtOdds, govtOddsS;
         const seatsAvail = 110000;
