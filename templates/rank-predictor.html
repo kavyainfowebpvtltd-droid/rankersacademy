@@ -354,7 +354,13 @@
       .btn-predict:active{transform:translateY(0)}
       .btn-predict svg{width:18px;height:18px}
       .report-download-row{display:flex;justify-content:flex-end;align-items:center;margin-top:18px}
-      .btn-download{min-width:220px;justify-content:center;display:inline-flex;align-items:center;gap:10px}
+      .btn-download{
+      min-width:220px;justify-content:center;display:inline-flex;align-items:center;gap:10px;
+      background:linear-gradient(135deg, #FFC928 0%, #F2A900 100%);
+      border-color:#FFD76A;color:#0A0D12;font-weight:700;
+      box-shadow:0 10px 26px rgba(242,169,0,.28), inset 0 1px 0 rgba(255,255,255,.35);
+      }
+      .btn-download:hover{border-color:#FFE7A6;color:#0A0D12;box-shadow:0 14px 34px rgba(242,169,0,.38)}
       .btn-download svg{width:16px;height:16px}
 
       /* â”€â”€â”€ RESULTS â”€â”€â”€ */
@@ -3251,20 +3257,17 @@
             currentY += introLines.length * 4.5 + 4;
           }
           if (promoDataUrl) {
-            ensureSpace(95);
-            const posterMaxWidth = Math.min(contentWidth, 112);
             const posterProps = doc.getImageProperties(promoDataUrl);
-            const posterHeight = Math.min(
-              150,
-              (posterProps.height * posterMaxWidth) / posterProps.width,
-            );
-            const posterX = (pageWidth - posterMaxWidth) / 2;
+            const posterWidth = contentWidth;
+            const posterHeight =
+              (posterProps.height * posterWidth) / posterProps.width;
+            ensureSpace(posterHeight + 10);
             doc.addImage(
               promoDataUrl,
               imageTypeFromDataUrl(promoDataUrl),
-              posterX,
+              margin,
               currentY,
-              posterMaxWidth,
+              posterWidth,
               posterHeight,
             );
             currentY += posterHeight + 6;
