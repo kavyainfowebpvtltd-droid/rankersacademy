@@ -218,7 +218,6 @@
             <th>Today Status</th>
             <th>Check-in</th>
             <th>Check-out</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -230,7 +229,11 @@
               data-total="{{ row.total_days }}"
             >
               <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
-              <td class="student-name">{{ row.student.student_name }}</td>
+              <td class="student-name">
+                <a href="{% url 'view_student_attendance' row.student.id %}?month={{ month }}" class="text-decoration-none text-reset">
+                  {{ row.student.student_name }}
+                </a>
+              </td>
               <td>{{ row.student.contact }}</td>
               <td>{{ row.student.batch }}</td>
               <td><span class="metric-badge metric-present">{{ row.present_days }}</span></td>
@@ -249,17 +252,10 @@
               </td>
               <td><span class="time-pill {% if row.today_check_in == '-' %}time-pill-muted{% endif %}">{{ row.today_check_in }}</span></td>
               <td><span class="time-pill {% if row.today_check_out == '-' %}time-pill-muted{% endif %}">{{ row.today_check_out }}</span></td>
-              <td>
-                <div class="d-flex gap-2">
-                  <a href="{% url 'view_student_attendance' row.student.id %}?month={{ month }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-eye"></i>
-                  </a>
-                </div>
-              </td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="13">
+              <td colspan="12">
                 <div class="table-empty">
                   <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
                   No students found.

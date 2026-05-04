@@ -23,7 +23,7 @@ from attendance.services import (
     record_kiosk_scan,
     record_staff_scan,
 )
-from sds.models import Student
+from sds.models import Student, TeacherAdmin
 
 
 def _can_manage_student_attendance(user):
@@ -222,6 +222,59 @@ def _attendance_export_recipient(user):
 
 def _attendance_redirect_url(month_value):
     return f"{reverse('attendance')}?month={month_value}"
+
+
+def _staff_attendance_export_bytes(attendance_rows, month_value):
+    workbook_rows = [
+        [
+            "Sr. No.",
+            "Staff Name",
+            "Role",
+            "Contact",
+            "Email",
+            "Date",
+            "Status",
+            "Check-in",
+            "Check-out",
+        ]
+    ]
+
+    for index, row in enumerate(attendance_rows, start=1):
+        workbook_rows.append(
+            [
+                str(index),
+                row["staff"].name,
+                row["role"],
+                row["contact"],
+                row["email"],
+                row["date"].strftime("%d-%m-%Y"),
+                row["status"],
+                row["check_in"],
+                row["check_out"],
+            ]
+        )
+
+    table_html = []
+    for row in workbook_rows:
+        cells = "".join(f"<td>{escape(str(value))}</td>" for value in row)
+        table_html.append(f"<tr>{cells}</tr>")
+
+    html = f"""<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+  <table border="1">
+    <tr><td colspan="9"><strong>Staff Attendance Export - {escape(month_value)}</strong></td></tr>
+    {''.join(table_html)}
+  </table>
+</body>
+</html>"""
+    return BytesIO(html.encode("utf-8")).getvalue()
+
+
+def _staff_attendance_redirect_url(month_value):
+    return f"{reverse('staff_attendance')}?month={month_value}"
 
 
 @login_required
@@ -454,6 +507,7 @@ def _build_staff_attendance_rows(start_date, end_date):
             {
                 "id": record.id,
                 "staff_id": record.staff_id,
+                "staff": record.staff,
                 "staff_name": record.staff.name,
                 "role": record.staff.role,
                 "contact": record.staff.contact,
@@ -497,6 +551,84 @@ def staff_attendance(request):
             "summary_checkout": summary_checkout,
             "page_obj": page_obj,
             "paginator": paginator,
+        },
+    )
+
+
+@login_required
+@require_POST
+def export_staff_attendance_email(request):
+    if not _can_manage_staff_attendance(request.user):
+        return HttpResponseForbidden("Only admins can export staff attendance.")
+
+    start_date, end_date, month_value, _today = _month_bounds(request.POST.get("month"))
+
+    recipient_email = _attendance_export_recipient(request.user)
+    if not recipient_email:
+        messages.error(request, "No registered email found for your account.")
+        return redirect(_staff_attendance_redirect_url(month_value))
+
+    attendance_rows = _build_staff_attendance_rows(start_date, end_date)
+    export_bytes = _staff_attendance_export_bytes(attendance_rows, month_value)
+    filename = f"staff-attendance-export-{month_value}.xls"
+
+    email = EmailMessage(
+        subject=f"Staff Attendance Export - {month_value}",
+        body=(
+            "Please find the staff attendance export attached.\n\n"
+            f"Month: {month_value}\n"
+            f"Total Records: {len(attendance_rows)}\n\n"
+            "Regards,\nRanker's Academy"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[recipient_email],
+    )
+    email.attach(filename, export_bytes, "application/vnd.ms-excel")
+
+    try:
+        email.send(fail_silently=False)
+        messages.success(request, f"Staff attendance export sent to {recipient_email}.")
+    except Exception as exc:
+        messages.error(request, f"Unable to send staff attendance export email: {exc}")
+
+    return redirect(_staff_attendance_redirect_url(month_value))
+
+
+@login_required
+def view_staff_attendance(request, staff_id):
+    if not _can_manage_staff_attendance(request.user):
+        return HttpResponseForbidden("Only admins can view staff attendance details.")
+
+    staff = get_object_or_404(TeacherAdmin, id=staff_id)
+    start_date, end_date, month_value, today = _month_bounds(request.GET.get("month"))
+
+    attendances = list(
+        StaffAttendance.objects.filter(
+            staff=staff,
+            date__gte=start_date,
+            date__lt=end_date,
+        ).order_by("date")
+    )
+
+    present_count = sum(1 for record in attendances if record.status == "Present")
+    late_count = sum(1 for record in attendances if record.status == "Late")
+    absent_count = sum(1 for record in attendances if record.status == "Absent")
+    total_days = len(attendances)
+    attendance_percent = _attendance_percent(present_count + late_count, total_days)
+
+    return render(
+        request,
+        "staff-attendance-detail.html",
+        {
+            "staff": staff,
+            "attendances": attendances,
+            "present_count": present_count,
+            "late_count": late_count,
+            "absent_count": absent_count,
+            "total_days": total_days,
+            "attendance_percent": attendance_percent,
+            "month": month_value,
+            "today": today,
         },
     )
 
