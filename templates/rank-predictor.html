@@ -2889,7 +2889,66 @@
             </svg>`;
       }
 
-      function downloadPredictionReport() {
+      function imageTypeFromDataUrl(dataUrl) {
+        if (!dataUrl) return "PNG";
+        if (dataUrl.startsWith("data:image/jpeg")) return "JPEG";
+        if (dataUrl.startsWith("data:image/webp")) return "WEBP";
+        return "PNG";
+      }
+
+      function getImageDataUrl(imgEl) {
+        return new Promise((resolve) => {
+          if (!imgEl || !imgEl.src) {
+            resolve(null);
+            return;
+          }
+
+          function renderImage() {
+            try {
+              const canvas = document.createElement("canvas");
+              const width = imgEl.naturalWidth || imgEl.width;
+              const height = imgEl.naturalHeight || imgEl.height;
+              if (!width || !height) {
+                resolve(null);
+                return;
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(imgEl, 0, 0, width, height);
+              const format =
+                (imgEl.currentSrc || imgEl.src || "").toLowerCase().includes(".jpg") ||
+                (imgEl.currentSrc || imgEl.src || "").toLowerCase().includes(".jpeg")
+                  ? "image/jpeg"
+                  : "image/png";
+              resolve(canvas.toDataURL(format));
+            } catch (error) {
+              console.warn("Unable to capture image for PDF export:", error);
+              resolve(null);
+            }
+          }
+
+          if (imgEl.complete && (imgEl.naturalWidth || imgEl.width)) {
+            renderImage();
+            return;
+          }
+
+          const onLoad = () => {
+            imgEl.removeEventListener("load", onLoad);
+            imgEl.removeEventListener("error", onError);
+            renderImage();
+          };
+          const onError = () => {
+            imgEl.removeEventListener("load", onLoad);
+            imgEl.removeEventListener("error", onError);
+            resolve(null);
+          };
+          imgEl.addEventListener("load", onLoad, { once: true });
+          imgEl.addEventListener("error", onError, { once: true });
+        });
+      }
+
+      async function downloadPredictionReport() {
         if (!rankPredictor.unlocked) {
           rankPredictor.pendingScroll = false;
           openOtpModal();
@@ -2910,6 +2969,25 @@
           const snapshot = getPredictionSnapshot();
           const filteredColleges = getFilteredColleges();
           const visibleColleges = filteredColleges.slice(0, 80);
+          const logoImage = document.querySelector(".logo-mark img");
+          const promoImage = document.querySelector(".promo-image");
+          const logoDataUrl = await getImageDataUrl(logoImage);
+          const promoDataUrl = await getImageDataUrl(promoImage);
+          const methodHeading =
+            $("methodSectionHead")?.querySelector(".ttl")?.textContent?.trim() ||
+            "The Rankers Academy | NEET Repeaters 2026-27 (Admissions Open)";
+          const methodBadge =
+            $("method")?.querySelector(".method-badge")?.textContent?.trim() || "";
+          const promoChip =
+            $("method")?.querySelector(".promo-chip")?.textContent?.trim() || "";
+          const promoIntro =
+            $("method")?.querySelector(".promo-intro")?.textContent?.trim() || "";
+          const promoNote =
+            $("method")?.querySelector(".promo-note")?.textContent?.trim() || "";
+          const footerAddress = $("pageFooter")?.textContent?.trim() || "";
+          const contactNumber =
+            document.querySelector(".brand-contact-number")?.textContent?.trim() ||
+            "";
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF({
             orientation: "portrait",
@@ -2935,13 +3013,35 @@
             currentY = margin;
           }
 
+          function addPageFooter(pageNumber, totalPages) {
+            doc.setDrawColor(200, 212, 228);
+            doc.setLineWidth(0.3);
+            doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(97, 119, 145);
+            doc.text("The Rankers Academy", margin, pageHeight - 8);
+            if (contactNumber) {
+              doc.text("Call: " + contactNumber, pageWidth / 2, pageHeight - 8, {
+                align: "center",
+              });
+            }
+            doc.text(
+              "Page " + pageNumber + " of " + totalPages,
+              pageWidth - margin,
+              pageHeight - 8,
+              { align: "right" },
+            );
+          }
+
           function drawSectionTitle(title) {
             ensureSpace(10);
             doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
             doc.setTextColor(17, 30, 48);
-            doc.text(title, margin, currentY);
-            currentY += 2;
+            const titleLines = doc.splitTextToSize(title, contentWidth);
+            doc.text(titleLines, margin, currentY);
+            currentY += titleLines.length * 5 - 3;
             doc.setDrawColor(81, 172, 227);
             doc.setLineWidth(0.6);
             doc.line(margin, currentY + 2, margin + contentWidth, currentY + 2);
@@ -2949,21 +3049,44 @@
           }
 
           doc.setFillColor(17, 30, 48);
-          doc.rect(0, 0, pageWidth, 30, "F");
+          doc.rect(0, 0, pageWidth, 34, "F");
+          if (logoDataUrl) {
+            doc.addImage(
+              logoDataUrl,
+              imageTypeFromDataUrl(logoDataUrl),
+              margin,
+              6,
+              16,
+              16,
+            );
+          }
           doc.setTextColor(245, 247, 250);
           doc.setFont("helvetica", "bold");
           doc.setFontSize(18);
-          doc.text("THE RANKERS ACADEMY", margin, 12);
+          doc.text("THE RANKERS ACADEMY", logoDataUrl ? margin + 21 : margin, 13);
           doc.setFontSize(11);
           doc.setFont("helvetica", "normal");
-          doc.text("NEET 2026 Rank Predictor Report", margin, 20);
+          doc.text(
+            "NEET 2026 Rank Predictor Report",
+            logoDataUrl ? margin + 21 : margin,
+            21,
+          );
+          doc.setFontSize(8.5);
+          doc.setTextColor(156, 216, 255);
+          doc.text(
+            "Nagpur | JEE | NEET | MHT-CET",
+            logoDataUrl ? margin + 21 : margin,
+            27,
+          );
+          doc.setTextColor(245, 247, 250);
+          doc.setFontSize(11);
           doc.text(
             "Generated on " + new Date().toLocaleDateString("en-IN"),
             pageWidth - margin,
             20,
             { align: "right" },
           );
-          currentY = 38;
+          currentY = 42;
 
           drawSectionTitle("Student Inputs");
           doc.autoTable({
@@ -3104,7 +3227,88 @@
             );
           }
 
+          currentY += 12;
+          drawSectionTitle(methodHeading);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.setTextColor(46, 141, 205);
+          if (methodBadge) {
+            const badgeLines = doc.splitTextToSize(methodBadge, contentWidth);
+            doc.text(badgeLines, margin, currentY);
+            currentY += badgeLines.length * 5;
+          }
+          if (promoChip) {
+            doc.setTextColor(255, 201, 40);
+            doc.text(promoChip, margin, currentY);
+            currentY += 6;
+          }
+          if (promoIntro) {
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9.5);
+            doc.setTextColor(17, 30, 48);
+            const introLines = doc.splitTextToSize(promoIntro, contentWidth);
+            doc.text(introLines, margin, currentY);
+            currentY += introLines.length * 4.5 + 4;
+          }
+          if (promoDataUrl) {
+            ensureSpace(95);
+            const posterMaxWidth = Math.min(contentWidth, 112);
+            const posterProps = doc.getImageProperties(promoDataUrl);
+            const posterHeight = Math.min(
+              150,
+              (posterProps.height * posterMaxWidth) / posterProps.width,
+            );
+            const posterX = (pageWidth - posterMaxWidth) / 2;
+            doc.addImage(
+              promoDataUrl,
+              imageTypeFromDataUrl(promoDataUrl),
+              posterX,
+              currentY,
+              posterMaxWidth,
+              posterHeight,
+            );
+            currentY += posterHeight + 6;
+          }
+          if (promoNote) {
+            ensureSpace(24);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(97, 119, 145);
+            const noteLines = doc.splitTextToSize(promoNote, contentWidth);
+            doc.text(noteLines, margin, currentY);
+            currentY += noteLines.length * 4.2 + 4;
+          }
+          if (contactNumber || footerAddress) {
+            ensureSpace(28);
+            doc.setDrawColor(200, 212, 228);
+            doc.setFillColor(245, 247, 250);
+            const addressLines = footerAddress
+              ? doc.splitTextToSize(footerAddress, contentWidth - 8)
+              : [];
+            const boxHeight = Math.max(
+              12,
+              (contactNumber ? 8 : 2) + addressLines.length * 4.2 + 6,
+            );
+            doc.roundedRect(margin, currentY, contentWidth, boxHeight, 2, 2, "FD");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(17, 30, 48);
+            if (contactNumber) {
+              doc.text("Call for Free Counselling: " + contactNumber, margin + 4, currentY + 7);
+            }
+            if (footerAddress) {
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(8.5);
+              doc.text(addressLines, margin + 4, currentY + (contactNumber ? 13 : 7));
+            }
+          }
+
           const safeCategory = String(state.cat || "UR").replace(/[^a-z0-9]+/gi, "-");
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let page = 1; page <= totalPages; page += 1) {
+            doc.setPage(page);
+            addPageFooter(page, totalPages);
+          }
           doc.save(
             "neet-rank-prediction-report-" +
               safeCategory.toLowerCase() +
