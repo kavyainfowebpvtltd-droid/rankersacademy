@@ -70,6 +70,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
   toggleFields();
 
+  const studentFilterForm = document.getElementById("studentFilterForm");
+  const studentSearchInput = document.getElementById("studentSearchInput");
+  const studentFilterSelects = document.querySelectorAll(".student-filter-select");
+  let studentSearchDebounceRef = null;
+
+  if (studentFilterForm && studentSearchInput) {
+    studentSearchInput.addEventListener("input", () => {
+      if (studentSearchDebounceRef) {
+        clearTimeout(studentSearchDebounceRef);
+      }
+
+      studentSearchDebounceRef = setTimeout(() => {
+        studentFilterForm.requestSubmit();
+      }, 450);
+    });
+
+    studentSearchInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      if (studentSearchDebounceRef) {
+        clearTimeout(studentSearchDebounceRef);
+      }
+      studentFilterForm.requestSubmit();
+    });
+  }
+
+  studentFilterSelects.forEach((select) => {
+    select.addEventListener("change", () => {
+      if (studentSearchDebounceRef) {
+        clearTimeout(studentSearchDebounceRef);
+      }
+      if (studentFilterForm) {
+        studentFilterForm.requestSubmit();
+      }
+    });
+  });
+
   document.querySelectorAll(".password-toggle").forEach((toggleBtn) => {
     toggleBtn.addEventListener("click", () => {
       const input = document.getElementById(toggleBtn.dataset.target);
