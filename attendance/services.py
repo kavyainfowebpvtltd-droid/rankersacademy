@@ -633,6 +633,9 @@ def record_staff_scan(raw_value: str, scanned_at: str | None = None) -> dict:
         "staffRole": staff.role,
         "staffContact": staff.contact,
         "staffEmail": staff.email,
+        "studentName": staff.name,
+        "studentClass": f"Staff | {staff.role}",
+        "studentBatch": staff.contact or staff.email or "",
         "photoUrl": get_staff_photo_url(staff),
         "action": action,
         "actionText": {

@@ -501,40 +501,6 @@ def staff_attendance(request):
     )
 
 
-@login_required
-@require_POST
-def staff_attendance_scan_api(request):
-    if not _can_manage_staff_attendance(request.user):
-        return JsonResponse({"success": False, "message": "Not allowed"}, status=403)
-
-    try:
-        payload = json.loads(request.body.decode("utf-8") or "{}")
-    except json.JSONDecodeError:
-        payload = request.POST
-
-    barcode = (
-        payload.get("barcode")
-        or payload.get("qr_data")
-        or payload.get("qrData")
-        or payload.get("code")
-    )
-    scanned_at = payload.get("scanned_at") or payload.get("timestamp")
-
-    if not barcode:
-        return JsonResponse({"success": False, "message": "No QR code data received."}, status=400)
-
-    try:
-        result = record_staff_scan(barcode, scanned_at=scanned_at)
-        return JsonResponse(result)
-    except ValueError as exc:
-        return JsonResponse({"success": False, "message": str(exc)}, status=400)
-    except Exception:
-        return JsonResponse(
-            {"success": False, "message": "Unable to process this staff QR scan right now."},
-            status=500,
-        )
-
-
 @csrf_exempt
 @require_POST
 def kiosk_scan_api(request):
@@ -554,13 +520,21 @@ def kiosk_scan_api(request):
     if not barcode:
         return JsonResponse({"success": False, "message": "No QR code data received."}, status=400)
 
-    try:
-        result = record_kiosk_scan(barcode, scanned_at=scanned_at)
-        return JsonResponse(result)
-    except ValueError as exc:
-        return JsonResponse({"success": False, "message": str(exc)}, status=400)
-    except Exception:
-        return JsonResponse(
-            {"success": False, "message": "Unable to process this QR scan right now."},
-            status=500,
-        )
+    resolver_error = None
+    for resolver in (record_kiosk_scan, record_staff_scan):
+        try:
+            result = resolver(barcode, scanned_at=scanned_at)
+            return JsonResponse(result)
+        except ValueError as exc:
+            resolver_error = exc
+            continue
+        except Exception:
+            return JsonResponse(
+                {"success": False, "message": "Unable to process this QR scan right now."},
+                status=500,
+            )
+
+    return JsonResponse(
+        {"success": False, "message": str(resolver_error or "Unable to identify the scanned QR code.")},
+        status=400,
+    )

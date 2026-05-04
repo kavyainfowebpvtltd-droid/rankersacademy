@@ -14,62 +14,46 @@
     .page-shell { max-width: 95%; margin: 1.5rem auto; }
     .hero-card {
       background: linear-gradient(135deg, #0f172a 0%, #0f4c81 54%, #0891b2 100%);
-      color: white; border-radius: 22px; padding: 24px;
+      color: white;
+      border-radius: 22px;
+      padding: 24px;
       box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
     }
     .hero-sub { color: rgba(255,255,255,.78); }
-    .scan-card, .summary-card, .panel-card {
-      background: white; border-radius: 18px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+    .info-card, .summary-card, .panel-card {
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
     }
-    .scan-card { padding: 22px; }
-    .scanner-input {
-      border-radius: 14px; border: 1px solid #dbe2ea; padding: 14px 16px;
-      font-size: 16px; font-weight: 600;
-    }
-    .scanner-input:focus {
-      border-color: #0d6efd; box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
-    }
-    .scan-btn {
-      border: none; border-radius: 14px; padding: 14px 22px;
-      background: linear-gradient(135deg, #0d6efd 0%, #0891b2 100%);
-      color: white; font-weight: 700;
-    }
-    .scan-btn:disabled { opacity: .7; }
-    .scan-status {
-      min-height: 148px; border-radius: 18px; padding: 20px; border: 1px solid #e2e8f0;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      display: flex; align-items: center; gap: 18px;
-    }
-    .scan-status.success { border-color: #86efac; background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%); }
-    .scan-status.error { border-color: #fecaca; background: linear-gradient(180deg, #fff1f2 0%, #fee2e2 100%); }
-    .scan-status.loading { border-color: #bfdbfe; background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%); }
-    .status-avatar {
-      width: 84px; height: 84px; border-radius: 22px; overflow: hidden; flex-shrink: 0;
-      background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #475569;
-      font-size: 30px; font-weight: 800;
-    }
-    .status-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .status-label {
-      display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px;
-      font-size: 13px; font-weight: 700;
-    }
-    .label-present { background: #dcfce7; color: #166534; }
-    .label-late { background: #fef3c7; color: #b45309; }
-    .label-neutral { background: #e2e8f0; color: #475569; }
+    .info-card { padding: 18px 20px; }
     .summary-card { padding: 20px; height: 100%; }
     .summary-number { font-size: 32px; font-weight: 800; line-height: 1; }
     .summary-label { color: #64748b; font-size: 14px; font-weight: 600; margin-top: 8px; }
     .toolbar-input, .toolbar-select {
-      border-radius: 12px; border: 1px solid #dbe2ea; padding: 10px 14px; font-weight: 500;
+      border-radius: 12px;
+      border: 1px solid #dbe2ea;
+      padding: 10px 14px;
+      font-weight: 500;
     }
     .attendance-table th {
-      background: #f8fafc; color: #334155; font-weight: 800; white-space: nowrap;
+      background: #f8fafc;
+      color: #334155;
+      font-weight: 800;
+      white-space: nowrap;
     }
-    .attendance-table th, .attendance-table td { padding: 14px 12px; vertical-align: middle; }
+    .attendance-table th, .attendance-table td {
+      padding: 14px 12px;
+      vertical-align: middle;
+    }
     .staff-name { font-weight: 700; color: #0f172a; }
     .status-badge, .time-pill {
-      display: inline-flex; align-items: center; justify-content: center; border-radius: 999px;
-      padding: 7px 12px; font-size: 13px; font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 700;
     }
     .status-present { background: #dcfce7; color: #166534; }
     .status-late { background: #fef3c7; color: #b45309; }
@@ -78,10 +62,14 @@
     .time-pill-muted { background: #f1f5f9; color: #64748b; }
     .table-empty { padding: 52px 24px; text-align: center; color: #64748b; }
     .pagination .page-link {
-      color: #0d6efd; border-radius: 10px; margin: 0 2px;
+      color: #0d6efd;
+      border-radius: 10px;
+      margin: 0 2px;
     }
     .pagination .page-item.active .page-link {
-      background: #0d6efd; border-color: #0d6efd; color: white;
+      background: #0d6efd;
+      border-color: #0d6efd;
+      color: white;
     }
   </style>
 </head>
@@ -91,7 +79,7 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
       <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-person-badge me-2"></i>Staff Attendance</h3>
-        <p class="hero-sub mb-0">Scan staff QR cards with the barcode scanner and track attendance records in real time.</p>
+        <p class="hero-sub mb-0">Attendance records for staff members scanned through the common kiosk attendance page.</p>
       </div>
       <form method="get" class="mb-0">
         <input type="month" class="form-control" name="month" value="{{ month }}" onchange="this.form.submit()">
@@ -99,45 +87,15 @@
     </div>
   </div>
 
-  <div class="row g-4 mb-4">
-    <div class="col-lg-5">
-      <div class="scan-card h-100">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-          <div>
-            <h5 class="fw-bold mb-1">Scanner Desk</h5>
-            <p class="text-muted mb-0">Keep the cursor here and scan the staff QR code.</p>
-          </div>
-          <span class="status-label label-neutral"><i class="bi bi-upc-scan"></i> Ready</span>
-        </div>
-        <div class="d-flex gap-2 flex-column flex-md-row">
-          <input
-            type="text"
-            id="barcodeInput"
-            class="form-control scanner-input"
-            placeholder="Scan QR / barcode here"
-            autocomplete="off"
-            autofocus
-          >
-          <button id="scanButton" type="button" class="scan-btn">
-            <i class="bi bi-arrow-right-circle me-2"></i>Process Scan
-          </button>
-        </div>
-        <p class="small text-muted mt-3 mb-0">
-          The first scan marks check-in. A later scan after 5:00 PM marks check-out.
-        </p>
+  <div class="info-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <div class="fw-bold mb-1"><i class="bi bi-upc-scan me-2 text-primary"></i>Scanning happens on the kiosk page</div>
+        <div class="text-muted">When a staff QR code is scanned from the kiosk, the attendance record is stored in the database and appears here automatically.</div>
       </div>
-    </div>
-    <div class="col-lg-7">
-      <div id="scanStatus" class="scan-status">
-        <div id="statusAvatar" class="status-avatar">
-          <i class="bi bi-person-badge"></i>
-        </div>
-        <div class="flex-grow-1">
-          <h5 id="statusTitle" class="fw-bold mb-1">Waiting for scan</h5>
-          <p id="statusSubtitle" class="text-muted mb-2">The latest staff attendance result will appear here.</p>
-          <div id="statusMeta" class="small text-muted">Selected month: {{ month }}</div>
-        </div>
-      </div>
+      <a href="{% url 'qr_kiosk' %}" target="_blank" class="btn btn-primary">
+        <i class="bi bi-box-arrow-up-right me-2"></i>Open Kiosk Page
+      </a>
     </div>
   </div>
 
@@ -219,7 +177,7 @@
               <td><span class="time-pill {% if row.check_out == '-' %}time-pill-muted{% endif %}">{{ row.check_out }}</span></td>
             </tr>
           {% empty %}
-            <tr id="emptyStateRow">
+            <tr>
               <td colspan="9">
                 <div class="table-empty">
                   <i class="bi bi-person-x fs-1 d-block mb-3"></i>
@@ -260,42 +218,10 @@
 </div>
 
 <script>
-  const barcodeInput = document.getElementById("barcodeInput");
-  const scanButton = document.getElementById("scanButton");
-  const scanStatus = document.getElementById("scanStatus");
-  const statusAvatar = document.getElementById("statusAvatar");
-  const statusTitle = document.getElementById("statusTitle");
-  const statusSubtitle = document.getElementById("statusSubtitle");
-  const statusMeta = document.getElementById("statusMeta");
-  const staffSearch = document.getElementById("staffSearch");
-  const statusFilter = document.getElementById("statusFilter");
-  const recordsBody = document.getElementById("recordsBody");
-  const selectedMonth = "{{ month }}";
-  const currentMonth = "{{ today|date:'Y-m' }}";
-  let isProcessing = false;
-
-  function getCookie(name) {
-    const cookieValue = document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(name + "="));
-    return cookieValue ? decodeURIComponent(cookieValue.split("=")[1]) : "";
-  }
-
-  function focusScanner() {
-    if (document.activeElement !== barcodeInput) {
-      barcodeInput.focus();
-    }
-  }
-
-  setInterval(focusScanner, 500);
-
-  function getRows() {
-    return Array.from(recordsBody.querySelectorAll("tr[data-record-id]"));
-  }
+  const tableRows = Array.from(document.querySelectorAll("#recordsBody tr[data-record-id]"));
 
   function updateSummary() {
-    const visibleRows = getRows().filter((row) => row.style.display !== "none");
+    const visibleRows = tableRows.filter((row) => row.style.display !== "none");
     document.getElementById("summaryTotal").textContent = visibleRows.length;
     document.getElementById("summaryPresent").textContent = visibleRows.filter((row) => row.dataset.status === "Present").length;
     document.getElementById("summaryLate").textContent = visibleRows.filter((row) => row.dataset.status === "Late").length;
@@ -303,10 +229,10 @@
   }
 
   function filterRows() {
-    const search = (staffSearch.value || "").trim().toLowerCase();
-    const status = statusFilter.value;
+    const search = (document.getElementById("staffSearch").value || "").trim().toLowerCase();
+    const status = document.getElementById("statusFilter").value;
 
-    getRows().forEach((row) => {
+    tableRows.forEach((row) => {
       const matchesSearch = (row.dataset.search || "").includes(search);
       const matchesStatus = status === "All" || row.dataset.status === status;
       row.style.display = matchesSearch && matchesStatus ? "" : "none";
@@ -315,140 +241,9 @@
     updateSummary();
   }
 
-  function setStatusState(type, title, subtitle, meta, imageUrl, fallbackText) {
-    scanStatus.className = "scan-status" + (type ? " " + type : "");
-    statusTitle.textContent = title;
-    statusSubtitle.textContent = subtitle;
-    statusMeta.textContent = meta;
-
-    if (imageUrl) {
-      statusAvatar.innerHTML = `<img src="${imageUrl}" alt="${title}">`;
-    } else {
-      statusAvatar.innerHTML = fallbackText || '<i class="bi bi-person-badge"></i>';
-    }
-  }
-
-  function buildRowMarkup(recordId, result) {
-    const statusClass = result.status === "Present"
-      ? "status-present"
-      : result.status === "Late"
-        ? "status-late"
-        : "status-absent";
-    const checkInClass = result.checkIn === "-" ? "time-pill time-pill-muted" : "time-pill";
-    const checkOutClass = result.checkOut === "-" ? "time-pill time-pill-muted" : "time-pill";
-
-    return `
-      <tr
-        data-record-id="${recordId}"
-        data-search="${`${result.staffName} ${result.staffContact} ${result.staffRole} ${result.staffEmail || ""}`.toLowerCase()}"
-        data-status="${result.status}"
-        data-checkout="${result.checkOut !== "-" ? "1" : "0"}"
-      >
-        <td>NEW</td>
-        <td class="staff-name">${result.staffName}</td>
-        <td>${result.staffRole}</td>
-        <td>${result.staffContact}</td>
-        <td>${result.staffEmail || "-"}</td>
-        <td>${result.date}</td>
-        <td><span class="status-badge ${statusClass}">${result.status}</span></td>
-        <td><span class="${checkInClass}">${result.checkIn}</span></td>
-        <td><span class="${checkOutClass}">${result.checkOut}</span></td>
-      </tr>
-    `;
-  }
-
-  function upsertAttendanceRow(result) {
-    if (selectedMonth !== currentMonth) {
-      return;
-    }
-
-    const emptyStateRow = document.getElementById("emptyStateRow");
-    if (emptyStateRow) {
-      emptyStateRow.remove();
-    }
-
-    const existingRow = recordsBody.querySelector(`tr[data-record-id="${result.recordId}"]`);
-    if (existingRow) {
-      existingRow.outerHTML = buildRowMarkup(result.recordId, result);
-    } else {
-      recordsBody.insertAdjacentHTML("afterbegin", buildRowMarkup(result.recordId, result));
-    }
-
-    filterRows();
-  }
-
-  async function submitScan() {
-    const barcode = (barcodeInput.value || "").trim();
-    if (!barcode || isProcessing) {
-      return;
-    }
-
-    isProcessing = true;
-    scanButton.disabled = true;
-    setStatusState("loading", "Processing scan...", "Please wait while the staff QR code is verified.", "Scanner active", "", '<i class="bi bi-hourglass-split"></i>');
-
-    try {
-      const response = await fetch("{% url 'staff_attendance_scan_api' %}", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({
-          barcode: barcode,
-          scanned_at: new Date().toISOString(),
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok || payload.success === false) {
-        throw new Error(payload.message || "Unable to process scan.");
-      }
-
-      setStatusState(
-        payload.status === "Late" ? "success" : "success",
-        payload.staffName,
-        payload.actionText + " | " + payload.staffRole,
-        payload.date + " | " + payload.timestamp + " | " + payload.staffContact,
-        payload.photoUrl,
-        '<i class="bi bi-person-check"></i>',
-      );
-      upsertAttendanceRow(payload);
-      barcodeInput.value = "";
-    } catch (error) {
-      setStatusState(
-        "error",
-        "Scan failed",
-        error.message || "Unable to process this QR code.",
-        "Please verify the QR data and try again.",
-        "",
-        '<i class="bi bi-exclamation-triangle"></i>',
-      );
-    } finally {
-      isProcessing = false;
-      scanButton.disabled = false;
-      focusScanner();
-    }
-  }
-
-  barcodeInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      submitScan();
-    }
-  });
-
-  barcodeInput.addEventListener("input", (event) => {
-    if ((event.target.value || "").includes("\n")) {
-      event.target.value = event.target.value.replace(/[\r\n]+/g, "");
-      submitScan();
-    }
-  });
-
-  scanButton.addEventListener("click", submitScan);
-  staffSearch.addEventListener("input", filterRows);
-  statusFilter.addEventListener("change", filterRows);
-  filterRows();
+  document.getElementById("staffSearch").addEventListener("input", filterRows);
+  document.getElementById("statusFilter").addEventListener("change", filterRows);
+  updateSummary();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
