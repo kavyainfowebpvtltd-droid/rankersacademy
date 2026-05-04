@@ -3235,26 +3235,42 @@
 
           currentY += 12;
           drawSectionTitle(methodHeading);
+          const textBlockWidth = Math.max(110, contentWidth - 20);
+          const textBlockX = margin + (contentWidth - textBlockWidth) / 2;
           doc.setFont("helvetica", "bold");
           doc.setFontSize(10);
           doc.setTextColor(46, 141, 205);
           if (methodBadge) {
-            const badgeLines = doc.splitTextToSize(methodBadge, contentWidth);
-            doc.text(badgeLines, margin, currentY);
-            currentY += badgeLines.length * 5;
+            const badgeLines = doc.splitTextToSize(methodBadge, textBlockWidth);
+            doc.text(badgeLines, pageWidth / 2, currentY, { align: "center" });
+            currentY += badgeLines.length * 5 + 1;
           }
           if (promoChip) {
+            doc.setFontSize(9);
             doc.setTextColor(255, 201, 40);
-            doc.text(promoChip, margin, currentY);
-            currentY += 6;
+            doc.text(promoChip, pageWidth / 2, currentY, { align: "center" });
+            currentY += 7;
           }
           if (promoIntro) {
+            ensureSpace(28);
+            doc.setDrawColor(215, 226, 240);
+            doc.setFillColor(250, 252, 255);
+            const introLines = doc.splitTextToSize(promoIntro, textBlockWidth - 10);
+            const introBoxHeight = introLines.length * 4.5 + 10;
+            doc.roundedRect(
+              textBlockX,
+              currentY - 4,
+              textBlockWidth,
+              introBoxHeight,
+              2,
+              2,
+              "FD",
+            );
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9.5);
             doc.setTextColor(17, 30, 48);
-            const introLines = doc.splitTextToSize(promoIntro, contentWidth);
-            doc.text(introLines, margin, currentY);
-            currentY += introLines.length * 4.5 + 4;
+            doc.text(introLines, textBlockX + 5, currentY + 2);
+            currentY += introBoxHeight + 4;
           }
           if (promoDataUrl) {
             const posterProps = doc.getImageProperties(promoDataUrl);
@@ -3273,13 +3289,29 @@
             currentY += posterHeight + 6;
           }
           if (promoNote) {
-            ensureSpace(24);
+            ensureSpace(32);
+            const noteLines = doc.splitTextToSize(promoNote, textBlockWidth - 10);
+            const noteBoxHeight = noteLines.length * 4.2 + 14;
+            doc.setDrawColor(200, 212, 228);
+            doc.setFillColor(245, 247, 250);
+            doc.roundedRect(
+              textBlockX,
+              currentY - 3,
+              textBlockWidth,
+              noteBoxHeight,
+              2,
+              2,
+              "FD",
+            );
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.setTextColor(46, 141, 205);
+            doc.text("Counselling Note", textBlockX + 5, currentY + 2);
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
             doc.setTextColor(97, 119, 145);
-            const noteLines = doc.splitTextToSize(promoNote, contentWidth);
-            doc.text(noteLines, margin, currentY);
-            currentY += noteLines.length * 4.2 + 4;
+            doc.text(noteLines, textBlockX + 5, currentY + 8);
+            currentY += noteBoxHeight + 4;
           }
           if (contactNumber || footerAddress) {
             ensureSpace(28);
