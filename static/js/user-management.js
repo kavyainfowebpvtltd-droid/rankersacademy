@@ -69,43 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   toggleFields();
-
-  const studentFilterForm = document.getElementById("studentFilterForm");
-  const studentSearchInput = document.getElementById("studentSearchInput");
-  const studentFilterSelects = document.querySelectorAll(".student-filter-select");
-  let studentSearchDebounceRef = null;
-
-  if (studentFilterForm && studentSearchInput) {
-    studentSearchInput.addEventListener("input", () => {
-      if (studentSearchDebounceRef) {
-        clearTimeout(studentSearchDebounceRef);
-      }
-
-      studentSearchDebounceRef = setTimeout(() => {
-        studentFilterForm.requestSubmit();
-      }, 450);
-    });
-
-    studentSearchInput.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") return;
-      event.preventDefault();
-      if (studentSearchDebounceRef) {
-        clearTimeout(studentSearchDebounceRef);
-      }
-      studentFilterForm.requestSubmit();
-    });
-  }
-
-  studentFilterSelects.forEach((select) => {
-    select.addEventListener("change", () => {
-      if (studentSearchDebounceRef) {
-        clearTimeout(studentSearchDebounceRef);
-      }
-      if (studentFilterForm) {
-        studentFilterForm.requestSubmit();
-      }
-    });
-  });
+  initStudentFilterSearch();
 
   document.querySelectorAll(".password-toggle").forEach((toggleBtn) => {
     toggleBtn.addEventListener("click", () => {
@@ -131,6 +95,136 @@ document.addEventListener("DOMContentLoaded", () => {
     batchInput.addEventListener("blur", () => generateUsernameFromBatch());
   }
 });
+
+let studentSearchDebounceRef = null;
+let studentFilterAbortController = null;
+
+function initStudentFilterSearch() {
+  const studentFilterForm = document.getElementById("studentFilterForm");
+  const studentSearchInput = document.getElementById("studentSearchInput");
+  const studentFilterSelects = document.querySelectorAll(".student-filter-select");
+
+  if (!studentFilterForm || !studentSearchInput) {
+    return;
+  }
+
+  if (studentFilterForm.dataset.ajaxBound === "true") {
+    return;
+  }
+  studentFilterForm.dataset.ajaxBound = "true";
+
+  studentFilterForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    fetchStudentTableResults(studentFilterForm);
+  });
+
+  studentSearchInput.addEventListener("input", () => {
+    if (studentSearchDebounceRef) {
+      clearTimeout(studentSearchDebounceRef);
+    }
+
+    studentSearchDebounceRef = setTimeout(() => {
+      fetchStudentTableResults(studentFilterForm);
+    }, 700);
+  });
+
+  studentSearchInput.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (studentSearchDebounceRef) {
+      clearTimeout(studentSearchDebounceRef);
+    }
+    fetchStudentTableResults(studentFilterForm);
+  });
+
+  studentFilterSelects.forEach((select) => {
+    select.addEventListener("change", () => {
+      if (studentSearchDebounceRef) {
+        clearTimeout(studentSearchDebounceRef);
+      }
+      fetchStudentTableResults(studentFilterForm);
+    });
+  });
+}
+
+async function fetchStudentTableResults(form) {
+  if (!form) return;
+
+  const studentTableCard = document.getElementById("studentTableCard");
+  if (!studentTableCard) {
+    form.submit();
+    return;
+  }
+
+  if (studentFilterAbortController) {
+    studentFilterAbortController.abort();
+  }
+  studentFilterAbortController = new AbortController();
+
+  const searchInput = document.getElementById("studentSearchInput");
+  const activeElementId = document.activeElement && document.activeElement.id;
+  const activeSelectionStart =
+    searchInput && document.activeElement === searchInput
+      ? searchInput.selectionStart
+      : null;
+  const activeSelectionEnd =
+    searchInput && document.activeElement === searchInput
+      ? searchInput.selectionEnd
+      : null;
+
+  studentTableCard.style.opacity = "0.6";
+  const url = new URL(form.action || window.location.href, window.location.origin);
+  const formData = new FormData(form);
+  url.search = new URLSearchParams(formData).toString();
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      signal: studentFilterAbortController.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to fetch filtered students.");
+    }
+
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const nextStudentTableCard = doc.getElementById("studentTableCard");
+
+    if (!nextStudentTableCard) {
+      throw new Error("Filtered student table not found.");
+    }
+
+    studentTableCard.replaceWith(nextStudentTableCard);
+    initStudentFilterSearch();
+
+    const nextSearchInput = document.getElementById("studentSearchInput");
+    if (nextSearchInput && activeElementId === "studentSearchInput") {
+      nextSearchInput.focus();
+      if (
+        activeSelectionStart !== null &&
+        activeSelectionEnd !== null &&
+        typeof nextSearchInput.setSelectionRange === "function"
+      ) {
+        nextSearchInput.setSelectionRange(activeSelectionStart, activeSelectionEnd);
+      }
+    }
+  } catch (error) {
+    if (error.name === "AbortError") {
+      return;
+    }
+    form.submit();
+  } finally {
+    const refreshedStudentTableCard = document.getElementById("studentTableCard");
+    if (refreshedStudentTableCard) {
+      refreshedStudentTableCard.style.opacity = "";
+    }
+  }
+}
 
 function generateUsernameFromBatch(sourceInput = null) {
   const batchInput = sourceInput || getCommonBatchInput();
