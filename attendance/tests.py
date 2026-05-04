@@ -5,9 +5,9 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 
-from attendance.models import Attendance
-from attendance.services import process_absent_attendance, record_kiosk_scan
-from sds.models import Student
+from attendance.models import Attendance, StaffAttendance
+from attendance.services import process_absent_attendance, record_kiosk_scan, record_staff_scan
+from sds.models import Student, TeacherAdmin
 
 
 class AttendanceKioskServiceTests(TestCase):
@@ -128,3 +128,36 @@ class AttendanceAbsentProcessingTests(TestCase):
         self.assertEqual(created_count, 1)
         self.assertEqual(attendance.status, "Absent")
         mocked_sms.assert_called_once()
+
+
+class StaffAttendanceServiceTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="admin.staff", password="testpass123")
+        self.staff = TeacherAdmin.objects.create(
+            user=self.user,
+            name="Asha Kulkarni",
+            username="admin.staff",
+            email="asha@example.com",
+            contact="9123456780",
+            gender="Female",
+            role="Admin",
+        )
+
+    def test_staff_qr_scan_marks_present(self):
+        result = record_staff_scan(
+            "Name: Asha Kulkarni, Username: admin.staff, Contact Number: 9123456780",
+            scanned_at="2026-04-24T03:10:00Z",
+        )
+
+        attendance = StaffAttendance.objects.get(staff=self.staff, date="2026-04-24")
+        self.assertEqual(attendance.status, "Present")
+        self.assertEqual(result["action"], "checkin")
+        self.assertEqual(result["staff_id"], self.staff.id)
+
+    def test_second_staff_scan_after_checkout_cutoff_marks_checkout(self):
+        record_staff_scan(str(self.staff.id), scanned_at="2026-04-24T03:10:00Z")
+        result = record_staff_scan(str(self.staff.id), scanned_at="2026-04-24T11:45:00Z")
+
+        attendance = StaffAttendance.objects.get(staff=self.staff, date="2026-04-24")
+        self.assertEqual(result["action"], "checkout")
+        self.assertIsNotNone(attendance.check_out)

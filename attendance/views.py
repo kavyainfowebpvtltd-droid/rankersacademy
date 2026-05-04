@@ -14,15 +14,28 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from attendance.models import Attendance
+from attendance.models import Attendance, StaffAttendance
 from attendance.services import (
     format_display_time,
     get_local_now,
     previous_working_day,
     process_absent_attendance,
     record_kiosk_scan,
+    record_staff_scan,
 )
 from sds.models import Student
+
+
+def _can_manage_student_attendance(user):
+    return user.is_superuser or (
+        hasattr(user, "teacheradmin") and user.teacheradmin.role in ["Admin", "Teacher"]
+    )
+
+
+def _can_manage_staff_attendance(user):
+    return user.is_superuser or (
+        hasattr(user, "teacheradmin") and user.teacheradmin.role == "Admin"
+    )
 
 
 def _teacher_scope_batches(user):
@@ -213,10 +226,7 @@ def _attendance_redirect_url(month_value):
 
 @login_required
 def attendance(request):
-    if not (
-        request.user.is_superuser
-        or (hasattr(request.user, "teacheradmin") and request.user.teacheradmin.role in ["Admin", "Teacher"])
-    ):
+    if not _can_manage_student_attendance(request.user):
         return HttpResponseForbidden("Only admins and teachers can access attendance.")
 
     teacher, batches = _teacher_scope_batches(request.user)
@@ -253,10 +263,7 @@ def attendance(request):
 @login_required
 @require_POST
 def export_attendance_email(request):
-    if not (
-        request.user.is_superuser
-        or (hasattr(request.user, "teacheradmin") and request.user.teacheradmin.role in ["Admin", "Teacher"])
-    ):
+    if not _can_manage_student_attendance(request.user):
         return HttpResponseForbidden("Only admins and teachers can export attendance.")
 
     start_date, end_date, month_value, today = _month_bounds(request.POST.get("month"))
@@ -298,10 +305,7 @@ def export_attendance_email(request):
 @login_required
 @require_POST
 def mark_attendance(request):
-    if not (
-        request.user.is_superuser
-        or (hasattr(request.user, "teacheradmin") and request.user.teacheradmin.role in ["Admin", "Teacher"])
-    ):
+    if not _can_manage_student_attendance(request.user):
         return JsonResponse({"success": False, "error": "Not allowed"}, status=403)
 
     student_id = request.POST.get("student_id")
@@ -341,10 +345,7 @@ def mark_attendance(request):
 
 @login_required
 def view_student_attendance(request, student_id):
-    if not (
-        request.user.is_superuser
-        or (hasattr(request.user, "teacheradmin") and request.user.teacheradmin.role in ["Admin", "Teacher"])
-    ):
+    if not _can_manage_student_attendance(request.user):
         return HttpResponseForbidden("Not allowed")
 
     student = get_object_or_404(Student, id=student_id)
@@ -435,6 +436,103 @@ def my_attendance(request):
 
 def qr_kiosk(request):
     return render(request, "qr-kiosk.html")
+
+
+def _build_staff_attendance_rows(start_date, end_date):
+    records = list(
+        StaffAttendance.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+        )
+        .select_related("staff", "staff__user")
+        .order_by("-date", "-check_in", "staff__name")
+    )
+
+    rows = []
+    for record in records:
+        rows.append(
+            {
+                "id": record.id,
+                "staff_id": record.staff_id,
+                "staff_name": record.staff.name,
+                "role": record.staff.role,
+                "contact": record.staff.contact,
+                "email": record.staff.email,
+                "date": record.date,
+                "status": record.status,
+                "check_in": format_display_time(record.check_in),
+                "check_out": format_display_time(record.check_out),
+                "updated_at": record.updated_at,
+            }
+        )
+    return rows
+
+
+@login_required
+def staff_attendance(request):
+    if not _can_manage_staff_attendance(request.user):
+        return HttpResponseForbidden("Only admins can access staff attendance.")
+
+    start_date, end_date, month_value, today = _month_bounds(request.GET.get("month"))
+    attendance_rows = _build_staff_attendance_rows(start_date, end_date)
+
+    summary_total = len(attendance_rows)
+    summary_present = sum(1 for row in attendance_rows if row["status"] == "Present")
+    summary_late = sum(1 for row in attendance_rows if row["status"] == "Late")
+    summary_checkout = sum(1 for row in attendance_rows if row["check_out"] != "-")
+
+    paginator = Paginator(attendance_rows, 20)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "staff-attendance.html",
+        {
+            "attendance_rows": page_obj.object_list,
+            "month": month_value,
+            "today": today,
+            "summary_total": summary_total,
+            "summary_present": summary_present,
+            "summary_late": summary_late,
+            "summary_checkout": summary_checkout,
+            "page_obj": page_obj,
+            "paginator": paginator,
+        },
+    )
+
+
+@login_required
+@require_POST
+def staff_attendance_scan_api(request):
+    if not _can_manage_staff_attendance(request.user):
+        return JsonResponse({"success": False, "message": "Not allowed"}, status=403)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        payload = request.POST
+
+    barcode = (
+        payload.get("barcode")
+        or payload.get("qr_data")
+        or payload.get("qrData")
+        or payload.get("code")
+    )
+    scanned_at = payload.get("scanned_at") or payload.get("timestamp")
+
+    if not barcode:
+        return JsonResponse({"success": False, "message": "No QR code data received."}, status=400)
+
+    try:
+        result = record_staff_scan(barcode, scanned_at=scanned_at)
+        return JsonResponse(result)
+    except ValueError as exc:
+        return JsonResponse({"success": False, "message": str(exc)}, status=400)
+    except Exception:
+        return JsonResponse(
+            {"success": False, "message": "Unable to process this staff QR scan right now."},
+            status=500,
+        )
 
 
 @csrf_exempt

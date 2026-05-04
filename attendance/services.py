@@ -12,8 +12,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from attendance.models import Attendance
-from sds.models import Student
+from attendance.models import Attendance, StaffAttendance
+from sds.models import Student, TeacherAdmin
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 INDIA_TZ = ZoneInfo("Asia/Kolkata")
 DEFAULT_CHECKIN_CUTOFF = time(8, 45)
 ALPHA_CHECKIN_CUTOFF = time(8, 0)
+STAFF_CHECKIN_CUTOFF = time(9, 15)
 CHECKOUT_CUTOFF = time(17, 0)
 
 
@@ -129,6 +130,14 @@ def parse_scan_payload(raw_value: str) -> dict:
     }
 
 
+def _first_scan_value(data: dict, *keys):
+    for key in keys:
+        value = data.get(key)
+        if value:
+            return value
+    return None
+
+
 def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
     parsed = parse_scan_payload(raw_value)
     data = parsed["data"]
@@ -136,20 +145,14 @@ def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
 
     base_qs = Student.objects.select_related("user")
 
-    def first_value(*keys):
-        for key in keys:
-            value = data.get(key)
-            if value:
-                return value
-        return None
-
-    numeric_id = first_value("student_id", "id")
+    numeric_id = _first_scan_value(data, "student_id", "id")
     if numeric_id and str(numeric_id).isdigit():
         student = base_qs.filter(id=int(numeric_id)).first()
         if student:
             return student, parsed
 
-    username = first_value(
+    username = _first_scan_value(
+        data,
         "username",
         "user",
         "user_name",
@@ -166,13 +169,14 @@ def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
         if student:
             return student, parsed
 
-    email = first_value("email", "email_id")
+    email = _first_scan_value(data, "email", "email_id")
     if email:
         student = base_qs.filter(email__iexact=email.strip()).first()
         if student:
             return student, parsed
 
-    phone = first_value(
+    phone = _first_scan_value(
+        data,
         "contact",
         "contact_no",
         "contact_number",
@@ -211,8 +215,8 @@ def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
     if student:
         return student, parsed
 
-    name = first_value("student_name", "name", "student", "full_name")
-    batch = first_value("batch", "student_batch")
+    name = _first_scan_value(data, "student_name", "name", "student", "full_name")
+    batch = _first_scan_value(data, "batch", "student_batch")
     if name and batch:
         matches = list(
             base_qs.filter(
@@ -238,6 +242,108 @@ def resolve_student_from_scan(raw_value: str) -> tuple[Student, dict]:
     )
 
 
+def resolve_staff_from_scan(raw_value: str) -> tuple[TeacherAdmin, dict]:
+    parsed = parse_scan_payload(raw_value)
+    data = parsed["data"]
+    raw = parsed["raw"]
+
+    base_qs = TeacherAdmin.objects.select_related("user")
+
+    numeric_id = _first_scan_value(data, "staff_id", "teacher_id", "employee_id", "id")
+    if numeric_id and str(numeric_id).isdigit():
+        staff = base_qs.filter(id=int(numeric_id)).first()
+        if staff:
+            return staff, parsed
+
+    username = _first_scan_value(
+        data,
+        "username",
+        "user",
+        "user_name",
+        "staff_username",
+        "teacher_username",
+        "employee_code",
+        "staff_code",
+    )
+    if username:
+        staff = base_qs.filter(
+            models.Q(user__username__iexact=username.strip())
+            | models.Q(username__iexact=username.strip())
+        ).first()
+        if staff:
+            return staff, parsed
+
+    email = _first_scan_value(data, "email", "email_id")
+    if email:
+        staff = base_qs.filter(email__iexact=email.strip()).first()
+        if staff:
+            return staff, parsed
+
+    phone = _first_scan_value(
+        data,
+        "contact",
+        "contact_no",
+        "contact_number",
+        "mobile",
+        "mobile_no",
+        "mobile_number",
+        "phone",
+        "phone_no",
+        "phone_number",
+        "number",
+    )
+    normalized_phone = normalize_phone(phone)
+    if len(normalized_phone) == 10:
+        staff = base_qs.filter(contact__regex=normalized_phone + r"$").first()
+        if staff:
+            return staff, parsed
+
+    raw_phone_match = re.search(r"(?<!\d)(\d{10})(?!\d)", raw)
+    if raw_phone_match:
+        staff = base_qs.filter(contact__regex=raw_phone_match.group(1) + r"$").first()
+        if staff:
+            return staff, parsed
+
+    if raw.isdigit():
+        staff = base_qs.filter(id=int(raw)).first()
+        if staff:
+            return staff, parsed
+
+    staff = base_qs.filter(
+        models.Q(user__username__iexact=raw)
+        | models.Q(username__iexact=raw)
+        | models.Q(email__iexact=raw)
+    ).first()
+    if staff:
+        return staff, parsed
+
+    name = _first_scan_value(data, "staff_name", "teacher_name", "name", "full_name")
+    role = _first_scan_value(data, "role", "designation")
+    if name and role:
+        matches = list(
+            base_qs.filter(
+                name__iexact=name.strip(),
+                role__iexact=role.strip(),
+            )[:2]
+        )
+        if len(matches) == 1:
+            return matches[0], parsed
+
+    if name:
+        matches = list(base_qs.filter(name__iexact=name.strip())[:2])
+        if len(matches) == 1:
+            return matches[0], parsed
+
+    exact_name_matches = list(base_qs.filter(name__iexact=raw)[:2])
+    if len(exact_name_matches) == 1:
+        return exact_name_matches[0], parsed
+
+    raise ValueError(
+        "Staff member could not be identified from this QR code. "
+        "Use a QR code containing staff id, username, contact, or email."
+    )
+
+
 def get_student_photo_url(student: Student) -> str:
     if not getattr(student, "profile_photo", None):
         return ""
@@ -246,6 +352,20 @@ def get_student_photo_url(student: Student) -> str:
         return student.profile_photo.url
     except Exception:
         photo_name = getattr(student.profile_photo, "name", "") or ""
+        if not photo_name:
+            return ""
+        media_url = getattr(settings, "MEDIA_URL", "/media/")
+        return urljoin(media_url, photo_name.replace("\\", "/"))
+
+
+def get_staff_photo_url(staff: TeacherAdmin) -> str:
+    if not getattr(staff, "profile_picture", None):
+        return ""
+
+    try:
+        return staff.profile_picture.url
+    except Exception:
+        photo_name = getattr(staff.profile_picture, "name", "") or ""
         if not photo_name:
             return ""
         media_url = getattr(settings, "MEDIA_URL", "/media/")
@@ -459,4 +579,74 @@ def record_kiosk_scan(raw_value: str, scanned_at: str | None = None) -> dict:
         "status": attendance.status,
         "checkIn": format_display_time(attendance.check_in),
         "checkOut": format_display_time(attendance.check_out),
+    }
+
+
+def record_staff_scan(raw_value: str, scanned_at: str | None = None) -> dict:
+    staff, parsed = resolve_staff_from_scan(raw_value)
+    local_dt = parse_scan_timestamp(scanned_at)
+    attendance_date = local_dt.date()
+    scan_time = local_dt.time().replace(second=0, microsecond=0)
+
+    with transaction.atomic():
+        attendance, _ = StaffAttendance.objects.select_for_update().get_or_create(
+            staff=staff,
+            date=attendance_date,
+            defaults={
+                "status": "Present",
+                "raw_scan_value": parsed["raw"],
+            },
+        )
+
+        action = "already_checked_out"
+        message = "Attendance already completed for today."
+        update_fields = ["raw_scan_value", "updated_at"]
+        attendance.raw_scan_value = parsed["raw"]
+
+        if not attendance.check_in:
+            attendance.check_in = scan_time
+            attendance.check_out = None
+            attendance.status = "Late" if scan_time > STAFF_CHECKIN_CUTOFF else "Present"
+            update_fields.extend(["check_in", "check_out", "status"])
+            if attendance.status == "Late":
+                action = "late_entry"
+                message = "Late entry recorded."
+            else:
+                action = "checkin"
+                message = "Check-in recorded."
+        elif not attendance.check_out:
+            if scan_time >= CHECKOUT_CUTOFF:
+                attendance.check_out = scan_time
+                update_fields.append("check_out")
+                action = "checkout"
+                message = "Check-out recorded."
+            else:
+                action = "already_checked_in"
+                message = "Staff member is already checked in."
+
+        attendance.save(update_fields=sorted(set(update_fields)))
+
+    return {
+        "success": True,
+        "staff_id": staff.id,
+        "staffName": staff.name,
+        "staffRole": staff.role,
+        "staffContact": staff.contact,
+        "staffEmail": staff.email,
+        "photoUrl": get_staff_photo_url(staff),
+        "action": action,
+        "actionText": {
+            "checkin": "Checked In",
+            "late_entry": "Late Entry Recorded",
+            "checkout": "Checked Out",
+            "already_checked_in": "Already Checked In",
+            "already_checked_out": "Already Checked Out",
+        }[action],
+        "message": message,
+        "timestamp": format_display_time(scan_time),
+        "date": format_display_date(attendance_date),
+        "status": attendance.status,
+        "checkIn": format_display_time(attendance.check_in),
+        "checkOut": format_display_time(attendance.check_out),
+        "recordId": attendance.id,
     }
