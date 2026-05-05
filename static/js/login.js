@@ -40,6 +40,7 @@ const otpResetSection = document.getElementById("otpResetSection");
 
 const usernameInput = document.getElementById("usernameField");
 const passwordInput = document.getElementById("passwordField");
+const passwordGroup = passwordInput?.closest(".password-toggle-group");
 const loginBtnSubmit = document.getElementById("loginBtn");
 
 const sendOtpBtn = document.getElementById("sendOtpBtn");
@@ -49,6 +50,7 @@ const otpInput = document.getElementById("otpInput");
 const backToPasswordBtn = document.getElementById("backToPasswordBtn");
 
 const forgotPasswordLink = document.getElementById("forgotPasswordLink");
+const forgotPasswordWrap = forgotPasswordLink?.closest(".text-end");
 const resetPhone = document.getElementById("resetPhone");
 const sendResetOtpBtn = document.getElementById("sendResetOtpBtn");
 const resetOtpInput = document.getElementById("resetOtpInput");
@@ -74,8 +76,9 @@ function showPasswordLogin() {
   otpResetSection.style.display = "none";
 
   usernameInput.style.display = "";
-  passwordInput.style.display = "";
+  if (passwordGroup) passwordGroup.style.display = "";
   loginBtnSubmit.style.display = "";
+  if (forgotPasswordWrap) forgotPasswordWrap.style.display = "";
 
   otpInput.style.display = "none";
   verifyOtpBtn.style.display = "none";
@@ -96,8 +99,9 @@ function showOtpLogin() {
   otpLoginSection.style.display = "";
 
   usernameInput.style.display = "none";
-  passwordInput.style.display = "none";
+  if (passwordGroup) passwordGroup.style.display = "none";
   loginBtnSubmit.style.display = "none";
+  if (forgotPasswordWrap) forgotPasswordWrap.style.display = "none";
 
   usernameInput.required = false;
   passwordInput.required = false;
@@ -108,8 +112,9 @@ function showReset() {
   otpResetSection.style.display = "";
 
   usernameInput.style.display = "none";
-  passwordInput.style.display = "none";
+  if (passwordGroup) passwordGroup.style.display = "none";
   loginBtnSubmit.style.display = "none";
+  if (forgotPasswordWrap) forgotPasswordWrap.style.display = "none";
 
   usernameInput.required = false;
   passwordInput.required = false;
