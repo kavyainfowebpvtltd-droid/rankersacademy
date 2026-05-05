@@ -688,6 +688,9 @@
                   id="teacherRoleInput"
                   placeholder="Designation (e.g. Teacher, Admin, Counselor)"
                   maxlength="80"
+                  oninput="toggleTeacherRoleFields()"
+                  onchange="toggleTeacherRoleFields()"
+                  onblur="toggleTeacherRoleFields()"
                   required
                 />
                 <div class="invalid-feedback" id="teacherRoleError"></div>
@@ -1036,6 +1039,9 @@
                 id="editTeacherRole"
                 placeholder="Designation"
                 maxlength="80"
+                oninput="toggleEditTeacherRoleFields()"
+                onchange="toggleEditTeacherRoleFields()"
+                onblur="toggleEditTeacherRoleFields()"
                 required
               />
             </div>
