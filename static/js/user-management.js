@@ -352,6 +352,7 @@ function bindStaffRoleToggles() {
   if (addTeacherRoleInput && addTeacherRoleInput.dataset.toggleBound !== "true") {
     addTeacherRoleInput.addEventListener("input", toggleTeacherRoleFields);
     addTeacherRoleInput.addEventListener("change", toggleTeacherRoleFields);
+    addTeacherRoleInput.addEventListener("keyup", toggleTeacherRoleFields);
     addTeacherRoleInput.dataset.toggleBound = "true";
   }
 
@@ -359,6 +360,7 @@ function bindStaffRoleToggles() {
   if (editTeacherRoleInput && editTeacherRoleInput.dataset.toggleBound !== "true") {
     editTeacherRoleInput.addEventListener("input", toggleEditTeacherRoleFields);
     editTeacherRoleInput.addEventListener("change", toggleEditTeacherRoleFields);
+    editTeacherRoleInput.addEventListener("keyup", toggleEditTeacherRoleFields);
     editTeacherRoleInput.dataset.toggleBound = "true";
   }
 }
@@ -367,17 +369,24 @@ function isTeacherDesignationValue(value) {
   return String(value || "").trim().toLowerCase() === "teacher";
 }
 
+function setElementVisibility(element, isVisible, displayValue = "") {
+  if (!element) return;
+  element.hidden = !isVisible;
+  element.classList.toggle("d-none", !isVisible);
+  element.style.display = isVisible ? displayValue : "none";
+}
+
 function toggleTeacherRoleFields() {
   const roleInput = document.getElementById("teacherRoleInput");
+  const teacherFields = document.getElementById("teacherFields");
   const teacherOnlyRow = document.getElementById("teacherTeacherFieldsRow");
   const teacherOnlyInputs = teacherOnlyRow
     ? teacherOnlyRow.querySelectorAll("input, select, textarea")
     : [];
   const isTeacher = isTeacherDesignationValue(roleInput ? roleInput.value : "");
 
-  if (teacherOnlyRow) {
-    teacherOnlyRow.style.display = isTeacher ? "flex" : "none";
-  }
+  setElementVisibility(teacherFields, true, "block");
+  setElementVisibility(teacherOnlyRow, isTeacher, "flex");
 
   teacherOnlyInputs.forEach((input) => {
     input.disabled = !isTeacher;
@@ -392,12 +401,8 @@ function toggleEditTeacherRoleFields() {
   const batchInput = document.getElementById("editTeacherBatch");
   const isTeacher = isTeacherDesignationValue(roleInput ? roleInput.value : "");
 
-  if (subjectsCol) {
-    subjectsCol.style.display = isTeacher ? "" : "none";
-  }
-  if (batchCol) {
-    batchCol.style.display = isTeacher ? "" : "none";
-  }
+  setElementVisibility(subjectsCol, isTeacher, "");
+  setElementVisibility(batchCol, isTeacher, "");
   if (subjectsInput) {
     subjectsInput.disabled = !isTeacher;
   }
@@ -673,11 +678,27 @@ document.addEventListener("input", (e) => {
   if (e.target && e.target.id === "batchInputCommon") {
     generateUsernameFromBatch(e.target);
   }
+
+  if (e.target && e.target.id === "teacherRoleInput") {
+    toggleTeacherRoleFields();
+  }
+
+  if (e.target && e.target.id === "editTeacherRole") {
+    toggleEditTeacherRoleFields();
+  }
 });
 
 document.addEventListener("change", (e) => {
   if (e.target && e.target.id === "batchInputCommon") {
     generateUsernameFromBatch(e.target);
+  }
+
+  if (e.target && e.target.id === "teacherRoleInput") {
+    toggleTeacherRoleFields();
+  }
+
+  if (e.target && e.target.id === "editTeacherRole") {
+    toggleEditTeacherRoleFields();
   }
 });
 
