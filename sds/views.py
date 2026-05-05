@@ -1446,6 +1446,9 @@ def add_user(request):
         
         # Handle profile picture upload
         profile_pic = request.FILES.get("profile_picture")
+        teacher_role = (request.POST.get("role") or "Teacher").strip()
+        teacher_subjects = (request.POST.get("subjects") or "").strip()
+        teacher_batch = _pick_post_value("batch", prefer_last=True)
         
         teacher = TeacherAdmin.objects.create(
             user=user,
@@ -1454,11 +1457,12 @@ def add_user(request):
             contact=contact,
             email=email,
             gender=request.POST.get("gender"),
-            role=request.POST.get("role"),
-            grade=_pick_post_value("grade", prefer_last=True),
-            board=_pick_post_value("board", prefer_last=True),
-            batch=_pick_post_value("batch", prefer_last=True),
-            subjects=request.POST.get("subjects"),
+            role=teacher_role,
+            grade="",
+            board="",
+            batch=teacher_batch if teacher_role == "Teacher" else "",
+            blood_group=blood_group,
+            subjects=teacher_subjects if teacher_role == "Teacher" else "",
             must_change_password=True,
         )
         
@@ -1467,7 +1471,7 @@ def add_user(request):
             teacher.profile_picture = profile_pic
             teacher.save()
         
-        messages.success(request, "Teacher/Admin added successfully")
+        messages.success(request, "Staff added successfully")
 
     return redirect("user-management")
 
@@ -1634,11 +1638,12 @@ def edit_teacher(request, id):
     teacher.email = new_email or teacher.email
     teacher.contact = new_contact
     teacher.gender = request.POST.get("gender")
-    teacher.role = request.POST.get("role")
+    teacher.role = (request.POST.get("role") or teacher.role).strip()
     teacher.grade = request.POST.get("grade")
     teacher.board = request.POST.get("board")
-    teacher.batch = request.POST.get("batch")
-    teacher.subjects = request.POST.get("subjects")
+    teacher.batch = request.POST.get("batch") if teacher.role == "Teacher" else ""
+    teacher.blood_group = (request.POST.get("blood_group") or "").strip()
+    teacher.subjects = (request.POST.get("subjects") or "").strip() if teacher.role == "Teacher" else ""
     
     # Handle profile picture upload
     if "profile_picture" in request.FILES:
@@ -1660,7 +1665,7 @@ def edit_teacher(request, id):
             teacher.user.set_password(password)
         teacher.user.save()
 
-    messages.success(request, "User updated successfully")
+    messages.success(request, "Staff updated successfully")
     return redirect("user-management")
 
 

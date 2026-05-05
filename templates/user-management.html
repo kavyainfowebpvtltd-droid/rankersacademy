@@ -241,9 +241,9 @@
         {% endif %}
       </div>
 
-      <!-- TEACHERS / ADMINS TABLE  -->
+      <!-- STAFF TABLE  -->
       <div class="card">
-        <div class="card-header fw-bold">Teachers / Admins</div>
+        <div class="card-header fw-bold">Staff</div>
         <div class="card-body table-responsive">
           <table class="table table-hover align-middle">
             <thead>
@@ -255,7 +255,7 @@
                  <th>Contact</th>
                  <th>Email</th>
                  <th>Username</th>
-                 <th>Role</th>
+                 <th>Designation</th>
                  <th>Subjects</th>
                  <th class="text-center">Actions</th>
                </tr>
@@ -297,6 +297,7 @@
                      data-grade="{{ teacher.grade }}"
                      data-board="{{ teacher.board }}"
                      data-batch="{{ teacher.batch }}"
+                     data-blood-group="{{ teacher.blood_group }}"
                      data-profile-picture="{% if teacher.profile_picture %}{{ teacher.profile_picture.url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
@@ -320,8 +321,8 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="8" class="text-center text-muted">
-                  No teachers/admins found!
+                <td colspan="10" class="text-center text-muted">
+                  No staff members found!
                 </td>
               </tr>
               {% endfor %}
@@ -595,6 +596,16 @@
                 <div class="invalid-feedback" id="teacherNameError"></div>
               </div>
               <div class="col-md-6">
+                <label class="form-label">Profile Photo</label>
+                <input
+                  class="form-control"
+                  type="file"
+                  name="profile_picture"
+                  id="teacherProfilePictureInput"
+                  accept="image/*"
+                />
+              </div>
+              <div class="col-md-6">
                 <input
                   class="form-control"
                   name="username"
@@ -659,58 +670,43 @@
                   </button>
                 </div>
               </div>
-            </div>
-
-            <!-- TEACHER ONLY -->
-            <div id="teacherFields" class="row g-3 mt-2" style="display: none">
               <div class="col-md-6">
-                <select class="form-select" name="role">
+                <select class="form-select" name="role" id="teacherRoleInput">
                   <option value="Teacher">Teacher</option>
                   <option value="Admin">Admin</option>
                 </select>
               </div>
-               <div class="col-md-6">
-                 <input
-                   class="form-control"
-                   name="subjects"
-                   placeholder="Subjects"
-                 />
-               </div>
-               <div class="col-md-6">
-                 <label class="form-label">Profile Picture</label>
-                 <input
-                   class="form-control"
-                   type="file"
-                   name="profile_picture"
-                   accept="image/*"
-                 />
-               </div>
-              <div class="col-md-6">
-                <select class="form-select" name="board">
-                  <option value="">Select Board / Exam</option>
-                  <option>State</option>
-                  <option>CBSE</option>
-                  <option>MHTCET</option>
-                  <option>JEE</option>
-                  <option>NEET</option>
-                </select>
+            </div>
+
+            <div id="teacherFields" style="display: none">
+              <div class="row g-3 mt-2" id="teacherTeacherFieldsRow">
+                <div class="col-md-6">
+                  <input
+                    class="form-control"
+                    name="subjects"
+                    id="teacherSubjectsInput"
+                    placeholder="Subject"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <input
+                    class="form-control"
+                    name="batch"
+                    id="teacherBatchInput"
+                    placeholder="Batch (ex: B1, B2)"
+                  />
+                </div>
               </div>
-              <div class="col-md-6">
-                <select class="form-select" name="grade">
-                  <option value="">Grade</option>
-                  <option>8th</option>
-                  <option>9th</option>
-                  <option>10th</option>
-                  <option>11th</option>
-                  <option>12th</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <input
-                  class="form-control"
-                  name="batch"
-                  placeholder="Batch (ex: B1, B2) "
-                />
+              <div class="row g-3 mt-2" id="teacherBloodGroupRow">
+                <div class="col-md-6">
+                  <input
+                    class="form-control"
+                    name="blood_group"
+                    id="teacherBloodGroupInput"
+                    placeholder="Blood Group"
+                    maxlength="10"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -931,7 +927,7 @@
          <form method="post" id="editTeacherForm" class="modal-content" enctype="multipart/form-data">
            {% csrf_token %}
            <div class="modal-header">
-            <h5 class="modal-title">Edit Teacher / Admin</h5>
+            <h5 class="modal-title">Edit Staff</h5>
             <button
               type="button"
               class="btn-close"
@@ -1020,14 +1016,24 @@
               </select>
             </div>
 
-             <div class="col-md-6">
-               <input
-                 class="form-control"
-                 name="subjects"
-                 id="editTeacherSubjects"
-                 placeholder="Subjects"
-               />
-             </div>
+            <div class="col-md-6">
+              <input
+                class="form-control"
+                name="blood_group"
+                id="editTeacherBloodGroup"
+                placeholder="Blood Group"
+                maxlength="10"
+              />
+            </div>
+
+            <div class="col-md-6" id="editTeacherSubjectsCol">
+              <input
+                class="form-control"
+                name="subjects"
+                id="editTeacherSubjects"
+                placeholder="Subjects"
+              />
+            </div>
              <div class="col-md-6">
                <label class="form-label">Profile Picture</label>
                <input
@@ -1062,7 +1068,7 @@
                 <option value="12th">12th</option>
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6" id="editTeacherBatchCol">
               <input
                 class="form-control"
                 name="batch"
