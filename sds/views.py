@@ -102,7 +102,7 @@ def login_view(request):
     if request.method == "POST":
         identifier = request.POST.get("username")
         password = request.POST.get("password")
-        role = request.POST.get("role")
+        role = _normalize_login_role(request.POST.get("role"))
 
         if not identifier or not password or not role:
             messages.error(request, "All fields are required")
@@ -166,17 +166,20 @@ def login_view(request):
             messages.error(request, "You are not registered as a student")
             return redirect("login")
 
-        if role == "Teacher/Admin":
-            if user.is_superuser or hasattr(user, "teacheradmin"):
+        if role == "Teacher":
+            if _can_login_as_teacher(user):
                 return redirect("admin-dashboard")
             messages.error(request, "You are not authorized")
             return redirect("login")
 
-        messages.error(request, "Invalid role selection")
-        return redirect("login")
+        if role == "Admin":
+            if _can_login_as_admin(user):
+                return redirect("admin-dashboard")
+            messages.error(request, "You are not authorized")
+            return redirect("login")
 
         if role == "Teacher/Admin":
-            if user.is_superuser or hasattr(user, "teacheradmin"):
+            if _can_login_as_teacher(user) or _can_login_as_admin(user):
                 return redirect("admin-dashboard")
             messages.error(request, "You are not authorized")
             return redirect("login")
@@ -257,6 +260,25 @@ def _increment_failed_attempts(request, identifier, username_key, attempt_data):
         _cache_set(username_key, {'attempts': username_attempts, 'locked': True, 'lockout_end': lockout_end}, LOCKOUT_DURATION_SECONDS)
     else:
         _cache_set(username_key, {'attempts': username_attempts, 'locked': False}, LOCKOUT_DURATION_SECONDS)
+
+
+def _normalize_login_role(role: str | None) -> str:
+    role_value = (role or "").strip()
+    if role_value in {"Student", "Teacher", "Admin", "Teacher/Admin"}:
+        return role_value
+    return ""
+
+
+def _can_login_as_teacher(user) -> bool:
+    return bool(hasattr(user, "teacheradmin"))
+
+
+def _can_login_as_admin(user) -> bool:
+    if getattr(user, "is_superuser", False):
+        return True
+    if hasattr(user, "teacheradmin"):
+        return (user.teacheradmin.role or "").strip().lower() == "admin"
+    return False
 
 
 @never_cache
@@ -445,10 +467,10 @@ def _is_msg91_verified(resp: dict) -> bool:
 @require_POST
 @csrf_protect
 def send_login_otp(request):
-    role = request.POST.get("role")
+    role = _normalize_login_role(request.POST.get("role"))
     phone = _normalize_phone(request.POST.get("phone"))
 
-    if role not in ("Student", "Teacher/Admin"):
+    if role not in ("Student", "Teacher", "Admin", "Teacher/Admin"):
         return JsonResponse({"ok": False, "msg": "Invalid role selection"}, status=400)
 
     if len(phone) != 10:
@@ -461,10 +483,15 @@ def send_login_otp(request):
         if student and student.user:
             user = student.user
 
-    elif role == "Teacher/Admin":
+    else:
         ta = TeacherAdmin.objects.select_related("user").filter(contact__regex=phone + r"$").first()
         if ta and ta.user:
-            user = ta.user
+            if role == "Teacher":
+                user = ta.user
+            elif role == "Admin" and (ta.role or "").strip().lower() == "admin":
+                user = ta.user
+            elif role == "Teacher/Admin":
+                user = ta.user
 
     if not user:
         return JsonResponse({"ok": False, "msg": "Mobile number not registered for the selected role"}, status=404)
@@ -492,7 +519,7 @@ def send_login_otp(request):
 def verify_login_otp(request):
     phone = _normalize_phone(request.POST.get("phone"))
     otp_in = (request.POST.get("otp") or "").strip()
-    role = request.POST.get("role")
+    role = _normalize_login_role(request.POST.get("role"))
 
     if len(phone) != 10:
         return JsonResponse({"ok": False, "msg": "Invalid phone"}, status=400)

@@ -18,7 +18,7 @@ document.querySelectorAll(".role").forEach((r) => {
     r.classList.add("active");
 
     selectedRole = r.dataset.role;
-    roleInput.value = r.dataset.submitRole || selectedRole;
+    roleInput.value = selectedRole;
 
     if (loginBtn) {
       loginBtn.innerText = "Sign in";
