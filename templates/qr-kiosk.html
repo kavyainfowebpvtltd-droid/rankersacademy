@@ -166,31 +166,30 @@
         }
       }
     </style>
-    <!-- 
+    <!--
       QR/Barcode Data Format Supported:
-      
+
       Option 1 - JSON format:
       {"name":"John Doe","class":"Class 12 - Science","batch":"Morning Batch","photo":"https://...","action":"checkin"}
-      
+
       Option 2 - Key-Value pairs:
       name=John Doe;class=Class 12 - Science;batch=Morning Batch
-      
+
       Option 3 - Plain text:
       John Doe,Class 12 - Science,Morning Batch
-      
+
       The scanner toggles between check-in and check-out on repeat scans.
     -->
   </head>
 
   <body>
-    <div id="app" class="app-container" tabindex="-1">
+    <div id="app" class="app-container">
       <input
-        id="barcode"
+        type="text"
+        id="barcode-input"
         class="hidden-input"
-        inputmode="none"
         autocomplete="off"
-        autocapitalize="off"
-        spellcheck="false"
+        autofocus
       />
 
       <audio id="success-audio" preload="auto">

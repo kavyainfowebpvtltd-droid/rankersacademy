@@ -14,11 +14,8 @@
   let offlineQueue = [];
   let isOnline = true;
   let timeoutRef = null;
-  let scanBuffer = "";
-  let scanBufferTimeoutRef = null;
 
-  const appRef = document.getElementById("app");
-  const inputRef = document.getElementById("barcode");
+  const inputRef = document.getElementById("barcode-input");
   const successAudioRef = document.getElementById("success-audio");
   const errorAudioRef = document.getElementById("error-audio");
 
@@ -49,23 +46,24 @@
   function init() {
     loadOfflineQueue();
     setupEventListeners();
+    startAutoFocus();
     startOfflineSync();
     updateOnlineStatus();
-    focusScanTarget();
   }
 
   function setupEventListeners() {
-    if (inputRef) {
-      inputRef.addEventListener("input", handleInputEvent);
-      inputRef.addEventListener("keydown", handleInputKeyDown);
-    }
-
-    document.addEventListener("keydown", handleDocumentKeyDown);
-    document.addEventListener("click", handleSurfaceInteraction);
-    document.addEventListener("touchstart", handleSurfaceInteraction, { passive: true });
-    window.addEventListener("focus", focusScanTarget);
+    inputRef.addEventListener("change", handleInputChange);
+    inputRef.addEventListener("keydown", handleKeyDown);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+  }
+
+  function startAutoFocus() {
+    setInterval(function () {
+      if (document.activeElement !== inputRef) {
+        inputRef.focus();
+      }
+    }, 300);
   }
 
   function loadOfflineQueue() {
@@ -281,9 +279,8 @@
   function resetUI() {
     setState(ScanState.IDLE);
     isProcessing = false;
-    clearScanBuffer();
-    clearInputValue();
-    focusScanTarget();
+    inputRef.value = "";
+    inputRef.focus();
   }
 
   function setState(newState) {
@@ -311,108 +308,18 @@
     offlineState.classList.add("d-none");
   }
 
-  function handleInputEvent() {
-    if (!inputRef || !inputRef.value) {
-      return;
-    }
-
-    if (inputRef.value.indexOf("\n") !== -1 || inputRef.value.indexOf("\r") !== -1) {
-      const barcode = inputRef.value.replace(/[\n\r]/g, "").trim();
-      clearInputValue();
-      handleScan(barcode);
+  function handleInputChange(event) {
+    const value = event.target.value;
+    if (value.indexOf("\n") !== -1 || value.indexOf("\r") !== -1) {
+      handleScan(value.replace(/[\n\r]/g, "").trim());
+      event.target.value = "";
     }
   }
 
-  function handleInputKeyDown(event) {
-    if (event.key !== "Enter") {
-      return;
-    }
-
-    event.preventDefault();
-    const barcode = inputRef ? inputRef.value.trim() : "";
-    clearInputValue();
-    handleScan(barcode);
-  }
-
-  function handleDocumentKeyDown(event) {
-    if (event.defaultPrevented || isTypingTarget(event.target)) {
-      return;
-    }
-
+  function handleKeyDown(event) {
     if (event.key === "Enter") {
-      if (!scanBuffer.trim()) {
-        return;
-      }
-
       event.preventDefault();
-      const barcode = scanBuffer.trim();
-      clearScanBuffer();
-      handleScan(barcode);
-      return;
-    }
-
-    if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) {
-      return;
-    }
-
-    scanBuffer += event.key;
-    restartScanBufferTimeout();
-  }
-
-  function restartScanBufferTimeout() {
-    if (scanBufferTimeoutRef) {
-      clearTimeout(scanBufferTimeoutRef);
-    }
-
-    scanBufferTimeoutRef = setTimeout(function () {
-      clearScanBuffer();
-    }, 250);
-  }
-
-  function clearScanBuffer() {
-    scanBuffer = "";
-
-    if (scanBufferTimeoutRef) {
-      clearTimeout(scanBufferTimeoutRef);
-      scanBufferTimeoutRef = null;
-    }
-  }
-
-  function isTypingTarget(target) {
-    if (!target) {
-      return false;
-    }
-
-    const tagName = target.tagName;
-    return (
-      target.isContentEditable ||
-      tagName === "INPUT" ||
-      tagName === "TEXTAREA" ||
-      tagName === "SELECT"
-    );
-  }
-
-  function handleSurfaceInteraction() {
-    focusScanTarget();
-  }
-
-  function focusScanTarget() {
-    if (inputRef) {
-      if (document.activeElement !== inputRef) {
-        inputRef.focus({ preventScroll: true });
-      }
-      return;
-    }
-
-    if (!appRef || document.activeElement === appRef) {
-      return;
-    }
-
-    appRef.focus({ preventScroll: true });
-  }
-
-  function clearInputValue() {
-    if (inputRef) {
+      handleScan(inputRef.value.trim());
       inputRef.value = "";
     }
   }
