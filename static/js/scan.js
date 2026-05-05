@@ -17,7 +17,7 @@
   let scanBuffer = "";
   let scanBufferTimeoutRef = null;
 
-  const inputRef = document.getElementById("barcode-input");
+  const appRef = document.getElementById("app");
   const successAudioRef = document.getElementById("success-audio");
   const errorAudioRef = document.getElementById("error-audio");
 
@@ -50,12 +50,13 @@
     setupEventListeners();
     startOfflineSync();
     updateOnlineStatus();
+    focusKioskSurface();
   }
 
   function setupEventListeners() {
-    inputRef.addEventListener("change", handleInputChange);
-    inputRef.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keydown", handleDocumentKeyDown);
+    document.addEventListener("click", handleSurfaceInteraction);
+    document.addEventListener("touchstart", handleSurfaceInteraction, { passive: true });
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
   }
@@ -273,7 +274,8 @@
   function resetUI() {
     setState(ScanState.IDLE);
     isProcessing = false;
-    inputRef.value = "";
+    clearScanBuffer();
+    focusKioskSurface();
   }
 
   function setState(newState) {
@@ -299,22 +301,6 @@
     successState.classList.add("d-none");
     errorState.classList.add("d-none");
     offlineState.classList.add("d-none");
-  }
-
-  function handleInputChange(event) {
-    const value = event.target.value;
-    if (value.indexOf("\n") !== -1 || value.indexOf("\r") !== -1) {
-      handleScan(value.replace(/[\n\r]/g, "").trim());
-      event.target.value = "";
-    }
-  }
-
-  function handleKeyDown(event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleScan(inputRef.value.trim());
-      inputRef.value = "";
-    }
   }
 
   function handleDocumentKeyDown(event) {
@@ -373,6 +359,20 @@
       tagName === "TEXTAREA" ||
       tagName === "SELECT"
     );
+  }
+
+  function handleSurfaceInteraction() {
+    if (!isTypingTarget(document.activeElement)) {
+      focusKioskSurface();
+    }
+  }
+
+  function focusKioskSurface() {
+    if (!appRef || document.activeElement === appRef) {
+      return;
+    }
+
+    appRef.focus({ preventScroll: true });
   }
 
   function playSuccessAudio() {
