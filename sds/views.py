@@ -125,7 +125,9 @@ def login_view(request):
                 attempt_data = None
 
         try:
-            user_obj = User.objects.get(Q(username=identifier) | Q(email=identifier))
+            user_obj = User.objects.get(
+                Q(username__iexact=identifier) | Q(email__iexact=identifier)
+            )
         except User.DoesNotExist:
             _increment_failed_attempts(request, identifier, username_key, attempt_data)
             messages.error(request, "Invalid credentials")

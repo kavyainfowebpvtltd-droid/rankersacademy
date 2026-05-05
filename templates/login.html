@@ -107,15 +107,15 @@
       }
 
       .brand-logo-shell {
-        width: 92px;
-        height: 92px;
+        width: 128px;
+        height: 128px;
         margin: 0 auto 1.25rem;
-        padding: 14px;
-        border-radius: 28px;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.35);
-        backdrop-filter: blur(18px) saturate(160%);
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        backdrop-filter: none;
       }
 
       .brand-logo-shell img {
@@ -144,7 +144,7 @@
 
       .display-brand {
         margin: 0.75rem 0 0;
-        font-size: clamp(2.7rem, 6vw, 4.9rem);
+        font-size: clamp(3rem, 6vw, 5.4rem);
         font-weight: 800;
         line-height: 0.92;
       }
@@ -724,17 +724,13 @@
       }
 
       .brand-logo-shell {
-        width: 58px;
-        height: 58px;
-        padding: 10px;
-        border-radius: 18px;
+        width: 148px;
+        height: 148px;
         margin-bottom: 1rem;
-        background: linear-gradient(135deg, rgba(255, 138, 0, 0.9), rgba(229, 46, 113, 0.9) 52%, rgba(124, 58, 237, 0.92));
-        border: 0;
       }
 
       .display-brand {
-        font-size: clamp(2.35rem, 6vw, 3.45rem);
+        font-size: clamp(3.1rem, 6vw, 4.2rem);
       }
 
       .brand-subtitle {
@@ -777,6 +773,7 @@
         background: transparent;
         text-align: center;
         box-shadow: none;
+        transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
       }
 
       .role:hover {
@@ -804,6 +801,19 @@
       .role strong {
         font-size: 0.96rem;
         font-weight: 600;
+      }
+
+      .password-toggle-group {
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .password-toggle-group .form-control {
+        border-radius: 16px 0 0 16px;
+      }
+
+      .password-toggle-group .password-toggle {
+        border-radius: 0 16px 16px 0;
       }
 
       .login-actions {
@@ -913,8 +923,13 @@
       }
 
       .role.active {
-        background: #ffffff;
-        box-shadow: 0 2px 10px rgba(37, 99, 235, 0.12);
+        background: linear-gradient(135deg, #0d6efd, #3b82f6);
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+        color: #ffffff;
+      }
+
+      .role.active strong {
+        color: #ffffff;
       }
 
       .btn-primary {
