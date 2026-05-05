@@ -37,10 +37,10 @@ const csrfToken = getCookie("csrftoken");
 const otpToggleBtn = document.getElementById("otpToggleBtn");
 const otpLoginSection = document.getElementById("otpLoginSection");
 const otpResetSection = document.getElementById("otpResetSection");
-const loginSurface = document.getElementById("loginSurface");
 
 const usernameInput = document.getElementById("usernameField");
 const passwordInput = document.getElementById("passwordField");
+const passwordGroup = passwordInput?.closest(".password-toggle-group");
 const loginBtnSubmit = document.getElementById("loginBtn");
 
 const sendOtpBtn = document.getElementById("sendOtpBtn");
@@ -50,6 +50,7 @@ const otpInput = document.getElementById("otpInput");
 const backToPasswordBtn = document.getElementById("backToPasswordBtn");
 
 const forgotPasswordLink = document.getElementById("forgotPasswordLink");
+const forgotPasswordWrap = forgotPasswordLink?.closest(".text-end");
 const resetPhone = document.getElementById("resetPhone");
 const sendResetOtpBtn = document.getElementById("sendResetOtpBtn");
 const resetOtpInput = document.getElementById("resetOtpInput");
@@ -70,16 +71,14 @@ const scholarshipTestContinueBtn = document.getElementById(
   "scholarshipTestContinueBtn",
 );
 
-function setLoginMode(mode) {
-  if (!loginSurface) return;
-  loginSurface.classList.remove("mode-password", "mode-otp", "mode-reset");
-  loginSurface.classList.add(`mode-${mode}`);
-}
-
 function showPasswordLogin() {
-  setLoginMode("password");
   otpLoginSection.style.display = "none";
   otpResetSection.style.display = "none";
+
+  usernameInput.style.display = "";
+  if (passwordGroup) passwordGroup.style.display = "";
+  loginBtnSubmit.style.display = "";
+  if (forgotPasswordWrap) forgotPasswordWrap.style.display = "";
 
   otpInput.style.display = "none";
   verifyOtpBtn.style.display = "none";
@@ -96,18 +95,26 @@ function showPasswordLogin() {
 }
 
 function showOtpLogin() {
-  setLoginMode("otp");
   otpResetSection.style.display = "none";
   otpLoginSection.style.display = "";
+
+  usernameInput.style.display = "none";
+  if (passwordGroup) passwordGroup.style.display = "none";
+  loginBtnSubmit.style.display = "none";
+  if (forgotPasswordWrap) forgotPasswordWrap.style.display = "none";
 
   usernameInput.required = false;
   passwordInput.required = false;
 }
 
 function showReset() {
-  setLoginMode("reset");
   otpLoginSection.style.display = "none";
   otpResetSection.style.display = "";
+
+  usernameInput.style.display = "none";
+  if (passwordGroup) passwordGroup.style.display = "none";
+  loginBtnSubmit.style.display = "none";
+  if (forgotPasswordWrap) forgotPasswordWrap.style.display = "none";
 
   usernameInput.required = false;
   passwordInput.required = false;
