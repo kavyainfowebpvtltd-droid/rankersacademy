@@ -710,6 +710,125 @@
         max-width: 560px;
         margin-bottom: 2.5rem;
       }
+
+      .login-page .container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .brand-header {
+        max-width: 420px;
+        margin: 0 auto 1.8rem;
+      }
+
+      .brand-logo-shell {
+        width: 58px;
+        height: 58px;
+        padding: 10px;
+        border-radius: 18px;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, rgba(255, 138, 0, 0.9), rgba(229, 46, 113, 0.9) 52%, rgba(124, 58, 237, 0.92));
+        border: 0;
+      }
+
+      .display-brand {
+        font-size: clamp(2.35rem, 6vw, 3.45rem);
+      }
+
+      .brand-subtitle {
+        font-size: 0.95rem;
+      }
+
+      .login-shell {
+        width: 100%;
+        max-width: 420px;
+      }
+
+      .login-surface {
+        max-width: 100%;
+        padding: 1.75rem;
+      }
+
+      .display-title {
+        font-size: 1.1rem;
+        margin-top: 0;
+      }
+
+      .login-copy {
+        display: none;
+      }
+
+      .role-switch {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 1.5rem;
+        padding: 0.25rem;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.22);
+      }
+
+      .role {
+        flex: 1 1 0;
+        border: 0;
+        border-radius: 999px;
+        padding: 0.7rem 0.55rem;
+        background: transparent;
+        text-align: center;
+        box-shadow: none;
+      }
+
+      .role:hover {
+        transform: none;
+        box-shadow: none;
+        border-color: transparent;
+      }
+
+      .role.active {
+        background: rgba(255, 255, 255, 0.16);
+        border-color: transparent;
+        box-shadow: none;
+      }
+
+      .role::after,
+      .role-icon,
+      .role .small {
+        display: none !important;
+      }
+
+      .role > div {
+        display: block !important;
+      }
+
+      .role strong {
+        font-size: 0.96rem;
+        font-weight: 600;
+      }
+
+      .login-actions {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+      }
+
+      .hidden-functional {
+        display: none !important;
+      }
+
+      @media (max-width: 767.98px) {
+        .login-page .container {
+          align-items: flex-start;
+        }
+
+        .login-shell {
+          max-width: 100%;
+        }
+
+        .login-surface {
+          padding: 1.35rem;
+        }
+      }
     </style>
   </head>
   <body class="login-page-body {% if test_login_ui %}test-login-ui{% endif %}">
@@ -719,80 +838,25 @@
       <div class="brand-orb brand-orb-c"></div>
 
       <div class="container py-5">
-        <div class="brand-header mb-5">
-          <div class="brand-logo-shell">
-            <img src="{% static 'img/Rankers_logo.png' %}" alt="The Rankers Academy logo" />
-          </div>
-          <div class="brand-kicker">The Rankers Academy</div>
-          <h1 class="display-brand">Climb Smarter.<br /><span class="brand-text">Rank Higher.</span></h1>
-          <p class="brand-subtitle">
-            Access the academy portal with the same secure login flow you already use, now in a refreshed Rankers Academy interface.
-          </p>
-        </div>
-
-        <div class="row g-4 justify-content-center align-items-stretch">
-          <div class="col-lg-5 left-card {% if test_login_ui %}d-none{% endif %}" id="leftCard">
-            <div class="brand-panel">
-              <span class="panel-badge">
-                <i class="bi bi-stars"></i>
-                Unified Access
-              </span>
-              <h2 class="panel-title">One login for students, faculty, and admins.</h2>
-              <p class="panel-copy mb-0">
-                Your existing authentication, OTP recovery, and secure redirects stay exactly the same. Only the interface has been refreshed.
-              </p>
-
-              <div class="panel-list">
-                <div class="panel-item">
-                  <span class="panel-item-icon"><i class="bi bi-bar-chart-line"></i></span>
-                  <div>
-                    <strong>Performance Dashboards</strong>
-                    <div class="small text-muted">Student insights and progress tracking</div>
-                  </div>
-                </div>
-                <div class="panel-item">
-                  <span class="panel-item-icon"><i class="bi bi-shield-lock"></i></span>
-                  <div>
-                    <strong>OTP and Password Recovery</strong>
-                    <div class="small text-muted">Built on the existing secure account flow</div>
-                  </div>
-                </div>
-                <div class="panel-item">
-                  <span class="panel-item-icon"><i class="bi bi-people"></i></span>
-                  <div>
-                    <strong>Role-Based Access</strong>
-                    <div class="small text-muted">Student and Teacher/Admin portals from one screen</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="stats-grid">
-                <div class="mini-stat">
-                  <span class="mono-label">Mode</span>
-                  <strong>Secure</strong>
-                  <div class="small text-muted">Password and OTP sign-in</div>
-                </div>
-                <div class="mini-stat">
-                  <span class="mono-label">Brand</span>
-                  <strong>Rankers</strong>
-                  <div class="small text-muted">Academy-first experience</div>
-                </div>
-              </div>
+        <section class="login-shell">
+          <div class="brand-header">
+            <div class="brand-logo-shell">
+              <img src="{% static 'img/Rankers_logo.png' %}" alt="The Rankers Academy logo" />
             </div>
+            <div class="brand-kicker">The Rankers Academy</div>
+            <h1 class="display-brand">Climb Smarter.<br /><span class="brand-text">Rank Higher.</span></h1>
           </div>
 
-          <form class="col-lg-5 right-card {% if test_login_ui %}test-login-card mx-auto{% endif %}" id="rightCard" method="post" action="/">
+          <div class="left-card hidden-functional" id="leftCard"></div>
+
+          <form class="right-card {% if test_login_ui %}test-login-card mx-auto{% endif %}" id="rightCard" method="post" action="/">
             {% csrf_token %}
             <div class="login-surface {% if test_login_ui %}test-login-surface{% endif %}">
-              <div class="brand-kicker">Portal Access</div>
-              <h2 class="display-title">Sign In</h2>
-              <p class="login-copy">
-                Choose your portal, then continue with your current username and password or OTP-based access.
-              </p>
+              <h2 class="display-title fw-bold mb-3">Sign In</h2>
 
               <div class="role-switch">
-                <button type="button" class="role active" data-role="Student">
-                  <div class="d-flex align-items-center gap-3">
+                <button type="button" class="role active" data-role="Student" data-submit-role="Student">
+                  <div class="d-flex align-items-center justify-content-center gap-3">
                     <div class="role-icon student">
                       <i class="bi bi-book"></i>
                     </div>
@@ -802,13 +866,24 @@
                     </div>
                   </div>
                 </button>
-                <button type="button" class="role" data-role="Teacher/Admin">
-                  <div class="d-flex align-items-center gap-3">
+                <button type="button" class="role" data-role="Teacher" data-submit-role="Teacher/Admin">
+                  <div class="d-flex align-items-center justify-content-center gap-3">
                     <div class="role-icon teacher-admin">
                       <i class="bi bi-person-badge"></i>
                     </div>
                     <div>
-                      <strong>Teacher / Admin</strong>
+                      <strong>Teacher</strong>
+                      <div class="small text-muted">Manage system</div>
+                    </div>
+                  </div>
+                </button>
+                <button type="button" class="role" data-role="Admin" data-submit-role="Teacher/Admin">
+                  <div class="d-flex align-items-center justify-content-center gap-3">
+                    <div class="role-icon teacher-admin">
+                      <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <div>
+                      <strong>Admin</strong>
                       <div class="small text-muted">Manage system</div>
                     </div>
                   </div>
@@ -852,7 +927,7 @@
                 id="loginBtn"
                 type="submit"
               >
-                Sign In as Student
+                Sign in
               </button>
 
               {% if not hide_otp %}
@@ -996,13 +1071,15 @@
                 </button>
               </div>
 
-              <div class="text-center small mt-2 {% if test_login_ui %}test-login-footer{% endif %}">
-                New user?
-                <a href="{% url 'register' %}" class="login-link cr">Create account</a>
+              <div class="login-actions text-center small {% if test_login_ui %}test-login-footer{% endif %}">
+                <div class="mb-2">
+                  <a href="{% url 'register' %}" class="login-link cr">Create account</a>
+                </div>
+                <button type="button" id="attemptTestsTrigger" class="hidden-functional">Attempt Tests</button>
               </div>
             </div>
           </form>
-        </div>
+        </section>
 
       <!-- Scholarship Login Modal -->
       <!-- <div class="modal fade" id="scholarshipLoginModal" tabindex="-1" aria-hidden="true">
@@ -1190,85 +1267,6 @@
       </div>
     </div> -->
 
-        <div class="row justify-content-center mt-4 utility-row">
-          <div class="col-lg-10">
-            <div class="row g-4">
-              <div class="col-lg-6">
-                <button
-                  type="button"
-                  id="attemptTestsTrigger"
-                  class="utility-card w-100 text-start border-0"
-                  style="cursor: pointer"
-                >
-                  <div class="d-flex align-items-center gap-3">
-                    <span class="utility-icon"><i class="bi bi-award"></i></span>
-                    <div>
-                      <div class="utility-title">Attempt Tests</div>
-                      <div class="utility-text text-muted">
-                        Choose and open scholarship or diagnostic tests
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              <div class="col-lg-6">
-                <a
-                  href="{% url 'bridgecourse:bridge_course_login' %}"
-                  class="utility-link"
-                >
-                  <div class="utility-card">
-                    <div class="d-flex align-items-center gap-3">
-                      <span class="utility-icon"><i class="bi bi-ladder"></i></span>
-                      <div>
-                        <div class="utility-title">Bridge Course</div>
-                        <div class="utility-text text-muted">
-                          Continue with bridge course enrollment
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row justify-content-center mt-4 features-row">
-          <div class="col-lg-11 col-xl-10">
-            <div class="row g-4 justify-content-center">
-              <div class="col-md-5 col-lg-4">
-                <div class="feature-card">
-                  <div class="feature-icon mb-3">
-                    <i class="bi bi-book"></i>
-                  </div>
-                  <div class="feature-title mb-2">Topic-Level Analysis</div>
-                  <div class="feature-text">Detailed progress tracking across subjects and chapters.</div>
-                </div>
-              </div>
-
-              <div class="col-md-5 col-lg-4">
-                <div class="feature-card">
-                  <div class="feature-icon mb-3">
-                    <i class="bi bi-person-circle"></i>
-                  </div>
-                  <div class="feature-title mb-2">Smart Diagnostics</div>
-                  <div class="feature-text">Gap analysis, improvement trends, and guided action.</div>
-                </div>
-              </div>
-
-              <div class="col-md-5 col-lg-4">
-                <div class="feature-card">
-                  <div class="feature-icon mb-3">
-                    <i class="bi bi-shield-check"></i>
-                  </div>
-                  <div class="feature-title mb-2">Reports and Analytics</div>
-                  <div class="feature-text">Performance visualization for students, staff, and admins.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 

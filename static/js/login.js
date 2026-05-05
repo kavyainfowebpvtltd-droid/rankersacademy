@@ -18,9 +18,11 @@ document.querySelectorAll(".role").forEach((r) => {
     r.classList.add("active");
 
     selectedRole = r.dataset.role;
-    roleInput.value = selectedRole;
+    roleInput.value = r.dataset.submitRole || selectedRole;
 
-    loginBtn.innerText = "Sign In as " + selectedRole;
+    if (loginBtn) {
+      loginBtn.innerText = "Sign in";
+    }
   };
 });
 
