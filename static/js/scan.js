@@ -18,6 +18,7 @@
   let scanBufferTimeoutRef = null;
 
   const appRef = document.getElementById("app");
+  const inputRef = document.getElementById("barcode");
   const successAudioRef = document.getElementById("success-audio");
   const errorAudioRef = document.getElementById("error-audio");
 
@@ -50,13 +51,19 @@
     setupEventListeners();
     startOfflineSync();
     updateOnlineStatus();
-    focusKioskSurface();
+    focusScanTarget();
   }
 
   function setupEventListeners() {
+    if (inputRef) {
+      inputRef.addEventListener("input", handleInputEvent);
+      inputRef.addEventListener("keydown", handleInputKeyDown);
+    }
+
     document.addEventListener("keydown", handleDocumentKeyDown);
     document.addEventListener("click", handleSurfaceInteraction);
     document.addEventListener("touchstart", handleSurfaceInteraction, { passive: true });
+    window.addEventListener("focus", focusScanTarget);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
   }
@@ -275,7 +282,8 @@
     setState(ScanState.IDLE);
     isProcessing = false;
     clearScanBuffer();
-    focusKioskSurface();
+    clearInputValue();
+    focusScanTarget();
   }
 
   function setState(newState) {
@@ -301,6 +309,29 @@
     successState.classList.add("d-none");
     errorState.classList.add("d-none");
     offlineState.classList.add("d-none");
+  }
+
+  function handleInputEvent() {
+    if (!inputRef || !inputRef.value) {
+      return;
+    }
+
+    if (inputRef.value.indexOf("\n") !== -1 || inputRef.value.indexOf("\r") !== -1) {
+      const barcode = inputRef.value.replace(/[\n\r]/g, "").trim();
+      clearInputValue();
+      handleScan(barcode);
+    }
+  }
+
+  function handleInputKeyDown(event) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    const barcode = inputRef ? inputRef.value.trim() : "";
+    clearInputValue();
+    handleScan(barcode);
   }
 
   function handleDocumentKeyDown(event) {
@@ -362,17 +393,28 @@
   }
 
   function handleSurfaceInteraction() {
-    if (!isTypingTarget(document.activeElement)) {
-      focusKioskSurface();
-    }
+    focusScanTarget();
   }
 
-  function focusKioskSurface() {
+  function focusScanTarget() {
+    if (inputRef) {
+      if (document.activeElement !== inputRef) {
+        inputRef.focus({ preventScroll: true });
+      }
+      return;
+    }
+
     if (!appRef || document.activeElement === appRef) {
       return;
     }
 
     appRef.focus({ preventScroll: true });
+  }
+
+  function clearInputValue() {
+    if (inputRef) {
+      inputRef.value = "";
+    }
   }
 
   function playSuccessAudio() {
