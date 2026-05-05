@@ -824,6 +824,21 @@
         padding-top: 1rem;
       }
 
+      .login-surface.mode-password #otpLoginSection,
+      .login-surface.mode-password #otpResetSection,
+      .login-surface.mode-otp #otpResetSection,
+      .login-surface.mode-reset #otpLoginSection,
+      .login-surface.mode-otp #usernameRow,
+      .login-surface.mode-otp #passwordRow,
+      .login-surface.mode-otp #forgotPasswordRow,
+      .login-surface.mode-otp #loginBtn,
+      .login-surface.mode-reset #usernameRow,
+      .login-surface.mode-reset #passwordRow,
+      .login-surface.mode-reset #forgotPasswordRow,
+      .login-surface.mode-reset #loginBtn {
+        display: none !important;
+      }
+
       .hidden-functional {
         display: none !important;
       }
@@ -1031,7 +1046,7 @@
 
           <form class="right-card {% if test_login_ui %}test-login-card mx-auto{% endif %}" id="rightCard" method="post" action="/">
             {% csrf_token %}
-            <div class="login-surface {% if test_login_ui %}test-login-surface{% endif %}">
+            <div class="login-surface mode-password {% if test_login_ui %}test-login-surface{% endif %}" id="loginSurface">
               <h2 class="display-title fw-bold mb-3">Sign In</h2>
 
               <div class="role-switch">
@@ -1073,14 +1088,16 @@
               <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
               <input type="hidden" name="role" id="roleInput" value="Student" />
 
-              <input
-                class="form-control mb-3 {% if test_login_ui %}test-login-input{% endif %}"
-                placeholder="Username or email"
-                name="username"
-                id="usernameField"
-                required
-              />
-              <div class="input-group mb-3 password-toggle-group {% if test_login_ui %}test-login-password-group{% endif %}">
+              <div id="usernameRow">
+                <input
+                  class="form-control mb-3 {% if test_login_ui %}test-login-input{% endif %}"
+                  placeholder="Username or email"
+                  name="username"
+                  id="usernameField"
+                  required
+                />
+              </div>
+              <div id="passwordRow" class="input-group mb-3 password-toggle-group {% if test_login_ui %}test-login-password-group{% endif %}">
                 <input
                   type="password"
                   class="form-control {% if test_login_ui %}test-login-input test-login-password-input{% endif %}"
@@ -1099,7 +1116,7 @@
                 </button>
               </div>
 
-              <div class="text-end small mb-3 {% if test_login_ui %}test-login-forgot-wrap{% endif %}">
+              <div id="forgotPasswordRow" class="text-end small mb-3 {% if test_login_ui %}test-login-forgot-wrap{% endif %}">
                 <a href="#" id="forgotPasswordLink" class="login-link cr">Forgot password?</a>
               </div>
               <button
