@@ -14,6 +14,8 @@
   let offlineQueue = [];
   let isOnline = true;
   let timeoutRef = null;
+  let scanBuffer = "";
+  let scanBufferTimeoutRef = null;
 
   const inputRef = document.getElementById("barcode-input");
   const successAudioRef = document.getElementById("success-audio");
@@ -46,7 +48,6 @@
   function init() {
     loadOfflineQueue();
     setupEventListeners();
-    startAutoFocus();
     startOfflineSync();
     updateOnlineStatus();
   }
@@ -54,16 +55,9 @@
   function setupEventListeners() {
     inputRef.addEventListener("change", handleInputChange);
     inputRef.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleDocumentKeyDown);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-  }
-
-  function startAutoFocus() {
-    setInterval(function () {
-      if (document.activeElement !== inputRef) {
-        inputRef.focus();
-      }
-    }, 300);
   }
 
   function loadOfflineQueue() {
@@ -280,7 +274,6 @@
     setState(ScanState.IDLE);
     isProcessing = false;
     inputRef.value = "";
-    inputRef.focus();
   }
 
   function setState(newState) {
@@ -322,6 +315,64 @@
       handleScan(inputRef.value.trim());
       inputRef.value = "";
     }
+  }
+
+  function handleDocumentKeyDown(event) {
+    if (event.defaultPrevented || isTypingTarget(event.target)) {
+      return;
+    }
+
+    if (event.key === "Enter") {
+      if (!scanBuffer.trim()) {
+        return;
+      }
+
+      event.preventDefault();
+      const barcode = scanBuffer.trim();
+      clearScanBuffer();
+      handleScan(barcode);
+      return;
+    }
+
+    if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+
+    scanBuffer += event.key;
+    restartScanBufferTimeout();
+  }
+
+  function restartScanBufferTimeout() {
+    if (scanBufferTimeoutRef) {
+      clearTimeout(scanBufferTimeoutRef);
+    }
+
+    scanBufferTimeoutRef = setTimeout(function () {
+      clearScanBuffer();
+    }, 250);
+  }
+
+  function clearScanBuffer() {
+    scanBuffer = "";
+
+    if (scanBufferTimeoutRef) {
+      clearTimeout(scanBufferTimeoutRef);
+      scanBufferTimeoutRef = null;
+    }
+  }
+
+  function isTypingTarget(target) {
+    if (!target) {
+      return false;
+    }
+
+    const tagName = target.tagName;
+    return (
+      target.isContentEditable ||
+      tagName === "INPUT" ||
+      tagName === "TEXTAREA" ||
+      tagName === "SELECT"
+    );
   }
 
   function playSuccessAudio() {
