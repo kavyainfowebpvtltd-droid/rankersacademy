@@ -1073,42 +1073,44 @@
               <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
               <input type="hidden" name="role" id="roleInput" value="Student" />
 
-              <input
-                class="form-control mb-3 {% if test_login_ui %}test-login-input{% endif %}"
-                placeholder="Username or email"
-                name="username"
-                id="usernameField"
-                required
-              />
-              <div class="input-group mb-3 password-toggle-group {% if test_login_ui %}test-login-password-group{% endif %}">
+              <div id="passwordLoginSection">
                 <input
-                  type="password"
-                  class="form-control {% if test_login_ui %}test-login-input test-login-password-input{% endif %}"
-                  placeholder="Password"
-                  name="password"
-                  id="passwordField"
+                  class="form-control mb-3 {% if test_login_ui %}test-login-input{% endif %}"
+                  placeholder="Username or email"
+                  name="username"
+                  id="usernameField"
                   required
                 />
+                <div class="input-group mb-3 password-toggle-group {% if test_login_ui %}test-login-password-group{% endif %}">
+                  <input
+                    type="password"
+                    class="form-control {% if test_login_ui %}test-login-input test-login-password-input{% endif %}"
+                    placeholder="Password"
+                    name="password"
+                    id="passwordField"
+                    required
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle {% if test_login_ui %}test-login-eye-btn{% endif %}"
+                    type="button"
+                    data-target="passwordField"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+
+                <div class="text-end small mb-3 {% if test_login_ui %}test-login-forgot-wrap{% endif %}">
+                  <a href="#" id="forgotPasswordLink" class="login-link cr">Forgot password?</a>
+                </div>
                 <button
-                  class="btn btn-outline-secondary password-toggle {% if test_login_ui %}test-login-eye-btn{% endif %}"
-                  type="button"
-                  data-target="passwordField"
-                  aria-label="Show password"
+                  class="btn btn-primary w-100 mb-3 {% if test_login_ui %}test-login-submit{% endif %}"
+                  id="loginBtn"
+                  type="submit"
                 >
-                  <i class="bi bi-eye"></i>
+                  Sign in
                 </button>
               </div>
-
-              <div class="text-end small mb-3 {% if test_login_ui %}test-login-forgot-wrap{% endif %}">
-                <a href="#" id="forgotPasswordLink" class="login-link cr">Forgot password?</a>
-              </div>
-              <button
-                class="btn btn-primary w-100 mb-3 {% if test_login_ui %}test-login-submit{% endif %}"
-                id="loginBtn"
-                type="submit"
-              >
-                Sign in
-              </button>
 
               {% if not hide_otp %}
               <button
