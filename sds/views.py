@@ -904,6 +904,19 @@ def _normalize_board(val: str) -> str:
 def _normalize_email(email: str) -> str:
     return (email or "").strip().lower()
 
+
+def _normalize_staff_designation(designation: str) -> str:
+    cleaned = re.sub(r"\s+", " ", (designation or "").strip())
+    if cleaned.lower() == "teacher":
+        return "Teacher"
+    if cleaned.lower() == "admin":
+        return "Admin"
+    return cleaned
+
+
+def _is_teacher_designation(designation: str) -> bool:
+    return _normalize_staff_designation(designation) == "Teacher"
+
 def _is_email_taken(email: str) -> bool:
    
     e = _normalize_email(email)
@@ -1441,14 +1454,18 @@ def add_user(request):
     else:
         
         if not (request.user.is_superuser or (hasattr(request.user, "teacheradmin") and request.user.teacheradmin.role == "Admin")):
-            messages.error(request, "Only admins can add teachers.")
+            messages.error(request, "Only admins can add staff members.")
             return redirect("user-management")
         
         # Handle profile picture upload
         profile_pic = request.FILES.get("profile_picture")
-        teacher_role = (request.POST.get("role") or "Teacher").strip()
+        teacher_role = _normalize_staff_designation(request.POST.get("role"))
         teacher_subjects = (request.POST.get("subjects") or "").strip()
         teacher_batch = _pick_post_value("batch", prefer_last=True)
+
+        if not teacher_role:
+            messages.error(request, "Designation is required for staff.")
+            return redirect("user-management")
         
         teacher = TeacherAdmin.objects.create(
             user=user,
@@ -1460,9 +1477,9 @@ def add_user(request):
             role=teacher_role,
             grade="",
             board="",
-            batch=teacher_batch if teacher_role == "Teacher" else "",
+            batch=teacher_batch if _is_teacher_designation(teacher_role) else "",
             blood_group=blood_group,
-            subjects=teacher_subjects if teacher_role == "Teacher" else "",
+            subjects=teacher_subjects if _is_teacher_designation(teacher_role) else "",
             must_change_password=True,
         )
         
@@ -1638,12 +1655,12 @@ def edit_teacher(request, id):
     teacher.email = new_email or teacher.email
     teacher.contact = new_contact
     teacher.gender = request.POST.get("gender")
-    teacher.role = (request.POST.get("role") or teacher.role).strip()
+    teacher.role = _normalize_staff_designation(request.POST.get("role") or teacher.role)
     teacher.grade = request.POST.get("grade")
     teacher.board = request.POST.get("board")
-    teacher.batch = request.POST.get("batch") if teacher.role == "Teacher" else ""
+    teacher.batch = request.POST.get("batch") if _is_teacher_designation(teacher.role) else ""
     teacher.blood_group = (request.POST.get("blood_group") or "").strip()
-    teacher.subjects = (request.POST.get("subjects") or "").strip() if teacher.role == "Teacher" else ""
+    teacher.subjects = (request.POST.get("subjects") or "").strip() if _is_teacher_designation(teacher.role) else ""
     
     # Handle profile picture upload
     if "profile_picture" in request.FILES:

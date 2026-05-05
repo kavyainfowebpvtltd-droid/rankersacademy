@@ -40,18 +40,16 @@ class Student(models.Model):
 
 
 
-# Teacher / Admin Model
+# Staff Model
 
 class TeacherAdmin(models.Model):
-    ROLE_CHOICES = (("Teacher", "Teacher"), ("Admin", "Admin"))
-    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     username = models.CharField(max_length=150)
     email = models.EmailField(max_length=255, unique=True)
     contact = models.CharField(max_length=15, unique=True)
     gender = models.CharField(max_length=10)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=80)
 
     grade = models.CharField(max_length=20, blank=True, null=True)
     board = models.CharField(max_length=50, blank=True, null=True)

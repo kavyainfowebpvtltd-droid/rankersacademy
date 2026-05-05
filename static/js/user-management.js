@@ -350,15 +350,21 @@ function toggleFields() {
 function bindStaffRoleToggles() {
   const addTeacherRoleInput = document.getElementById("teacherRoleInput");
   if (addTeacherRoleInput && addTeacherRoleInput.dataset.toggleBound !== "true") {
+    addTeacherRoleInput.addEventListener("input", toggleTeacherRoleFields);
     addTeacherRoleInput.addEventListener("change", toggleTeacherRoleFields);
     addTeacherRoleInput.dataset.toggleBound = "true";
   }
 
   const editTeacherRoleInput = document.getElementById("editTeacherRole");
   if (editTeacherRoleInput && editTeacherRoleInput.dataset.toggleBound !== "true") {
+    editTeacherRoleInput.addEventListener("input", toggleEditTeacherRoleFields);
     editTeacherRoleInput.addEventListener("change", toggleEditTeacherRoleFields);
     editTeacherRoleInput.dataset.toggleBound = "true";
   }
+}
+
+function isTeacherDesignationValue(value) {
+  return String(value || "").trim().toLowerCase() === "teacher";
 }
 
 function toggleTeacherRoleFields() {
@@ -367,7 +373,7 @@ function toggleTeacherRoleFields() {
   const teacherOnlyInputs = teacherOnlyRow
     ? teacherOnlyRow.querySelectorAll("input, select, textarea")
     : [];
-  const isTeacher = !roleInput || roleInput.value === "Teacher";
+  const isTeacher = isTeacherDesignationValue(roleInput ? roleInput.value : "");
 
   if (teacherOnlyRow) {
     teacherOnlyRow.style.display = isTeacher ? "flex" : "none";
@@ -384,7 +390,7 @@ function toggleEditTeacherRoleFields() {
   const batchCol = document.getElementById("editTeacherBatchCol");
   const subjectsInput = document.getElementById("editTeacherSubjects");
   const batchInput = document.getElementById("editTeacherBatch");
-  const isTeacher = !roleInput || roleInput.value === "Teacher";
+  const isTeacher = isTeacherDesignationValue(roleInput ? roleInput.value : "");
 
   if (subjectsCol) {
     subjectsCol.style.display = isTeacher ? "" : "none";
@@ -432,6 +438,7 @@ function clearAllAddUserErrors() {
     "teacherEmailInput",
     "studentContactInput",
     "teacherContactInput",
+    "teacherRoleInput",
   ];
   fields.forEach((fieldId) => {
     const input = document.getElementById(fieldId);
@@ -449,6 +456,7 @@ function clearAllAddUserErrors() {
     "teacherEmailError",
     "studentContactError",
     "teacherContactError",
+    "teacherRoleError",
   ];
   errorIds.forEach((errorId) => {
     const errorDiv = document.getElementById(errorId);
@@ -487,6 +495,7 @@ function validateAndSubmitAddUser() {
     isTeacherUser ? "teacherContactInput" : "studentContactInput",
   );
   const batchInput = getCommonBatchInput();
+  const teacherRoleInput = document.getElementById("teacherRoleInput");
   const nameErrorId = isTeacherUser ? "teacherNameError" : "studentNameError";
   const usernameErrorId = isTeacherUser
     ? "teacherUsernameError"
@@ -526,6 +535,13 @@ function validateAndSubmitAddUser() {
       if (errorDiv) errorDiv.textContent = "Batch is required for students";
       isValid = false;
     }
+  } else if (!teacherRoleInput || !teacherRoleInput.value.trim()) {
+    setAddUserFieldError(
+      teacherRoleInput,
+      "teacherRoleError",
+      "Designation is required",
+    );
+    isValid = false;
   }
 
   const contactValue = contactInput.value.trim();
