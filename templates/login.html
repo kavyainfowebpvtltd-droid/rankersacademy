@@ -6,9 +6,9 @@
     <link
       rel="shortcut icon"
       type="image/png"
-      href="{% static 'img/logo.webp' %}"
+      href="{% static 'img/Rankers_logo.png' %}"
     />
-    <title>Student Diagnostic System</title>
+    <title>The Rankers Academy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <link
@@ -21,6 +21,583 @@
     />
     <link rel="stylesheet" href="{% static 'css/login.css' %}" />
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap");
+
+      :root {
+        --brand-a: #ff8a00;
+        --brand-b: #e52e71;
+        --brand-c: #7c3aed;
+        --muted: #a1a1aa;
+        --surface: rgba(7, 7, 12, 0.78);
+        --surface-strong: rgba(12, 12, 18, 0.92);
+        --surface-soft: rgba(255, 255, 255, 0.06);
+        --border-soft: rgba(255, 255, 255, 0.12);
+      }
+
+      body.login-page-body {
+        min-height: 100vh;
+        margin: 0;
+        overflow-x: hidden;
+        color: #fafafa;
+        background:
+          radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.2), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(229, 46, 113, 0.13), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 0% 100%, rgba(255, 138, 0, 0.1), transparent 60%),
+          #06060a;
+        font-family: "DM Sans", system-ui, sans-serif;
+      }
+
+      .login-page {
+        position: relative;
+        min-height: 100vh;
+        isolation: isolate;
+      }
+
+      .brand-orb {
+        position: fixed;
+        inset: auto;
+        z-index: -1;
+        border-radius: 999px;
+        filter: blur(80px);
+        opacity: 0.65;
+      }
+
+      .brand-orb-a {
+        top: 4rem;
+        left: 6%;
+        width: 16rem;
+        height: 16rem;
+        background: rgba(124, 58, 237, 0.24);
+      }
+
+      .brand-orb-b {
+        right: 5%;
+        bottom: 10%;
+        width: 18rem;
+        height: 18rem;
+        background: rgba(229, 46, 113, 0.18);
+      }
+
+      .brand-orb-c {
+        left: 22%;
+        bottom: 8%;
+        width: 14rem;
+        height: 14rem;
+        background: rgba(255, 138, 0, 0.14);
+      }
+
+      .brand-header {
+        max-width: 720px;
+        margin: 0 auto;
+        text-align: center;
+        opacity: 0;
+        animation: headerIn 0.8s ease forwards;
+      }
+
+      @keyframes headerIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .brand-logo-shell {
+        width: 92px;
+        height: 92px;
+        margin: 0 auto 1.25rem;
+        padding: 14px;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(18px) saturate(160%);
+      }
+
+      .brand-logo-shell img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .brand-kicker,
+      .mono-label {
+        font-family: "DM Mono", monospace;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+
+      .display-brand,
+      .display-title,
+      .panel-title,
+      .feature-title,
+      .utility-title {
+        font-family: "Bricolage Grotesque", system-ui, sans-serif;
+      }
+
+      .display-brand {
+        margin: 0.75rem 0 0;
+        font-size: clamp(2.7rem, 6vw, 4.9rem);
+        font-weight: 800;
+        line-height: 0.92;
+      }
+
+      .brand-text {
+        background: linear-gradient(135deg, #ffb55a, #f72585 50%, #a78bfa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .brand-subtitle {
+        max-width: 560px;
+        margin: 1rem auto 0;
+        color: rgba(250, 250, 250, 0.72);
+        font-size: 1rem;
+      }
+
+      .left-card,
+      .right-card {
+        opacity: 0;
+      }
+
+      .enter-left {
+        animation: enterLeft 0.9s ease forwards;
+      }
+
+      .enter-right {
+        animation: enterRight 0.9s ease forwards;
+      }
+
+      @keyframes enterLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-90px);
+        }
+
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      @keyframes enterRight {
+        from {
+          opacity: 0;
+          transform: translateX(90px);
+        }
+
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .brand-panel,
+      .login-surface,
+      .utility-card,
+      .feature-card,
+      .modal-content {
+        background: var(--surface);
+        border: 1px solid var(--border-soft);
+        border-radius: 28px;
+        box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.32);
+        backdrop-filter: blur(18px) saturate(160%);
+      }
+
+      .brand-panel,
+      .login-surface {
+        height: 100%;
+        padding: 2rem;
+      }
+
+      .panel-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+
+      .panel-title {
+        margin: 1.25rem 0 0.5rem;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .panel-copy,
+      .panel-list,
+      .login-copy,
+      .helper-text,
+      .feature-text,
+      .text-muted {
+        color: rgba(250, 250, 250, 0.66) !important;
+      }
+
+      .panel-list {
+        display: grid;
+        gap: 0.85rem;
+        margin-top: 1.5rem;
+      }
+
+      .panel-item,
+      .mini-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.95rem 1rem;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .panel-item i,
+      .mini-stat i,
+      .feature-icon i {
+        color: #fff;
+      }
+
+      .panel-item-icon,
+      .feature-icon,
+      .utility-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+        box-shadow: 0 0.75rem 1.8rem rgba(229, 46, 113, 0.22);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+        margin-top: 1.5rem;
+      }
+
+      .mini-stat {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .mini-stat strong {
+        font-size: 1.4rem;
+        font-family: "Bricolage Grotesque", system-ui, sans-serif;
+      }
+
+      .login-surface {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .login-surface::after {
+        content: "";
+        position: absolute;
+        top: -3rem;
+        right: -3rem;
+        width: 12rem;
+        height: 12rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(255, 138, 0, 0.18), rgba(229, 46, 113, 0.18), rgba(124, 58, 237, 0.2));
+        filter: blur(10px);
+      }
+
+      .login-surface > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .display-title {
+        margin: 0.6rem 0 0;
+        font-size: clamp(2rem, 4.4vw, 3.4rem);
+        font-weight: 800;
+        line-height: 0.96;
+      }
+
+      .login-copy {
+        margin: 1rem 0 1.5rem;
+        max-width: 30rem;
+      }
+
+      .role-switch {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .role {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        position: relative;
+        background: rgba(255, 255, 255, 0.04);
+        color: #fff;
+        text-align: left;
+      }
+
+      .role:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.24);
+      }
+
+      .role.active {
+        border-color: rgba(255, 181, 90, 0.75);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 0 1px rgba(255, 181, 90, 0.28);
+      }
+
+      .role::after {
+        content: "";
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 999px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .role.active::after {
+        border-color: transparent;
+        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+      }
+
+      .role-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+      }
+
+      .student {
+        background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+      }
+
+      .teacher-admin {
+        background: linear-gradient(135deg, #f97316, #e52e71);
+      }
+
+      .form-control,
+      .form-select,
+      .input-group-text {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border-radius: 16px;
+        padding: 0.88rem 1rem;
+      }
+
+      .input-group-text {
+        color: rgba(250, 250, 250, 0.72);
+      }
+
+      .form-control::placeholder {
+        color: rgba(250, 250, 250, 0.46);
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border-color: rgba(255, 181, 90, 0.52);
+        box-shadow: 0 0 0 0.25rem rgba(255, 138, 0, 0.12);
+      }
+
+      .input-group > .form-control:not(:last-child) {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      .password-toggle {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-left: 0;
+        border-radius: 0 16px 16px 0;
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        padding: 0.88rem 1rem;
+      }
+
+      .password-toggle:hover,
+      .password-toggle:focus {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+        border: none;
+        border-radius: 16px;
+        padding: 0.95rem 1rem;
+        font-weight: 700;
+        box-shadow: 0 0.9rem 1.8rem rgba(229, 46, 113, 0.22);
+      }
+
+      .btn-primary:hover,
+      .btn-primary:focus {
+        background: linear-gradient(135deg, #ff9f2f, #ed4f8f 52%, #9260ff);
+      }
+
+      .google-btn,
+      .btn-outline-primary,
+      .btn-outline-secondary,
+      .btn-outline-success {
+        border-radius: 16px;
+        padding: 0.88rem 1rem;
+        font-weight: 600;
+      }
+
+      .google-btn {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #fff;
+      }
+
+      .google-btn:hover,
+      .google-btn:focus,
+      .btn-outline-primary:hover,
+      .btn-outline-secondary:hover,
+      .btn-outline-success:hover {
+        color: #fff;
+      }
+
+      .btn-outline-primary,
+      .btn-outline-secondary,
+      .btn-outline-success {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.18);
+        color: #fff;
+      }
+
+      .btn-outline-primary:hover,
+      .btn-outline-primary:focus {
+        background: rgba(14, 165, 233, 0.22);
+        border-color: rgba(34, 211, 238, 0.4);
+      }
+
+      .btn-outline-secondary:hover,
+      .btn-outline-secondary:focus {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.24);
+      }
+
+      .btn-outline-success:hover,
+      .btn-outline-success:focus {
+        background: rgba(34, 197, 94, 0.22);
+        border-color: rgba(34, 197, 94, 0.4);
+      }
+
+      .login-link {
+        color: #ffd4a2;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .login-link:hover,
+      .login-link:focus {
+        color: #fff;
+      }
+
+      .utility-row,
+      .features-row {
+        opacity: 0;
+        animation: fadeUp 0.9s ease 0.45s forwards;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .utility-card,
+      .feature-card {
+        height: 100%;
+        padding: 1.5rem;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      }
+
+      .utility-card:hover,
+      .feature-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow: 0 1.7rem 3.2rem rgba(0, 0, 0, 0.34);
+      }
+
+      .utility-link {
+        display: block;
+        height: 100%;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .feature-title,
+      .utility-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .feature-text,
+      .utility-text {
+        font-size: 0.95rem;
+      }
+
+      .modal-content {
+        background: var(--surface-strong);
+        color: #fff;
+      }
+
+      .modal-header,
+      .modal-footer {
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-close {
+        filter: invert(1);
+      }
+
+      .alert {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+      }
+
+      .alert-warning {
+        background: rgba(245, 158, 11, 0.16);
+        color: #ffde9a;
+      }
+
+      .alert-info {
+        background: rgba(14, 165, 233, 0.14);
+        color: #c6f4ff;
+      }
+
       .step-indicator {
         display: flex;
         justify-content: center;
@@ -85,288 +662,347 @@
       .step-indicator .step.completed ~ .step-connector {
         background: #22c55e;
       }
+
+      @media (max-width: 991.98px) {
+        .brand-panel,
+        .login-surface,
+        .utility-card,
+        .feature-card {
+          border-radius: 24px;
+        }
+      }
+
+      @media (max-width: 767.98px) {
+        .brand-header {
+          margin-bottom: 2rem;
+        }
+
+        .brand-logo-shell {
+          width: 76px;
+          height: 76px;
+          border-radius: 24px;
+        }
+
+        .brand-panel,
+        .login-surface {
+          padding: 1.35rem;
+        }
+
+        .role-switch,
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .utility-card,
+        .feature-card {
+          padding: 1.2rem;
+        }
+      }
+
+      body.login-page-body.test-login-ui .brand-panel,
+      body.login-page-body.test-login-ui .role-switch,
+      body.login-page-body.test-login-ui .utility-row,
+      body.login-page-body.test-login-ui .features-row {
+        display: none !important;
+      }
+
+      body.login-page-body.test-login-ui .brand-header {
+        max-width: 560px;
+        margin-bottom: 2.5rem;
+      }
     </style>
   </head>
-  <body class="{% if test_login_ui %}test-login-ui{% endif %}">
-    <div class="container py-5">
-      <!-- HEADER -->
-      <div class="header mb-5">
-        <div class="logo mb-0">
-          <img
-            src="{% static 'img/logo.webp' %}"
-            alt="SDS Logo"
-            style="
-              width: 100%;
-              height: 100%;
-              object-fit: contain;
-              border-radius: 8px;
-            "
-          />
+  <body class="login-page-body {% if test_login_ui %}test-login-ui{% endif %}">
+    <div class="login-page">
+      <div class="brand-orb brand-orb-a"></div>
+      <div class="brand-orb brand-orb-b"></div>
+      <div class="brand-orb brand-orb-c"></div>
+
+      <div class="container py-5">
+        <div class="brand-header mb-5">
+          <div class="brand-logo-shell">
+            <img src="{% static 'img/Rankers_logo.png' %}" alt="The Rankers Academy logo" />
+          </div>
+          <div class="brand-kicker">The Rankers Academy</div>
+          <h1 class="display-brand">Climb Smarter.<br /><span class="brand-text">Rank Higher.</span></h1>
+          <p class="brand-subtitle">
+            Access the academy portal with the same secure login flow you already use, now in a refreshed Rankers Academy interface.
+          </p>
         </div>
-        <h4 class="fw-bold">Student Diagnostic System</h4>
-        <p class="text-muted">Smart Learning Analytics Platform</p>
-      </div>
 
-      <div class="row g-4 justify-content-center">
-        <!-- ROLE SELECTION -->
-        <div class="col-lg-5 left-card {% if test_login_ui %}d-none{% endif %}" id="leftCard">
-          <div class="card p-4" style="height: 416px">
-            <h6 class="fw-bold mb-3">Select Your Role</h6>
+        <div class="row g-4 justify-content-center align-items-stretch">
+          <div class="col-lg-5 left-card {% if test_login_ui %}d-none{% endif %}" id="leftCard">
+            <div class="brand-panel">
+              <span class="panel-badge">
+                <i class="bi bi-stars"></i>
+                Unified Access
+              </span>
+              <h2 class="panel-title">One login for students, faculty, and admins.</h2>
+              <p class="panel-copy mb-0">
+                Your existing authentication, OTP recovery, and secure redirects stay exactly the same. Only the interface has been refreshed.
+              </p>
 
-            <div class="role active mb-3" data-role="Student">
-              <div class="d-flex align-items-center">
-                <div class="role-icon student me-3">
-                  <i class="bi bi-book"></i>
+              <div class="panel-list">
+                <div class="panel-item">
+                  <span class="panel-item-icon"><i class="bi bi-bar-chart-line"></i></span>
+                  <div>
+                    <strong>Performance Dashboards</strong>
+                    <div class="small text-muted">Student insights and progress tracking</div>
+                  </div>
                 </div>
-                <div>
-                  <strong>Student</strong>
-                  <div class="text-muted small">Access dashboard</div>
+                <div class="panel-item">
+                  <span class="panel-item-icon"><i class="bi bi-shield-lock"></i></span>
+                  <div>
+                    <strong>OTP and Password Recovery</strong>
+                    <div class="small text-muted">Built on the existing secure account flow</div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div class="role mb-3" data-role="Teacher/Admin">
-              <div class="d-flex align-items-center">
-                <div class="role-icon teacher-admin me-3">
-                  <i class="bi bi-person"></i>
-                </div>
-                <div>
-                  <strong>Teacher / Admin</strong>
-                  <div class="text-muted small">Manage system</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Download Imp Question and Solutions button commented out
-            <button
-              class="download-btn mb-3"
-              id="downloadBtnCard"
-              type="button"
-              data-bs-toggle="modal"
-              data-bs-target="#gradeBoardModal"
-            >
-              <div class="d-flex align-items-center">
-                <div class="role-icon student me-3">
-                  <i class="bi bi-download"></i>
-                </div>
-                <div>
-                  <strong>Download Imp. Question and Solutions</strong>
-                  <div class="text-muted small">
-                    10th (State/CBSE) and 12th (State/CBSE)
+                <div class="panel-item">
+                  <span class="panel-item-icon"><i class="bi bi-people"></i></span>
+                  <div>
+                    <strong>Role-Based Access</strong>
+                    <div class="small text-muted">Student and Teacher/Admin portals from one screen</div>
                   </div>
                 </div>
               </div>
-            </button>
-            -->
+
+              <div class="stats-grid">
+                <div class="mini-stat">
+                  <span class="mono-label">Mode</span>
+                  <strong>Secure</strong>
+                  <div class="small text-muted">Password and OTP sign-in</div>
+                </div>
+                <div class="mini-stat">
+                  <span class="mono-label">Brand</span>
+                  <strong>Rankers</strong>
+                  <div class="small text-muted">Academy-first experience</div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <form class="col-lg-5 right-card {% if test_login_ui %}test-login-card mx-auto{% endif %}" id="rightCard" method="post" action="/">
+            {% csrf_token %}
+            <div class="login-surface {% if test_login_ui %}test-login-surface{% endif %}">
+              <div class="brand-kicker">Portal Access</div>
+              <h2 class="display-title">Sign In</h2>
+              <p class="login-copy">
+                Choose your portal, then continue with your current username and password or OTP-based access.
+              </p>
+
+              <div class="role-switch">
+                <button type="button" class="role active" data-role="Student">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="role-icon student">
+                      <i class="bi bi-book"></i>
+                    </div>
+                    <div>
+                      <strong>Student</strong>
+                      <div class="small text-muted">Access dashboard</div>
+                    </div>
+                  </div>
+                </button>
+                <button type="button" class="role" data-role="Teacher/Admin">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="role-icon teacher-admin">
+                      <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div>
+                      <strong>Teacher / Admin</strong>
+                      <div class="small text-muted">Manage system</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+              <input type="hidden" name="role" id="roleInput" value="Student" />
+
+              <input
+                class="form-control mb-3 {% if test_login_ui %}test-login-input{% endif %}"
+                placeholder="Username or email"
+                name="username"
+                id="usernameField"
+                required
+              />
+              <div class="input-group mb-3 password-toggle-group {% if test_login_ui %}test-login-password-group{% endif %}">
+                <input
+                  type="password"
+                  class="form-control {% if test_login_ui %}test-login-input test-login-password-input{% endif %}"
+                  placeholder="Password"
+                  name="password"
+                  id="passwordField"
+                  required
+                />
+                <button
+                  class="btn btn-outline-secondary password-toggle {% if test_login_ui %}test-login-eye-btn{% endif %}"
+                  type="button"
+                  data-target="passwordField"
+                  aria-label="Show password"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+
+              <div class="text-end small mb-3 {% if test_login_ui %}test-login-forgot-wrap{% endif %}">
+                <a href="#" id="forgotPasswordLink" class="login-link cr">Forgot password?</a>
+              </div>
+              <button
+                class="btn btn-primary w-100 mb-3 {% if test_login_ui %}test-login-submit{% endif %}"
+                id="loginBtn"
+                type="submit"
+              >
+                Sign In as Student
+              </button>
+
+              {% if not hide_otp %}
+              <button
+                class="google-btn otp-btn w-100 mb-3 {% if test_login_ui %}test-login-otp-btn{% endif %}"
+                type="button"
+                id="otpToggleBtn"
+              >
+                <i class="bi bi-shield-lock me-2"></i> Sign In with OTP
+              </button>
+              {% endif %}
+
+              <div id="otpLoginSection" style="display: none">
+                <input
+                  class="form-control mb-3"
+                  placeholder="Registered Mobile Number"
+                  id="otpPhone"
+                />
+
+                <div class="d-flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary w-50"
+                    id="sendOtpBtn"
+                  >
+                    Send OTP
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary w-50"
+                    id="backToPasswordBtn"
+                  >
+                    Back
+                  </button>
+                </div>
+
+                <input
+                  class="form-control mb-3"
+                  placeholder="Enter OTP"
+                  id="otpInput"
+                  style="display: none"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-primary w-100 mb-3"
+                  id="verifyOtpBtn"
+                  style="display: none"
+                >
+                  Verify OTP & Login
+                </button>
+              </div>
+
+              <div id="otpResetSection" style="display: none">
+                <input
+                  class="form-control mb-3"
+                  placeholder="Registered Mobile Number"
+                  id="resetPhone"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-outline-primary w-100 mb-3"
+                  id="sendResetOtpBtn"
+                >
+                  Send Reset OTP
+                </button>
+
+                <input
+                  class="form-control mb-3"
+                  placeholder="Enter Reset OTP"
+                  id="resetOtpInput"
+                  style="display: none"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-outline-success w-100 mb-3"
+                  id="verifyResetOtpBtn"
+                  style="display: none"
+                >
+                  Verify OTP
+                </button>
+
+                <div
+                  class="input-group mb-3 password-toggle-group"
+                  id="newPassGroup"
+                  style="display: none"
+                >
+                  <input
+                    class="form-control"
+                    type="password"
+                    placeholder="New Password"
+                    id="newPass"
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle"
+                    type="button"
+                    data-target="newPass"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+                <div
+                  class="input-group mb-3 password-toggle-group"
+                  id="confirmPassGroup"
+                  style="display: none"
+                >
+                  <input
+                    class="form-control"
+                    type="password"
+                    placeholder="Confirm Password"
+                    id="confirmPass"
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle"
+                    type="button"
+                    data-target="confirmPass"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-primary w-100 mb-3"
+                  id="setNewPassBtn"
+                  style="display: none"
+                >
+                  Update Password
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary w-100"
+                  id="resetBackBtn"
+                >
+                  Back to Login
+                </button>
+              </div>
+
+              <div class="text-center small mt-2 {% if test_login_ui %}test-login-footer{% endif %}">
+                New user?
+                <a href="{% url 'register' %}" class="login-link cr">Create account</a>
+              </div>
+            </div>
+          </form>
         </div>
-
-        <!-- LOGIN -->
-         <form class="col-lg-5 right-card {% if test_login_ui %}test-login-card mx-auto{% endif %}" id="rightCard" method="post" action="/">
-           {% csrf_token %}
-           <div class="card p-4 {% if test_login_ui %}test-login-surface{% endif %}">
-             <h6 class="fw-bold mb-3">Sign In</h6>
-             
-             <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
-
-             <input
-               class="form-control mb-3 {% if test_login_ui %}test-login-input{% endif %}"
-               placeholder="Username"
-               name="username"
-               id="usernameField"
-               required
-             />
-             <div class="input-group mb-3 password-toggle-group {% if test_login_ui %}test-login-password-group{% endif %}">
-               <input
-                 type="password"
-                 class="form-control {% if test_login_ui %}test-login-input test-login-password-input{% endif %}"
-                 placeholder="Password"
-                 name="password"
-                 id="passwordField"
-                 required
-               />
-               <button
-                 class="btn btn-outline-secondary password-toggle {% if test_login_ui %}test-login-eye-btn{% endif %}"
-                 type="button"
-                 data-target="passwordField"
-                 aria-label="Show password"
-               >
-                 <i class="bi bi-eye"></i>
-               </button>
-             </div>
-
-             <input type="hidden" name="role" id="roleInput" value="Student" />
-
-            <div class="text-end small mb-3 {% if test_login_ui %}test-login-forgot-wrap{% endif %}">
-              <a
-                href="#"
-                id="forgotPasswordLink"
-                class="text-dark fw-semibold cr"
-                style="text-decoration: none"
-                >Forgot password?</a
-              >
-            </div>
-            <button
-              class="btn btn-primary w-100 mb-3 {% if test_login_ui %}test-login-submit{% endif %}"
-              id="loginBtn"
-              type="submit"
-            >
-              Sign In as Student
-            </button>
-
-            {% if not hide_otp %}
-            <button
-              class="google-btn otp-btn w-100 mb-3 {% if test_login_ui %}test-login-otp-btn{% endif %}"
-              type="button"
-              id="otpToggleBtn"
-            >
-              <i class="bi bi-shield-lock me-2"></i> Sign In with OTP
-            </button>
-            {% endif %}
-
-            <div id="otpLoginSection" style="display: none">
-              <input
-                class="form-control mb-3"
-                placeholder="Registered Mobile Number"
-                id="otpPhone"
-              />
-
-              <div class="d-flex gap-2 mb-3">
-                <button
-                  type="button"
-                  class="btn btn-outline-primary w-50"
-                  id="sendOtpBtn"
-                >
-                  Send OTP
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary w-50"
-                  id="backToPasswordBtn"
-                >
-                  Back
-                </button>
-              </div>
-
-              <input
-                class="form-control mb-3"
-                placeholder="Enter OTP"
-                id="otpInput"
-                style="display: none"
-              />
-
-              <button
-                type="button"
-                class="btn btn-primary w-100 mb-3"
-                id="verifyOtpBtn"
-                style="display: none"
-              >
-                Verify OTP & Login
-              </button>
-            </div>
-
-            <div id="otpResetSection" style="display: none">
-              <input
-                class="form-control mb-3"
-                placeholder="Registered Mobile Number"
-                id="resetPhone"
-              />
-
-              <button
-                type="button"
-                class="btn btn-outline-primary w-100 mb-3"
-                id="sendResetOtpBtn"
-              >
-                Send Reset OTP
-              </button>
-
-              <input
-                class="form-control mb-3"
-                placeholder="Enter Reset OTP"
-                id="resetOtpInput"
-                style="display: none"
-              />
-
-              <button
-                type="button"
-                class="btn btn-outline-success w-100 mb-3"
-                id="verifyResetOtpBtn"
-                style="display: none"
-              >
-                Verify OTP
-              </button>
-
-              <div
-                class="input-group mb-3 password-toggle-group"
-                id="newPassGroup"
-                style="display: none"
-              >
-                <input
-                  class="form-control"
-                  type="password"
-                  placeholder="New Password"
-                  id="newPass"
-                />
-                <button
-                  class="btn btn-outline-secondary password-toggle"
-                  type="button"
-                  data-target="newPass"
-                  aria-label="Show password"
-                >
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-              <div
-                class="input-group mb-3 password-toggle-group"
-                id="confirmPassGroup"
-                style="display: none"
-              >
-                <input
-                  class="form-control"
-                  type="password"
-                  placeholder="Confirm Password"
-                  id="confirmPass"
-                />
-                <button
-                  class="btn btn-outline-secondary password-toggle"
-                  type="button"
-                  data-target="confirmPass"
-                  aria-label="Show password"
-                >
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-
-              <button
-                type="button"
-                class="btn btn-primary w-100 mb-3"
-                id="setNewPassBtn"
-                style="display: none"
-              >
-                Update Password
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-outline-secondary w-100"
-                id="resetBackBtn"
-              >
-                Back to Login
-              </button>
-            </div>
-
-            <div class="text-center small mt-2 {% if test_login_ui %}test-login-footer{% endif %}">
-              New user?
-              <a
-                href="{% url 'register' %}"
-                class="text-dark fw-semibold cr"
-                style="text-decoration: none"
-                >Create account</a
-              >
-            </div>
-          </div>
-        </form>
-      </div>
 
       <!-- Scholarship Login Modal -->
       <!-- <div class="modal fade" id="scholarshipLoginModal" tabindex="-1" aria-hidden="true">
@@ -554,81 +1190,81 @@
       </div>
     </div> -->
 
-      <!-- FEATURES -->
-      <div class="row justify-content-center mt-5 features-row">
-        <div class="col-lg-11 col-xl-10">
-          <div class="row g-4 justify-content-center mb-4">
-            <div class="col-lg-5">
-              <button
-                type="button"
-                id="attemptTestsTrigger"
-                class="card p-3 h-100 w-100 text-start border-0 bg-white"
-                style="cursor: pointer"
-              >
-                <div class="d-flex align-items-center">
-                  <div class="role-icon student me-3">
-                    <i class="bi bi-award"></i>
-                  </div>
-                  <div>
-                    <strong>Attempt Tests</strong>
-                    <div class="text-muted small">
-                      Choose and open scholarship tests
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <div class="col-lg-5">
-              <a
-                href="{% url 'bridgecourse:bridge_course_login' %}"
-                class="text-decoration-none"
-              >
-                <div class="card p-3 h-100">
-                  <div class="d-flex align-items-center">
-                    <div class="role-icon teacher-admin me-3">
-                      <i class="bi bi-ladder"></i>
-                    </div>
+        <div class="row justify-content-center mt-4 utility-row">
+          <div class="col-lg-10">
+            <div class="row g-4">
+              <div class="col-lg-6">
+                <button
+                  type="button"
+                  id="attemptTestsTrigger"
+                  class="utility-card w-100 text-start border-0"
+                  style="cursor: pointer"
+                >
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="utility-icon"><i class="bi bi-award"></i></span>
                     <div>
-                      <strong>Bridge Course</strong>
-                      <div class="text-muted small">
-                        Enroll in bridge course
+                      <div class="utility-title">Attempt Tests</div>
+                      <div class="utility-text text-muted">
+                        Choose and open scholarship or diagnostic tests
                       </div>
                     </div>
                   </div>
-                </div>
-              </a>
+                </button>
+              </div>
+
+              <div class="col-lg-6">
+                <a
+                  href="{% url 'bridgecourse:bridge_course_login' %}"
+                  class="utility-link"
+                >
+                  <div class="utility-card">
+                    <div class="d-flex align-items-center gap-3">
+                      <span class="utility-icon"><i class="bi bi-ladder"></i></span>
+                      <div>
+                        <div class="utility-title">Bridge Course</div>
+                        <div class="utility-text text-muted">
+                          Continue with bridge course enrollment
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="row g-4 justify-content-center">
-            <div class="col-md-5 col-lg-4">
-              <div class="feature-card">
-                <div class="feature-icon icon-green">
-                  <i class="bi bi-book"></i>
+        <div class="row justify-content-center mt-4 features-row">
+          <div class="col-lg-11 col-xl-10">
+            <div class="row g-4 justify-content-center">
+              <div class="col-md-5 col-lg-4">
+                <div class="feature-card">
+                  <div class="feature-icon mb-3">
+                    <i class="bi bi-book"></i>
+                  </div>
+                  <div class="feature-title mb-2">Topic-Level Analysis</div>
+                  <div class="feature-text">Detailed progress tracking across subjects and chapters.</div>
                 </div>
-                <div class="feature-title">Topic-Level Analysis</div>
-                <div class="feature-text">Detailed progress tracking</div>
               </div>
-            </div>
 
-            <div class="col-md-5 col-lg-4">
-              <div class="feature-card">
-                <div class="feature-icon icon-blue">
-                  <i class="bi bi-person-circle"></i>
+              <div class="col-md-5 col-lg-4">
+                <div class="feature-card">
+                  <div class="feature-icon mb-3">
+                    <i class="bi bi-person-circle"></i>
+                  </div>
+                  <div class="feature-title mb-2">Smart Diagnostics</div>
+                  <div class="feature-text">Gap analysis, improvement trends, and guided action.</div>
                 </div>
-                <div class="feature-title">Smart Diagnostics</div>
-                <div class="feature-text">Gap analysis & insights</div>
               </div>
-            </div>
 
-            <div class="col-md-5 col-lg-4">
-              <div class="feature-card">
-                <div class="feature-icon icon-purple">
-                  <i class="bi bi-shield-check"></i>
+              <div class="col-md-5 col-lg-4">
+                <div class="feature-card">
+                  <div class="feature-icon mb-3">
+                    <i class="bi bi-shield-check"></i>
+                  </div>
+                  <div class="feature-title mb-2">Reports and Analytics</div>
+                  <div class="feature-text">Performance visualization for students, staff, and admins.</div>
                 </div>
-                <div class="feature-title">Reports & Analytics</div>
-                <div class="feature-text">Performance visualization</div>
               </div>
             </div>
           </div>
