@@ -688,9 +688,9 @@
                   id="teacherRoleInput"
                   placeholder="Designation (e.g. Teacher, Admin, Counselor)"
                   maxlength="80"
-                  oninput="toggleTeacherRoleFields()"
-                  onchange="toggleTeacherRoleFields()"
-                  onblur="toggleTeacherRoleFields()"
+                  oninput="syncAddStaffDesignationFields()"
+                  onchange="syncAddStaffDesignationFields()"
+                  onblur="syncAddStaffDesignationFields()"
                   required
                 />
                 <div class="invalid-feedback" id="teacherRoleError"></div>
@@ -1039,9 +1039,9 @@
                 id="editTeacherRole"
                 placeholder="Designation"
                 maxlength="80"
-                oninput="toggleEditTeacherRoleFields()"
-                onchange="toggleEditTeacherRoleFields()"
-                onblur="toggleEditTeacherRoleFields()"
+                oninput="syncEditStaffDesignationFields()"
+                onchange="syncEditStaffDesignationFields()"
+                onblur="syncEditStaffDesignationFields()"
                 required
               />
             </div>
@@ -1132,6 +1132,64 @@
      <script>
        // Batch counts data from server: {"Star 01": 5, "Alpha": 3, ...}
        const batchCounts = {{ batch_counts_json|safe }};
+
+       function isTeacherDesignationText(value) {
+         return String(value || "").trim().toLowerCase() === "teacher";
+       }
+
+       function syncAddStaffDesignationFields() {
+         const roleInput = document.getElementById("teacherRoleInput");
+         const teacherFields = document.getElementById("teacherFields");
+         const teacherOnlyRow = document.getElementById("teacherTeacherFieldsRow");
+         const teacherOnlyInputs = teacherOnlyRow
+           ? teacherOnlyRow.querySelectorAll("input, select, textarea")
+           : [];
+         const isTeacher = isTeacherDesignationText(roleInput ? roleInput.value : "");
+
+         if (teacherFields) {
+           teacherFields.style.display = "block";
+           teacherFields.hidden = false;
+         }
+
+         if (teacherOnlyRow) {
+           teacherOnlyRow.style.display = isTeacher ? "flex" : "none";
+           teacherOnlyRow.hidden = !isTeacher;
+           teacherOnlyRow.classList.toggle("d-none", !isTeacher);
+         }
+
+         teacherOnlyInputs.forEach((input) => {
+           input.disabled = !isTeacher;
+         });
+       }
+
+       function syncEditStaffDesignationFields() {
+         const roleInput = document.getElementById("editTeacherRole");
+         const subjectsCol = document.getElementById("editTeacherSubjectsCol");
+         const batchCol = document.getElementById("editTeacherBatchCol");
+         const subjectsInput = document.getElementById("editTeacherSubjects");
+         const batchInput = document.getElementById("editTeacherBatch");
+         const isTeacher = isTeacherDesignationText(roleInput ? roleInput.value : "");
+
+         if (subjectsCol) {
+           subjectsCol.style.display = isTeacher ? "" : "none";
+           subjectsCol.hidden = !isTeacher;
+           subjectsCol.classList.toggle("d-none", !isTeacher);
+         }
+
+         if (batchCol) {
+           batchCol.style.display = isTeacher ? "" : "none";
+           batchCol.hidden = !isTeacher;
+           batchCol.classList.toggle("d-none", !isTeacher);
+         }
+
+         if (subjectsInput) {
+           subjectsInput.disabled = !isTeacher;
+         }
+
+         if (batchInput) {
+           batchInput.disabled = !isTeacher;
+         }
+       }
      </script>
      <script src="{% static 'js/user-management.js' %}"></script>
    </body>
