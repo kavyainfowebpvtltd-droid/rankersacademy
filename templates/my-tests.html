@@ -362,6 +362,155 @@
       box-shadow: none;
     }
 
+    .my-tests-page .hero-status {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.7rem;
+    }
+
+    .my-tests-page .streak-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(249, 115, 22, 0.28);
+      background: linear-gradient(180deg, #7c3a1d, #6b3016);
+      color: #fed7aa;
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .my-tests-page .streak-pill-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 999px;
+      background: rgba(251, 191, 36, 0.14);
+      color: #fbbf24;
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    .my-tests-page .rank-shift-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 3rem;
+      gap: 0.35rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 1rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .my-tests-page .rank-shift-pill.up {
+      color: #dcfce7;
+      background: linear-gradient(180deg, #14532d, #166534);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .my-tests-page .rank-shift-pill.down {
+      color: #fecdd3;
+      background: linear-gradient(180deg, #8a3b48, #7a3140);
+      border-color: rgba(251, 113, 133, 0.28);
+    }
+
+    .my-tests-page .rank-shift-pill.flat {
+      color: #dbeafe;
+      background: linear-gradient(180deg, #334155, #293548);
+      border-color: rgba(148, 163, 184, 0.28);
+    }
+
+    .my-tests-page .rank-shift-icon {
+      font-size: 0.92rem;
+      line-height: 1;
+    }
+
+    .my-tests-page .home-score-breakdown {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .my-tests-page .home-score-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(219, 234, 254, 0.95);
+      border-radius: 1.1rem;
+      padding: 1rem 1.05rem;
+      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.06);
+    }
+
+    .my-tests-page .home-score-label {
+      color: #64748b;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      font-family: "DM Mono", monospace;
+    }
+
+    .my-tests-page .home-score-total {
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+      margin-top: 0.35rem;
+    }
+
+    .my-tests-page .home-score-value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      color: #0f172a;
+    }
+
+    .my-tests-page .home-score-outof {
+      color: #64748b;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .my-tests-page .home-score-meta {
+      margin-top: 0.35rem;
+      font-size: 0.88rem;
+      color: #64748b;
+    }
+
+    .my-tests-page .home-score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .my-tests-page .home-score-chip {
+      background: linear-gradient(180deg, #f8fbff, #eff6ff);
+      border: 1px solid #dbeafe;
+      border-radius: 1rem;
+      padding: 0.9rem 0.95rem;
+    }
+
+    .my-tests-page .home-score-chip-name {
+      color: #475569;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .my-tests-page .home-score-chip-value {
+      margin-top: 0.3rem;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .my-tests-page .home-score-chip-meta {
+      margin-top: 0.2rem;
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
     @media (max-width: 767.98px) {
       .my-tests-page {
         padding: 1rem 0 1.5rem;
@@ -369,6 +518,10 @@
 
       .my-tests-page .rank-hero-number {
         font-size: 3rem;
+      }
+
+      .my-tests-page .home-score-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -401,10 +554,22 @@
       <div class="card app-card p-4 mb-4 rise position-relative overflow-hidden">
         <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle summary-orb"></div>
         <div class="position-relative">
-          <span id="rankTierBadge" class="badge rounded-pill"></span>
+          <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+            <span id="rankTierBadge" class="badge rounded-pill"></span>
+            <div class="hero-status">
+              <span id="testStreakBadge" class="streak-pill d-none">
+                <span class="streak-pill-icon" aria-hidden="true">🔥</span>
+                <span id="testStreakText"></span>
+              </span>
+              <span id="rankShiftBadge" class="rank-shift-pill d-none">
+                <span id="rankShiftIcon" class="rank-shift-icon"></span>
+                <span id="rankShiftText"></span>
+              </span>
+            </div>
+          </div>
           <h2 id="rankValue" class="display fw-bold mt-2 mb-0 rank-hero-number"></h2>
           <div id="rankSummary" class="soft"></div>
-          <div id="homeKpiRow" class="row g-2 mt-3"></div>
+          <div id="homeKpiRow" class="home-score-breakdown mt-3"></div>
         </div>
       </div>
 
@@ -855,6 +1020,11 @@
       analyticsSection: document.getElementById("analyticsSection"),
       rewardsSection: document.getElementById("rewardsSection"),
       rankTierBadge: document.getElementById("rankTierBadge"),
+      testStreakBadge: document.getElementById("testStreakBadge"),
+      testStreakText: document.getElementById("testStreakText"),
+      rankShiftBadge: document.getElementById("rankShiftBadge"),
+      rankShiftIcon: document.getElementById("rankShiftIcon"),
+      rankShiftText: document.getElementById("rankShiftText"),
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
       homeKpiRow: document.getElementById("homeKpiRow"),
@@ -1079,6 +1249,134 @@
         else break;
       }
       return { improveStreak };
+    }
+
+    function calculateTestStreak(studentId, selectedTestId) {
+      const selectedIndex = TESTS.findIndex((test) => test.id === selectedTestId);
+      if (selectedIndex < 0) return 0;
+
+      let streak = 0;
+      for (let index = selectedIndex; index >= 0; index -= 1) {
+        const appeared = allScores[TESTS[index].id]?.some(
+          (score) => score.studentId === studentId,
+        );
+        if (!appeared) break;
+        streak += 1;
+      }
+
+      return streak;
+    }
+
+    function getHomeBreakdownItems(studentId, score) {
+      const subjectItems = SUBJECTS.map((subject) => ({
+        label: subject,
+        value: score[subject],
+        total: 100,
+        meta: `${Math.round(
+          generateTopicMastery(studentId, state.testId, subject).reduce(
+            (sum, item) => sum + item.score,
+            0,
+          ) / TOPICS[subject].length,
+        )}% topic mastery`,
+      }));
+
+      if (subjectItems.length) {
+        return {
+          title: "Subject Scorecard",
+          items: subjectItems,
+        };
+      }
+
+      return {
+        title: "Topic Scorecard",
+        items: generateTopicMastery(studentId, state.testId, "Physics")
+          .slice(0, 4)
+          .map((topic) => ({
+            label: topic.topic,
+            value: topic.score,
+            total: 100,
+            meta: "Topic marks",
+          })),
+      };
+    }
+
+    function renderHomeBreakdown(student, score, scoreTotal, previousRank, rank) {
+      clearNode(refs.homeKpiRow);
+
+      const selectedTest = currentTest();
+      const totalCard = document.createElement("div");
+      totalCard.className = "home-score-card";
+      const totalLabel = document.createElement("div");
+      totalLabel.className = "home-score-label";
+      totalLabel.textContent = "Scored Marks";
+
+      const totalValueRow = document.createElement("div");
+      totalValueRow.className = "home-score-total";
+
+      const totalValue = document.createElement("span");
+      totalValue.className = "home-score-value";
+      totalValue.textContent = String(scoreTotal);
+
+      const totalOutOf = document.createElement("span");
+      totalOutOf.className = "home-score-outof";
+      totalOutOf.textContent = "/ 300";
+
+      totalValueRow.appendChild(totalValue);
+      totalValueRow.appendChild(totalOutOf);
+
+      const totalMeta = document.createElement("div");
+      totalMeta.className = "home-score-meta";
+      totalMeta.textContent =
+        `${
+          previousRank === null
+            ? "First recorded test"
+            : rank < previousRank
+              ? `Improved by ${previousRank - rank} rank${previousRank - rank === 1 ? "" : "s"} from previous test`
+              : rank > previousRank
+                ? `Dropped by ${rank - previousRank} rank${rank - previousRank === 1 ? "" : "s"} from previous test`
+                : "Same rank as previous test"
+        } • ${selectedTest.name}`;
+
+      totalCard.appendChild(totalLabel);
+      totalCard.appendChild(totalValueRow);
+      totalCard.appendChild(totalMeta);
+      refs.homeKpiRow.appendChild(totalCard);
+
+      const breakdown = getHomeBreakdownItems(student.id, score);
+      const breakdownCard = document.createElement("div");
+      breakdownCard.className = "home-score-card";
+
+      const title = document.createElement("div");
+      title.className = "home-score-label";
+      title.textContent = breakdown.title;
+      breakdownCard.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "home-score-grid mt-3";
+
+      breakdown.items.forEach((item) => {
+        const chip = document.createElement("div");
+        chip.className = "home-score-chip";
+        const chipName = document.createElement("div");
+        chipName.className = "home-score-chip-name";
+        chipName.textContent = item.label;
+
+        const chipValue = document.createElement("div");
+        chipValue.className = "home-score-chip-value";
+        chipValue.textContent = `${item.value}/${item.total}`;
+
+        const chipMeta = document.createElement("div");
+        chipMeta.className = "home-score-chip-meta";
+        chipMeta.textContent = item.meta;
+
+        chip.appendChild(chipName);
+        chip.appendChild(chipValue);
+        chip.appendChild(chipMeta);
+        grid.appendChild(chip);
+      });
+
+      breakdownCard.appendChild(grid);
+      refs.homeKpiRow.appendChild(breakdownCard);
     }
 
     function clearNode(node) {
@@ -1396,6 +1694,7 @@
           ).rank
         : null;
       const delta = previousRank ? previousRank - rank : null;
+      const testStreak = calculateTestStreak(student.id, state.testId);
 
       refs.rankTierBadge.className = `badge rounded-pill ${
         rank <= 10
@@ -1409,28 +1708,34 @@
       refs.rankValue.textContent = `#${rank}`;
       refs.rankSummary.textContent = `of ${STUDENTS.length} students - ${currentTest().name}`;
 
-      renderKpiRow(refs.homeKpiRow, [
-        {
-          label: "Total",
-          value: `${score.total}/300`,
-          extra:
-            delta === null
-              ? "First test"
-              : delta > 0
-                ? `Up ${delta} ranks`
-                : delta < 0
-                  ? `Down ${Math.abs(delta)} ranks`
-                  : "No rank change",
-        },
-        {
-          label: "Cluster",
-          value: flaggedSubjects.length ? flaggedSubjects.join(", ") : "None",
-          extra:
-            flaggedSubjects.length === 3
-              ? "All-subjects session"
-              : "Targeted revision",
-        },
-      ]);
+      if (testStreak > 0) {
+        refs.testStreakBadge.classList.remove("d-none");
+        refs.testStreakText.textContent = `${testStreak}-TEST STREAK`;
+      } else {
+        refs.testStreakBadge.classList.add("d-none");
+        refs.testStreakText.textContent = "";
+      }
+
+      refs.rankShiftBadge.classList.remove("up", "down", "flat", "d-none");
+      if (delta === null) {
+        refs.rankShiftBadge.classList.add("flat");
+        refs.rankShiftIcon.textContent = "•";
+        refs.rankShiftText.textContent = "0";
+      } else if (delta > 0) {
+        refs.rankShiftBadge.classList.add("up");
+        refs.rankShiftIcon.textContent = "↑";
+        refs.rankShiftText.textContent = String(delta);
+      } else if (delta < 0) {
+        refs.rankShiftBadge.classList.add("down");
+        refs.rankShiftIcon.textContent = "↓";
+        refs.rankShiftText.textContent = String(Math.abs(delta));
+      } else {
+        refs.rankShiftBadge.classList.add("flat");
+        refs.rankShiftIcon.textContent = "•";
+        refs.rankShiftText.textContent = "0";
+      }
+
+      renderHomeBreakdown(student, score, score.total, previousRank, rank);
 
       renderCoaching(student.id, flaggedSubjects);
       renderTopPerformers(ranked);
