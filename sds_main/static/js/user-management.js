@@ -304,6 +304,27 @@ function clearAllAddUserErrors() {
   });
 }
 
+function setEditTeacherFieldError(input, errorId, message) {
+  if (input) {
+    input.classList.add("is-invalid");
+  }
+  const errorDiv = document.getElementById(errorId);
+  if (errorDiv) {
+    errorDiv.textContent = message;
+  }
+}
+
+function clearEditTeacherNameError() {
+  const nameInput = document.getElementById("editTeacherName");
+  const errorDiv = document.getElementById("editTeacherNameError");
+  if (nameInput) {
+    nameInput.classList.remove("is-invalid");
+  }
+  if (errorDiv) {
+    errorDiv.textContent = "";
+  }
+}
+
 function validateAndSubmitAddUser() {
   const form = getAddUserForm();
   const batchInput = getCommonBatchInput();
@@ -551,6 +572,36 @@ if (editStudentModal) {
 }
 
 const editTeacherModal = document.getElementById("editTeacherModal");
+const editTeacherForm = document.getElementById("editTeacherForm");
+
+if (editTeacherForm && editTeacherForm.dataset.validationBound !== "true") {
+  editTeacherForm.addEventListener("submit", (event) => {
+    const nameInput = document.getElementById("editTeacherName");
+    if (!nameInput) {
+      return;
+    }
+
+    clearEditTeacherNameError();
+
+    const nameValue = nameInput.value.trim();
+    const nameRegex = /^[a-zA-Z\s.]+$/;
+    if (!nameValue) {
+      setEditTeacherFieldError(nameInput, "editTeacherNameError", "Name is required");
+      event.preventDefault();
+      return;
+    }
+
+    if (!nameRegex.test(nameValue)) {
+      setEditTeacherFieldError(
+        nameInput,
+        "editTeacherNameError",
+        "Name should contain only letters, spaces, and dots",
+      );
+      event.preventDefault();
+    }
+  });
+  editTeacherForm.dataset.validationBound = "true";
+}
 
 if (editTeacherModal) {
   editTeacherModal.addEventListener("show.bs.modal", function (event) {
@@ -579,6 +630,9 @@ if (editTeacherModal) {
     document.getElementById("editTeacherRole").value =
       button.dataset.role || "";
 
+    document.getElementById("editTeacherBloodGroup").value =
+      button.dataset.bloodGroup || "";
+
     document.getElementById("editTeacherSubjects").value =
       button.dataset.subjects || "";
 
@@ -591,6 +645,8 @@ if (editTeacherModal) {
     document.getElementById("editTeacherBatch").value =
       button.dataset.batch || "";
     document.getElementById("editTeacherPassword").value = "";
+
+    clearEditTeacherNameError();
 
     // Set current profile picture preview
     const currentPicDiv = document.getElementById("currentProfilePicture");
