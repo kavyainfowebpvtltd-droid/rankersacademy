@@ -35,6 +35,7 @@ const csrfToken = getCookie("csrftoken");
 const otpToggleBtn = document.getElementById("otpToggleBtn");
 const otpLoginSection = document.getElementById("otpLoginSection");
 const otpResetSection = document.getElementById("otpResetSection");
+const passwordLoginSection = document.getElementById("passwordLoginSection");
 
 const usernameInput = document.getElementById("usernameField");
 const passwordInput = document.getElementById("passwordField");
@@ -71,9 +72,7 @@ function showPasswordLogin() {
   otpLoginSection.style.display = "none";
   otpResetSection.style.display = "none";
 
-  usernameInput.style.display = "";
-  passwordInput.style.display = "";
-  loginBtnSubmit.style.display = "";
+  if (passwordLoginSection) passwordLoginSection.style.display = "";
 
   otpInput.style.display = "none";
   verifyOtpBtn.style.display = "none";
@@ -93,9 +92,7 @@ function showOtpLogin() {
   otpResetSection.style.display = "none";
   otpLoginSection.style.display = "";
 
-  usernameInput.style.display = "none";
-  passwordInput.style.display = "none";
-  loginBtnSubmit.style.display = "none";
+  if (passwordLoginSection) passwordLoginSection.style.display = "none";
 
   usernameInput.required = false;
   passwordInput.required = false;
@@ -105,9 +102,7 @@ function showReset() {
   otpLoginSection.style.display = "none";
   otpResetSection.style.display = "";
 
-  usernameInput.style.display = "none";
-  passwordInput.style.display = "none";
-  loginBtnSubmit.style.display = "none";
+  if (passwordLoginSection) passwordLoginSection.style.display = "none";
 
   usernameInput.required = false;
   passwordInput.required = false;
