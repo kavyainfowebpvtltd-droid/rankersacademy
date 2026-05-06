@@ -2317,6 +2317,8 @@ def delete_student(request, id):
 def system_management(request):
     context = {
          "teacher_name": _display_name(request.user),
+         "is_teacher": _is_teacher_user(request.user),
+         "is_admin": _is_admin_user(request.user) or request.user.is_superuser,
     }
     return render(request, "system-management.html", context)
 

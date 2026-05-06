@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.utils import timezone
@@ -1032,7 +1033,26 @@ def scholarshiptest_management(request):
     return render(request, "scholarshiptest-management.html")
 
 
+@login_required
 def scholarship_test_analysis(request):
+    teacher = getattr(request.user, "teacheradmin", None)
+    if not teacher or (teacher.role or "").strip() != "Teacher":
+        return HttpResponseForbidden("Only teacher users can access Test Analysis.")
+
+    allowed_subjects = [
+        part.strip()
+        for part in (teacher.subjects or "").split(",")
+        if part.strip()
+    ]
+    teacher_subject = next(
+        (
+            subject
+            for subject in allowed_subjects
+            if subject in {"Physics", "Chemistry", "Maths"}
+        ),
+        "Physics",
+    )
+
     completed_statuses = {"completed", "expired"}
     tests = list(
         ScholarshipTest.objects
@@ -1160,6 +1180,8 @@ def scholarship_test_analysis(request):
     avg_attempts = round(total_attempts / total_tests, 1) if total_tests else 0
 
     context = {
+        "teacher": teacher,
+        "teacher_subject": teacher_subject,
         "summary_cards": [
             {
                 "label": "Total Tests",
