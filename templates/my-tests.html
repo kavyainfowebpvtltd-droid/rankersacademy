@@ -601,9 +601,9 @@
               <tr>
                 <th>#</th>
                 <th>Student</th>
-                <th>PHY</th>
-                <th>CHM</th>
-                <th>MTH</th>
+                <th id="leaderboardSectionHead1">SEC 1</th>
+                <th id="leaderboardSectionHead2">SEC 2</th>
+                <th id="leaderboardSectionHead3">SEC 3</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -623,7 +623,7 @@
         <div id="rankJourneyRow" class="row g-2"></div>
       </div>
 
-      <h5 class="display fw-bold">Topic Analytics</h5>
+      <h5 id="analyticsBreakdownTitle" class="display fw-bold">Section Analytics</h5>
       <div id="topicAnalyticsContainer" class="vstack gap-3 mb-4"></div>
     </section>
 
@@ -778,7 +778,6 @@
 <script>
   (() => {
     const SUBJECTS = ["Physics", "Chemistry", "Maths"];
-    const CLUSTER_SIZE = 12;
     const SUBJECT_THEMES = {
       Physics: {
         from: "#0ea5e9",
@@ -799,139 +798,18 @@
         icon: "M",
       },
     };
-    const TOPICS = {
-      Physics: [
-        "Mechanics",
-        "Thermodynamics",
-        "Waves & Sound",
-        "Optics",
-        "Electrostatics",
-        "Current Electricity",
-        "Magnetism",
-        "Modern Physics",
-      ],
-      Chemistry: [
-        "Atomic Structure",
-        "Chemical Bonding",
-        "Thermochemistry",
-        "Equilibrium",
-        "Organic Reactions",
-        "Coordination Compounds",
-        "Electrochemistry",
-        "Periodic Table",
-      ],
-      Maths: [
-        "Algebra",
-        "Quadratic Equations",
-        "Trigonometry",
-        "Coordinate Geometry",
-        "Differential Calculus",
-        "Integral Calculus",
-        "Vectors & 3D",
-        "Probability",
-      ],
-    };
-    const STUDENT_NAMES = [
-      "Aarav Sharma",
-      "Vivaan Gupta",
-      "Aditya Patel",
-      "Vihaan Iyer",
-      "Arjun Reddy",
-      "Sai Kumar",
-      "Reyansh Joshi",
-      "Krishna Mehta",
-      "Ishaan Singh",
-      "Shaurya Malhotra",
-      "Ananya Verma",
-      "Diya Kapoor",
-      "Aanya Rao",
-      "Saanvi Bhat",
-      "Aaradhya Nair",
-      "Kavya Pillai",
-      "Pari Desai",
-      "Riya Khanna",
-      "Anika Bose",
-      "Navya Menon",
-      "Atharv Trivedi",
-      "Aarush Saxena",
-      "Dev Bhatia",
-      "Kabir Chopra",
-      "Yash Agarwal",
-      "Rudra Dube",
-      "Veer Naidu",
-      "Ayan Mishra",
-      "Aryan Tiwari",
-      "Aanav Goel",
-      "Myra Bansal",
-      "Aadhya Goyal",
-      "Sara Sinha",
-      "Ira Choudhury",
-      "Tara Pandey",
-      "Kiara Sehgal",
-      "Pihu Kashyap",
-      "Avni Mahajan",
-      "Anaya Shukla",
-      "Ishita Yadav",
-      "Daksh Dewan",
-      "Parth Bedi",
-      "Aaryan Bali",
-      "Rohit Anand",
-      "Karan Bajaj",
-      "Riya Sood",
-      "Tanvi Bhalla",
-      "Suhani Walia",
-      "Mahi Sethi",
-      "Naina Gera",
-    ];
     const CURRENT_STUDENT = {
-      id: "{{ student.username|default:request.user.username|escapejs }}",
+      id: "portal-{{ student.id }}",
       name: "{{ student.student_name|escapejs }}",
       batch: "{{ student.batch|escapejs }}",
       parentPhone: "{{ student.contact|escapejs }}",
+      profilePhotoUrl: "{% if student.profile_photo %}{{ student.profile_photo.url|escapejs }}{% endif %}",
     };
     const MY_TESTS_PAYLOAD = JSON.parse(
       document.getElementById("my-tests-payload").textContent,
     );
-    const BASE_COMPLETED_TESTS = [
-      {
-        id: "T01",
-        name: "Mock Test 01",
-        date: "15 Apr 2026",
-        shortDate: "Apr 15",
-        sortAt: "2026-04-15T00:00:00+05:30",
-        kind: "completed",
-      },
-      {
-        id: "T02",
-        name: "Mock Test 02",
-        date: "22 Apr 2026",
-        shortDate: "Apr 22",
-        sortAt: "2026-04-22T00:00:00+05:30",
-        kind: "completed",
-      },
-      {
-        id: "T03",
-        name: "Mock Test 03",
-        date: "29 Apr 2026",
-        shortDate: "Apr 29",
-        sortAt: "2026-04-29T00:00:00+05:30",
-        kind: "completed",
-      },
-    ];
-    const CLUSTER_SCHEDULE = {
-      Physics: {
-        time: "4:00 - 4:30 PM",
-        faculty: "Mr. Rajesh Kumar",
-      },
-      Chemistry: {
-        time: "4:30 - 5:00 PM",
-        faculty: "Dr. Priya Verma",
-      },
-      Maths: {
-        time: "5:00 - 5:30 PM",
-        faculty: "Mr. Amit Sharma",
-      },
-    };
+    const BASE_COMPLETED_TESTS = [];
+    const CLUSTER_SCHEDULE = {};
     const BADGES = [
       ["first_test", "T1", "Mock Test Starter", "Completed the first academy test", "bronze"],
       ["top_25", "R25", "Rank Booster", "Entered the top 25 merit band", "silver"],
@@ -944,31 +822,30 @@
       ["attend_perfect", "ATT", "Revision Warrior", "Attended every assigned booster session", "silver"],
       ["no_cluster", "CLR", "Concept Clear Badge", "Stayed out of coaching clusters this test", "bronze"],
     ].map(([id, icon, name, desc, tier]) => ({ id, icon, name, desc, tier }));
-    const StorageKeys = {
-      attendance: (testId) => `tra4_att:${testId}`,
-    };
     const MEDALS = {
       1: { icon: "🥇", label: "Gold medal" },
       2: { icon: "🥈", label: "Silver medal" },
       3: { icon: "🥉", label: "Bronze medal" },
     };
-    const studentsSeed = STUDENT_NAMES.map((name, index) => ({
-      id: `TRA${String(index + 1).padStart(3, "0")}`,
-      name,
-      batch: index < 25 ? "Alpha" : "Star-01",
-      parentPhone: `+91 9${String(800000000 + index * 13579).slice(0, 9)}`,
-    }));
-
-    studentsSeed[0] = {
-      ...studentsSeed[0],
-      id: CURRENT_STUDENT.id || studentsSeed[0].id,
-      name: CURRENT_STUDENT.name || studentsSeed[0].name,
-      batch: CURRENT_STUDENT.batch || studentsSeed[0].batch,
-      parentPhone: CURRENT_STUDENT.parentPhone || studentsSeed[0].parentPhone,
-    };
-
-    const STUDENTS = studentsSeed;
-    const CURRENT_STUDENT_ID = STUDENTS[0].id;
+    const STUDENT_MAP = new Map();
+    (MY_TESTS_PAYLOAD.completedTests || []).forEach((test) => {
+      (test.leaderboard || []).forEach((entry) => {
+        STUDENT_MAP.set(entry.studentId, {
+          id: entry.studentId,
+          name: entry.studentName,
+          batch: "",
+          parentPhone: "",
+          studentRef: entry.studentRef || "",
+          profilePhotoUrl: entry.profilePhotoUrl || "",
+        });
+      });
+    });
+    STUDENT_MAP.set(CURRENT_STUDENT.id, {
+      ...CURRENT_STUDENT,
+      studentRef: CURRENT_STUDENT.id,
+    });
+    const STUDENTS = [...STUDENT_MAP.values()];
+    const CURRENT_STUDENT_ID = CURRENT_STUDENT.id;
     const SCHOLARSHIP_COMPLETED_TESTS = (MY_TESTS_PAYLOAD.completedTests || []).map(
       (test) => ({
         ...test,
@@ -998,19 +875,26 @@
       VISIBLE_COMPLETED_TESTS[1] || VISIBLE_COMPLETED_TESTS[0] || TESTS[TESTS.length - 1] || null,
       UPCOMING_TEST_SLOT,
     ];
+    MEDALS[1].icon = "\uD83E\uDD47";
+    MEDALS[2].icon = "\uD83E\uDD48";
+    MEDALS[3].icon = "\uD83E\uDD49";
+    const REWARD_PAYLOAD = MY_TESTS_PAYLOAD.rewards || {
+      xp: 0,
+      level: 1,
+      progress: 0,
+      streak: 0,
+      badges: BADGES.map((badge) => ({ ...badge, earned: false })),
+    };
     const state = {
       studentTab: "home",
       studentLeaderboardOpen: false,
       testId:
         (VISIBLE_COMPLETED_TESTS[1] && VISIBLE_COMPLETED_TESTS[1].id) ||
         (VISIBLE_COMPLETED_TESTS[0] && VISIBLE_COMPLETED_TESTS[0].id) ||
-        TESTS[TESTS.length - 1].id,
+        (TESTS[TESTS.length - 1] && TESTS[TESTS.length - 1].id) ||
+        null,
       online: navigator.onLine,
-      attendance: blankAttendance(),
     };
-    const allScores = Object.fromEntries(
-      TESTS.map((test) => [test.id, generateScores(test.id)]),
-    );
     const refs = {
       onlineBadge: document.getElementById("onlineBadge"),
       levelBadgeText: document.getElementById("levelBadgeText"),
@@ -1039,7 +923,13 @@
       leaderboardBody: document.getElementById("leaderboardBody"),
       leaderboardFooterText: document.getElementById("leaderboardFooterText"),
       leaderboardToggleBtn: document.getElementById("leaderboardToggleBtn"),
+      leaderboardSectionHeads: [
+        document.getElementById("leaderboardSectionHead1"),
+        document.getElementById("leaderboardSectionHead2"),
+        document.getElementById("leaderboardSectionHead3"),
+      ],
       rankJourneyRow: document.getElementById("rankJourneyRow"),
+      analyticsBreakdownTitle: document.getElementById("analyticsBreakdownTitle"),
       topicAnalyticsContainer: document.getElementById("topicAnalyticsContainer"),
       rewardLevelTitle: document.getElementById("rewardLevelTitle"),
       rewardXpText: document.getElementById("rewardXpText"),
@@ -1047,256 +937,32 @@
       rewardProgressBar: document.getElementById("rewardProgressBar"),
       rewardsGrid: document.getElementById("rewardsGrid"),
     };
-
-    function blankAttendance() {
-      return { Physics: {}, Chemistry: {}, Maths: {}, finalized: {} };
-    }
-
-    function getStore(key, fallback) {
-      try {
-        return JSON.parse(localStorage.getItem(key)) ?? fallback;
-      } catch {
-        return fallback;
-      }
-    }
-
-    function loadAttendance() {
-      state.attendance = getStore(
-        StorageKeys.attendance(state.testId),
-        blankAttendance(),
-      );
-    }
-
-    function hashCode(str) {
-      let hash = 0;
-      for (let i = 0; i < str.length; i += 1) {
-        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-      }
-      return Math.abs(hash);
-    }
-
-    function generateScores(testId) {
-      const testHash = hashCode(testId);
-      return STUDENTS.map((student) => {
-        const studentHash = hashCode(student.id);
-        const Physics = Math.max(
-          18,
-          Math.min(99, (studentHash % 65) + 25 + ((testHash + studentHash) % 22) - 11),
-        );
-        const Chemistry = Math.max(
-          18,
-          Math.min(99, ((studentHash * 7) % 65) + 25 + ((testHash * 3 + studentHash) % 22) - 11),
-        );
-        const Maths = Math.max(
-          18,
-          Math.min(99, ((studentHash * 13) % 65) + 25 + ((testHash * 5 + studentHash) % 22) - 11),
-        );
-        return {
-          studentId: student.id,
-          testId,
-          Physics,
-          Chemistry,
-          Maths,
-          total: Physics + Chemistry + Maths,
-        };
-      });
-    }
-
-    function generateTopicMastery(studentId, testId, subject) {
-      return TOPICS[subject].map((topic, index) => {
-        const score =
-          (hashCode(studentId) +
-            hashCode(testId) +
-            hashCode(subject) +
-            hashCode(topic) +
-            index * 7) %
-          100;
-        return { topic, score: Math.max(15, Math.min(98, score)) };
-      });
-    }
-
-    function currentScores() {
-      return allScores[state.testId];
-    }
+    document.querySelector(".level-pill-icon").textContent = "\u26A1";
+    document.querySelector(".streak-pill-icon").textContent = "\uD83D\uDD25";
 
     function currentTest() {
       return TESTS.find((test) => test.id === state.testId);
     }
-
-    function getRankings(scores, key = "total") {
-      return [...scores]
-        .sort((left, right) => right[key] - left[key])
-        .map((score, index) => ({ ...score, rank: index + 1 }));
+    function currentLeaderboard() {
+      return currentTest()?.leaderboard || [];
     }
 
-    function getBottomCluster(scores, subject, count = CLUSTER_SIZE) {
-      return [...scores]
-        .sort((left, right) => left[subject] - right[subject])
-        .slice(0, count);
+    function currentStudentLeaderboardEntry() {
+      return currentLeaderboard().find((entry) => entry.studentId === CURRENT_STUDENT_ID) || null;
     }
 
-    function getStudentClusterFlags(studentId, scores) {
-      return Object.fromEntries(
-        SUBJECTS.map((subject) => [
-          subject,
-          getBottomCluster(scores, subject).some(
-            (score) => score.studentId === studentId,
-          ),
-        ]),
-      );
-    }
-
-    function calculateXP(studentId) {
-      let xp = 0;
-      TESTS.forEach((test, index) => {
-        const scores = allScores[test.id];
-        const mine = scores.find((score) => score.studentId === studentId);
-        const rank = getRankings(scores).find(
-          (score) => score.studentId === studentId,
-        ).rank;
-        xp += Math.floor(mine.total / 3);
-        xp +=
-          rank === 1
-            ? 200
-            : rank <= 3
-              ? 120
-              : rank <= 10
-                ? 60
-                : rank <= 25
-                  ? 25
-                  : 0;
-
-        if (index) {
-          const previousRank = getRankings(allScores[TESTS[index - 1].id]).find(
-            (score) => score.studentId === studentId,
-          ).rank;
-          if (previousRank > rank) xp += (previousRank - rank) * 10;
-        }
-      });
-
-      const level = Math.floor(Math.sqrt(xp / 30)) + 1;
-      const nextLevelXP = level * level * 30;
-      const prevLevelXP = (level - 1) * (level - 1) * 30;
-      return {
-        xp,
-        level,
-        progress: (xp - prevLevelXP) / (nextLevelXP - prevLevelXP),
-      };
-    }
-
-    function getEarnedBadges(studentId) {
-      const earned = new Set(["first_test"]);
-      let bestRank = 999;
-      let ever90 = false;
-      let climbedFive = false;
-      let streak = 0;
-
-      TESTS.forEach((test, index) => {
-        const scores = allScores[test.id];
-        const mine = scores.find((score) => score.studentId === studentId);
-        const rank = getRankings(scores).find(
-          (score) => score.studentId === studentId,
-        ).rank;
-        bestRank = Math.min(bestRank, rank);
-        ever90 ||= mine.Physics >= 90 || mine.Chemistry >= 90 || mine.Maths >= 90;
-
-        if (index) {
-          const previousRank = getRankings(allScores[TESTS[index - 1].id]).find(
-            (score) => score.studentId === studentId,
-          ).rank;
-          if (previousRank - rank >= 5) climbedFive = true;
-          streak = previousRank > rank ? streak + 1 : 0;
-        }
-      });
-
-      if (bestRank <= 25) earned.add("top_25");
-      if (bestRank <= 10) earned.add("top_10");
-      if (bestRank <= 3) earned.add("top_3");
-      if (bestRank === 1) earned.add("rank_1");
-      if (climbedFive) earned.add("climb_5");
-      if (streak >= 2) earned.add("streak_3");
-      if (ever90) earned.add("subject_90");
-
-      const flags = getStudentClusterFlags(
-        studentId,
-        allScores[TESTS[TESTS.length - 1].id],
-      );
-      const flaggedSubjects = SUBJECTS.filter((subject) => flags[subject]);
-
-      if (!flaggedSubjects.length) earned.add("no_cluster");
-      if (
-        flaggedSubjects.length &&
-        flaggedSubjects.every((subject) =>
-          ["present", "late"].includes(state.attendance[subject]?.[studentId]),
-        )
-      ) {
-        earned.add("attend_perfect");
-      }
-
-      return earned;
-    }
-
-    function calculateStreaks(studentId) {
-      let improveStreak = 0;
-      for (let index = TESTS.length - 1; index > 0; index -= 1) {
-        const currentRank = getRankings(allScores[TESTS[index].id]).find(
-          (score) => score.studentId === studentId,
-        ).rank;
-        const previousRank = getRankings(allScores[TESTS[index - 1].id]).find(
-          (score) => score.studentId === studentId,
-        ).rank;
-        if (previousRank > currentRank) improveStreak += 1;
-        else break;
-      }
-      return { improveStreak };
-    }
-
-    function calculateTestStreak(studentId, selectedTestId) {
-      const selectedIndex = TESTS.findIndex((test) => test.id === selectedTestId);
-      if (selectedIndex < 0) return 0;
-
-      let streak = 0;
-      for (let index = selectedIndex; index >= 0; index -= 1) {
-        const appeared = allScores[TESTS[index].id]?.some(
-          (score) => score.studentId === studentId,
-        );
-        if (!appeared) break;
-        streak += 1;
-      }
-
-      return streak;
-    }
-
-    function getHomeBreakdownItems(studentId, score) {
-      const subjectItems = SUBJECTS.map((subject) => ({
-        label: subject,
-        value: score[subject],
-        total: 100,
-        meta: `${Math.round(
-          generateTopicMastery(studentId, state.testId, subject).reduce(
-            (sum, item) => sum + item.score,
-            0,
-          ) / TOPICS[subject].length,
-        )}% topic mastery`,
+    function getHomeBreakdownItems() {
+      const test = currentTest();
+      const items = (test?.sectionBreakdown || []).map((section) => ({
+        label: section.name,
+        value: section.score,
+        total: section.total,
+        meta: `${section.percentage}% scored`,
       }));
 
-      if (subjectItems.length) {
-        return {
-          title: "Subject Scorecard",
-          items: subjectItems,
-        };
-      }
-
       return {
-        title: "Topic Scorecard",
-        items: generateTopicMastery(studentId, state.testId, "Physics")
-          .slice(0, 4)
-          .map((topic) => ({
-            label: topic.topic,
-            value: topic.score,
-            total: 100,
-            meta: "Topic marks",
-          })),
+        title: items.length <= 1 ? "Topic Scorecard" : "Subject Scorecard",
+        items,
       };
     }
 
@@ -1319,7 +985,7 @@
 
       const totalOutOf = document.createElement("span");
       totalOutOf.className = "home-score-outof";
-      totalOutOf.textContent = "/ 300";
+      totalOutOf.textContent = `/ ${selectedTest?.totalMarks || 0}`;
 
       totalValueRow.appendChild(totalValue);
       totalValueRow.appendChild(totalOutOf);
@@ -1342,7 +1008,7 @@
       totalCard.appendChild(totalMeta);
       refs.homeKpiRow.appendChild(totalCard);
 
-      const breakdown = getHomeBreakdownItems(student.id, score);
+      const breakdown = getHomeBreakdownItems();
       const breakdownCard = document.createElement("div");
       breakdownCard.className = "home-score-card";
 
@@ -1389,7 +1055,18 @@
       return document.getElementById(id).content.firstElementChild.cloneNode(true);
     }
 
-    function createAvatar(name, size = 38) {
+    function createAvatar(name, size = 38, photoUrl = "") {
+      if (photoUrl) {
+        const img = document.createElement("img");
+        img.src = photoUrl;
+        img.alt = name;
+        img.className = "rounded-circle flex-shrink-0";
+        img.style.width = `${size}px`;
+        img.style.height = `${size}px`;
+        img.style.objectFit = "cover";
+        return img;
+      }
+
       const span = document.createElement("span");
       const initials = name
         .split(" ")
@@ -1414,14 +1091,15 @@
     }
 
     function createSubjectIcon(subject) {
-      const theme = SUBJECT_THEMES[subject];
+      const subjectThemes = Object.values(SUBJECT_THEMES);
+      const theme = SUBJECT_THEMES[subject] || subjectThemes[0];
       const span = document.createElement("span");
       span.className =
         "d-inline-flex align-items-center justify-content-center rounded-3 text-white fw-bold flex-shrink-0";
       span.style.width = "36px";
       span.style.height = "36px";
       span.style.background = `linear-gradient(135deg, ${theme.from}, ${theme.to})`;
-      span.textContent = theme.icon;
+      span.textContent = theme.icon || String(subject || "S").slice(0, 1).toUpperCase();
       return span;
     }
 
@@ -1483,12 +1161,12 @@
       }
     }
 
-    function renderHeader(xp) {
+    function renderHeader() {
       refs.onlineBadge.className = `badge rounded-pill ${
         state.online ? "text-bg-success" : "text-bg-danger"
       }`;
       refs.onlineBadge.textContent = state.online ? "ONLINE" : "OFFLINE";
-      refs.levelBadgeText.textContent = `LVL ${xp.level}`;
+      refs.levelBadgeText.textContent = `LVL ${REWARD_PAYLOAD.level}`;
 
       refs.tabButtons.forEach((button) => {
         button.classList.toggle("active", button.dataset.tab === state.studentTab);
@@ -1516,40 +1194,33 @@
     }
 
     function renderCoaching(studentId, flaggedSubjects) {
-      if (!flaggedSubjects.length) {
+      const test = currentTest();
+      const coachingItems = (test && test.coachingItems) || [];
+      if (!coachingItems.length) {
         refs.coachingSection.classList.add("d-none");
         return;
       }
 
       refs.coachingSection.classList.remove("d-none");
-      const allSubjects = flaggedSubjects.length === 3;
-      refs.coachingTitle.textContent = allSubjects
-        ? "All-Subjects Coaching Cluster"
-        : "Coaching Cluster";
-      refs.coachingSchedule.textContent = allSubjects
-        ? "4:00 - 5:30 PM - 90 minutes"
-        : flaggedSubjects
-            .map((subject) => `${subject}: ${CLUSTER_SCHEDULE[subject].time}`)
-            .join(" | ");
-      refs.coachingDurationBadge.textContent = allSubjects ? "90 MIN" : "30 MIN";
+      refs.coachingTitle.textContent = "Tonight's Coaching";
+      refs.coachingSchedule.textContent = "Personal mentorship · 30 minutes per subject";
+      refs.coachingDurationBadge.textContent = `${Math.max(coachingItems.length, 1) * 30} MIN`;
 
       clearNode(refs.coachingItems);
-      flaggedSubjects.forEach((subject) => {
+      coachingItems.forEach((item) => {
         const node = cloneTemplate("clusterItemTemplate");
-        node.querySelector(".cluster-icon").appendChild(createSubjectIcon(subject));
-        node.querySelector(".cluster-subject").textContent = subject;
-        node.querySelector(".cluster-faculty").textContent = CLUSTER_SCHEDULE[subject].faculty;
+        node.querySelector(".cluster-icon").appendChild(createSubjectIcon(item.name));
+        node.querySelector(".cluster-subject").textContent = item.name;
+        node.querySelector(".cluster-faculty").textContent = `${item.score}/${item.total} marks · ${item.percentage}%`;
         node
           .querySelector(".cluster-status")
           .appendChild(
             createBadge(
-              state.attendance[subject]?.[studentId] || "pending",
+              item.status || "Focus Area",
               {
-                present: "text-bg-success",
-                late: "text-bg-warning text-dark",
-                absent: "text-bg-danger",
-                pending: "text-bg-secondary",
-              }[state.attendance[subject]?.[studentId] || "pending"],
+                "Focus Area": "text-bg-danger",
+                "On Track": "text-bg-success",
+              }[item.status || "Focus Area"],
             ),
           );
         refs.coachingItems.appendChild(node);
@@ -1557,45 +1228,37 @@
     }
 
     function renderSubjectCards(score, studentId) {
+      const test = currentTest();
       const flags = getStudentClusterFlags(studentId, currentScores());
       clearNode(refs.subjectCards);
 
-      SUBJECTS.forEach((subject) => {
-        const theme = SUBJECT_THEMES[subject];
+      (test?.sectionBreakdown || []).forEach((section, index) => {
+        const theme = Object.values(SUBJECT_THEMES)[index % Object.values(SUBJECT_THEMES).length];
         const average = Math.round(
-          currentScores().reduce((sum, entry) => sum + entry[subject], 0) /
-            STUDENTS.length,
-        );
-        const rank = getRankings(currentScores(), subject).find(
-          (entry) => entry.studentId === studentId,
-        ).rank;
-        const delta = score[subject] - average;
+          ((test.leaderboard || []).reduce((sum, entry) => {
+            const sectionScore = entry.sectionScores?.[index];
+            return sum + (sectionScore ? sectionScore.score : 0);
+          }, 0) / Math.max((test.leaderboard || []).length, 1)) * 10,
+        ) / 10;
         const node = cloneTemplate("subjectCardTemplate");
 
-        node.querySelector(".subject-icon").appendChild(createSubjectIcon(subject));
-        node.querySelector(".subject-title").textContent = subject;
-        node.querySelector(".subject-rank").textContent = `Subject rank #${rank}`;
-        node.querySelector(".subject-score").textContent = score[subject];
+        node.querySelector(".subject-icon").appendChild(createSubjectIcon(section.shortLabel || section.name));
+        node.querySelector(".subject-title").textContent = section.name;
+        node.querySelector(".subject-rank").textContent = `${section.score}/${section.total} in this section`;
+        node.querySelector(".subject-score").textContent = section.score;
         node.querySelector(".subject-score").style.color = theme.accent;
-        node.querySelector(".subject-average").textContent = `Class avg ${average}/100`;
+        node.querySelector(".subject-average").textContent = `Class avg ${average}/${section.total}`;
         setProgressBar(
           node.querySelector(".subject-progress-fill"),
-          score[subject],
+          section.percentage,
           `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
         );
-
-        if (subject === "Maths" && flags[subject]) {
-          node
-            .querySelector(".subject-boost")
-            .appendChild(createBadge("Boost", "text-bg-warning text-dark"));
-        }
-
         node
           .querySelector(".subject-delta")
           .appendChild(
             createBadge(
-              delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`,
-              delta >= 0 ? "text-bg-success" : "text-bg-danger",
+              `${section.percentage}% scored`,
+              section.percentage >= 60 ? "text-bg-success" : "text-bg-danger",
             ),
           );
 
@@ -1608,8 +1271,21 @@
     function renderTopPerformers(ranked) {
       clearNode(refs.topPerformers);
 
-      ranked.slice(0, 5).forEach((entry) => {
-        const student = STUDENTS.find((item) => item.id === entry.studentId);
+      const test = currentTest();
+      const topEntries = (test && test.topPerformers && test.topPerformers.length)
+        ? test.topPerformers
+        : ranked.slice(0, 5).map((entry) => {
+            const student = STUDENTS.find((item) => item.id === entry.studentId) || {};
+            return {
+              rank: entry.rank,
+              studentName: student.name || entry.studentId,
+              profilePhotoUrl: student.profilePhotoUrl || "",
+              score: entry.total,
+              totalMarks: entry.totalMarks || 0,
+            };
+          });
+
+      topEntries.forEach((entry) => {
         const node = cloneTemplate("topPerformerTemplate");
         const medal = createRankMedal(entry.rank);
 
@@ -1618,9 +1294,11 @@
           node.querySelector(".top-performer-rank").appendChild(medal);
         }
 
-        node.querySelector(".top-performer-avatar").appendChild(createAvatar(student.name, 42));
-        node.querySelector(".top-performer-name").textContent = student.name;
-        node.querySelector(".top-performer-meta").textContent = `#${entry.rank} - ${entry.total}`;
+        node
+          .querySelector(".top-performer-avatar")
+          .appendChild(createAvatar(entry.studentName, 42, entry.profilePhotoUrl || ""));
+        node.querySelector(".top-performer-name").textContent = entry.studentName;
+        node.querySelector(".top-performer-meta").textContent = `#${entry.rank} - ${entry.score}/${entry.totalMarks}`;
         refs.topPerformers.appendChild(node);
       });
     }
@@ -1635,8 +1313,14 @@
     }
 
     function renderLeaderboard(ranked, highlightId) {
+      const test = currentTest();
       refs.leaderboardCountBadge.textContent = `${ranked.length} students`;
       clearNode(refs.leaderboardBody);
+      const headerItems = (test?.sectionBreakdown || []).slice(0, 3);
+      refs.leaderboardSectionHeads.forEach((head, index) => {
+        const item = headerItems[index];
+        head.textContent = item ? item.shortLabel || item.name.slice(0, 3).toUpperCase() : `SEC ${index + 1}`;
+      });
 
       const rows = leaderboardRows(
         ranked,
@@ -1645,9 +1329,9 @@
       );
 
       rows.forEach((row) => {
-        const student = STUDENTS.find((item) => item.id === row.studentId);
+        const student = STUDENTS.find((item) => item.id === row.studentId) || {};
         const node = cloneTemplate("leaderboardRowTemplate");
-        const mine = student.id === highlightId;
+        const mine = row.studentId === highlightId;
         const medal = createRankMedal(row.rank);
 
         if (mine) {
@@ -1659,13 +1343,15 @@
           node.querySelector(".leaderboard-rank-medal").appendChild(medal);
         }
 
-        node.querySelector(".leaderboard-avatar").appendChild(createAvatar(student.name, 28));
-        node.querySelector(".leaderboard-name").textContent = student.name;
-        node.querySelector(".leaderboard-id").textContent = student.id;
-        node.querySelector(".leaderboard-physics").textContent = row.Physics;
-        node.querySelector(".leaderboard-chemistry").textContent = row.Chemistry;
-        node.querySelector(".leaderboard-maths").textContent = row.Maths;
-        node.querySelector(".leaderboard-total").textContent = row.total;
+        node
+          .querySelector(".leaderboard-avatar")
+          .appendChild(createAvatar(student.name || row.studentId, 28, student.profilePhotoUrl || ""));
+        node.querySelector(".leaderboard-name").textContent = student.name || row.studentId;
+        node.querySelector(".leaderboard-id").textContent = student.studentRef || student.id || row.studentId;
+        node.querySelector(".leaderboard-physics").textContent = row.sectionScores?.[0]?.score ?? row.Physics;
+        node.querySelector(".leaderboard-chemistry").textContent = row.sectionScores?.[1]?.score ?? row.Chemistry;
+        node.querySelector(".leaderboard-maths").textContent = row.sectionScores?.[2]?.score ?? row.Maths;
+        node.querySelector(".leaderboard-total").textContent = `${row.total}/${row.totalMarks || test?.totalMarks || 0}`;
 
         if (mine) {
           node
@@ -1685,6 +1371,7 @@
     }
 
     function renderHome(student, score, rank, ranked) {
+      const test = currentTest();
       const flags = renderSubjectCards(score, student.id);
       const flaggedSubjects = SUBJECTS.filter((subject) => flags[subject]);
       const testIndex = TESTS.findIndex((test) => test.id === state.testId);
@@ -1706,7 +1393,7 @@
       refs.rankTierBadge.textContent =
         rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD";
       refs.rankValue.textContent = `#${rank}`;
-      refs.rankSummary.textContent = `of ${STUDENTS.length} students - ${currentTest().name}`;
+      refs.rankSummary.textContent = `of ${test?.totalStudents || ranked.length} students - ${currentTest().name}`;
 
       if (testStreak > 0) {
         refs.testStreakBadge.classList.remove("d-none");
@@ -1735,7 +1422,7 @@
         refs.rankShiftText.textContent = "0";
       }
 
-      renderHomeBreakdown(student, score, score.total, previousRank, rank);
+      renderHomeBreakdown(student, score, test?.score || score.total, previousRank, rank);
 
       renderCoaching(student.id, flaggedSubjects);
       renderTopPerformers(ranked);
@@ -1764,23 +1451,33 @@
       );
 
       clearNode(refs.topicAnalyticsContainer);
-      SUBJECTS.forEach((subject) => {
-        const theme = SUBJECT_THEMES[subject];
+      const test = currentTest();
+      const sections = test?.sectionBreakdown || [];
+      refs.analyticsBreakdownTitle.textContent = sections.length <= 1
+        ? "Topic Analytics"
+        : "Section Analytics";
+
+      sections.forEach((section, index) => {
+        const theme = Object.values(SUBJECT_THEMES)[index % Object.values(SUBJECT_THEMES).length];
         const node = cloneTemplate("topicCardTemplate");
         const rowsContainer = node.querySelector(".topic-rows");
 
-        node.querySelector(".topic-subject-icon").appendChild(createSubjectIcon(subject));
-        node.querySelector(".topic-subject-name").textContent = subject;
+        node.querySelector(".topic-subject-icon").appendChild(createSubjectIcon(section.shortLabel || section.name));
+        node.querySelector(".topic-subject-name").textContent = section.name;
         node.querySelector(".topic-subject-name").style.color = theme.accent;
-        node.querySelector(".topic-subject-score").textContent = `${score[subject]}/100`;
+        node.querySelector(".topic-subject-score").textContent = `${section.score}/${section.total}`;
 
-        generateTopicMastery(student.id, state.testId, subject).forEach((topicItem) => {
+        TESTS.forEach((item) => {
+          const sectionItem = (item.sectionBreakdown || []).find((entry) => entry.name === section.name);
+          if (!sectionItem) {
+            return;
+          }
           const row = cloneTemplate("topicRowTemplate");
-          row.querySelector(".topic-name").textContent = topicItem.topic;
-          row.querySelector(".topic-score").textContent = `${topicItem.score}%`;
+          row.querySelector(".topic-name").textContent = `${item.shortDate} - ${item.name}`;
+          row.querySelector(".topic-score").textContent = `${sectionItem.score}/${sectionItem.total}`;
           setProgressBar(
             row.querySelector(".topic-progress-fill"),
-            topicItem.score,
+            sectionItem.percentage,
             `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
           );
           rowsContainer.appendChild(row);
@@ -1791,31 +1488,35 @@
     }
 
     function renderRewards(student) {
-      const xp = calculateXP(student.id);
-      const earned = getEarnedBadges(student.id);
-      const streak = calculateStreaks(student.id).improveStreak;
+      const rewardPayload = MY_TESTS_PAYLOAD.rewards || {
+        xp: 0,
+        level: 1,
+        progress: 0,
+        streak: 0,
+        badges: BADGES.map((badge) => ({ ...badge, earned: false })),
+      };
 
-      refs.rewardLevelTitle.textContent = `Level ${xp.level}`;
-      refs.rewardXpText.textContent = `${xp.xp} XP earned`;
-      refs.rewardStreakBadge.textContent = `${streak} TEST STREAK`;
+      refs.rewardLevelTitle.textContent = `Level ${rewardPayload.level}`;
+      refs.rewardXpText.textContent = `${rewardPayload.xp} XP earned`;
+      refs.rewardStreakBadge.textContent = `${rewardPayload.streak} TEST STREAK`;
       setProgressBar(
         refs.rewardProgressBar,
-        Math.round(xp.progress * 100),
+        Math.round((rewardPayload.progress || 0) * 100),
         "linear-gradient(135deg, #2563eb, #0d6efd 52%, #06b6d4)",
       );
 
       clearNode(refs.rewardsGrid);
-      BADGES.forEach((badgeItem) => {
+      (rewardPayload.badges || []).forEach((badgeItem) => {
         const node = cloneTemplate("rewardCardTemplate");
         const shell = node.querySelector(".reward-card-shell");
         node.querySelector(".reward-icon-text").textContent = badgeItem.icon;
         node.querySelector(".reward-name").textContent = badgeItem.name;
         node.querySelector(".reward-desc").textContent = badgeItem.desc;
         node.querySelector(".reward-meta").textContent = `${
-          earned.has(badgeItem.id) ? "earned" : "locked"
+          badgeItem.earned ? "earned" : "locked"
         } - ${badgeItem.tier}`;
 
-        if (!earned.has(badgeItem.id)) {
+        if (!badgeItem.earned) {
           shell.classList.add("opacity-50");
         }
 
@@ -1824,16 +1525,457 @@
     }
 
     function render() {
-      const student = STUDENTS.find((entry) => entry.id === CURRENT_STUDENT_ID) || STUDENTS[0];
-      const score = currentScores().find((entry) => entry.studentId === student.id);
-      const ranked = getRankings(currentScores());
-      const rank = ranked.find((entry) => entry.studentId === student.id).rank;
+      const student = STUDENTS.find((entry) => entry.id === CURRENT_STUDENT_ID) || CURRENT_STUDENT;
+      const scores = currentScores() || [];
+      const ranked = getRankings(scores);
+      const score = scores.find((entry) => entry.studentId === student.id) || {
+        studentId: student.id,
+        Physics: 0,
+        Chemistry: 0,
+        Maths: 0,
+        total: 0,
+      };
+      const rankEntry = ranked.find((entry) => entry.studentId === student.id);
+      const rank = rankEntry ? rankEntry.rank : 0;
       const xp = calculateXP(student.id);
 
       renderHeader(xp);
+      if (!scores.length) {
+        refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
+        refs.rankTierBadge.textContent = "NO TESTS YET";
+        refs.rankValue.textContent = "--";
+        refs.rankSummary.textContent = "No completed tests available yet.";
+        refs.testStreakBadge.classList.add("d-none");
+        refs.rankShiftBadge.classList.add("d-none");
+        clearNode(refs.homeKpiRow);
+        clearNode(refs.subjectCards);
+        clearNode(refs.topPerformers);
+        clearNode(refs.leaderboardBody);
+        clearNode(refs.rankJourneyRow);
+        clearNode(refs.topicAnalyticsContainer);
+        refs.coachingSection.classList.add("d-none");
+        refs.leaderboardCountBadge.textContent = "0 students";
+        refs.leaderboardFooterText.textContent = "";
+        renderRewards(student);
+        return;
+      }
+
       renderHome(student, score, rank, ranked);
       renderAnalytics(student, score);
       renderRewards(student);
+    }
+
+    function renderHomeBreakdown(scoreTotal, previousRank, rank) {
+      clearNode(refs.homeKpiRow);
+
+      const selectedTest = currentTest();
+      const totalCard = document.createElement("div");
+      totalCard.className = "home-score-card";
+      const totalLabel = document.createElement("div");
+      totalLabel.className = "home-score-label";
+      totalLabel.textContent = "Scored Marks";
+
+      const totalValueRow = document.createElement("div");
+      totalValueRow.className = "home-score-total";
+
+      const totalValue = document.createElement("span");
+      totalValue.className = "home-score-value";
+      totalValue.textContent = String(scoreTotal);
+
+      const totalOutOf = document.createElement("span");
+      totalOutOf.className = "home-score-outof";
+      totalOutOf.textContent = `/ ${selectedTest?.totalMarks || 0}`;
+
+      totalValueRow.appendChild(totalValue);
+      totalValueRow.appendChild(totalOutOf);
+
+      const totalMeta = document.createElement("div");
+      totalMeta.className = "home-score-meta";
+      totalMeta.textContent =
+        `${
+          previousRank === null
+            ? "First recorded test"
+            : rank < previousRank
+              ? `Improved by ${previousRank - rank} rank${previousRank - rank === 1 ? "" : "s"} from previous test`
+              : rank > previousRank
+                ? `Dropped by ${rank - previousRank} rank${rank - previousRank === 1 ? "" : "s"} from previous test`
+                : "Same rank as previous test"
+        } \u00b7 ${selectedTest?.name || ""}`;
+
+      totalCard.appendChild(totalLabel);
+      totalCard.appendChild(totalValueRow);
+      totalCard.appendChild(totalMeta);
+      refs.homeKpiRow.appendChild(totalCard);
+
+      const breakdown = getHomeBreakdownItems();
+      const breakdownCard = document.createElement("div");
+      breakdownCard.className = "home-score-card";
+
+      const title = document.createElement("div");
+      title.className = "home-score-label";
+      title.textContent = breakdown.title;
+      breakdownCard.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "home-score-grid mt-3";
+
+      breakdown.items.forEach((item) => {
+        const chip = document.createElement("div");
+        chip.className = "home-score-chip";
+        const chipName = document.createElement("div");
+        chipName.className = "home-score-chip-name";
+        chipName.textContent = item.label;
+
+        const chipValue = document.createElement("div");
+        chipValue.className = "home-score-chip-value";
+        chipValue.textContent = `${item.value}/${item.total}`;
+
+        const chipMeta = document.createElement("div");
+        chipMeta.className = "home-score-chip-meta";
+        chipMeta.textContent = item.meta;
+
+        chip.appendChild(chipName);
+        chip.appendChild(chipValue);
+        chip.appendChild(chipMeta);
+        grid.appendChild(chip);
+      });
+
+      breakdownCard.appendChild(grid);
+      refs.homeKpiRow.appendChild(breakdownCard);
+    }
+
+    function renderCoaching() {
+      const test = currentTest();
+      const coachingItems = test?.coachingItems || [];
+      if (!coachingItems.length) {
+        refs.coachingSection.classList.add("d-none");
+        return;
+      }
+
+      refs.coachingSection.classList.remove("d-none");
+      refs.coachingTitle.textContent = "Tonight's Coaching";
+      refs.coachingSchedule.textContent = "Personal mentorship \u00b7 30 minutes per subject";
+      refs.coachingDurationBadge.textContent = `${Math.max(coachingItems.length, 1) * 30} MIN`;
+
+      clearNode(refs.coachingItems);
+      coachingItems.forEach((item) => {
+        const node = cloneTemplate("clusterItemTemplate");
+        node.querySelector(".cluster-icon").appendChild(createSubjectIcon(item.shortLabel || item.name));
+        node.querySelector(".cluster-subject").textContent = item.name;
+        node.querySelector(".cluster-faculty").textContent = `${item.score}/${item.total} marks \u00b7 ${item.percentage}%`;
+        node
+          .querySelector(".cluster-status")
+          .appendChild(
+            createBadge(
+              item.status || "Focus Area",
+              {
+                "Focus Area": "text-bg-danger",
+                "On Track": "text-bg-success",
+              }[item.status || "Focus Area"],
+            ),
+          );
+        refs.coachingItems.appendChild(node);
+      });
+    }
+
+    function renderSubjectCards() {
+      const test = currentTest();
+      clearNode(refs.subjectCards);
+
+      (test?.sectionBreakdown || []).forEach((section, index) => {
+        const theme = Object.values(SUBJECT_THEMES)[index % Object.values(SUBJECT_THEMES).length];
+        const average = Math.round(
+          ((test.leaderboard || []).reduce((sum, entry) => {
+            const sectionScore = entry.sectionScores?.[index];
+            return sum + (sectionScore ? sectionScore.score : 0);
+          }, 0) / Math.max((test.leaderboard || []).length, 1)) * 10,
+        ) / 10;
+        const node = cloneTemplate("subjectCardTemplate");
+
+        node.querySelector(".subject-icon").appendChild(createSubjectIcon(section.shortLabel || section.name));
+        node.querySelector(".subject-title").textContent = section.name;
+        node.querySelector(".subject-rank").textContent = `${section.score}/${section.total} in this section`;
+        node.querySelector(".subject-score").textContent = section.score;
+        node.querySelector(".subject-score").style.color = theme.accent;
+        node.querySelector(".subject-average").textContent = `Class avg ${average}/${section.total}`;
+        setProgressBar(
+          node.querySelector(".subject-progress-fill"),
+          section.percentage,
+          `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+        );
+        node
+          .querySelector(".subject-delta")
+          .appendChild(
+            createBadge(
+              `${section.percentage}% scored`,
+              section.percentage >= 60 ? "text-bg-success" : "text-bg-danger",
+            ),
+          );
+
+        refs.subjectCards.appendChild(node);
+      });
+    }
+
+    function renderTopPerformers() {
+      clearNode(refs.topPerformers);
+
+      const test = currentTest();
+      const topEntries = (test?.topPerformers && test.topPerformers.length)
+        ? test.topPerformers
+        : currentLeaderboard().slice(0, 5);
+
+      topEntries.forEach((entry) => {
+        const student = STUDENTS.find((item) => item.id === entry.studentId) || {};
+        const node = cloneTemplate("topPerformerTemplate");
+        const medal = createRankMedal(entry.rank);
+
+        node.querySelector(".top-performer-rank").textContent = `#${entry.rank}`;
+        if (medal) {
+          node.querySelector(".top-performer-rank").appendChild(medal);
+        }
+
+        node
+          .querySelector(".top-performer-avatar")
+          .appendChild(
+            createAvatar(
+              entry.studentName || student.name || entry.studentId,
+              42,
+              entry.profilePhotoUrl || student.profilePhotoUrl || "",
+            ),
+          );
+        node.querySelector(".top-performer-name").textContent =
+          entry.studentName || student.name || entry.studentId;
+        node.querySelector(".top-performer-meta").textContent =
+          `#${entry.rank} - ${(entry.score ?? entry.total ?? 0)}/${entry.totalMarks || test?.totalMarks || 0}`;
+        refs.topPerformers.appendChild(node);
+      });
+    }
+
+    function renderLeaderboard() {
+      const test = currentTest();
+      const ranked = currentLeaderboard();
+      refs.leaderboardCountBadge.textContent = `${ranked.length} students`;
+      clearNode(refs.leaderboardBody);
+      const headerItems = (test?.sectionBreakdown || []).slice(0, 3);
+      refs.leaderboardSectionHeads.forEach((head, index) => {
+        const item = headerItems[index];
+        head.textContent = item ? item.shortLabel || item.name.slice(0, 3).toUpperCase() : `SEC ${index + 1}`;
+      });
+
+      const rows = leaderboardRows(
+        ranked,
+        CURRENT_STUDENT_ID,
+        !state.studentLeaderboardOpen,
+      );
+
+      rows.forEach((row) => {
+        const student = STUDENTS.find((item) => item.id === row.studentId) || {};
+        const node = cloneTemplate("leaderboardRowTemplate");
+        const mine = row.studentId === CURRENT_STUDENT_ID;
+        const medal = createRankMedal(row.rank);
+
+        if (mine) {
+          node.classList.add("table-active", "student-highlight");
+        }
+
+        node.querySelector(".leaderboard-rank-text").textContent = `#${row.rank}`;
+        if (medal) {
+          node.querySelector(".leaderboard-rank-medal").appendChild(medal);
+        }
+
+        node
+          .querySelector(".leaderboard-avatar")
+          .appendChild(
+            createAvatar(
+              row.studentName || student.name || row.studentId,
+              28,
+              row.profilePhotoUrl || student.profilePhotoUrl || "",
+            ),
+          );
+        node.querySelector(".leaderboard-name").textContent = row.studentName || student.name || row.studentId;
+        node.querySelector(".leaderboard-id").textContent = row.studentRef || student.studentRef || student.id || row.studentId;
+        node.querySelector(".leaderboard-physics").textContent = row.sectionScores?.[0]?.score ?? "-";
+        node.querySelector(".leaderboard-chemistry").textContent = row.sectionScores?.[1]?.score ?? "-";
+        node.querySelector(".leaderboard-maths").textContent = row.sectionScores?.[2]?.score ?? "-";
+        node.querySelector(".leaderboard-total").textContent = `${row.score ?? 0}/${row.totalMarks || test?.totalMarks || 0}`;
+
+        if (mine) {
+          node
+            .querySelector(".leaderboard-you")
+            .appendChild(createBadge("You", "text-bg-info"));
+        }
+
+        refs.leaderboardBody.appendChild(node);
+      });
+
+      refs.leaderboardFooterText.textContent = state.studentLeaderboardOpen
+        ? `Showing all ${ranked.length} students`
+        : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`;
+      refs.leaderboardToggleBtn.textContent = state.studentLeaderboardOpen
+        ? "Show Less"
+        : "View All";
+    }
+
+    function renderHome(student) {
+      const test = currentTest();
+      const rank = test?.rank || 0;
+      const delta = test?.rankDelta ?? null;
+      const previousRank = delta === null ? null : rank + delta;
+      const testStreak = test?.testStreak || 0;
+
+      refs.rankTierBadge.className = `badge rounded-pill ${
+        rank <= 10
+          ? "text-bg-info"
+          : rank <= 25
+            ? "text-bg-primary"
+            : "text-bg-secondary"
+      }`;
+      refs.rankTierBadge.textContent =
+        rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD";
+      refs.rankValue.textContent = `#${rank}`;
+      refs.rankSummary.textContent = `of ${test?.totalStudents || currentLeaderboard().length} students - ${test?.name || ""}`;
+
+      if (testStreak > 0) {
+        refs.testStreakBadge.classList.remove("d-none");
+        refs.testStreakText.textContent = `${testStreak}-TEST STREAK`;
+      } else {
+        refs.testStreakBadge.classList.add("d-none");
+        refs.testStreakText.textContent = "";
+      }
+
+      refs.rankShiftBadge.classList.remove("up", "down", "flat", "d-none");
+      if (delta === null) {
+        refs.rankShiftBadge.classList.add("flat");
+        refs.rankShiftIcon.textContent = "\u2022";
+        refs.rankShiftText.textContent = "0";
+      } else if (delta > 0) {
+        refs.rankShiftBadge.classList.add("up");
+        refs.rankShiftIcon.textContent = "\u2191";
+        refs.rankShiftText.textContent = String(delta);
+      } else if (delta < 0) {
+        refs.rankShiftBadge.classList.add("down");
+        refs.rankShiftIcon.textContent = "\u2193";
+        refs.rankShiftText.textContent = String(Math.abs(delta));
+      } else {
+        refs.rankShiftBadge.classList.add("flat");
+        refs.rankShiftIcon.textContent = "\u2022";
+        refs.rankShiftText.textContent = "0";
+      }
+
+      renderHomeBreakdown(test?.score || 0, previousRank, rank);
+      renderSubjectCards();
+      renderCoaching();
+      renderTopPerformers();
+      renderLeaderboard();
+    }
+
+    function renderAnalytics() {
+      renderKpiRow(
+        refs.rankJourneyRow,
+        TESTS.map((test, index) => ({
+          label: test.shortDate,
+          value: `#${test.rank || "-"}`,
+          extra:
+            index === 0 || test.rankDelta === null || test.rankDelta === undefined
+              ? "Baseline"
+              : `${test.rankDelta >= 0 ? "Up" : "Down"} ${Math.abs(test.rankDelta)}`,
+        })),
+      );
+
+      clearNode(refs.topicAnalyticsContainer);
+      const test = currentTest();
+      const sections = test?.sectionBreakdown || [];
+      refs.analyticsBreakdownTitle.textContent = sections.length <= 1
+        ? "Topic Analytics"
+        : "Section Analytics";
+
+      sections.forEach((section, index) => {
+        const theme = Object.values(SUBJECT_THEMES)[index % Object.values(SUBJECT_THEMES).length];
+        const node = cloneTemplate("topicCardTemplate");
+        const rowsContainer = node.querySelector(".topic-rows");
+
+        node.querySelector(".topic-subject-icon").appendChild(createSubjectIcon(section.shortLabel || section.name));
+        node.querySelector(".topic-subject-name").textContent = section.name;
+        node.querySelector(".topic-subject-name").style.color = theme.accent;
+        node.querySelector(".topic-subject-score").textContent = `${section.score}/${section.total}`;
+
+        TESTS.forEach((item) => {
+          const sectionItem = (item.sectionBreakdown || []).find((entry) => entry.name === section.name);
+          if (!sectionItem) {
+            return;
+          }
+          const row = cloneTemplate("topicRowTemplate");
+          row.querySelector(".topic-name").textContent = `${item.shortDate} - ${item.name}`;
+          row.querySelector(".topic-score").textContent = `${sectionItem.score}/${sectionItem.total}`;
+          setProgressBar(
+            row.querySelector(".topic-progress-fill"),
+            sectionItem.percentage,
+            `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+          );
+          rowsContainer.appendChild(row);
+        });
+
+        refs.topicAnalyticsContainer.appendChild(node);
+      });
+    }
+
+    function renderRewards() {
+      refs.rewardLevelTitle.textContent = `Level ${REWARD_PAYLOAD.level}`;
+      refs.rewardXpText.textContent = `${REWARD_PAYLOAD.xp} XP earned`;
+      refs.rewardStreakBadge.textContent = `${REWARD_PAYLOAD.streak} TEST STREAK`;
+      setProgressBar(
+        refs.rewardProgressBar,
+        Math.round((REWARD_PAYLOAD.progress || 0) * 100),
+        "linear-gradient(135deg, #2563eb, #0d6efd 52%, #06b6d4)",
+      );
+
+      clearNode(refs.rewardsGrid);
+      (REWARD_PAYLOAD.badges || []).forEach((badgeItem) => {
+        const node = cloneTemplate("rewardCardTemplate");
+        const shell = node.querySelector(".reward-card-shell");
+        node.querySelector(".reward-icon-text").textContent = badgeItem.icon;
+        node.querySelector(".reward-name").textContent = badgeItem.name;
+        node.querySelector(".reward-desc").textContent = badgeItem.desc;
+        node.querySelector(".reward-meta").textContent = `${
+          badgeItem.earned ? "earned" : "locked"
+        } - ${badgeItem.tier}`;
+
+        if (!badgeItem.earned) {
+          shell.classList.add("opacity-50");
+        }
+
+        refs.rewardsGrid.appendChild(node);
+      });
+    }
+
+    function render() {
+      const student = STUDENTS.find((entry) => entry.id === CURRENT_STUDENT_ID) || CURRENT_STUDENT;
+      const test = currentTest();
+
+      renderHeader();
+      if (!test) {
+        refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
+        refs.rankTierBadge.textContent = "NO TESTS YET";
+        refs.rankValue.textContent = "--";
+        refs.rankSummary.textContent = "No completed tests available yet.";
+        refs.testStreakBadge.classList.add("d-none");
+        refs.rankShiftBadge.classList.add("d-none");
+        clearNode(refs.homeKpiRow);
+        clearNode(refs.subjectCards);
+        clearNode(refs.topPerformers);
+        clearNode(refs.leaderboardBody);
+        clearNode(refs.rankJourneyRow);
+        clearNode(refs.topicAnalyticsContainer);
+        refs.coachingSection.classList.add("d-none");
+        refs.leaderboardCountBadge.textContent = "0 students";
+        refs.leaderboardFooterText.textContent = "";
+        renderRewards();
+        return;
+      }
+
+      renderHome(student);
+      renderAnalytics();
+      renderRewards();
     }
 
     refs.tabButtons.forEach((button) => {
@@ -1851,7 +1993,6 @@
         if (slot.kind === "completed") {
           state.testId = slot.id;
           state.studentLeaderboardOpen = false;
-          loadAttendance();
           render();
           return;
         }
@@ -1887,8 +2028,6 @@
         render();
       }
     });
-
-    loadAttendance();
     render();
   })();
 </script>

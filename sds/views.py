@@ -41,7 +41,8 @@ from urllib.parse import urlencode, urlsplit
 from datetime import timedelta
 
 from .models import *
-from scholarship_test.models import ScholarshipTest
+from scholarship_test.models import ScholarshipTest, ScholarshipTestAttempt
+from scholarship_test.services import test_service as scholarship_test_service
 from .password_policy import (
     DEFAULT_ONE_TIME_PASSWORD,
     clear_password_change_flag,
@@ -3556,9 +3557,237 @@ def submit_self_diagnostic(request):
 
 
 
-def _build_my_tests_payload():
+def _short_section_label(name):
+    tokens = [token for token in re.findall(r"[A-Za-z0-9]+", str(name or "")) if token]
+    if not tokens:
+        return "SEC"
+    if len(tokens) >= 2:
+        return "".join(token[0] for token in tokens[:3]).upper()
+    return tokens[0][:3].upper()
+
+
+def _student_photo_url(student):
+    if not student or not getattr(student, "profile_photo", None):
+        return None
+    try:
+        return student.profile_photo.url
+    except Exception:
+        return None
+
+
+def _build_attempt_section_breakdown(attempt):
+    test = getattr(attempt, "test", None)
+    if not test:
+        return []
+
+    correct_question_ids = {
+        answer.question_id
+        for answer in attempt.answers.all()
+        if answer.is_correct
+    }
+    breakdown = []
+
+    for section in test.sections.all().order_by("order", "id"):
+        questions = list(section.questions.all())
+        total_marks = sum(int(question.pos_marks or 0) for question in questions)
+        if total_marks <= 0:
+            total_marks = len(questions)
+
+        scored_marks = sum(
+            int(question.pos_marks or 0) if int(question.pos_marks or 0) > 0 else 1
+            for question in questions
+            if question.id in correct_question_ids
+        )
+        percentage = round((scored_marks / total_marks) * 100, 1) if total_marks else 0
+
+        breakdown.append(
+            {
+                "name": section.name,
+                "shortLabel": _short_section_label(section.name),
+                "score": scored_marks,
+                "total": total_marks,
+                "percentage": percentage,
+                "meta": section.instructions or "Section score",
+            }
+        )
+
+    return breakdown
+
+
+def _build_attempt_leaderboard(test, current_attempt_id=None):
+    leaderboard_attempts = (
+        ScholarshipTestAttempt.objects
+        .filter(test=test, status__in=["completed", "expired"])
+        .select_related("student", "portal_student")
+        .prefetch_related("answers__question__section", "test__sections__questions")
+        .order_by("-score", "test_completed_at", "test_started_at", "id")
+    )
+
+    entries = []
+    current_entry = None
+
+    for rank, attempt in enumerate(leaderboard_attempts, start=1):
+        portal_student = getattr(attempt, "portal_student", None)
+        section_scores = _build_attempt_section_breakdown(attempt)
+        entry = {
+            "rank": rank,
+            "attemptId": attempt.id,
+            "studentId": f"portal-{portal_student.id}" if portal_student else f"scholar-{attempt.student_id}",
+            "studentName": (
+                portal_student.student_name
+                if portal_student and portal_student.student_name
+                else attempt.student.name
+            ),
+            "studentRef": (
+                portal_student.username
+                if portal_student and portal_student.username
+                else attempt.student.phone_number
+            ),
+            "profilePhotoUrl": _student_photo_url(portal_student),
+            "score": int(attempt.score or 0),
+            "totalMarks": int(attempt.total_marks or 0),
+            "sectionScores": section_scores,
+            "isCurrentStudent": bool(current_attempt_id and attempt.id == current_attempt_id),
+        }
+        entries.append(entry)
+        if entry["isCurrentStudent"]:
+            current_entry = entry
+
+    return {
+        "entries": entries,
+        "topEntries": entries[:5],
+        "currentEntry": current_entry,
+    }
+
+
+def _build_rewards_payload(completed_tests):
+    if not completed_tests:
+        return {
+            "xp": 0,
+            "level": 1,
+            "progress": 0,
+            "streak": 0,
+            "badges": [],
+        }
+
+    xp = 0
+    best_rank = 999
+    ever_ninety = False
+    climbed_five = False
+    improve_streak = 0
+    running_improve = 0
+
+    for index, test in enumerate(completed_tests):
+        rank = test.get("rank") or 999
+        score = test.get("score") or 0
+        total_marks = max(test.get("totalMarks") or 0, 1)
+        score_percent = (score / total_marks) * 100
+
+        xp += score * 10
+        xp += 200 if rank == 1 else 120 if rank <= 3 else 60 if rank <= 10 else 25 if rank <= 25 else 0
+        best_rank = min(best_rank, rank)
+        ever_ninety = ever_ninety or score_percent >= 90 or any(
+            item.get("percentage", 0) >= 90 for item in test.get("sectionBreakdown", [])
+        )
+
+        if index:
+            previous_rank = completed_tests[index - 1].get("rank") or rank
+            if previous_rank - rank >= 5:
+                climbed_five = True
+            if previous_rank > rank:
+                running_improve += 1
+            else:
+                running_improve = 0
+            improve_streak = max(improve_streak, running_improve)
+
+    level = int((xp / 30) ** 0.5) + 1 if xp > 0 else 1
+    next_level_xp = level * level * 30
+    prev_level_xp = (level - 1) * (level - 1) * 30
+    progress = (
+        (xp - prev_level_xp) / (next_level_xp - prev_level_xp)
+        if next_level_xp > prev_level_xp
+        else 0
+    )
+
+    badges = [
+        {
+            "id": "first_test",
+            "icon": "T1",
+            "name": "Mock Test Starter",
+            "desc": "Completed the first academy test",
+            "tier": "bronze",
+            "earned": True,
+        },
+        {
+            "id": "top_25",
+            "icon": "R25",
+            "name": "Rank Booster",
+            "desc": "Entered the top 25 merit band",
+            "tier": "silver",
+            "earned": best_rank <= 25,
+        },
+        {
+            "id": "top_10",
+            "icon": "T10",
+            "name": "JEE Main Sprinter",
+            "desc": "Cracked the top 10 in class",
+            "tier": "gold",
+            "earned": best_rank <= 10,
+        },
+        {
+            "id": "top_3",
+            "icon": "T3",
+            "name": "NEET Podium Performer",
+            "desc": "Reached the top 3 merit list",
+            "tier": "gold",
+            "earned": best_rank <= 3,
+        },
+        {
+            "id": "rank_1",
+            "icon": "R1",
+            "name": "AIR Mindset Champion",
+            "desc": "Held rank #1 on a test",
+            "tier": "platinum",
+            "earned": best_rank == 1,
+        },
+        {
+            "id": "climb_5",
+            "icon": "UP5",
+            "name": "Comeback Climber",
+            "desc": "Climbed 5+ ranks in one test",
+            "tier": "silver",
+            "earned": climbed_five,
+        },
+        {
+            "id": "streak_3",
+            "icon": "S3",
+            "name": "Consistency Streak",
+            "desc": "Improved across 3 tests in a row",
+            "tier": "gold",
+            "earned": improve_streak >= 2,
+        },
+        {
+            "id": "subject_90",
+            "icon": "90+",
+            "name": "Subject Mastery Badge",
+            "desc": "Scored 90+ in a section or test",
+            "tier": "gold",
+            "earned": ever_ninety,
+        },
+    ]
+
+    return {
+        "xp": xp,
+        "level": level,
+        "progress": max(0, min(progress, 1)),
+        "streak": improve_streak,
+        "badges": badges,
+    }
+
+
+def _build_my_tests_payload(student):
     now = timezone.localtime()
-    completed_tests = []
+    completed_published_tests = []
     upcoming_test = None
 
     published_tests = (
@@ -3569,7 +3798,7 @@ def _build_my_tests_payload():
     )
 
     for test in published_tests:
-        if not test.sections.filter(questions__isnull=False).exists():
+        if not scholarship_test_service.get_runtime_questions_for_test(test):
             continue
 
         start_at = timezone.localtime(test.scheduled_start_at)
@@ -3590,7 +3819,7 @@ def _build_my_tests_payload():
         }
 
         if end_at <= now:
-            completed_tests.append(item)
+            completed_published_tests.append(item)
             continue
 
         if upcoming_test is None:
@@ -3601,9 +3830,98 @@ def _build_my_tests_payload():
                 "isLive": start_at <= now < end_at,
             }
 
+    attempt_queryset = (
+        ScholarshipTestAttempt.objects
+        .filter(
+            portal_student=student,
+            status__in=["completed", "expired"],
+            test__isnull=False,
+        )
+        .select_related("student", "portal_student", "test")
+        .prefetch_related("answers__question__section", "test__sections__questions")
+        .order_by("test__scheduled_start_at", "test_completed_at", "id")
+    )
+
+    latest_attempt_by_test = {}
+    for attempt in attempt_queryset:
+        latest_attempt_by_test[attempt.test_id] = attempt
+
+    student_completed_tests = []
+    attempted_test_ids = set(latest_attempt_by_test.keys())
+
+    for published_test in completed_published_tests:
+        attempt = latest_attempt_by_test.get(published_test["external_id"])
+        if not attempt:
+            continue
+
+        leaderboard = _build_attempt_leaderboard(attempt.test, attempt.id)
+        current_entry = leaderboard["currentEntry"] or {}
+        section_breakdown = _build_attempt_section_breakdown(attempt)
+        weak_sections = [
+            item for item in section_breakdown if item.get("percentage", 0) < 60
+        ] or sorted(section_breakdown, key=lambda item: item.get("percentage", 0))[:3]
+
+        student_completed_tests.append(
+            {
+                **published_test,
+                "kind": "completed",
+                "attemptId": attempt.id,
+                "score": int(attempt.score or 0),
+                "totalMarks": int(attempt.total_marks or 0),
+                "rank": current_entry.get("rank"),
+                "totalStudents": len(leaderboard["entries"]),
+                "sectionBreakdown": section_breakdown,
+                "leaderboard": leaderboard["entries"],
+                "topPerformers": leaderboard["topEntries"],
+                "coachingItems": [
+                    {
+                        "name": item["name"],
+                        "shortLabel": item["shortLabel"],
+                        "score": item["score"],
+                        "total": item["total"],
+                        "percentage": item["percentage"],
+                        "status": "Focus Area" if item["percentage"] < 60 else "On Track",
+                    }
+                    for item in weak_sections
+                ],
+            }
+        )
+
+    completed_test_id_order = [item["external_id"] for item in completed_published_tests]
+    completed_test_index = {test_id: index for index, test_id in enumerate(completed_test_id_order)}
+
+    for index, test in enumerate(student_completed_tests):
+        previous_test = student_completed_tests[index - 1] if index else None
+        previous_rank = previous_test.get("rank") if previous_test else None
+        test["rankDelta"] = (
+            previous_rank - test["rank"]
+            if previous_rank is not None and test.get("rank") is not None
+            else None
+        )
+
+        streak = 0
+        current_test_index = completed_test_index.get(test["external_id"])
+        if current_test_index is not None:
+            for cursor in range(current_test_index, -1, -1):
+                if completed_test_id_order[cursor] not in attempted_test_ids:
+                    break
+                streak += 1
+        test["testStreak"] = streak
+
+    rewards = _build_rewards_payload(student_completed_tests)
+
     return {
-        "completedTests": completed_tests,
+        "student": {
+            "id": f"portal-{student.id}",
+            "name": student.student_name,
+            "username": student.username,
+            "batch": student.batch,
+            "parentPhone": student.contact,
+            "profilePhotoUrl": _student_photo_url(student),
+        },
+        "completedTests": student_completed_tests,
         "upcomingTest": upcoming_test,
+        "rewards": rewards,
     }
 
 
@@ -3612,12 +3930,13 @@ def my_tests(request):
     if not hasattr(request.user, "student"):
         return redirect("login")
 
+    student = request.user.student
     return render(
         request,
         "my-tests.html",
         {
-            "student": request.user.student,
-            "my_tests_payload": _build_my_tests_payload(),
+            "student": student,
+            "my_tests_payload": _build_my_tests_payload(student),
         },
     )
 
