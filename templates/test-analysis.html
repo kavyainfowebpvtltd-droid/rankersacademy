@@ -1,459 +1,616 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Test Analysis</title>
+    <title>Test Analysis | The Rankers Academy</title>
     <link rel="icon" href="{% static 'img/logo.webp' %}" type="image/webp" />
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap");
+
+      :root {
+        --brand-a: #ff8a00;
+        --brand-b: #e52e71;
+        --brand-c: #7c3aed;
+        --muted: #a1a1aa;
+      }
+
       body {
-        background: #f1f5f9;
-        color: #0f172a;
+        min-height: 100vh;
+        color: #fafafa;
+        background:
+          radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.2), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(229, 46, 113, 0.13), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 0% 100%, rgba(255, 138, 0, 0.1), transparent 60%),
+          #06060a;
         font-family: "DM Sans", system-ui, sans-serif;
       }
 
-      .analysis-page {
+      .display {
+        font-family: "Bricolage Grotesque", system-ui, sans-serif;
+        letter-spacing: 0;
+      }
+
+      .mono {
+        font-family: "DM Mono", monospace;
+      }
+
+      .soft {
+        color: var(--muted);
+      }
+
+      .brand-gradient {
+        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+      }
+
+      .brand-text {
+        background: linear-gradient(135deg, #ffb55a, #f72585 50%, #a78bfa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .glass {
+        background: rgba(7, 7, 12, 0.78);
+        backdrop-filter: blur(18px) saturate(160%);
+      }
+
+      .btn-brand {
+        --bs-btn-color: #fff;
+        --bs-btn-border-color: transparent;
+        --bs-btn-hover-color: #fff;
+        --bs-btn-hover-border-color: transparent;
+        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+      }
+
+      .app-shell {
         min-height: 100vh;
       }
 
-      .analysis-hero {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.5rem;
-        border: 1px solid #dbeafe;
-        border-radius: 1.25rem;
-        background:
-          radial-gradient(circle at top right, rgba(6, 182, 212, 0.18), transparent 32%),
-          linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+      .sticky-head {
+        position: sticky;
+        top: 0;
+        z-index: 5;
       }
 
-      .analysis-eyebrow {
-        display: inline-block;
-        margin-bottom: 0.55rem;
-        color: #0284c7;
-        font-size: 0.8rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+      .hover-card {
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
       }
 
-      .analysis-title {
-        margin: 0;
-        font-size: 2rem;
-        font-weight: 800;
-        color: #0f172a;
+      .hover-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.32) !important;
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.32) !important;
       }
 
-      .analysis-subtitle {
-        max-width: 680px;
-        color: #64748b;
+      .subject-card:hover .progress-bar {
+        filter: brightness(1.18);
       }
 
-      .analysis-hero-mark {
+      .student-highlight {
+        --bs-table-bg: rgba(13, 202, 240, 0.22);
+        --bs-table-striped-bg: rgba(13, 202, 240, 0.28);
+        outline: 2px solid rgba(13, 202, 240, 0.7);
+        outline-offset: -2px;
+      }
+
+      .rank-medal {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 64px;
-        height: 64px;
-        border-radius: 1rem;
-        background: linear-gradient(135deg, #2563eb, #06b6d4);
-        color: #ffffff;
-        font-size: 1.6rem;
-        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
-      }
-
-      .summary-card,
-      .panel-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 1.15rem;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-      }
-
-      .summary-card {
-        padding: 1.2rem;
-        height: 100%;
-      }
-
-      .summary-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 44px;
-        height: 44px;
-        margin-bottom: 0.8rem;
-        border-radius: 0.95rem;
-        font-size: 1.1rem;
-        color: #ffffff;
-      }
-
-      .summary-card-primary .summary-icon {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      }
-
-      .summary-card-success .summary-icon {
-        background: linear-gradient(135deg, #10b981, #059669);
-      }
-
-      .summary-card-info .summary-icon {
-        background: linear-gradient(135deg, #0ea5e9, #06b6d4);
-      }
-
-      .summary-card-warning .summary-icon {
-        background: linear-gradient(135deg, #f59e0b, #f97316);
-      }
-
-      .summary-label {
-        color: #64748b;
-        font-size: 0.82rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .summary-value {
-        margin-top: 0.25rem;
-        font-size: 2rem;
-        font-weight: 800;
-        line-height: 1.1;
-        color: #0f172a;
-      }
-
-      .summary-meta {
-        margin-top: 0.25rem;
-        color: #64748b;
-        font-size: 0.92rem;
-      }
-
-      .panel-card {
-        overflow: hidden;
-      }
-
-      .panel-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.25rem 1.25rem 0;
-      }
-
-      .panel-title {
-        margin: 0 0 0.2rem;
-        font-size: 1.2rem;
-        font-weight: 800;
-        color: #0f172a;
-      }
-
-      .panel-copy,
-      .table-subtext {
-        color: #64748b;
-        font-size: 0.88rem;
-      }
-
-      .analysis-table {
-        margin-top: 1rem;
-      }
-
-      .analysis-table thead th {
-        background: #f8fbff;
-        color: #64748b;
-        font-size: 0.76rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        border-bottom: 1px solid #e2e8f0;
-        white-space: nowrap;
-      }
-
-      .analysis-table tbody td {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #eef2f7;
-        vertical-align: middle;
-      }
-
-      .status-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.3rem 0.65rem;
+        width: 1.9rem;
+        height: 1.9rem;
         border-radius: 999px;
-        font-size: 0.78rem;
-        font-weight: 700;
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+        font-size: 1.25rem;
+        line-height: 1;
       }
 
-      .status-live {
-        background: #dcfce7;
-        color: #166534;
+      .leaderboard-rank {
+        width: 1%;
+        white-space: nowrap;
+        padding-right: 0.25rem !important;
       }
 
-      .status-published {
-        background: #dbeafe;
-        color: #1d4ed8;
+      .leaderboard-rank .rank-medal {
+        width: 1.4rem;
+        height: 1.4rem;
+        margin-left: 0.2rem;
+        background: transparent;
+        box-shadow: none;
+        font-size: 1rem;
       }
 
-      .status-draft {
-        background: #e2e8f0;
-        color: #475569;
+      .leaderboard-student {
+        padding-left: 0.15rem !important;
       }
 
-      .stack-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.8rem;
-        padding: 1rem 1.25rem 1.25rem;
-      }
-
-      .outcome-item {
-        display: flex;
-        align-items: center;
-        gap: 0.9rem;
-        padding: 0.95rem 1rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 1rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-      }
-
-      .outcome-rank {
+      .reward-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        width: 34px;
-        height: 34px;
+        width: 48px;
+        height: 48px;
         border-radius: 999px;
-        background: linear-gradient(135deg, #2563eb, #06b6d4);
-        color: #ffffff;
-        font-weight: 800;
+        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+        box-shadow: 0 0.5rem 1.4rem rgba(229, 46, 113, 0.22);
+        color: #fff;
+        font-size: 1.45rem;
+        line-height: 1;
       }
 
-      .outcome-body {
-        min-width: 0;
-        flex: 1 1 auto;
+      .rise {
+        animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) both;
       }
 
-      .empty-panel {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        min-height: 260px;
-        padding: 2rem;
-        text-align: center;
-        color: #64748b;
-      }
-
-      .empty-panel i {
-        font-size: 2rem;
-        color: #2563eb;
-      }
-
-      .empty-panel h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #0f172a;
-      }
-
-      .empty-panel-compact {
-        min-height: 320px;
-      }
-
-      .row-hover {
-        background: #f8fbff;
-      }
-
-      @media (max-width: 991.98px) {
-        .analysis-hero {
-          align-items: flex-start;
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
         }
 
-        .analysis-title {
-          font-size: 1.7rem;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
 
-      @media (max-width: 767.98px) {
-        .analysis-page {
-          padding-left: 1rem !important;
-          padding-right: 1rem !important;
-        }
+      .qr-box {
+        width: 144px;
+        height: 144px;
+        background:
+          linear-gradient(90deg, #fff 10px, transparent 10px) 0 0 / 18px 18px,
+          linear-gradient(#fff 10px, transparent 10px) 0 0 / 18px 18px,
+          #111;
+        border: 10px solid #fff;
+        border-radius: 0.5rem;
+      }
 
-        .analysis-hero {
-          flex-direction: column;
-          padding: 1.1rem;
-        }
-
-        .panel-head {
-          padding: 1rem 1rem 0;
-        }
-
-        .stack-list {
-          padding: 1rem;
-        }
-
-        .outcome-item {
-          padding: 0.85rem;
-        }
+      pre.message-box {
+        white-space: pre-wrap;
+        font-size: 0.78rem;
       }
     </style>
   </head>
-  <body>
-    <div class="container-fluid py-4 px-4 analysis-page">
-      <div class="analysis-hero mb-4">
-        <div>
-          <span class="analysis-eyebrow">System Management</span>
-          <h1 class="analysis-title mb-1">Test Analysis</h1>
-          <p class="analysis-subtitle mb-0">
-            Live scholarship test performance, attempt volume, and outcome trends.
-          </p>
-        </div>
-        <div class="analysis-hero-mark">
-          <i class="bi bi-graph-up-arrow"></i>
-        </div>
-      </div>
-
-      <div class="row g-3 mb-4">
-        {% for card in summary_cards %}
-          <div class="col-12 col-sm-6 col-xl-3">
-            <div class="summary-card summary-card-{{ card.tone }}">
-              <div class="summary-icon">
-                <i class="bi {{ card.icon }}"></i>
-              </div>
-              <div class="summary-label">{{ card.label }}</div>
-              <div class="summary-value">{{ card.value }}</div>
-              <div class="summary-meta">{{ card.meta }}</div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-
-      <div class="row g-4">
-        <div class="col-12 col-xxl-8">
-          <div class="panel-card h-100">
-            <div class="panel-head">
-              <div>
-                <h2 class="panel-title">Recent Test Performance</h2>
-                <p class="panel-copy mb-0">
-                  Snapshot of the most recent tests with schedule, attempts, and score outcomes.
-                </p>
-              </div>
-            </div>
-
-            {% if test_rows %}
-              <div class="table-responsive">
-                <table class="table analysis-table align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>Test</th>
-                      <th>Status</th>
-                      <th>Schedule</th>
-                      <th>Attempts</th>
-                      <th>Avg Score</th>
-                      <th>Top Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for test in test_rows %}
-                      <tr>
-                        <td>
-                          <div class="fw-semibold text-dark">{{ test.name }}</div>
-                          <div class="table-subtext">
-                            {{ test.question_count }} questions · {{ test.total_marks }} marks · {{ test.duration }}
-                          </div>
-                        </td>
-                        <td>
-                          <span class="status-pill {% if test.is_live %}status-live{% elif test.status == 'Published' %}status-published{% else %}status-draft{% endif %}">
-                            {% if test.is_live %}Live{% else %}{{ test.status }}{% endif %}
-                          </span>
-                          <div class="table-subtext">{{ test.folder }}</div>
-                        </td>
-                        <td>
-                          <div>{{ test.scheduled_start }}</div>
-                          <div class="table-subtext">{{ test.unique_students }} students attempted</div>
-                        </td>
-                        <td>
-                          <div class="fw-semibold">{{ test.attempt_count }}</div>
-                          <div class="table-subtext">completed attempts</div>
-                        </td>
-                        <td>
-                          <div class="fw-semibold">{{ test.avg_score }}</div>
-                          <div class="table-subtext">{{ test.avg_percentage }}% average</div>
-                        </td>
-                        <td>
-                          <div class="fw-semibold">{{ test.top_score }}</div>
-                          <div class="table-subtext">{{ test.top_student_name }}</div>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            {% else %}
-              <div class="empty-panel">
-                <i class="bi bi-bar-chart-line"></i>
-                <h3>No tests available yet</h3>
-                <p class="mb-0">Published and drafted tests will appear here once they are created.</p>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-
-        <div class="col-12 col-xxl-4">
-          <div class="panel-card h-100">
-            <div class="panel-head">
-              <div>
-                <h2 class="panel-title">Top Outcomes</h2>
-                <p class="panel-copy mb-0">
-                  Highest scoring completed attempts across the current test set.
-                </p>
-              </div>
-            </div>
-
-            {% if top_attempt_rows %}
-              <div class="stack-list">
-                {% for row in top_attempt_rows %}
-                  <div class="outcome-item">
-                    <div class="outcome-rank">{{ forloop.counter }}</div>
-                    <div class="outcome-body">
-                      <div class="fw-semibold text-dark">{{ row.student_name }}</div>
-                      <div class="table-subtext">{{ row.test_name }}</div>
-                    </div>
-                    <div class="text-end">
-                      <div class="fw-semibold text-dark">{{ row.score }}/{{ row.total_marks }}</div>
-                      <div class="table-subtext">{{ row.scholarship_percentage }}% scholarship</div>
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-            {% else %}
-              <div class="empty-panel empty-panel-compact">
-                <i class="bi bi-trophy"></i>
-                <h3>No completed attempts yet</h3>
-                <p class="mb-0">Top outcomes will show here once students finish their tests.</p>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
+  <body data-page="admin">
+    <main id="app"></main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      document.querySelectorAll(".analysis-table tbody tr").forEach((row) => {
-        row.addEventListener("mouseenter", () => row.classList.add("row-hover"));
-        row.addEventListener("mouseleave", () => row.classList.remove("row-hover"));
+      const SUBJECTS = ["Physics", "Chemistry", "Maths"];
+      const CLUSTER_SIZE = 12;
+      const SUBJECT_THEMES = {
+        Physics: { from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P", short: "PHY" },
+        Chemistry: { from: "#d946ef", to: "#ec4899", accent: "#f472b6", icon: "C", short: "CHM" },
+        Maths: { from: "#f59e0b", to: "#f97316", accent: "#fb923c", icon: "M", short: "MTH" },
+      };
+      const TOPICS = {
+        Physics: ["Mechanics", "Thermodynamics", "Waves & Sound", "Optics", "Electrostatics", "Current Electricity", "Magnetism", "Modern Physics"],
+        Chemistry: ["Atomic Structure", "Chemical Bonding", "Thermochemistry", "Equilibrium", "Organic Reactions", "Coordination Compounds", "Electrochemistry", "Periodic Table"],
+        Maths: ["Algebra", "Quadratic Equations", "Trigonometry", "Coordinate Geometry", "Differential Calculus", "Integral Calculus", "Vectors & 3D", "Probability"],
+      };
+      const STUDENT_NAMES = [
+        "Aarav Sharma", "Vivaan Gupta", "Aditya Patel", "Vihaan Iyer", "Arjun Reddy", "Sai Kumar", "Reyansh Joshi", "Krishna Mehta", "Ishaan Singh", "Shaurya Malhotra",
+        "Ananya Verma", "Diya Kapoor", "Aanya Rao", "Saanvi Bhat", "Aaradhya Nair", "Kavya Pillai", "Pari Desai", "Riya Khanna", "Anika Bose", "Navya Menon",
+        "Atharv Trivedi", "Aarush Saxena", "Dev Bhatia", "Kabir Chopra", "Yash Agarwal", "Rudra Dube", "Veer Naidu", "Ayan Mishra", "Aryan Tiwari", "Aanav Goel",
+        "Myra Bansal", "Aadhya Goyal", "Sara Sinha", "Ira Choudhury", "Tara Pandey", "Kiara Sehgal", "Pihu Kashyap", "Avni Mahajan", "Anaya Shukla", "Ishita Yadav",
+        "Daksh Dewan", "Parth Bedi", "Aaryan Bali", "Rohit Anand", "Karan Bajaj", "Riya Sood", "Tanvi Bhalla", "Suhani Walia", "Mahi Sethi", "Naina Gera",
+      ];
+      const STUDENTS = STUDENT_NAMES.map((name, i) => ({
+        id: `TRA${String(i + 1).padStart(3, "0")}`,
+        name,
+        password: `demo${String(i + 1).padStart(3, "0")}`,
+        batch: i < 25 ? "Alpha" : "Star-01",
+        parentPhone: `+91 9${String(800000000 + i * 13579).slice(0, 9)}`,
+      }));
+      const TESTS = [
+        { id: "T01", name: "Mock Test 01", date: "15 Apr 2026", shortDate: "Apr 15" },
+        { id: "T02", name: "Mock Test 02", date: "22 Apr 2026", shortDate: "Apr 22" },
+        { id: "T03", name: "Mock Test 03", date: "29 Apr 2026", shortDate: "Apr 29" },
+      ];
+      const CLUSTER_SCHEDULE = {
+        Physics: { time: "4:00 - 4:30 PM", faculty: "Mr. Rajesh Kumar", room: "Conference Room A" },
+        Chemistry: { time: "4:30 - 5:00 PM", faculty: "Dr. Priya Verma", room: "Conference Room A" },
+        Maths: { time: "5:00 - 5:30 PM", faculty: "Mr. Amit Sharma", room: "Conference Room A" },
+      };
+      const BADGES = [
+        ["first_test", "🎯", "Mock Test Starter", "Completed the first academy test", "bronze"],
+        ["top_25", "📈", "Rank Booster", "Entered the top 25 merit band", "silver"],
+        ["top_10", "⚡", "JEE Main Sprinter", "Cracked the top 10 in class", "gold"],
+        ["top_3", "🏆", "NEET Podium Performer", "Reached the top 3 merit list", "gold"],
+        ["rank_1", "👑", "AIR Mindset Champion", "Held rank #1 on a test", "platinum"],
+        ["climb_5", "🚀", "Comeback Climber", "Climbed 5+ ranks in one test", "silver"],
+        ["streak_3", "🔥", "Consistency Streak", "Improved across 3 tests in a row", "gold"],
+        ["subject_90", "🎓", "Subject Mastery Badge", "Scored 90+ in any subject", "gold"],
+        ["attend_perfect", "✅", "Revision Warrior", "Attended every assigned booster session", "silver"],
+        ["no_cluster", "💎", "Concept Clear Badge", "Stayed out of coaching clusters this test", "bronze"],
+      ].map(([id, icon, name, desc, tier]) => ({ id, icon, name, desc, tier }));
+      const StorageKeys = {
+        attendance: (testId) => `tra4_att:${testId}`,
+        facultyNotes: "tra4_fac_notes",
+        parentAlerts: "tra4_parent_alerts",
+      };
+
+      const state = {
+        page: "admin",
+        user: { type: "admin" },
+        testId: TESTS.at(-1).id,
+        adminTab: "overview",
+        adminSort: "total",
+        adminSearch: "",
+        commsTab: "post-test",
+        online: navigator.onLine,
+        attendance: blankAttendance(),
+        facultyNotes: getStore(StorageKeys.facultyNotes, {}),
+        parentAlerts: getStore(StorageKeys.parentAlerts, {}),
+        modal: "",
+      };
+      window.state = state;
+
+      const allScores = Object.fromEntries(TESTS.map((t) => [t.id, generateScores(t.id)]));
+      const app = document.getElementById("app");
+
+      window.addEventListener("online", () => {
+        state.online = true;
+        render();
       });
+      window.addEventListener("offline", () => {
+        state.online = false;
+        render();
+      });
+
+      loadAttendance();
+      render();
+
+      function hashCode(str) {
+        let h = 0;
+        for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        return Math.abs(h);
+      }
+
+      function generateScores(testId) {
+        const testHash = hashCode(testId);
+        return STUDENTS.map((s) => {
+          const sh = hashCode(s.id);
+          const Physics = Math.max(18, Math.min(99, (sh % 65) + 25 + ((testHash + sh) % 22) - 11));
+          const Chemistry = Math.max(18, Math.min(99, ((sh * 7) % 65) + 25 + ((testHash * 3 + sh) % 22) - 11));
+          const Maths = Math.max(18, Math.min(99, ((sh * 13) % 65) + 25 + ((testHash * 5 + sh) % 22) - 11));
+          return { studentId: s.id, testId, Physics, Chemistry, Maths, total: Physics + Chemistry + Maths };
+        });
+      }
+
+      function getRankings(scores, key = "total") {
+        return [...scores].sort((a, b) => b[key] - a[key]).map((s, i) => ({ ...s, rank: i + 1 }));
+      }
+
+      function getBottomCluster(scores, subject, count = CLUSTER_SIZE) {
+        return [...scores].sort((a, b) => a[subject] - b[subject]).slice(0, count);
+      }
+
+      function getStudentClusterFlags(studentId, scores) {
+        return Object.fromEntries(SUBJECTS.map((sub) => [sub, getBottomCluster(scores, sub).some((s) => s.studentId === studentId)]));
+      }
+
+      function getPredictiveAlerts() {
+        const alerts = [];
+        STUDENTS.forEach((stu) => {
+          const reasons = [];
+          let severity = 0;
+          const ranks = TESTS.map((t) => getRankings(allScores[t.id]).find((s) => s.studentId === stu.id).rank);
+          const drop = ranks.at(-1) - ranks.at(-2);
+          if (drop >= 8) {
+            reasons.push(`Dropped ${drop} ranks vs last test`);
+            severity += 3;
+          } else if (drop >= 4) {
+            reasons.push(`Dropped ${drop} ranks vs last test`);
+            severity += 1;
+          }
+          if (ranks.every((r) => r > 35)) {
+            reasons.push("Bottom-15 in all tests");
+            severity += 2;
+          }
+          const clusterCount = TESTS.reduce((n, t) => n + Object.values(getStudentClusterFlags(stu.id, allScores[t.id])).filter(Boolean).length, 0);
+          if (clusterCount >= 6) {
+            reasons.push(`In ${clusterCount} subject clusters across ${TESTS.length} tests`);
+            severity += 2;
+          }
+          let absent = 0;
+          let marked = 0;
+          SUBJECTS.forEach((sub) => {
+            const status = state.attendance[sub]?.[stu.id];
+            if (status) marked++;
+            if (status === "absent") absent++;
+          });
+          if (marked && absent / marked >= 0.5) {
+            reasons.push(`${absent}/${marked} sessions absent`);
+            severity += 2;
+          }
+          if (reasons.length) alerts.push({ ...stu, reasons, severity, ranks });
+        });
+        return alerts.sort((a, b) => b.severity - a.severity);
+      }
+
+      function blankAttendance() {
+        return { Physics: {}, Chemistry: {}, Maths: {}, finalized: {} };
+      }
+
+      function getStore(key, fallback) {
+        try {
+          return JSON.parse(localStorage.getItem(key)) ?? fallback;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function setStore(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+
+      function loadAttendance() {
+        state.attendance = getStore(StorageKeys.attendance(state.testId), blankAttendance());
+      }
+
+      function saveAttendance() {
+        setStore(StorageKeys.attendance(state.testId), state.attendance);
+      }
+
+      function esc(v) {
+        return String(v ?? "").replace(/[&<>\"']/g, (c) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#039;",
+        })[c]);
+      }
+
+      function currentScores() {
+        return allScores[state.testId];
+      }
+
+      function currentTest() {
+        return TESTS.find((t) => t.id === state.testId);
+      }
+
+      function scoreStudent(score) {
+        return { ...score, ...STUDENTS.find((s) => s.id === score.studentId) };
+      }
+
+      function avatar(name, size = 38) {
+        const initials = name.split(" ").map((x) => x[0]).slice(0, 2).join("");
+        return `<span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient flex-shrink-0" style="width:${size}px;height:${size}px;font-size:${Math.max(10, size * 0.32)}px">${esc(initials)}</span>`;
+      }
+
+      function badge(text, tone = "text-bg-secondary", style = "") {
+        const map = {
+          present: "text-bg-success",
+          late: "text-bg-warning text-dark",
+          absent: "text-bg-danger",
+          pending: "text-bg-secondary",
+        };
+        return `<span class="badge rounded-pill ${map[tone] || tone}" style="${style}">${esc(text)}</span>`;
+      }
+
+      function progress(value, color) {
+        return `<div class="progress bg-black bg-opacity-25" style="height:8px"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:${Math.max(0, Math.min(100, value))}%;background:${color}"></div></div>`;
+      }
+
+      function subjectIcon(sub) {
+        const t = SUBJECT_THEMES[sub];
+        return `<span class="d-inline-flex align-items-center justify-content-center rounded-3 text-white fw-bold flex-shrink-0" style="width:36px;height:36px;background:linear-gradient(135deg,${t.from},${t.to})">${t.icon}</span>`;
+      }
+
+      function card(cls = "p-3", body = "") {
+        return `<div class="card bg-dark bg-opacity-50 border-secondary border-opacity-25 shadow-sm rounded-3 hover-card ${cls}">${body}</div>`;
+      }
+
+      function mini(cls = "p-3", body = "") {
+        return `<div class="card bg-black bg-opacity-25 border-secondary border-opacity-25 rounded-3 hover-card ${cls}">${body}</div>`;
+      }
+
+      function render() {
+        app.innerHTML = adminView();
+        if (state.modal) app.insertAdjacentHTML("beforeend", state.modal);
+      }
+
+      function onlineBadge() {
+        return `<div class="position-fixed top-0 end-0 m-3 z-3">${badge(state.online ? "ONLINE" : "OFFLINE", state.online ? "text-bg-success" : "text-bg-danger")}</div>`;
+      }
+
+      function logout() {
+        window.top.location.href = "{% url 'logout' %}";
+      }
+
+      function setTest(id) {
+        state.testId = id;
+        loadAttendance();
+        render();
+      }
+
+      function shell(title, subtitle, icon, max = "940px") {
+        return `<div class="app-shell pb-5">${onlineBadge()}<div class="container" style="max-width:${max}">
+          <header class="sticky-head glass border-bottom border-secondary border-opacity-25 py-3 mb-3 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">${icon}<div><div class="soft text-uppercase small fw-bold mono">${subtitle}</div><div class="fw-bold">${title}</div></div></div>
+            <button class="btn btn-sm btn-outline-light fw-bold" onclick="logout()">Sign out</button>
+          </header>`;
+      }
+
+      function testSelector() {
+        return `<div class="d-flex gap-2 overflow-auto pb-1 mb-3">${TESTS.map((t) => `<button class="btn btn-sm ${state.testId === t.id ? "btn-brand" : "btn-outline-light"} rounded-pill mono flex-shrink-0" onclick="setTest('${t.id}')">${t.name} - ${t.date}</button>`).join("")}</div>`;
+      }
+
+      function kpi(label, value, extra = "") {
+        return `<div class="col-6 col-lg-3">${mini("p-3 h-100", `<div class="soft small text-uppercase fw-bold mono">${esc(label)}</div><div class="display fs-4 fw-bold">${esc(value)}</div><div class="small soft">${esc(extra)}</div>` )}</div>`;
+      }
+
+      function rankMedal(rank) {
+        const medals = {
+          1: { icon: "🥇", label: "Gold medal" },
+          2: { icon: "🥈", label: "Silver medal" },
+          3: { icon: "🥉", label: "Bronze medal" },
+        };
+        const medal = medals[rank];
+        if (medal) return `<span class="rank-medal" role="img" aria-label="${medal.label}" title="${medal.label}">${medal.icon}</span>`;
+        return "";
+      }
+
+      function leaderboardRows(ranked, highlightId, collapsed) {
+        if (!collapsed) return ranked;
+        const firstFive = ranked.slice(0, 5);
+        const me = ranked.find((r) => r.studentId === highlightId);
+        return me && !firstFive.some((r) => r.studentId === highlightId) ? [...firstFive, me] : firstFive;
+      }
+
+      function leaderboard(ranked, highlightId = "", collapsible = false) {
+        const rows = leaderboardRows(ranked, highlightId, collapsible);
+        return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${rows.map((r) => {
+          const stu = STUDENTS.find((s) => s.id === r.studentId);
+          const mine = stu.id === highlightId;
+          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${stu.id}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Maths}</td><td><b>${r.total}</b></td></tr>`;
+        }).join("")}</tbody></table></div>`);
+      }
+
+      function adminView() {
+        const tabs = [["overview", "Overview"], ["predict", "At Risk"], ["students", "Students"], ["clusters", "Clusters"], ["attend", "Attendance"], ["comms", "Comms"]];
+        return `${shell("Admin - The Rankers Academy", "Console", `<div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient" style="width:38px;height:38px">A</div>`, "940px")}
+          ${testSelector()}<div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id, label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
+          ${state.adminTab === "overview" ? adminOverview() : state.adminTab === "predict" ? adminPredict() : state.adminTab === "students" ? adminStudents() : state.adminTab === "clusters" ? adminClusters() : state.adminTab === "attend" ? adminAttendance() : parentComms()}
+        </div></div>`;
+      }
+
+      function adminOverview() {
+        const ranked = getRankings(currentScores());
+        const avg = Math.round(currentScores().reduce((n, s) => n + s.total, 0) / STUDENTS.length);
+        return `<div class="row g-3 mb-4">${kpi("Class Average", `${avg}/300`, currentTest().name)}${kpi("Top Score", ranked[0].total, STUDENTS.find((s) => s.id === ranked[0].studentId).name)}${kpi("All-Subject Cluster", getAllThreeSet(currentScores()).size, "students")}${kpi("At-Risk Alerts", getPredictiveAlerts().length, "predictive warnings")}</div>
+        ${card("p-4 mb-4", `<h5 class="display fw-bold">Subject Averages</h5><div class="row g-3">${SUBJECTS.map((sub) => {
+          const avgSub = Math.round(currentScores().reduce((n, s) => n + s[sub], 0) / STUDENTS.length);
+          return `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="display fs-3 fw-bold mt-2">${avgSub}</div>${progress(avgSub, SUBJECT_THEMES[sub].accent)}`)}</div>`;
+        }).join("")}</div>`)}${leaderboard(ranked.slice(0, 10))}`;
+      }
+
+      function adminPredict() {
+        const alerts = getPredictiveAlerts();
+        return card("p-4 mb-4", `<h5 class="display fw-bold">Predictive Alerts</h5><div class="vstack gap-2">${alerts.map((a) => {
+          const notes = SUBJECTS.flatMap((sub) => state.facultyNotes[`${a.id}:${sub}`] || []);
+          return mini("p-3", `<div class="d-flex align-items-start gap-3">${avatar(a.name, 38)}<div class="flex-grow-1"><div class="d-flex justify-content-between"><b>${esc(a.name)}</b>${badge(`S${a.severity}`, a.severity >= 4 ? "text-bg-danger" : "text-bg-warning text-dark")}</div><div class="small soft mono">${a.id} - ranks ${a.ranks.join(" -> ")}</div><ul class="small soft mb-1 mt-2">${a.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>${notes.length ? `<div class="small text-info">Faculty notes: ${notes.map((n) => esc(n.text)).join("; ")}</div>` : ""}</div></div>`);
+        }).join("") || `<div class="soft small">No active risk alerts.</div>`}</div>`);
+      }
+
+      function adminStudents() {
+        const q = state.adminSearch.toLowerCase();
+        const ranked = getRankings(currentScores(), state.adminSort).map(scoreStudent).filter((s) => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q));
+        return card("p-3 mb-4", `<div class="row g-2 mb-3"><div class="col-md"><input class="form-control" value="${esc(state.adminSearch)}" placeholder="Search name or ID" oninput="state.adminSearch=this.value;render()"></div><div class="col-md-auto"><select class="form-select" onchange="state.adminSort=this.value;render()">${["total", "Physics", "Chemistry", "Maths"].map((k) => `<option ${state.adminSort === k ? "selected" : ""} value="${k}">${k}</option>`).join("")}</select></div></div>${leaderboard(ranked)}`);
+      }
+
+      function adminClusters() {
+        const sc = currentScores();
+        const allThree = getAllThreeSet(sc);
+        const notice = buildNotice(sc);
+        const schedule = card("p-4 mb-4", `<h5 class="display fw-bold">Cluster Schedule</h5><div class="row g-2">${SUBJECTS.map((sub) => `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft mt-2">${CLUSTER_SCHEDULE[sub].faculty}<br>${CLUSTER_SCHEDULE[sub].time}</div>`)}</div>`).join("")}</div>`);
+        const allSubjectBlock = allThree.size ? card("p-4 mb-4", `<h5 class="display fw-bold">All-Subjects Cluster</h5>${[...allThree].map((id) => {
+          const s = scoreStudent(sc.find((x) => x.studentId === id));
+          return mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `${avatar(s.name, 30)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${s.id}</div></div><span class="mono small">P${s.Physics} C${s.Chemistry} M${s.Maths}</span>`);
+        }).join("")}`) : "";
+        const subjectBlocks = SUBJECTS.map((sub) => {
+          const rows = getBottomCluster(sc, sub).filter((s) => !allThree.has(s.studentId)).map(scoreStudent).map((s, i) => mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft">${i + 1}</span>${avatar(s.name, 28)}<div class="flex-grow-1 text-truncate"><b>${esc(s.name)}</b><div class="small soft mono">${s.id}</div></div><b style="color:${SUBJECT_THEMES[sub].accent}">${s[sub]}</b>`)).join("") || `<div class="small soft">All weak ${sub} students are in the all-subjects group.</div>`;
+          return `<div class="col-lg-4">${card("p-3 h-100", `<h6 class="display fw-bold">${sub} Cluster</h6>${rows}`)}</div>`;
+        }).join("");
+        const noticeBlock = card("p-4 my-4", `<div class="d-flex justify-content-between"><h5 class="display fw-bold">Faculty Notice</h5><button class="btn btn-outline-light btn-sm" onclick="navigator.clipboard?.writeText(document.getElementById('notice').innerText)">Copy</button></div><pre id="notice" class="message-box bg-black bg-opacity-25 border border-secondary border-opacity-25 rounded-3 p-3 mono">${esc(notice)}</pre>`);
+        return `${schedule}${allSubjectBlock}<div class="row g-3">${subjectBlocks}</div>${noticeBlock}`;
+      }
+
+      function buildNotice(sc) {
+        const lines = [`The Rankers Academy - ${currentTest().name}`, `Cluster sessions for ${currentTest().date}`, ""];
+        SUBJECTS.forEach((sub) => {
+          lines.push(`${sub} (${CLUSTER_SCHEDULE[sub].time}) - ${CLUSTER_SCHEDULE[sub].faculty}`);
+          getBottomCluster(sc, sub).map(scoreStudent).forEach((s, i) => lines.push(`${i + 1}. ${s.name} (${s.id}) - ${s[sub]}/100`));
+          lines.push("");
+        });
+        return lines.join("\n");
+      }
+
+      function adminAttendance() {
+        return card("p-4 mb-4", `<h5 class="display fw-bold">Attendance Records</h5>${SUBJECTS.map((sub) => {
+          const cluster = getBottomCluster(currentScores(), sub);
+          const att = state.attendance[sub] || {};
+          const present = cluster.filter((s) => ["present", "late"].includes(att[s.studentId])).length;
+          const rate = Math.round((present / cluster.length) * 100);
+          const absent = cluster.map(scoreStudent).filter((s) => att[s.studentId] === "absent");
+          return mini("p-3 mb-3", `<div class="d-flex justify-content-between align-items-center"><div>${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft">${CLUSTER_SCHEDULE[sub].time}</div></div>${badge(`${rate}%`, rate >= 80 ? "text-bg-success" : rate >= 50 ? "text-bg-warning text-dark" : "text-bg-danger")}</div><div class="mt-2">${progress(rate, SUBJECT_THEMES[sub].accent)}</div>${absent.length ? `<div class="small text-danger mt-2">Absentees: ${absent.map((s) => `${esc(s.name)} (${s.id})`).join(", ")}</div>` : ""}`);
+        }).join("")}`);
+      }
+
+      function parentComms() {
+        const messages = state.commsTab === "post-test" ? postTestMessages() : absenceMessages();
+        const sent = messages.filter((m) => state.parentAlerts[msgId(m)]).length;
+        return `${card("p-4 mb-4", `<div class="d-flex align-items-center gap-3"><div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient" style="width:48px;height:48px">PA</div><div><h5 class="display fw-bold mb-0">Parent Communications</h5><div class="small soft">Auto-drafted WhatsApp/SMS - review before sending</div></div></div><div class="row g-2 mt-3"><div class="col"><button class="card bg-black bg-opacity-25 border-secondary rounded-3 p-3 w-100 text-start text-white ${state.commsTab === "post-test" ? "border-light" : ""}" onclick="state.commsTab='post-test';render()"><div class="small soft text-uppercase fw-bold">Post-Test Reports</div><b>${postTestMessages().length} drafts</b></button></div><div class="col"><button class="card bg-black bg-opacity-25 border-secondary rounded-3 p-3 w-100 text-start text-white ${state.commsTab === "absences" ? "border-light" : ""}" onclick="state.commsTab='absences';render()"><div class="small soft text-uppercase fw-bold">Absence Alerts</div><b>${absenceMessages().length} drafts</b></button></div></div><div class="d-flex justify-content-between align-items-center mt-3 small soft"><span>${sent}/${messages.length} sent - ${messages.length - sent} queued</span><button class="btn btn-brand btn-sm" onclick="sendAllMessages()" ${messages.length ? "" : "disabled"}>Send all queued</button></div>`)}
+        <div class="vstack gap-2">${messages.map(messageCard).join("") || card("p-4 text-center soft", "No drafts yet.")}</div>`;
+      }
+
+      function postTestMessages() {
+        const ranked = getRankings(currentScores());
+        return STUDENTS.map((stu) => {
+          const me = currentScores().find((s) => s.studentId === stu.id);
+          const rank = ranked.find((s) => s.studentId === stu.id).rank;
+          const flagged = SUBJECTS.filter((s) => getStudentClusterFlags(stu.id, currentScores())[s]);
+          const tone = rank <= 10 ? "Celebrate" : rank <= 25 ? "Positive" : flagged.length === 3 ? "Concerned" : "Support";
+          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/300 - Rank: #${rank} of ${STUDENTS.length}\nPhysics: ${me.Physics} - Chemistry: ${me.Chemistry} - Maths: ${me.Maths}\n\n`;
+          body += tone === "Celebrate" ? `Outstanding performance. ${stu.name.split(" ")[0]} cracked the top 10. Congratulations!` : tone === "Positive" ? `Solid showing this round. Encourage ${stu.name.split(" ")[0]} to keep the momentum.` : flagged.length ? `${stu.name.split(" ")[0]} will join faculty-led revision for ${flagged.join(", ")} after class. Please ensure attendance.` : "Steady performance. Keep up the consistency.";
+          body += "\n\n- The Rankers Academy";
+          return { studentId: stu.id, student: stu, tone, body, type: "post-test" };
+        });
+      }
+
+      function absenceMessages() {
+        const messages = [];
+        SUBJECTS.forEach((sub) => Object.entries(state.attendance[sub] || {}).forEach(([sid, status]) => {
+          if (status !== "absent") return;
+          const stu = STUDENTS.find((s) => s.id === sid);
+          messages.push({ studentId: sid, student: stu, subject: sub, type: "absence", tone: "Absence", body: `Dear Parent,\n\n${stu.name} was marked ABSENT for the ${sub} revision session today (${CLUSTER_SCHEDULE[sub].time}).\n\nThis was a faculty-led targeted coaching session for students who scored below the threshold. Missing it directly impacts ${stu.name.split(" ")[0]}'s performance.\n\nPlease discuss this at home.\n\n- ${CLUSTER_SCHEDULE[sub].faculty}\n  The Rankers Academy` });
+        }));
+        return messages;
+      }
+
+      function msgId(m) {
+        return `${m.studentId}-${m.type}-${m.subject || ""}-${state.testId}`;
+      }
+
+      function messageCard(m) {
+        const sent = state.parentAlerts[msgId(m)];
+        return card("p-3", `<div class="d-flex align-items-center gap-3">${avatar(m.student.name, 36)}<div class="flex-grow-1"><b>${esc(m.student.name)}</b> ${badge(m.tone, m.type === "absence" || m.tone === "Concerned" ? "text-bg-danger" : "text-bg-success")} ${m.subject ? badge(m.subject) : ""}<div class="small soft mono">${m.student.parentPhone}</div></div><button class="btn btn-sm btn-outline-light" onclick="toggleMessage('${msgId(m)}')">View</button>${sent ? badge("Sent", "text-bg-success") : `<button class="btn btn-sm btn-brand" onclick='sendMessage(${JSON.stringify(msgId(m))})'>Send</button>`}</div><div id="body-${msgId(m)}" class="mt-3 d-none"><pre class="message-box bg-black bg-opacity-25 border border-secondary border-opacity-25 rounded-3 p-3">${esc(m.body)}</pre>${sent ? `<div class="small soft mono">Sent at ${new Date(sent.sentAt).toLocaleString("en-IN")}</div>` : ""}</div>`);
+      }
+
+      function toggleMessage(id) {
+        document.getElementById(`body-${id}`)?.classList.toggle("d-none");
+      }
+
+      function sendMessage(id) {
+        const msg = [...postTestMessages(), ...absenceMessages()].find((m) => msgId(m) === id);
+        state.parentAlerts[id] = { ...msg, sentAt: new Date().toISOString(), testId: state.testId };
+        setStore(StorageKeys.parentAlerts, state.parentAlerts);
+        render();
+      }
+
+      function sendAllMessages() {
+        const messages = state.commsTab === "post-test" ? postTestMessages() : absenceMessages();
+        messages.forEach((m) => {
+          const id = msgId(m);
+          if (!state.parentAlerts[id]) state.parentAlerts[id] = { ...m, sentAt: new Date().toISOString(), testId: state.testId };
+        });
+        setStore(StorageKeys.parentAlerts, state.parentAlerts);
+        render();
+      }
+
+      function getAllThreeSet(scores) {
+        const clusters = Object.fromEntries(SUBJECTS.map((sub) => [sub, getBottomCluster(scores, sub).map((s) => s.studentId)]));
+        return new Set(STUDENTS.filter((s) => SUBJECTS.every((sub) => clusters[sub].includes(s.id))).map((s) => s.id));
+      }
     </script>
   </body>
 </html>
