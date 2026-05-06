@@ -242,12 +242,6 @@
       display: block;
     }
 
-    .my-tests-page .hero-orb {
-      width: 220px;
-      height: 220px;
-      filter: blur(55px);
-    }
-
     .my-tests-page .summary-orb {
       width: 180px;
       height: 180px;
@@ -296,26 +290,6 @@
     <div class="position-fixed top-0 end-0 m-3" style="z-index: 3">
       <span id="onlineBadge" class="badge rounded-pill"></span>
     </div>
-
-    <section class="card app-card p-4 mb-4 rise overflow-hidden position-relative">
-      <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle hero-orb"></div>
-      <div class="position-relative">
-        <div class="soft text-uppercase small fw-bold mono mb-2">Student Portal</div>
-        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center">
-          <div>
-            <h1 class="display fw-bold mb-1">My Tests</h1>
-            <div class="soft">Climb Smarter. <span class="brand-text">Rank Higher.</span></div>
-          </div>
-          <div class="d-flex align-items-center gap-3">
-            <div id="studentAvatar"></div>
-            <div>
-              <div id="studentName" class="fw-bold"></div>
-              <div id="studentMeta" class="small soft mono"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <div class="mb-2">
       <span id="levelBadge" class="badge rounded-pill text-bg-info"></span>
@@ -747,9 +721,6 @@
     );
     const refs = {
       onlineBadge: document.getElementById("onlineBadge"),
-      studentAvatar: document.getElementById("studentAvatar"),
-      studentName: document.getElementById("studentName"),
-      studentMeta: document.getElementById("studentMeta"),
       levelBadge: document.getElementById("levelBadge"),
       tabButtons: [...document.querySelectorAll("#studentTabs [data-tab]")],
       testButtons: [...document.querySelectorAll("#testSelector [data-test-id]")],
@@ -1047,18 +1018,11 @@
       bar.style.background = background;
     }
 
-    function renderHeader(student, xp) {
+    function renderHeader(xp) {
       refs.onlineBadge.className = `badge rounded-pill ${
         state.online ? "text-bg-success" : "text-bg-danger"
       }`;
       refs.onlineBadge.textContent = state.online ? "ONLINE" : "OFFLINE";
-
-      clearNode(refs.studentAvatar);
-      refs.studentAvatar.appendChild(createAvatar(student.name, 52));
-      refs.studentName.textContent = student.name;
-      refs.studentMeta.textContent = student.batch
-        ? `${student.id} - ${student.batch}`
-        : student.id;
       refs.levelBadge.textContent = `LVL ${xp.level}`;
 
       refs.tabButtons.forEach((button) => {
@@ -1396,7 +1360,7 @@
       const rank = ranked.find((entry) => entry.studentId === student.id).rank;
       const xp = calculateXP(student.id);
 
-      renderHeader(student, xp);
+      renderHeader(xp);
       renderHome(student, score, rank, ranked);
       renderAnalytics(student, score);
       renderRewards(student);
