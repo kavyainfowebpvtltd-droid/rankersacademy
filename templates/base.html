@@ -116,6 +116,14 @@
         </a>
 
         <a
+          href="{% url 'my_tests' %}"
+          class="{% if '/my-tests/' in request.path %}active{% endif %}"
+        >
+          <i class="bi bi-journal-check"></i>
+          <span>My Tests</span>
+        </a>
+
+        <a
           href="{% url 'subject_analysis' %}"
           class="{% if '/subject-analysis/' in request.path %}active{% endif %}"
         >

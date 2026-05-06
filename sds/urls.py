@@ -55,7 +55,8 @@ urlpatterns = [
     path("dashboard/admin-dashboard/", views.admin_dashboard, name="admin-dashboard"),
 
     # Student Module
-
+ 
+    path("my-tests/", views.my_tests, name="my_tests"),
     path("gap-analysis/", views.gap_analysis, name="gap_analysis"),
     path("subject-analysis/", views.subject_analysis, name="subject_analysis"),
     path("reports/", views.report, name="reports"),

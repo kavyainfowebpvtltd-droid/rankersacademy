@@ -1,0 +1,845 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="my-tests-page">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap");
+
+    .my-tests-page {
+      --brand-a: #ff8a00;
+      --brand-b: #e52e71;
+      --brand-c: #7c3aed;
+      --muted: #a1a1aa;
+      --panel: rgba(7, 7, 12, 0.78);
+      --panel-soft: rgba(255, 255, 255, 0.04);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --page-bg:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.2), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(229, 46, 113, 0.13), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(255, 138, 0, 0.1), transparent 60%),
+        #06060a;
+      padding: 1.5rem 0 2rem;
+      color: #fafafa;
+      background: var(--page-bg);
+      font-family: "DM Sans", system-ui, sans-serif;
+    }
+
+    .my-tests-page .display {
+      font-family: "Bricolage Grotesque", system-ui, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .my-tests-page .mono {
+      font-family: "DM Mono", monospace;
+    }
+
+    .my-tests-page .soft {
+      color: var(--muted);
+    }
+
+    .my-tests-page .brand-gradient {
+      background: linear-gradient(
+        135deg,
+        var(--brand-a),
+        var(--brand-b) 52%,
+        var(--brand-c)
+      );
+    }
+
+    .my-tests-page .brand-text {
+      background: linear-gradient(135deg, #ffb55a, #f72585 50%, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .my-tests-page .glass {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(18px) saturate(160%);
+    }
+
+    .my-tests-page .btn-brand {
+      --bs-btn-color: #fff;
+      --bs-btn-border-color: transparent;
+      --bs-btn-hover-color: #fff;
+      --bs-btn-hover-border-color: transparent;
+      background: linear-gradient(
+        135deg,
+        var(--brand-a),
+        var(--brand-b) 52%,
+        var(--brand-c)
+      );
+    }
+
+    .my-tests-page .hover-card {
+      transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .my-tests-page .hover-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.32) !important;
+      box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.32) !important;
+    }
+
+    .my-tests-page .subject-card:hover .progress-bar {
+      filter: brightness(1.18);
+    }
+
+    .my-tests-page .student-highlight {
+      --bs-table-bg: rgba(13, 202, 240, 0.22);
+      --bs-table-striped-bg: rgba(13, 202, 240, 0.28);
+      outline: 2px solid rgba(13, 202, 240, 0.7);
+      outline-offset: -2px;
+    }
+
+    .my-tests-page .rank-medal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    .my-tests-page .leaderboard-rank {
+      width: 1%;
+      white-space: nowrap;
+      padding-right: 0.25rem !important;
+    }
+
+    .my-tests-page .leaderboard-rank .rank-medal {
+      width: 1.4rem;
+      height: 1.4rem;
+      margin-left: 0.2rem;
+      background: transparent;
+      box-shadow: none;
+      font-size: 1rem;
+    }
+
+    .my-tests-page .leaderboard-student {
+      padding-left: 0.15rem !important;
+    }
+
+    .my-tests-page .reward-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      background: linear-gradient(
+        135deg,
+        var(--brand-a),
+        var(--brand-b) 52%,
+        var(--brand-c)
+      );
+      box-shadow: 0 0.5rem 1.4rem rgba(229, 46, 113, 0.22);
+      color: #fff;
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+
+    .my-tests-page .rise {
+      animation: my-tests-rise 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    }
+
+    @keyframes my-tests-rise {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .my-tests-page .app-card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 1.25rem;
+      box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+    }
+
+    .my-tests-page .app-card-soft {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1rem;
+    }
+
+    .my-tests-page .nav-pills .nav-link.active,
+    .my-tests-page .btn-brand:hover,
+    .my-tests-page .btn-brand:focus {
+      color: #fff;
+    }
+
+    .my-tests-page .nav-pills .nav-link {
+      color: #e5e7eb;
+      border-radius: 999px;
+    }
+
+    .my-tests-page .nav-pills .nav-link.active {
+      background: linear-gradient(
+        135deg,
+        var(--brand-a),
+        var(--brand-b) 52%,
+        var(--brand-c)
+      );
+    }
+
+    .my-tests-page .table-dark {
+      --bs-table-bg: transparent;
+      --bs-table-striped-bg: rgba(255, 255, 255, 0.04);
+      --bs-table-hover-bg: rgba(255, 255, 255, 0.07);
+      margin-bottom: 0;
+    }
+
+    .my-tests-page .progress {
+      overflow: hidden;
+    }
+
+    @media (max-width: 767.98px) {
+      .my-tests-page {
+        padding: 1rem 0 1.5rem;
+      }
+    }
+  </style>
+
+  <div class="container-fluid px-3 px-lg-4">
+    <div id="my-tests-app"></div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const SUBJECTS = ["Physics", "Chemistry", "Maths"];
+    const CLUSTER_SIZE = 12;
+    const SUBJECT_THEMES = {
+      Physics: {
+        from: "#0ea5e9",
+        to: "#06b6d4",
+        accent: "#22d3ee",
+        icon: "P",
+      },
+      Chemistry: {
+        from: "#d946ef",
+        to: "#ec4899",
+        accent: "#f472b6",
+        icon: "C",
+      },
+      Maths: {
+        from: "#f59e0b",
+        to: "#f97316",
+        accent: "#fb923c",
+        icon: "M",
+      },
+    };
+    const TOPICS = {
+      Physics: [
+        "Mechanics",
+        "Thermodynamics",
+        "Waves & Sound",
+        "Optics",
+        "Electrostatics",
+        "Current Electricity",
+        "Magnetism",
+        "Modern Physics",
+      ],
+      Chemistry: [
+        "Atomic Structure",
+        "Chemical Bonding",
+        "Thermochemistry",
+        "Equilibrium",
+        "Organic Reactions",
+        "Coordination Compounds",
+        "Electrochemistry",
+        "Periodic Table",
+      ],
+      Maths: [
+        "Algebra",
+        "Quadratic Equations",
+        "Trigonometry",
+        "Coordinate Geometry",
+        "Differential Calculus",
+        "Integral Calculus",
+        "Vectors & 3D",
+        "Probability",
+      ],
+    };
+    const STUDENT_NAMES = [
+      "Aarav Sharma",
+      "Vivaan Gupta",
+      "Aditya Patel",
+      "Vihaan Iyer",
+      "Arjun Reddy",
+      "Sai Kumar",
+      "Reyansh Joshi",
+      "Krishna Mehta",
+      "Ishaan Singh",
+      "Shaurya Malhotra",
+      "Ananya Verma",
+      "Diya Kapoor",
+      "Aanya Rao",
+      "Saanvi Bhat",
+      "Aaradhya Nair",
+      "Kavya Pillai",
+      "Pari Desai",
+      "Riya Khanna",
+      "Anika Bose",
+      "Navya Menon",
+      "Atharv Trivedi",
+      "Aarush Saxena",
+      "Dev Bhatia",
+      "Kabir Chopra",
+      "Yash Agarwal",
+      "Rudra Dube",
+      "Veer Naidu",
+      "Ayan Mishra",
+      "Aryan Tiwari",
+      "Aanav Goel",
+      "Myra Bansal",
+      "Aadhya Goyal",
+      "Sara Sinha",
+      "Ira Choudhury",
+      "Tara Pandey",
+      "Kiara Sehgal",
+      "Pihu Kashyap",
+      "Avni Mahajan",
+      "Anaya Shukla",
+      "Ishita Yadav",
+      "Daksh Dewan",
+      "Parth Bedi",
+      "Aaryan Bali",
+      "Rohit Anand",
+      "Karan Bajaj",
+      "Riya Sood",
+      "Tanvi Bhalla",
+      "Suhani Walia",
+      "Mahi Sethi",
+      "Naina Gera",
+    ];
+    const CURRENT_STUDENT = {
+      id: "{{ student.username|default:request.user.username|escapejs }}",
+      name: "{{ student.student_name|escapejs }}",
+      batch: "{{ student.batch|escapejs }}",
+      parentPhone: "{{ student.contact|escapejs }}",
+    };
+    const TESTS = [
+      {
+        id: "T01",
+        name: "Mock Test 01",
+        date: "15 Apr 2026",
+        shortDate: "Apr 15",
+      },
+      {
+        id: "T02",
+        name: "Mock Test 02",
+        date: "22 Apr 2026",
+        shortDate: "Apr 22",
+      },
+      {
+        id: "T03",
+        name: "Mock Test 03",
+        date: "29 Apr 2026",
+        shortDate: "Apr 29",
+      },
+    ];
+    const CLUSTER_SCHEDULE = {
+      Physics: {
+        time: "4:00 - 4:30 PM",
+        faculty: "Mr. Rajesh Kumar",
+      },
+      Chemistry: {
+        time: "4:30 - 5:00 PM",
+        faculty: "Dr. Priya Verma",
+      },
+      Maths: {
+        time: "5:00 - 5:30 PM",
+        faculty: "Mr. Amit Sharma",
+      },
+    };
+    const BADGES = [
+      ["first_test", "T1", "Mock Test Starter", "Completed the first academy test", "bronze"],
+      ["top_25", "R25", "Rank Booster", "Entered the top 25 merit band", "silver"],
+      ["top_10", "T10", "JEE Main Sprinter", "Cracked the top 10 in class", "gold"],
+      ["top_3", "T3", "NEET Podium Performer", "Reached the top 3 merit list", "gold"],
+      ["rank_1", "R1", "AIR Mindset Champion", "Held rank #1 on a test", "platinum"],
+      ["climb_5", "UP5", "Comeback Climber", "Climbed 5+ ranks in one test", "silver"],
+      ["streak_3", "S3", "Consistency Streak", "Improved across 3 tests in a row", "gold"],
+      ["subject_90", "90+", "Subject Mastery Badge", "Scored 90+ in any subject", "gold"],
+      ["attend_perfect", "ATT", "Revision Warrior", "Attended every assigned booster session", "silver"],
+      ["no_cluster", "CLR", "Concept Clear Badge", "Stayed out of coaching clusters this test", "bronze"],
+    ].map(([id, icon, name, desc, tier]) => ({ id, icon, name, desc, tier }));
+
+    const StorageKeys = {
+      attendance: (testId) => `tra4_att:${testId}`,
+    };
+
+    const studentsSeed = STUDENT_NAMES.map((name, i) => ({
+      id: `TRA${String(i + 1).padStart(3, "0")}`,
+      name,
+      batch: i < 25 ? "Alpha" : "Star-01",
+      parentPhone: `+91 9${String(800000000 + i * 13579).slice(0, 9)}`,
+    }));
+
+    studentsSeed[0] = {
+      ...studentsSeed[0],
+      id: CURRENT_STUDENT.id || studentsSeed[0].id,
+      name: CURRENT_STUDENT.name || studentsSeed[0].name,
+      batch: CURRENT_STUDENT.batch || studentsSeed[0].batch,
+      parentPhone: CURRENT_STUDENT.parentPhone || studentsSeed[0].parentPhone,
+    };
+
+    const STUDENTS = studentsSeed;
+    const CURRENT_STUDENT_ID = STUDENTS[0].id;
+    const state = {
+      studentTab: "home",
+      studentLeaderboardOpen: false,
+      testId: TESTS[TESTS.length - 1].id,
+      online: navigator.onLine,
+      attendance: blankAttendance(),
+    };
+    const allScores = Object.fromEntries(
+      TESTS.map((test) => [test.id, generateScores(test.id)]),
+    );
+    const app = document.getElementById("my-tests-app");
+
+    function blankAttendance() {
+      return { Physics: {}, Chemistry: {}, Maths: {}, finalized: {} };
+    }
+
+    function getStore(key, fallback) {
+      try {
+        return JSON.parse(localStorage.getItem(key)) ?? fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function loadAttendance() {
+      state.attendance = getStore(
+        StorageKeys.attendance(state.testId),
+        blankAttendance(),
+      );
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(
+        /[&<>"']/g,
+        (char) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;",
+          })[char],
+      );
+    }
+
+    function hashCode(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i += 1) {
+        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+      }
+      return Math.abs(hash);
+    }
+
+    function generateScores(testId) {
+      const testHash = hashCode(testId);
+      return STUDENTS.map((student) => {
+        const studentHash = hashCode(student.id);
+        const Physics = Math.max(
+          18,
+          Math.min(99, (studentHash % 65) + 25 + ((testHash + studentHash) % 22) - 11),
+        );
+        const Chemistry = Math.max(
+          18,
+          Math.min(99, ((studentHash * 7) % 65) + 25 + ((testHash * 3 + studentHash) % 22) - 11),
+        );
+        const Maths = Math.max(
+          18,
+          Math.min(99, ((studentHash * 13) % 65) + 25 + ((testHash * 5 + studentHash) % 22) - 11),
+        );
+        return {
+          studentId: student.id,
+          testId,
+          Physics,
+          Chemistry,
+          Maths,
+          total: Physics + Chemistry + Maths,
+        };
+      });
+    }
+
+    function generateTopicMastery(studentId, testId, subject) {
+      return TOPICS[subject].map((topic, index) => {
+        const score =
+          (hashCode(studentId) +
+            hashCode(testId) +
+            hashCode(subject) +
+            hashCode(topic) +
+            index * 7) %
+          100;
+        return { topic, score: Math.max(15, Math.min(98, score)) };
+      });
+    }
+
+    function currentScores() {
+      return allScores[state.testId];
+    }
+
+    function currentTest() {
+      return TESTS.find((test) => test.id === state.testId);
+    }
+
+    function scoreStudent(score) {
+      return { ...score, ...STUDENTS.find((student) => student.id === score.studentId) };
+    }
+
+    function getRankings(scores, key = "total") {
+      return [...scores]
+        .sort((left, right) => right[key] - left[key])
+        .map((score, index) => ({ ...score, rank: index + 1 }));
+    }
+
+    function getBottomCluster(scores, subject, count = CLUSTER_SIZE) {
+      return [...scores]
+        .sort((left, right) => left[subject] - right[subject])
+        .slice(0, count);
+    }
+
+    function getStudentClusterFlags(studentId, scores) {
+      return Object.fromEntries(
+        SUBJECTS.map((subject) => [
+          subject,
+          getBottomCluster(scores, subject).some(
+            (score) => score.studentId === studentId,
+          ),
+        ]),
+      );
+    }
+
+    function calculateXP(studentId) {
+      let xp = 0;
+      TESTS.forEach((test, index) => {
+        const scores = allScores[test.id];
+        const mine = scores.find((score) => score.studentId === studentId);
+        const rank = getRankings(scores).find(
+          (score) => score.studentId === studentId,
+        ).rank;
+        xp += Math.floor(mine.total / 3);
+        xp +=
+          rank === 1
+            ? 200
+            : rank <= 3
+              ? 120
+              : rank <= 10
+                ? 60
+                : rank <= 25
+                  ? 25
+                  : 0;
+
+        if (index) {
+          const previousRank = getRankings(allScores[TESTS[index - 1].id]).find(
+            (score) => score.studentId === studentId,
+          ).rank;
+          if (previousRank > rank) xp += (previousRank - rank) * 10;
+        }
+      });
+
+      const level = Math.floor(Math.sqrt(xp / 30)) + 1;
+      const nextLevelXP = level * level * 30;
+      const prevLevelXP = (level - 1) * (level - 1) * 30;
+      return {
+        xp,
+        level,
+        progress: (xp - prevLevelXP) / (nextLevelXP - prevLevelXP),
+      };
+    }
+
+    function getEarnedBadges(studentId) {
+      const earned = new Set(["first_test"]);
+      let bestRank = 999;
+      let ever90 = false;
+      let climbedFive = false;
+      let streak = 0;
+
+      TESTS.forEach((test, index) => {
+        const scores = allScores[test.id];
+        const mine = scores.find((score) => score.studentId === studentId);
+        const rank = getRankings(scores).find(
+          (score) => score.studentId === studentId,
+        ).rank;
+        bestRank = Math.min(bestRank, rank);
+        ever90 ||= mine.Physics >= 90 || mine.Chemistry >= 90 || mine.Maths >= 90;
+
+        if (index) {
+          const previousRank = getRankings(allScores[TESTS[index - 1].id]).find(
+            (score) => score.studentId === studentId,
+          ).rank;
+          if (previousRank - rank >= 5) climbedFive = true;
+          streak = previousRank > rank ? streak + 1 : 0;
+        }
+      });
+
+      if (bestRank <= 25) earned.add("top_25");
+      if (bestRank <= 10) earned.add("top_10");
+      if (bestRank <= 3) earned.add("top_3");
+      if (bestRank === 1) earned.add("rank_1");
+      if (climbedFive) earned.add("climb_5");
+      if (streak >= 2) earned.add("streak_3");
+      if (ever90) earned.add("subject_90");
+
+      const flags = getStudentClusterFlags(studentId, allScores[TESTS[TESTS.length - 1].id]);
+      const flaggedSubjects = SUBJECTS.filter((subject) => flags[subject]);
+      if (!flaggedSubjects.length) earned.add("no_cluster");
+      if (
+        flaggedSubjects.length &&
+        flaggedSubjects.every((subject) =>
+          ["present", "late"].includes(state.attendance[subject]?.[studentId]),
+        )
+      ) {
+        earned.add("attend_perfect");
+      }
+
+      return earned;
+    }
+
+    function calculateStreaks(studentId) {
+      let improveStreak = 0;
+      for (let index = TESTS.length - 1; index > 0; index -= 1) {
+        const currentRank = getRankings(allScores[TESTS[index].id]).find(
+          (score) => score.studentId === studentId,
+        ).rank;
+        const previousRank = getRankings(allScores[TESTS[index - 1].id]).find(
+          (score) => score.studentId === studentId,
+        ).rank;
+        if (previousRank > currentRank) improveStreak += 1;
+        else break;
+      }
+      return { improveStreak };
+    }
+
+    function avatar(name, size = 38) {
+      const initials = name
+        .split(" ")
+        .map((part) => part[0])
+        .slice(0, 2)
+        .join("");
+      return `<span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient flex-shrink-0" style="width:${size}px;height:${size}px;font-size:${Math.max(10, size * 0.32)}px">${esc(initials)}</span>`;
+    }
+
+    function badge(text, tone = "text-bg-secondary", style = "") {
+      const map = {
+        present: "text-bg-success",
+        late: "text-bg-warning text-dark",
+        absent: "text-bg-danger",
+        pending: "text-bg-secondary",
+      };
+      return `<span class="badge rounded-pill ${map[tone] || tone}" style="${style}">${esc(text)}</span>`;
+    }
+
+    function progress(value, color) {
+      return `<div class="progress bg-black bg-opacity-25" style="height:8px"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:${Math.max(0, Math.min(100, value))}%;background:${color}"></div></div>`;
+    }
+
+    function subjectIcon(subject) {
+      const theme = SUBJECT_THEMES[subject];
+      return `<span class="d-inline-flex align-items-center justify-content-center rounded-3 text-white fw-bold flex-shrink-0" style="width:36px;height:36px;background:linear-gradient(135deg,${theme.from},${theme.to})">${theme.icon}</span>`;
+    }
+
+    function card(classes = "p-3", body = "") {
+      return `<div class="card app-card hover-card ${classes}">${body}</div>`;
+    }
+
+    function mini(classes = "p-3", body = "") {
+      return `<div class="card app-card-soft hover-card ${classes}">${body}</div>`;
+    }
+
+    function kpi(label, value, extra = "") {
+      return `<div class="col-6 col-lg-3">${mini("p-3 h-100", `<div class="soft small text-uppercase fw-bold mono">${esc(label)}</div><div class="display fs-4 fw-bold">${esc(value)}</div><div class="small soft">${esc(extra)}</div>`)}</div>`;
+    }
+
+    function rankMedal(rank) {
+      const medals = {
+        1: { icon: "&#129351;", label: "Gold medal" },
+        2: { icon: "&#129352;", label: "Silver medal" },
+        3: { icon: "&#129353;", label: "Bronze medal" },
+      };
+      const medal = medals[rank];
+      if (!medal) return "";
+      return `<span class="rank-medal" role="img" aria-label="${medal.label}" title="${medal.label}">${medal.icon}</span>`;
+    }
+
+    function leaderboardRows(ranked, highlightId, collapsed) {
+      if (!collapsed) return ranked;
+      const topFive = ranked.slice(0, 5);
+      const mine = ranked.find((row) => row.studentId === highlightId);
+      return mine && !topFive.some((row) => row.studentId === highlightId)
+        ? [...topFive, mine]
+        : topFive;
+    }
+
+    function leaderboard(ranked, highlightId = "", collapsible = false) {
+      const rows = leaderboardRows(
+        ranked,
+        highlightId,
+        collapsible && !state.studentLeaderboardOpen,
+      );
+      const footer = collapsible
+        ? `<div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="small soft">${state.studentLeaderboardOpen ? `Showing all ${ranked.length} students` : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`}</div>
+            <button class="btn btn-outline-light btn-sm rounded-pill" onclick="window.myTestsToggleLeaderboard()">${state.studentLeaderboardOpen ? "Show Less" : "View All"}</button>
+          </div>`
+        : "";
+
+      return card(
+        "p-3 mb-4",
+        `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${rows
+          .map((row) => {
+            const student = STUDENTS.find((entry) => entry.id === row.studentId);
+            const mine = student.id === highlightId;
+            return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${row.rank}</span>${rankMedal(row.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(student.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(student.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(student.id)}</div></div></div></td><td>${row.Physics}</td><td>${row.Chemistry}</td><td>${row.Maths}</td><td><b>${row.total}</b></td></tr>`;
+          })
+          .join("")}</tbody></table></div>${footer}`,
+      );
+    }
+
+    function coaching(studentId, flaggedSubjects) {
+      const allSubjects = flaggedSubjects.length === 3;
+      return card(
+        "p-3 mb-4",
+        `<div class="d-flex justify-content-between align-items-start"><div><h5 class="display fw-bold mb-1">${allSubjects ? "All-Subjects Coaching Cluster" : "Coaching Cluster"}</h5><div class="small soft">${allSubjects ? "4:00 - 5:30 PM - 90 minutes" : flaggedSubjects.map((subject) => `${subject}: ${CLUSTER_SCHEDULE[subject].time}`).join(" | ")}</div></div>${badge(allSubjects ? "90 MIN" : "30 MIN", "text-bg-primary")}</div><div class="row g-2 mt-2">${flaggedSubjects.map((subject) => `<div class="col-md-4">${mini("p-2 d-flex align-items-center gap-2", `${subjectIcon(subject)}<div class="flex-grow-1"><b>${subject}</b><div class="small soft">${CLUSTER_SCHEDULE[subject].faculty}</div></div>${badge(state.attendance[subject]?.[studentId] || "pending", state.attendance[subject]?.[studentId] || "pending")}`)}</div>`).join("")}</div>`,
+      );
+    }
+
+    function subjectCard(subject, score, flagged) {
+      const theme = SUBJECT_THEMES[subject];
+      const average = Math.round(
+        currentScores().reduce((sum, entry) => sum + entry[subject], 0) / STUDENTS.length,
+      );
+      const rank = getRankings(currentScores(), subject).find(
+        (entry) => entry.studentId === score.studentId,
+      ).rank;
+      const delta = score[subject] - average;
+      const boostBadge =
+        subject === "Maths" && flagged
+          ? ` ${badge("Boost", "text-bg-warning text-dark")}`
+          : "";
+
+      return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(subject)}<div><b>${subject}</b>${boostBadge}<div class="small soft">Subject rank #${rank}</div></div></div><div class="display fs-2 fw-bold" style="color:${theme.accent}">${score[subject]}</div>${progress(score[subject], theme.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${average}/100</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>`)}</div>`;
+    }
+
+    function studentHome(student, score, rank, ranked) {
+      const flags = getStudentClusterFlags(student.id, currentScores());
+      const flaggedSubjects = SUBJECTS.filter((subject) => flags[subject]);
+      const testIndex = TESTS.findIndex((test) => test.id === state.testId);
+      const previousRank = testIndex
+        ? getRankings(allScores[TESTS[testIndex - 1].id]).find(
+            (entry) => entry.studentId === student.id,
+          ).rank
+        : null;
+      const delta = previousRank ? previousRank - rank : null;
+
+      return `${card("p-4 mb-4 rise position-relative overflow-hidden", `<div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:180px;height:180px;filter:blur(45px)"></div><div class="position-relative">${badge(rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD")}<h2 class="display fw-bold mt-2 mb-0" style="font-size:4rem">#${rank}</h2><div class="soft">of ${STUDENTS.length} students - ${esc(currentTest().name)}</div><div class="row g-2 mt-3">${kpi("Total", `${score.total}/300`, delta === null ? "First test" : delta > 0 ? `Up ${delta} ranks` : delta < 0 ? `Down ${Math.abs(delta)} ranks` : "No rank change")}${kpi("Cluster", flaggedSubjects.length ? flaggedSubjects.join(", ") : "None", flaggedSubjects.length === 3 ? "All-subjects session" : "Targeted revision")}</div></div>`)}
+        ${flaggedSubjects.length ? coaching(student.id, flaggedSubjects) : ""}
+        <h5 class="display fw-bold">Subject Performance</h5>
+        <div class="row g-3 mb-4">${SUBJECTS.map((subject) => subjectCard(subject, score, flags[subject])).join("")}</div>
+        <h5 class="display fw-bold">Top Performers</h5>
+        <div class="d-flex gap-2 overflow-auto pb-1 mb-4">${ranked.slice(0, 5).map((entry) => {
+          const topStudent = STUDENTS.find((studentItem) => studentItem.id === entry.studentId);
+          return mini("p-3 text-center flex-shrink-0 position-relative", `${rankMedal(entry.rank)}${avatar(topStudent.name, 42)}<div class="fw-bold mt-2 text-truncate" style="width:120px">${esc(topStudent.name)}</div><div class="mono soft">#${entry.rank} - ${entry.total}</div>`);
+        }).join("")}</div>
+        ${leaderboard(ranked, student.id, true)}`;
+    }
+
+    function studentAnalytics(student, score) {
+      const ranks = TESTS.map(
+        (test) => getRankings(allScores[test.id]).find((entry) => entry.studentId === student.id).rank,
+      );
+      return `${card("p-4 mb-4", `<h5 class="display fw-bold">Rank Journey</h5><div class="row g-2">${TESTS.map((test, index) => kpi(test.shortDate, `#${ranks[index]}`, index ? `${ranks[index - 1] - ranks[index] >= 0 ? "Up" : "Down"} ${Math.abs(ranks[index - 1] - ranks[index])}` : "Baseline")).join("")}</div>`)}
+        <h5 class="display fw-bold">Topic Analytics</h5>
+        <div class="vstack gap-3 mb-4">${SUBJECTS.map((subject) => {
+          const theme = SUBJECT_THEMES[subject];
+          return card("p-3", `<div class="d-flex align-items-center justify-content-between mb-2"><div class="d-flex align-items-center gap-2">${subjectIcon(subject)}<div><b style="color:${theme.accent}">${subject}</b><div class="small soft">Topic-wise mastery</div></div></div><span class="mono">${score[subject]}/100</span></div>${generateTopicMastery(student.id, state.testId, subject).map((topicItem) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(topicItem.topic)}</span><span class="soft">${topicItem.score}%</span></div>${progress(topicItem.score, theme.accent)}</div>`).join("")}`);
+        }).join("")}</div>`;
+    }
+
+    function studentRewards(student, xp) {
+      const earned = getEarnedBadges(student.id);
+      const streak = calculateStreaks(student.id).improveStreak;
+      return `${card("p-4 mb-4", `<div class="d-flex justify-content-between"><div><h5 class="display fw-bold">Level ${xp.level}</h5><div class="soft small">${xp.xp} XP earned</div></div>${badge(`${streak} TEST STREAK`, "text-bg-warning text-dark")}</div><div class="mt-3">${progress(Math.round(xp.progress * 100), "linear-gradient(135deg,#ff8a00,#e52e71,#7c3aed)")}</div>`)}
+        <div class="row g-3">${BADGES.map((badgeItem) => `<div class="col-md-6">${card(`p-3 h-100 ${earned.has(badgeItem.id) ? "" : "opacity-50"}`, `<div class="d-flex gap-3"><div class="reward-icon">${esc(badgeItem.icon)}</div><div><b>${esc(badgeItem.name)}</b><div class="small soft">${esc(badgeItem.desc)}</div><div class="small mono soft text-uppercase">${earned.has(badgeItem.id) ? "earned" : "locked"} - ${esc(badgeItem.tier)}</div></div></div>`)}</div>`).join("")}</div>`;
+    }
+
+    function render() {
+      const student = STUDENTS.find((entry) => entry.id === CURRENT_STUDENT_ID) || STUDENTS[0];
+      const score = currentScores().find((entry) => entry.studentId === student.id);
+      const ranked = getRankings(currentScores());
+      const rank = ranked.find((entry) => entry.studentId === student.id).rank;
+      const xp = calculateXP(student.id);
+
+      app.innerHTML = `<div class="position-fixed top-0 end-0 m-3" style="z-index:3">${badge(state.online ? "ONLINE" : "OFFLINE", state.online ? "text-bg-success" : "text-bg-danger")}</div>
+        ${card("p-4 mb-4 rise overflow-hidden position-relative", `<div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:220px;height:220px;filter:blur(55px)"></div><div class="position-relative"><div class="soft text-uppercase small fw-bold mono mb-2">Student Portal</div><div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center"><div><h1 class="display fw-bold mb-1">My Tests</h1><div class="soft">Climb Smarter. <span class="brand-text">Rank Higher.</span></div></div><div class="d-flex align-items-center gap-3">${avatar(student.name, 52)}<div><div class="fw-bold">${esc(student.name)}</div><div class="small soft mono">${esc(student.id)}${student.batch ? ` - ${esc(student.batch)}` : ""}</div></div></div></div></div>`)}
+        <div class="mb-2">${badge(`LVL ${xp.level}`, "text-bg-info")}</div>
+        <ul class="nav nav-pills bg-black bg-opacity-25 rounded-pill p-1 mb-3">
+          ${[
+            ["home", "Home"],
+            ["analytics", "Analytics"],
+            ["rewards", "Rewards"],
+          ].map(([id, label]) => `<li class="nav-item flex-fill"><button class="nav-link w-100 ${state.studentTab === id ? "active" : ""}" onclick="window.myTestsSetTab('${id}')">${label}</button></li>`).join("")}
+        </ul>
+        <div class="d-flex gap-2 overflow-auto pb-1 mb-3">${TESTS.map((test) => `<button class="btn btn-sm ${state.testId === test.id ? "btn-brand" : "btn-outline-light"} rounded-pill mono flex-shrink-0" onclick="window.myTestsSetTest('${test.id}')">${test.name} - ${test.date}</button>`).join("")}</div>
+        ${state.studentTab === "home" ? studentHome(student, score, rank, ranked) : state.studentTab === "analytics" ? studentAnalytics(student, score) : studentRewards(student, xp)}`;
+    }
+
+    window.myTestsSetTab = (tab) => {
+      state.studentTab = tab;
+      render();
+    };
+
+    window.myTestsSetTest = (testId) => {
+      state.testId = testId;
+      state.studentLeaderboardOpen = false;
+      loadAttendance();
+      render();
+    };
+
+    window.myTestsToggleLeaderboard = () => {
+      state.studentLeaderboardOpen = !state.studentLeaderboardOpen;
+      render();
+    };
+
+    window.addEventListener("online", () => {
+      state.online = true;
+      render();
+    });
+
+    window.addEventListener("offline", () => {
+      state.online = false;
+      render();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)) return;
+      if (["1", "2", "3"].includes(event.key)) {
+        state.studentTab = ["home", "analytics", "rewards"][Number(event.key) - 1];
+        render();
+      }
+    });
+
+    loadAttendance();
+    render();
+  })();
+</script>
+{% endblock %}

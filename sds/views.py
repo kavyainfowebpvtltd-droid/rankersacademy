@@ -3555,6 +3555,20 @@ def submit_self_diagnostic(request):
 
 
 @login_required
+def my_tests(request):
+    if not hasattr(request.user, "student"):
+        return redirect("login")
+
+    return render(
+        request,
+        "my-tests.html",
+        {
+            "student": request.user.student,
+        },
+    )
+
+
+@login_required
 def subject_analysis(request):
     if not hasattr(request.user, "student"):
         return redirect("login")
