@@ -601,9 +601,6 @@
               <tr>
                 <th>#</th>
                 <th>Student</th>
-                <th id="leaderboardSectionHead1">SEC 1</th>
-                <th id="leaderboardSectionHead2">SEC 2</th>
-                <th id="leaderboardSectionHead3">SEC 3</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -722,9 +719,6 @@
           </div>
         </div>
       </td>
-      <td class="leaderboard-physics"></td>
-      <td class="leaderboard-chemistry"></td>
-      <td class="leaderboard-maths"></td>
       <td><b class="leaderboard-total"></b></td>
     </tr>
   </template>
@@ -923,11 +917,6 @@
       leaderboardBody: document.getElementById("leaderboardBody"),
       leaderboardFooterText: document.getElementById("leaderboardFooterText"),
       leaderboardToggleBtn: document.getElementById("leaderboardToggleBtn"),
-      leaderboardSectionHeads: [
-        document.getElementById("leaderboardSectionHead1"),
-        document.getElementById("leaderboardSectionHead2"),
-        document.getElementById("leaderboardSectionHead3"),
-      ],
       rankJourneyRow: document.getElementById("rankJourneyRow"),
       analyticsBreakdownTitle: document.getElementById("analyticsBreakdownTitle"),
       topicAnalyticsContainer: document.getElementById("topicAnalyticsContainer"),
@@ -1756,11 +1745,6 @@
       const ranked = currentLeaderboard();
       refs.leaderboardCountBadge.textContent = `${ranked.length} students`;
       clearNode(refs.leaderboardBody);
-      const headerItems = (test?.sectionBreakdown || []).slice(0, 3);
-      refs.leaderboardSectionHeads.forEach((head, index) => {
-        const item = headerItems[index];
-        head.textContent = item ? item.shortLabel || item.name.slice(0, 3).toUpperCase() : `SEC ${index + 1}`;
-      });
 
       const rows = leaderboardRows(
         ranked,
@@ -1794,9 +1778,6 @@
           );
         node.querySelector(".leaderboard-name").textContent = row.studentName || student.name || row.studentId;
         node.querySelector(".leaderboard-id").textContent = row.studentRef || student.studentRef || student.id || row.studentId;
-        node.querySelector(".leaderboard-physics").textContent = row.sectionScores?.[0]?.score ?? "-";
-        node.querySelector(".leaderboard-chemistry").textContent = row.sectionScores?.[1]?.score ?? "-";
-        node.querySelector(".leaderboard-maths").textContent = row.sectionScores?.[2]?.score ?? "-";
         node.querySelector(".leaderboard-total").textContent = `${row.score ?? 0}/${row.totalMarks || test?.totalMarks || 0}`;
 
         if (mine) {
