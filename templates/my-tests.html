@@ -5,20 +5,20 @@
     @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap");
 
     .my-tests-page {
-      --brand-a: #ff8a00;
-      --brand-b: #e52e71;
-      --brand-c: #7c3aed;
-      --muted: #a1a1aa;
-      --panel: rgba(7, 7, 12, 0.78);
-      --panel-soft: rgba(255, 255, 255, 0.04);
-      --panel-border: rgba(255, 255, 255, 0.12);
+      --brand-a: #2563eb;
+      --brand-b: #0d6efd;
+      --brand-c: #06b6d4;
+      --muted: #64748b;
+      --panel: #ffffff;
+      --panel-soft: #f8fbff;
+      --panel-border: #e5edf8;
       --page-bg:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.2), transparent 60%),
-        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(229, 46, 113, 0.13), transparent 60%),
-        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(255, 138, 0, 0.1), transparent 60%),
-        #06060a;
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.09), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(14, 165, 233, 0.08), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(13, 110, 253, 0.06), transparent 60%),
+        #f4f9fc;
       padding: 1.5rem 0 2rem;
-      color: #fafafa;
+      color: #0f172a;
       background: var(--page-bg);
       font-family: "DM Sans", system-ui, sans-serif;
     }
@@ -46,7 +46,7 @@
     }
 
     .my-tests-page .brand-text {
-      background: linear-gradient(135deg, #ffb55a, #f72585 50%, #a78bfa);
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -55,7 +55,7 @@
     .my-tests-page .glass {
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      backdrop-filter: blur(18px) saturate(160%);
+      backdrop-filter: none;
     }
 
     .my-tests-page .btn-brand {
@@ -80,8 +80,8 @@
 
     .my-tests-page .hover-card:hover {
       transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.32) !important;
-      box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.32) !important;
+      border-color: rgba(37, 99, 235, 0.2) !important;
+      box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.12) !important;
     }
 
     .my-tests-page .subject-card:hover .progress-bar {
@@ -89,9 +89,9 @@
     }
 
     .my-tests-page .student-highlight {
-      --bs-table-bg: rgba(13, 202, 240, 0.22);
-      --bs-table-striped-bg: rgba(13, 202, 240, 0.28);
-      outline: 2px solid rgba(13, 202, 240, 0.7);
+      --bs-table-bg: rgba(59, 130, 246, 0.12);
+      --bs-table-striped-bg: rgba(59, 130, 246, 0.16);
+      outline: 2px solid rgba(37, 99, 235, 0.28);
       outline-offset: -2px;
     }
 
@@ -102,8 +102,8 @@
       width: 1.9rem;
       height: 1.9rem;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+      background: #eef5ff;
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
       font-size: 1.25rem;
       line-height: 1;
     }
@@ -141,7 +141,7 @@
         var(--brand-b) 52%,
         var(--brand-c)
       );
-      box-shadow: 0 0.5rem 1.4rem rgba(229, 46, 113, 0.22);
+      box-shadow: 0 0.5rem 1.4rem rgba(37, 99, 235, 0.18);
       color: #fff;
       font-size: 1.15rem;
       line-height: 1;
@@ -167,12 +167,12 @@
       background: var(--panel);
       border: 1px solid var(--panel-border);
       border-radius: 1.25rem;
-      box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
     }
 
     .my-tests-page .app-card-soft {
-      background: rgba(0, 0, 0, 0.22);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--panel-soft);
+      border: 1px solid #edf2f7;
       border-radius: 1rem;
     }
 
@@ -183,8 +183,9 @@
     }
 
     .my-tests-page .nav-pills .nav-link {
-      color: #e5e7eb;
+      color: #475569;
       border-radius: 999px;
+      font-weight: 600;
     }
 
     .my-tests-page .nav-pills .nav-link.active {
@@ -198,13 +199,59 @@
 
     .my-tests-page .table-dark {
       --bs-table-bg: transparent;
-      --bs-table-striped-bg: rgba(255, 255, 255, 0.04);
-      --bs-table-hover-bg: rgba(255, 255, 255, 0.07);
+      --bs-table-color: #0f172a;
+      --bs-table-border-color: #e5edf8;
+      --bs-table-striped-color: #0f172a;
+      --bs-table-striped-bg: #f8fbff;
+      --bs-table-hover-color: #0f172a;
+      --bs-table-hover-bg: #eef5ff;
       margin-bottom: 0;
     }
 
     .my-tests-page .progress {
       overflow: hidden;
+      background: #e8edf3;
+    }
+
+    .my-tests-page .nav-pills.bg-black.bg-opacity-25 {
+      background: #eef5ff !important;
+      border: 1px solid #dbeafe;
+    }
+
+    .my-tests-page .btn-outline-light {
+      color: #2563eb;
+      background: #ffffff;
+      border-color: #dbe4f0;
+      font-weight: 600;
+    }
+
+    .my-tests-page .btn-outline-light:hover,
+    .my-tests-page .btn-outline-light:focus {
+      color: #1d4ed8;
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .my-tests-page .btn-brand {
+      border-color: transparent;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+
+    .my-tests-page .table thead th {
+      background: #fbfdff;
+      color: #64748b;
+      border-bottom-color: #e5edf8;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .my-tests-page .table tbody td {
+      color: #0f172a;
+      border-bottom-color: #eef2f7;
+    }
+
+    .my-tests-page .text-white {
+      color: #ffffff !important;
     }
 
     @media (max-width: 767.98px) {
