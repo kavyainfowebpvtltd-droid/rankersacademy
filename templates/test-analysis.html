@@ -1,13 +1,10 @@
 <!doctype html>
-<html lang="en" data-bs-theme="light">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Portal | The Rankers Academy</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap");
 
@@ -15,20 +12,17 @@
         --brand-a: #2563eb;
         --brand-b: #0d6efd;
         --brand-c: #06b6d4;
-        --muted: #64748b;
-        --panel: #ffffff;
-        --panel-soft: #f8fbff;
-        --panel-border: #e5edf8;
+        --muted: #a1a1aa;
       }
 
       body {
         min-height: 100vh;
-        color: #0f172a;
+        color: #fafafa;
         background:
-          radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.09), transparent 60%),
-          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(14, 165, 233, 0.08), transparent 60%),
-          radial-gradient(ellipse 60% 50% at 0% 100%, rgba(13, 110, 253, 0.06), transparent 60%),
-          #f4f9fc;
+          radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, .22), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(6, 182, 212, .13), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 0% 100%, rgba(13, 110, 253, .1), transparent 60%),
+          #06060a;
         font-family: "DM Sans", system-ui, sans-serif;
       }
 
@@ -37,15 +31,14 @@
       .soft { color: var(--muted); }
       .brand-gradient { background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c)); }
       .brand-text {
-        background: linear-gradient(135deg, var(--brand-a), var(--brand-c));
+        background: linear-gradient(135deg, #93c5fd, #38bdf8 50%, #67e8f9);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
       }
       .glass {
-        background: rgba(255, 255, 255, .78);
+        background: rgba(7, 7, 12, .78);
         backdrop-filter: blur(18px) saturate(160%);
-        box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
       }
       .btn-brand {
         --bs-btn-color: #fff;
@@ -53,8 +46,6 @@
         --bs-btn-hover-color: #fff;
         --bs-btn-hover-border-color: transparent;
         background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
-        border-color: transparent;
-        box-shadow: 0 10px 24px rgba(37, 99, 235, .18);
       }
       .app-shell { min-height: 100vh; }
       .sticky-head { position: sticky; top: 0; z-index: 5; }
@@ -63,16 +54,16 @@
       }
       .hover-card:hover {
         transform: translateY(-2px);
-        border-color: rgba(37, 99, 235, .2) !important;
-        box-shadow: 0 1rem 2rem rgba(15, 23, 42, .12) !important;
+        border-color: rgba(255, 255, 255, .32) !important;
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, .32) !important;
       }
       .subject-card:hover .progress-bar {
         filter: brightness(1.18);
       }
       .student-highlight {
-        --bs-table-bg: rgba(59, 130, 246, .12);
-        --bs-table-striped-bg: rgba(59, 130, 246, .16);
-        outline: 2px solid rgba(37, 99, 235, .28);
+        --bs-table-bg: rgba(13, 202, 240, .22);
+        --bs-table-striped-bg: rgba(13, 202, 240, .28);
+        outline: 2px solid rgba(13, 202, 240, .7);
         outline-offset: -2px;
       }
       .rank-medal {
@@ -82,8 +73,8 @@
         width: 1.9rem;
         height: 1.9rem;
         border-radius: 999px;
-        background: #eef5ff;
-        box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .1);
+        background: rgba(255, 255, 255, .08);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
         font-size: 1.25rem;
         line-height: 1;
       }
@@ -112,7 +103,7 @@
         height: 48px;
         border-radius: 999px;
         background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
-        box-shadow: 0 .5rem 1.4rem rgba(37, 99, 235, .18);
+        box-shadow: 0 .5rem 1.4rem rgba(13, 110, 253, .22);
         color: #fff;
         font-size: 1.45rem;
         line-height: 1;
@@ -136,103 +127,6 @@
         white-space: pre-wrap;
         font-size: .78rem;
       }
-
-      .card.bg-dark.bg-opacity-50 {
-        background: var(--panel) !important;
-        border-color: var(--panel-border) !important;
-        color: #0f172a;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
-      }
-
-      .card.bg-black.bg-opacity-25 {
-        background: var(--panel-soft) !important;
-        border-color: #edf2f7 !important;
-        color: #0f172a;
-      }
-
-      .btn-outline-light {
-        color: #2563eb;
-        background: #ffffff;
-        border-color: #dbe4f0;
-        font-weight: 600;
-      }
-
-      .btn-outline-light:hover,
-      .btn-outline-light:focus {
-        color: #1d4ed8;
-        background: #eff6ff;
-        border-color: #bfdbfe;
-      }
-
-      .nav-pills {
-        background: linear-gradient(180deg, #edf4ff, #f6faff) !important;
-        border: 1px solid #d7e6fb;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
-      }
-
-      .nav-pills .nav-link {
-        color: #475569;
-        font-weight: 700;
-        border-radius: 999px;
-      }
-
-      .nav-pills .nav-link:hover,
-      .nav-pills .nav-link:focus {
-        color: #1e293b;
-        background: rgba(255, 255, 255, .72);
-      }
-
-      .nav-pills .nav-link.active,
-      .nav-pills .show > .nav-link {
-        color: #fff;
-        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
-        box-shadow: 0 14px 26px rgba(37, 99, 235, .2);
-      }
-
-      .table-dark {
-        --bs-table-bg: transparent;
-        --bs-table-color: #0f172a;
-        --bs-table-border-color: #e5edf8;
-        --bs-table-striped-color: #0f172a;
-        --bs-table-striped-bg: #f8fbff;
-        --bs-table-hover-color: #0f172a;
-        --bs-table-hover-bg: #eef5ff;
-        margin-bottom: 0;
-      }
-
-      .table thead th {
-        background: #fbfdff;
-        color: #64748b;
-        border-bottom-color: #e5edf8;
-        font-size: 12px;
-        text-transform: uppercase;
-      }
-
-      .table tbody td {
-        color: #0f172a;
-        border-bottom-color: #eef2f7;
-      }
-
-      .form-control,
-      .form-select {
-        color: #0f172a;
-        background: #fff;
-        border-color: #dbe4f0;
-      }
-
-      .form-control::placeholder {
-        color: #94a3b8;
-      }
-
-      .modal-content.bg-dark {
-        background: #fff !important;
-        color: #0f172a !important;
-        border-color: #dbe4f0 !important;
-      }
-
-      .btn-close.btn-close-white {
-        filter: none;
-      }
     </style>
   </head>
   <body data-page="admin">
@@ -242,9 +136,9 @@
       const SUBJECTS = ["Physics", "Chemistry", "Maths"];
       const CLUSTER_SIZE = 12;
       const SUBJECT_THEMES = {
-        Physics: { from: "#0ea5e9", to: "#06b6d4", accent: "#0891b2", icon: "P", short: "PHY" },
-        Chemistry: { from: "#2563eb", to: "#0d6efd", accent: "#2563eb", icon: "C", short: "CHM" },
-        Maths: { from: "#38bdf8", to: "#0284c7", accent: "#0369a1", icon: "M", short: "MTH" }
+        Physics: { from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P", short: "PHY" },
+        Chemistry: { from: "#2563eb", to: "#0d6efd", accent: "#60a5fa", icon: "C", short: "CHM" },
+        Maths: { from: "#38bdf8", to: "#0284c7", accent: "#67e8f9", icon: "M", short: "MTH" }
       };
       const TOPICS = {
         Physics: ["Mechanics", "Thermodynamics", "Waves & Sound", "Optics", "Electrostatics", "Current Electricity", "Magnetism", "Modern Physics"],
@@ -299,11 +193,17 @@
         parentAlerts: "tra4_parent_alerts",
         session: "tra4_session"
       };
+      const ROUTES = {
+        login: "login.html",
+        student: "student.html",
+        faculty: "teacher.html",
+        admin: "admin.html"
+      };
 
       const state = {
-        page: "admin",
+        page: document.body.dataset.page || "login",
         user: { type: "admin" },
-        loginMode: "admin",
+        loginMode: "student",
         testId: TESTS.at(-1).id,
         studentTab: "home",
         studentLeaderboardOpen: false,
@@ -334,7 +234,41 @@
       });
 
       loadAttendance();
-      render();
+      if (!guardRoute()) render();
+
+      function guardRoute() {
+        if (!state.user) {
+          if (state.page !== "login") {
+            window.location.href = ROUTES.login;
+            return true;
+          }
+          return false;
+        }
+
+        if (state.page === "login") {
+          window.location.href = routeForUser(state.user);
+          return true;
+        }
+
+        const expected = state.page === "teacher" ? "faculty" : state.page;
+        if (state.user.type !== expected) {
+          window.location.href = routeForUser(state.user);
+          return true;
+        }
+        return false;
+      }
+
+      function routeForUser(user) {
+        return ROUTES[user.type] || ROUTES.login;
+      }
+
+      function saveSession() {
+        setStore(StorageKeys.session, state.user);
+      }
+
+      function clearSession() {
+        localStorage.removeItem(StorageKeys.session);
+      }
 
       function hashCode(str) {
         let h = 0;
@@ -459,7 +393,7 @@
       function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
       function loadAttendance() { state.attendance = getStore(StorageKeys.attendance(state.testId), blankAttendance()); }
       function saveAttendance() { setStore(StorageKeys.attendance(state.testId), state.attendance); }
-      function esc(v) { return String(v ?? "").replace(/[&<>\"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" }[c])); }
+      function esc(v) { return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); }
       function currentScores() { return allScores[state.testId]; }
       function currentTest() { return TESTS.find((t) => t.id === state.testId); }
       function scoreStudent(score) { return { ...score, ...STUDENTS.find((s) => s.id === score.studentId) }; }
@@ -492,7 +426,7 @@
       }
 
       function render() {
-        app.innerHTML = adminView();
+        app.innerHTML = !state.user ? loginView() : state.user.type === "student" ? studentView() : state.user.type === "faculty" ? facultyView() : adminView();
         if (state.modal) app.insertAdjacentHTML("beforeend", state.modal);
       }
 
@@ -500,7 +434,68 @@
         return `<div class="position-fixed top-0 end-0 m-3 z-3">${badge(state.online ? "ONLINE" : "OFFLINE", state.online ? "text-bg-success" : "text-bg-danger")}</div>`;
       }
 
+      function loginView(err = "") {
+        const label = state.loginMode === "student" ? "Student ID" : state.loginMode === "faculty" ? "Faculty ID" : "Username";
+        const placeholder = state.loginMode === "student" ? "TRA001" : state.loginMode === "faculty" ? "physics" : "admin";
+        const demo = state.loginMode === "student"
+          ? "TRA001 / demo001<br>TRA014 / demo014<br>TRA033 / demo033<br><span class='soft'>Any TRA001-TRA050 with demo&lt;num&gt;</span>"
+          : state.loginMode === "faculty"
+            ? "physics / coach@2026<br>chemistry / coach@2026<br>maths / coach@2026"
+            : "admin / admin@2026";
+        return `<div class="app-shell d-flex align-items-center justify-content-center px-3 py-5">
+          <section class="w-100 rise" style="max-width:420px">
+            <div class="text-center mb-4">
+              <div class="brand-gradient d-inline-flex align-items-center justify-content-center rounded-4 mb-3" style="width:58px;height:58px"><b class="display fs-3">TR</b></div>
+              <div class="text-uppercase soft small fw-bold mono" style="letter-spacing:.22em">The Rankers Academy</div>
+              <h1 class="display fw-bold mt-2 mb-0">Climb Smarter.</h1><h1 class="display fw-bold brand-text">Rank Higher.</h1>
+            </div>
+            ${card("p-4", `
+              <ul class="nav nav-pills nav-fill bg-black bg-opacity-25 rounded-pill p-1 mb-4">
+                ${["student","faculty","admin"].map((m) => `<li class="nav-item"><button class="nav-link ${state.loginMode === m ? "active" : ""}" onclick="setLoginMode('${m}')">${m[0].toUpperCase() + m.slice(1)}</button></li>`).join("")}
+              </ul>
+              <div class="mb-3"><label class="form-label text-uppercase soft small fw-bold mono">${label}</label><input id="login-user" class="form-control" placeholder="${placeholder}"></div>
+              <div class="mb-3"><label class="form-label text-uppercase soft small fw-bold mono">Password</label><input id="login-pwd" type="password" class="form-control" placeholder="password" onkeydown="if(event.key==='Enter') login()"></div>
+              ${err ? `<div class="alert alert-danger py-2 small">${esc(err)}</div>` : ""}
+              <button class="btn btn-brand w-100 fw-bold py-2" onclick="login()">Sign in</button>
+              <div class="border-top border-secondary border-opacity-25 mt-4 pt-3 small soft"><div class="text-uppercase fw-bold mono mb-1">Demo Credentials</div><div class="mono">${demo}</div></div>
+            `)}
+          </section>
+        </div>`;
+      }
+
+      function setLoginMode(mode) { state.loginMode = mode; render(); }
+
+      function login() {
+        const user = document.getElementById("login-user").value.trim();
+        const pwd = document.getElementById("login-pwd").value;
+        let err = "";
+        if (state.loginMode === "student") {
+          const s = STUDENTS.find((x) => x.id.toLowerCase() === user.toLowerCase());
+          if (!s) err = "Student ID not found";
+          else if (s.password !== pwd) err = "Incorrect password";
+          else state.user = { type: "student", studentId: s.id };
+        } else if (state.loginMode === "admin") {
+          if (user === ADMIN_CREDS.user && pwd === ADMIN_CREDS.pwd) state.user = { type: "admin" };
+          else err = "Wrong admin credentials";
+        } else {
+          const f = Object.values(FACULTY_CREDS).find((x) => x.user.toLowerCase() === user.toLowerCase());
+          if (!f) err = "Faculty ID not found";
+          else if (f.pwd !== pwd) err = "Incorrect password";
+          else state.user = { type: "faculty", faculty: f };
+        }
+        if (err) {
+          app.innerHTML = loginView(err);
+          return;
+        }
+        saveSession();
+        window.location.href = routeForUser(state.user);
+      }
+
       function logout() {
+        state.user = null;
+        state.modal = "";
+        state.studentLeaderboardOpen = false;
+        clearSession();
         window.top.location.href = "{% url 'logout' %}";
       }
 
@@ -508,7 +503,7 @@
 
       function shell(title, subtitle, icon, max = "760px") {
         return `<div class="app-shell pb-5">${onlineBadge()}<div class="container" style="max-width:${max}">
-          <header class="sticky-head glass border-bottom border-secondary border-opacity-25 py-3 mb-3 d-flex align-items-center justify-content-between rounded-4 px-3">
+          <header class="sticky-head glass border-bottom border-secondary border-opacity-25 py-3 mb-3 d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">${icon}<div><div class="soft text-uppercase small fw-bold mono">${subtitle}</div><div class="fw-bold">${title}</div></div></div>
             <button class="btn btn-sm btn-outline-light fw-bold" onclick="logout()">Sign out</button>
           </header>`;
@@ -522,8 +517,63 @@
         return `<ul class="nav nav-pills bg-black bg-opacity-25 rounded-pill p-1 mb-3">${items.map(([id, label]) => `<li class="nav-item flex-fill"><button class="nav-link w-100 ${active === id ? "active" : ""}" onclick="${setter}='${id}';render()">${label}</button></li>`).join("")}</ul>`;
       }
 
+      function studentView() {
+        const student = STUDENTS.find((s) => s.id === state.user.studentId);
+        const score = currentScores().find((s) => s.studentId === student.id);
+        const ranked = getRankings(currentScores());
+        const rank = ranked.find((s) => s.studentId === student.id).rank;
+        const xp = calculateXP(student.id);
+        return `${shell(student.name.split(" ")[0], "Welcome back", avatar(student.name))}
+          <div class="mb-2">${badge(`LVL ${xp.level}`, "text-bg-info")}</div>
+          ${nav([["home","Home"],["analytics","Analytics"],["rewards","Rewards"]], state.studentTab, "state.studentTab")}
+          ${testSelector()}
+          ${state.studentTab === "home" ? studentHome(student, score, rank, ranked) : state.studentTab === "analytics" ? studentAnalytics(student, score) : studentRewards(student, xp)}
+        </div></div>`;
+      }
+
       function kpi(label, value, extra = "") {
         return `<div class="col-6 col-lg-3">${mini("p-3 h-100", `<div class="soft small text-uppercase fw-bold mono">${esc(label)}</div><div class="display fs-4 fw-bold">${esc(value)}</div><div class="small soft">${esc(extra)}</div>`)}</div>`;
+      }
+
+      function studentHome(student, score, rank, ranked) {
+        const flags = getStudentClusterFlags(student.id, currentScores());
+        const flagged = SUBJECTS.filter((s) => flags[s]);
+        const testIndex = TESTS.findIndex((t) => t.id === state.testId);
+        const prevRank = testIndex ? getRankings(allScores[TESTS[testIndex - 1].id]).find((s) => s.studentId === student.id).rank : null;
+        const delta = prevRank ? prevRank - rank : null;
+        return `${card("p-4 mb-4 rise position-relative overflow-hidden", `
+          <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:180px;height:180px;filter:blur(45px)"></div>
+          <div class="position-relative">${badge(rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD")}
+          <h2 class="display fw-bold mt-2 mb-0" style="font-size:4rem">#${rank}</h2>
+          <div class="soft">of ${STUDENTS.length} students - ${currentTest().name}</div>
+          <div class="row g-2 mt-3">${kpi("Total", `${score.total}/300`, delta === null ? "First test" : delta > 0 ? `Up ${delta} ranks` : delta < 0 ? `Down ${Math.abs(delta)} ranks` : "No rank change")}${kpi("Cluster", flagged.length ? flagged.join(", ") : "None", flagged.length === 3 ? "All-subjects session" : "Targeted revision")}</div></div>
+        `)}
+        ${flagged.length ? coaching(student.id, flagged) : ""}
+        <h5 class="display fw-bold">Subject Performance</h5>
+        <div class="row g-3 mb-4">${SUBJECTS.map((sub) => subjectCard(sub, score, flags[sub])).join("")}</div>
+        <h5 class="display fw-bold">Top Performers</h5>
+        <div class="d-flex gap-2 overflow-auto pb-1 mb-4">${ranked.slice(0, 5).map((r) => {
+          const stu = STUDENTS.find((s) => s.id === r.studentId);
+          return mini("p-3 text-center flex-shrink-0 position-relative", `${rankMedal(r.rank)}${avatar(stu.name, 42)}<div class="fw-bold mt-2 text-truncate" style="width:120px">${esc(stu.name)}</div><div class="mono soft">#${r.rank} - ${r.total}</div>`);
+        }).join("")}</div>
+        ${leaderboard(ranked, student.id, true)}`;
+      }
+
+      function coaching(studentId, flagged) {
+        const all = flagged.length === 3;
+        return card("p-3 mb-4", `
+          <div class="d-flex justify-content-between align-items-start"><div><h5 class="display fw-bold mb-1">${all ? "All-Subjects Coaching Cluster" : "Coaching Cluster"}</h5><div class="small soft">${all ? "4:00 - 5:30 PM - 90 minutes" : flagged.map((s) => `${s}: ${CLUSTER_SCHEDULE[s].time}`).join(" | ")}</div></div>${badge(all ? "90 MIN" : "30 MIN", "text-bg-primary")}</div>
+          <div class="row g-2 mt-2">${flagged.map((sub) => `<div class="col-md-4">${mini("p-2 d-flex align-items-center gap-2", `${subjectIcon(sub)}<div class="flex-grow-1"><b>${sub}</b><div class="small soft">${CLUSTER_SCHEDULE[sub].faculty}</div></div>${badge(state.attendance[sub]?.[studentId] || "pending", state.attendance[sub]?.[studentId] || "pending")}`)}</div>`).join("")}</div>
+        `);
+      }
+
+      function subjectCard(sub, score, flagged) {
+        const t = SUBJECT_THEMES[sub];
+        const avg = Math.round(currentScores().reduce((n, s) => n + s[sub], 0) / STUDENTS.length);
+        const rank = getRankings(currentScores(), sub).find((s) => s.studentId === score.studentId).rank;
+        const delta = score[sub] - avg;
+        const boostBadge = sub === "Maths" && flagged ? ` ${badge("Boost", "text-bg-warning text-dark")}` : "";
+        return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(sub)}<div><b>${sub}</b>${boostBadge}<div class="small soft">Subject rank #${rank}</div></div></div><div class="display fs-2 fw-bold" style="color:${t.accent}">${score[sub]}</div>${progress(score[sub], t.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${avg}/100</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>` )}</div>`;
       }
 
       function rankMedal(rank) {
@@ -537,12 +587,71 @@
         return "";
       }
 
+      function leaderboardRows(ranked, highlightId, collapsed) {
+        if (!collapsed) return ranked;
+        const firstFive = ranked.slice(0, 5);
+        const me = ranked.find((r) => r.studentId === highlightId);
+        return me && !firstFive.some((r) => r.studentId === highlightId) ? [...firstFive, me] : firstFive;
+      }
+
+      function toggleStudentLeaderboard() {
+        state.studentLeaderboardOpen = !state.studentLeaderboardOpen;
+        render();
+      }
+
       function leaderboard(ranked, highlightId = "", collapsible = false) {
-        return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${ranked.map((r) => {
+        const rows = leaderboardRows(ranked, highlightId, collapsible && !state.studentLeaderboardOpen);
+        const footer = collapsible ? `<div class="d-flex justify-content-between align-items-center mt-3">
+          <div class="small soft">${state.studentLeaderboardOpen ? `Showing all ${ranked.length} students` : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`}</div>
+          <button class="btn btn-outline-light btn-sm rounded-pill" onclick="toggleStudentLeaderboard()">${state.studentLeaderboardOpen ? "Show Less" : "View All"}</button>
+        </div>` : "";
+        return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${rows.map((r) => {
           const stu = STUDENTS.find((s) => s.id === r.studentId);
           const mine = stu.id === highlightId;
           return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${stu.id}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Maths}</td><td><b>${r.total}</b></td></tr>`;
-        }).join("")}</tbody></table></div>`);
+        }).join("")}</tbody></table></div>${footer}`);
+      }
+
+      function studentAnalytics(student, score) {
+        const ranks = TESTS.map((t) => getRankings(allScores[t.id]).find((s) => s.studentId === student.id).rank);
+        return `${card("p-4 mb-4", `<h5 class="display fw-bold">Rank Journey</h5><div class="row g-2">${TESTS.map((t, i) => kpi(t.shortDate, `#${ranks[i]}`, i ? `${ranks[i - 1] - ranks[i] >= 0 ? "Up" : "Down"} ${Math.abs(ranks[i - 1] - ranks[i])}` : "Baseline")).join("")}</div>`)}
+        <h5 class="display fw-bold">Topic Analytics</h5>
+        <div class="vstack gap-3 mb-4">${SUBJECTS.map((sub) => {
+          const t = SUBJECT_THEMES[sub];
+          return card("p-3", `<div class="d-flex align-items-center justify-content-between mb-2"><div class="d-flex align-items-center gap-2">${subjectIcon(sub)}<div><b style="color:${t.accent}">${sub}</b><div class="small soft">Topic-wise mastery</div></div></div><span class="mono">${score[sub]}/100</span></div>${generateTopicMastery(student.id, state.testId, sub).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span class="soft">${x.score}%</span></div>${progress(x.score, t.accent)}</div>`).join("")}`);
+        }).join("")}</div>`;
+      }
+
+      function studentRewards(student, xp) {
+        const earned = getEarnedBadges(student.id);
+        const streak = calculateStreaks(student.id).improveStreak;
+        return `${card("p-4 mb-4", `<div class="d-flex justify-content-between"><div><h5 class="display fw-bold">Level ${xp.level}</h5><div class="soft small">${xp.xp} XP earned</div></div>${badge(`${streak} TEST STREAK`, "text-bg-warning text-dark")}</div><div class="mt-3">${progress(Math.round(xp.progress * 100), "linear-gradient(135deg,#2563eb,#0d6efd,#06b6d4)")}</div>`)}
+        <div class="row g-3">${BADGES.map((b) => `<div class="col-md-6">${card(`p-3 h-100 ${earned.has(b.id) ? "" : "opacity-50"}`, `<div class="d-flex gap-3"><div class="reward-icon">${b.icon}</div><div><b>${b.name}</b><div class="small soft">${b.desc}</div><div class="small mono soft text-uppercase">${earned.has(b.id) ? "earned" : "locked"} - ${b.tier}</div></div></div>`)}</div>`).join("")}</div>`;
+      }
+
+      function facultyView() {
+        const faculty = state.user.faculty, subject = faculty.subject;
+        return `${shell(faculty.name, "Faculty", subjectIcon(subject))}
+          ${nav([["attend","Attendance"],["topics","Topic Focus"],["notes","Notes"]], state.facultyTab, "state.facultyTab")}
+          ${testSelector()}
+          ${state.facultyTab === "attend" ? facultyAttendance(subject) : state.facultyTab === "topics" ? facultyTopics(subject) : facultyNotes(subject)}
+        </div></div>`;
+      }
+
+      function facultyAttendance(subject) {
+        const cluster = getBottomCluster(currentScores(), subject).map(scoreStudent);
+        const att = state.attendance[subject] || {};
+        const counts = ["present", "late", "absent"].map((x) => Object.values(att).filter((s) => s === x).length);
+        const marked = counts.reduce((a, b) => a + b, 0);
+        const finalized = !!state.attendance.finalized?.[subject];
+        const allThree = getAllThreeSet(currentScores());
+        return `${card("p-4 mb-4", `${badge("Tonight's Session", "text-bg-primary")}<h2 class="display fw-bold mt-2">${subject} Revision</h2><div class="soft small mono">${CLUSTER_SCHEDULE[subject].time} - ${CLUSTER_SCHEDULE[subject].room} - ${cluster.length} students</div><div class="row g-2 mt-3">${kpi("Present", counts[0], "marked")}${kpi("Late", counts[1], "marked")}${kpi("Absent", counts[2], "marked")}</div><div class="mt-3">${progress(Math.round(marked / cluster.length * 100), SUBJECT_THEMES[subject].accent)}</div><div class="d-flex gap-2 flex-wrap mt-3"><button class="btn btn-outline-light" ${finalized ? "disabled" : ""} onclick="openQR('${subject}')">Scan QR</button>${finalized ? `${badge("Finalized", "text-bg-success")}<button class="btn btn-outline-light btn-sm" onclick="resetAttendance('${subject}')">Re-open</button>` : `<button class="btn btn-brand flex-grow-1" onclick="finalizeAttendance('${subject}')">Finalize and auto-mark rest absent</button>`}</div>`)}
+        <h5 class="display fw-bold">Mark Attendance</h5><div class="vstack gap-2 mb-4">${cluster.map((s, i) => attendanceRow(s, i, att[s.studentId] || "pending", allThree.has(s.studentId), finalized, subject)).join("")}</div>`;
+      }
+
+      function attendanceRow(s, i, status, allThree, disabled, subject) {
+        const btnClass = (x) => status !== x ? "btn-outline-light" : x === "present" ? "btn-success" : x === "late" ? "btn-warning" : "btn-danger";
+        return card("p-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft text-center" style="width:26px">${i + 1}</span>${avatar(s.name, 34)}<div class="flex-grow-1 overflow-hidden"><b class="text-truncate d-block">${esc(s.name)}</b><div class="small soft mono">${s.id} ${allThree ? "- all subjects" : ""}</div></div>${["present","late","absent"].map((x) => `<button class="btn btn-sm ${btnClass(x)}" ${disabled ? "disabled" : ""} onclick="setAttendanceStatus('${subject}','${s.studentId}','${x}')">${x}</button>`).join("")}`);
       }
 
       function getAllThreeSet(scores) {
@@ -550,10 +659,68 @@
         return new Set(STUDENTS.filter((s) => SUBJECTS.every((sub) => clusters[sub].includes(s.id))).map((s) => s.id));
       }
 
+      function setAttendanceStatus(subject, studentId, status) {
+        if (state.attendance.finalized?.[subject]) return;
+        state.attendance[subject] = { ...(state.attendance[subject] || {}), [studentId]: status };
+        saveAttendance(); render();
+      }
+
+      function finalizeAttendance(subject) {
+        const subj = { ...(state.attendance[subject] || {}) };
+        getBottomCluster(currentScores(), subject).forEach((s) => { if (!subj[s.studentId]) subj[s.studentId] = "absent"; });
+        state.attendance[subject] = subj;
+        state.attendance.finalized = { ...(state.attendance.finalized || {}), [subject]: true };
+        saveAttendance(); render();
+      }
+
+      function resetAttendance(subject) {
+        state.attendance[subject] = {};
+        state.attendance.finalized = { ...(state.attendance.finalized || {}), [subject]: false };
+        saveAttendance(); render();
+      }
+
+      function openQR(subject) {
+        state.modal = `<div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.72)"><div class="modal-dialog modal-dialog-centered"><div class="modal-content bg-dark text-white border-secondary"><div class="modal-header"><h5 class="modal-title">QR Attendance - ${subject}</h5><button class="btn-close btn-close-white" onclick="closeModal()"></button></div><div class="modal-body text-center"><div class="qr-box mx-auto mb-3"></div><p class="soft small">Type a student ID from this cluster and mark present.</p><div class="input-group"><input id="qr-input" class="form-control" placeholder="TRA001" onkeydown="if(event.key==='Enter') markQR('${subject}')"><button class="btn btn-brand" onclick="markQR('${subject}')">Mark</button></div></div></div></div></div>`;
+        render(); setTimeout(() => document.getElementById("qr-input")?.focus(), 0);
+      }
+
+      function markQR(subject) {
+        const id = document.getElementById("qr-input").value.trim().toUpperCase();
+        if (getBottomCluster(currentScores(), subject).some((s) => s.studentId === id)) setAttendanceStatus(subject, id, "present");
+        state.modal = ""; render();
+      }
+
+      function closeModal() { state.modal = ""; render(); }
+
+      function facultyTopics(subject) {
+        const cluster = getBottomCluster(currentScores(), subject).map(scoreStudent);
+        return card("p-4 mb-4", `<h5 class="display fw-bold">${subject} Topic Focus</h5>${cluster.map((s) => mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2 mb-2">${avatar(s.name, 32)}<div><b>${esc(s.name)}</b><div class="small soft mono">${s.id} - score ${s[subject]}</div></div></div>${generateTopicMastery(s.studentId, state.testId, subject).sort((a,b) => a.score - b.score).slice(0,4).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span>${x.score}%</span></div>${progress(x.score, SUBJECT_THEMES[subject].accent)}</div>`).join("")}`)).join("")}`);
+      }
+
+      function facultyNotes(subject) {
+        const cluster = getBottomCluster(currentScores(), subject).map(scoreStudent);
+        return card("p-4 mb-4", `<h5 class="display fw-bold">Faculty Notes</h5>${cluster.map((s) => {
+          const key = `${s.studentId}:${subject}`, notes = state.facultyNotes[key] || [];
+          return mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2">${avatar(s.name, 32)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${s.id}</div></div></div><div class="input-group input-group-sm my-2"><input id="note-${key}" class="form-control" placeholder="Add a note"><button class="btn btn-brand" onclick="addNote('${key}')">Add</button></div>${notes.map((n) => `<div class="small soft border-top border-secondary border-opacity-25 py-1 d-flex justify-content-between"><span>${esc(n.text)}</span><button class="btn btn-sm btn-link text-danger p-0" onclick="deleteNote('${key}','${n.id}')">x</button></div>`).join("")}`);
+        }).join("")}`);
+      }
+
+      function addNote(key) {
+        const text = document.getElementById(`note-${key}`).value.trim();
+        if (!text) return;
+        state.facultyNotes[key] = [{ id: Date.now().toString(), text, at: new Date().toISOString() }, ...(state.facultyNotes[key] || [])];
+        setStore(StorageKeys.facultyNotes, state.facultyNotes); render();
+      }
+
+      function deleteNote(key, id) {
+        state.facultyNotes[key] = (state.facultyNotes[key] || []).filter((n) => n.id !== id);
+        setStore(StorageKeys.facultyNotes, state.facultyNotes); render();
+      }
+
       function adminView() {
         const tabs = [["overview","Overview"],["predict","At Risk"],["students","Students"],["clusters","Clusters"],["attend","Attendance"],["comms","Comms"]];
         return `${shell("Admin - The Rankers Academy", "Console", `<div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient" style="width:38px;height:38px">A</div>`, "940px")}
-          ${testSelector()}<div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-brand" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
+          ${testSelector()}<div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
           ${state.adminTab === "overview" ? adminOverview() : state.adminTab === "predict" ? adminPredict() : state.adminTab === "students" ? adminStudents() : state.adminTab === "clusters" ? adminClusters() : state.adminTab === "attend" ? adminAttendance() : parentComms()}
         </div></div>`;
       }
@@ -624,7 +791,7 @@
       function parentComms() {
         const messages = state.commsTab === "post-test" ? postTestMessages() : absenceMessages();
         const sent = messages.filter((m) => state.parentAlerts[msgId(m)]).length;
-        return `${card("p-4 mb-4", `<div class="d-flex align-items-center gap-3"><div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient" style="width:48px;height:48px">PA</div><div><h5 class="display fw-bold mb-0">Parent Communications</h5><div class="small soft">Auto-drafted WhatsApp/SMS - review before sending</div></div></div><div class="row g-2 mt-3"><div class="col"><button class="card bg-black bg-opacity-25 border-secondary rounded-3 p-3 w-100 text-start ${state.commsTab === "post-test" ? "border-light" : ""}" onclick="state.commsTab='post-test';render()"><div class="small soft text-uppercase fw-bold">Post-Test Reports</div><b>${postTestMessages().length} drafts</b></button></div><div class="col"><button class="card bg-black bg-opacity-25 border-secondary rounded-3 p-3 w-100 text-start ${state.commsTab === "absences" ? "border-light" : ""}" onclick="state.commsTab='absences';render()"><div class="small soft text-uppercase fw-bold">Absence Alerts</div><b>${absenceMessages().length} drafts</b></button></div></div><div class="d-flex justify-content-between align-items-center mt-3 small soft"><span>${sent}/${messages.length} sent - ${messages.length - sent} queued</span><button class="btn btn-brand btn-sm" onclick="sendAllMessages()" ${messages.length ? "" : "disabled"}>Send all queued</button></div>`)}
+        return `${card("p-4 mb-4", `<div class="d-flex align-items-center gap-3"><div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient" style="width:48px;height:48px">PA</div><div><h5 class="display fw-bold mb-0">Parent Communications</h5><div class="small soft">Auto-drafted WhatsApp/SMS - review before sending</div></div></div><div class="row g-2 mt-3"><div class="col"><button class="card bg-black bg-opacity-25 border-secondary rounded-3 p-3 w-100 text-start text-white ${state.commsTab === "post-test" ? "border-light" : ""}" onclick="state.commsTab='post-test';render()"><div class="small soft text-uppercase fw-bold">Post-Test Reports</div><b>${postTestMessages().length} drafts</b></button></div><div class="col"><button class="card bg-black bg-opacity-25 border-secondary rounded-3 p-3 w-100 text-start text-white ${state.commsTab === "absences" ? "border-light" : ""}" onclick="state.commsTab='absences';render()"><div class="small soft text-uppercase fw-bold">Absence Alerts</div><b>${absenceMessages().length} drafts</b></button></div></div><div class="d-flex justify-content-between align-items-center mt-3 small soft"><span>${sent}/${messages.length} sent - ${messages.length - sent} queued</span><button class="btn btn-brand btn-sm" onclick="sendAllMessages()" ${messages.length ? "" : "disabled"}>Send all queued</button></div>`)}
         <div class="vstack gap-2">${messages.map(messageCard).join("") || card("p-4 text-center soft", "No drafts yet.")}</div>`;
       }
 
