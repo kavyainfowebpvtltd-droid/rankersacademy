@@ -1039,8 +1039,14 @@ def scholarship_test_analysis(request):
     normalized_role = ""
     if teacher:
         normalized_role = re.sub(r"\s+", " ", (teacher.role or "").strip()).lower()
-    is_teacher = normalized_role == "teacher"
-    is_admin = request.user.is_superuser or normalized_role == "admin"
+
+    session_mode = (request.session.get("staff_portal_mode") or "").strip().lower()
+    is_admin = request.user.is_superuser or session_mode == "admin" or normalized_role == "admin"
+    is_teacher = session_mode == "teacher" or (normalized_role == "teacher" and not is_admin)
+
+    if teacher and not (is_teacher or is_admin):
+        is_teacher = True
+
     if not (is_teacher or is_admin):
         return HttpResponseForbidden("Only teacher and admin users can access Test Analysis.")
 

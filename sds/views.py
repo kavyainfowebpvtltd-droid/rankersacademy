@@ -173,18 +173,21 @@ def login_view(request):
 
         if role == "Teacher":
             if _can_login_as_teacher(user):
+                _set_staff_portal_mode(request, role)
                 return redirect("admin-dashboard")
             messages.error(request, "You are not authorized")
             return redirect("login")
 
         if role == "Admin":
             if _can_login_as_admin(user):
+                _set_staff_portal_mode(request, role)
                 return redirect("admin-dashboard")
             messages.error(request, "You are not authorized")
             return redirect("login")
 
         if role == "Teacher/Admin":
             if _can_login_as_teacher(user) or _can_login_as_admin(user):
+                _set_staff_portal_mode(request, role)
                 return redirect("admin-dashboard")
             messages.error(request, "You are not authorized")
             return redirect("login")
@@ -284,6 +287,20 @@ def _can_login_as_admin(user) -> bool:
     if hasattr(user, "teacheradmin"):
         return (user.teacheradmin.role or "").strip().lower() == "admin"
     return False
+
+
+def _set_staff_portal_mode(request, role: str) -> None:
+    normalized = (role or "").strip()
+    if normalized == "Teacher":
+        request.session["staff_portal_mode"] = "teacher"
+        return
+    if normalized == "Admin":
+        request.session["staff_portal_mode"] = "admin"
+        return
+    if normalized == "Teacher/Admin":
+        request.session["staff_portal_mode"] = "admin"
+        return
+    request.session.pop("staff_portal_mode", None)
 
 
 @never_cache
@@ -563,6 +580,7 @@ def verify_login_otp(request):
         return JsonResponse({"ok": False, "msg": "User not found/inactive"}, status=400)
 
     login(request, user)
+    _set_staff_portal_mode(request, role)
     cache.delete(key)
 
     if user_needs_password_change(user):
