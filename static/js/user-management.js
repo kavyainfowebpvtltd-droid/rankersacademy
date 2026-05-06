@@ -520,7 +520,7 @@ function validateAndSubmitAddUser() {
   let isValid = true;
 
   const nameValue = nameInput.value.trim();
-  const nameRegex = /^[a-zA-Z\s]+$/;
+  const nameRegex = /^[a-zA-Z\s.]+$/;
   if (!nameValue) {
     setAddUserFieldError(nameInput, nameErrorId, "Name is required");
     isValid = false;
@@ -528,7 +528,7 @@ function validateAndSubmitAddUser() {
     setAddUserFieldError(
       nameInput,
       nameErrorId,
-      "Name should contain only letters and spaces",
+      "Name should contain only letters, spaces, and dots",
     );
     isValid = false;
   }
@@ -668,7 +668,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("input", (e) => {
   if (e.target.classList.contains("alpha-only")) {
-    e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+    e.target.value = e.target.value.replace(/[^a-zA-Z\s.]/g, "");
   }
 
   if (e.target.classList.contains("number-only")) {
