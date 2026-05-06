@@ -2332,11 +2332,11 @@ def _is_superadmin(user):
 
 def _is_admin_user(user):
     ta = _teacheradmin(user)
-    return bool(ta and ta.role == "Admin")
+    return bool(ta and _normalize_staff_designation(ta.role) == "Admin")
 
 def _is_teacher_user(user):
     ta = _teacheradmin(user)
-    return bool(ta and ta.role == "Teacher")
+    return bool(ta and _normalize_staff_designation(ta.role) == "Teacher")
 
 def _can_manage_all(user):
    

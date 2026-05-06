@@ -1036,14 +1036,19 @@ def scholarshiptest_management(request):
 @login_required
 def scholarship_test_analysis(request):
     teacher = getattr(request.user, "teacheradmin", None)
-    if not teacher or (teacher.role or "").strip() != "Teacher":
-        return HttpResponseForbidden("Only teacher users can access Test Analysis.")
+    normalized_role = ""
+    if teacher:
+        normalized_role = re.sub(r"\s+", " ", (teacher.role or "").strip()).lower()
+    is_teacher = normalized_role == "teacher"
+    is_admin = request.user.is_superuser or normalized_role == "admin"
+    if not (is_teacher or is_admin):
+        return HttpResponseForbidden("Only teacher and admin users can access Test Analysis.")
 
     allowed_subjects = [
         part.strip()
         for part in (teacher.subjects or "").split(",")
         if part.strip()
-    ]
+    ] if teacher else []
     teacher_subject = next(
         (
             subject
@@ -1052,6 +1057,10 @@ def scholarship_test_analysis(request):
         ),
         "Physics",
     )
+    teacher_context = {
+        "username": request.user.username,
+        "name": teacher.name if teacher and teacher.name else (request.user.get_full_name() or request.user.username),
+    }
 
     completed_statuses = {"completed", "expired"}
     tests = list(
@@ -1180,7 +1189,7 @@ def scholarship_test_analysis(request):
     avg_attempts = round(total_attempts / total_tests, 1) if total_tests else 0
 
     context = {
-        "teacher": teacher,
+        "teacher": teacher_context,
         "teacher_subject": teacher_subject,
         "summary_cards": [
             {
