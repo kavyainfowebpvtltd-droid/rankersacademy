@@ -958,153 +958,168 @@
             ></button>
           </div>
 
-          <div class="modal-body row g-3">
+          <div class="modal-body">
             <input type="hidden" id="editTeacherId" />
 
-            <div class="col-md-6">
-              <input
-                class="form-control alpha-only"
-                name="name"
-                id="editTeacherName"
-                required
-              />
-              <div class="invalid-feedback" id="editTeacherNameError"></div>
-            </div>
-            <div class="col-md-6">
-              <input
-                class="form-control"
-                name="username"
-                id="editTeacherUsername"
-                required
-              />
-              <div class="invalid-feedback" id="editTeacherUsernameError"></div>
-            </div>
-            <div class="col-md-6">
-              <input
-                class="form-control number-only"
-                type="tel"
-                name="contact"
-                id="editTeacherContact"
-                maxlength="10"
-                minlength="10"
-                placeholder="Contact (10-digit number)"
-              />
-              <div class="invalid-feedback" id="editTeacherContactError"></div>
-            </div>
-
-            <div class="col-md-6">
-              <input
-                class="form-control"
-                name="email"
-                id="editTeacherEmail"
-                required
-                placeholder="Email"
-              />
-              <div class="invalid-feedback" id="editTeacherEmailError"></div>
-            </div>
-
-            <div class="col-md-6">
-              <select class="form-select" name="gender" id="editTeacherGender">
-                <option value="">Gender</option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <div class="input-group password-toggle-group">
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherName">Full Name</label>
+                <input
+                  class="form-control alpha-only"
+                  name="name"
+                  id="editTeacherName"
+                  placeholder="Full Name"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="editTeacherNameError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherProfilePicture">Profile Photo</label>
                 <input
                   class="form-control"
-                  name="password"
-                  id="editTeacherPassword"
-                  type="password"
-                  placeholder="Password (leave blank to keep current)"
+                  type="file"
+                  name="profile_picture"
+                  id="editTeacherProfilePicture"
+                  accept="image/*"
                 />
-                <button
-                  class="btn btn-outline-secondary password-toggle"
-                  type="button"
-                  data-target="editTeacherPassword"
-                  aria-label="Show password"
-                >
-                  <i class="bi bi-eye"></i>
-                </button>
+                <div id="currentProfilePicture" style="margin-top: 0.5rem;"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherUsername">Username</label>
+                <input
+                  class="form-control"
+                  name="username"
+                  id="editTeacherUsername"
+                  placeholder="Username"
+                  required
+                  maxlength="50"
+                />
+                <div class="invalid-feedback" id="editTeacherUsernameError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherContact">Contact</label>
+                <input
+                  class="form-control number-only"
+                  type="tel"
+                  name="contact"
+                  id="editTeacherContact"
+                  maxlength="10"
+                  minlength="10"
+                  placeholder="Contact (10-digit number)"
+                />
+                <div class="invalid-feedback" id="editTeacherContactError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherEmail">Email</label>
+                <input
+                  class="form-control"
+                  name="email"
+                  id="editTeacherEmail"
+                  type="email"
+                  required
+                  placeholder="Email"
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="editTeacherEmailError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherGender">Gender</label>
+                <select class="form-select" name="gender" id="editTeacherGender">
+                  <option value="">Gender</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherPassword">Password</label>
+                <div class="input-group password-toggle-group">
+                  <input
+                    class="form-control"
+                    name="password"
+                    id="editTeacherPassword"
+                    type="password"
+                    placeholder="Password (leave blank to keep current)"
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle"
+                    type="button"
+                    data-target="editTeacherPassword"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherRole">Designation</label>
+                <input
+                  class="form-control"
+                  name="role"
+                  id="editTeacherRole"
+                  placeholder="Designation (e.g. Teacher, Admin, Counselor)"
+                  maxlength="80"
+                  oninput="syncEditStaffDesignationFields()"
+                  onchange="syncEditStaffDesignationFields()"
+                  onblur="syncEditStaffDesignationFields()"
+                  required
+                />
+                <small class="text-muted">Type <strong>Teacher</strong> to enable Subject and Batch.</small>
               </div>
             </div>
 
-            <div class="col-md-6">
-              <input
-                class="form-control"
-                name="role"
-                id="editTeacherRole"
-                placeholder="Designation"
-                maxlength="80"
-                oninput="syncEditStaffDesignationFields()"
-                onchange="syncEditStaffDesignationFields()"
-                onblur="syncEditStaffDesignationFields()"
-                required
-              />
-            </div>
-
-            <div class="col-md-6">
-              <input
-                class="form-control"
-                name="blood_group"
-                id="editTeacherBloodGroup"
-                placeholder="Blood Group"
-                maxlength="10"
-              />
-            </div>
-
-            <div class="col-md-6" id="editTeacherSubjectsCol">
-              <input
-                class="form-control"
-                name="subjects"
-                id="editTeacherSubjects"
-                placeholder="Subjects"
-              />
-            </div>
-             <div class="col-md-6">
-               <label class="form-label">Profile Picture</label>
-               <input
-                 class="form-control"
-                 type="file"
-                 name="profile_picture"
-                 id="editTeacherProfilePicture"
-                 accept="image/*"
-               />
-               <div id="currentProfilePicture" style="margin-top: 0.5rem;">
-                 {% comment %} Will be filled by JS with current image {% endcomment %}
-               </div>
-             </div>
-            <div class="col-md-6">
-              <select class="form-select" name="board" id="editTeacherBoard">
-                <option value="">Select Board / Exam</option>
-                <option value="State">State</option>
-                <option value="CBSE">CBSE</option>
-                <option value="MHTCET">MHTCET</option>
-                <option value="JEE">JEE</option>
-                <option value="NEET">NEET</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <select class="form-select" name="grade" id="editTeacherGrade">
-                <option value="">Grade</option>
-                <option value="8th">8th</option>
-                <option value="9th">9th</option>
-                <option value="10th">10th</option>
-                <option value="11th">11th</option>
-                <option value="12th">12th</option>
-              </select>
-            </div>
-            <div class="col-md-6" id="editTeacherBatchCol">
-              <input
-                class="form-control"
-                name="batch"
-                id="editTeacherBatch"
-                placeholder="Batch (ex: B1, B2)"
-              />
+            <div class="row g-3 mt-2" id="editTeacherFields">
+              <div class="col-md-6" id="editTeacherSubjectsCol">
+                <label class="form-label add-user-label" for="editTeacherSubjects">Subject</label>
+                <input
+                  class="form-control"
+                  name="subjects"
+                  id="editTeacherSubjects"
+                  placeholder="Subject"
+                />
+              </div>
+              <div class="col-md-6" id="editTeacherBatchCol">
+                <label class="form-label add-user-label" for="editTeacherBatch">Batch</label>
+                <input
+                  class="form-control"
+                  name="batch"
+                  id="editTeacherBatch"
+                  placeholder="Batch (ex: B1, B2)"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherBoard">Board</label>
+                <select class="form-select" name="board" id="editTeacherBoard">
+                  <option value="">Select Board / Exam</option>
+                  <option value="State">State</option>
+                  <option value="CBSE">CBSE</option>
+                  <option value="MHTCET">MHTCET</option>
+                  <option value="JEE">JEE</option>
+                  <option value="NEET">NEET</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherGrade">Grade</label>
+                <select class="form-select" name="grade" id="editTeacherGrade">
+                  <option value="">Grade</option>
+                  <option value="8th">8th</option>
+                  <option value="9th">9th</option>
+                  <option value="10th">10th</option>
+                  <option value="11th">11th</option>
+                  <option value="12th">12th</option>
+                </select>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label add-user-label" for="editTeacherBloodGroup">Blood Group</label>
+                <input
+                  class="form-control"
+                  name="blood_group"
+                  id="editTeacherBloodGroup"
+                  placeholder="Blood Group"
+                  maxlength="10"
+                />
+              </div>
             </div>
           </div>
 
