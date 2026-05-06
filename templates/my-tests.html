@@ -170,26 +170,6 @@
       color: #fff;
     }
 
-    .my-tests-page .nav-pills .nav-link {
-      color: #475569;
-      border-radius: 999px;
-      font-weight: 600;
-    }
-
-    .my-tests-page .nav-pills .nav-link.active {
-      background: linear-gradient(
-        135deg,
-        var(--brand-a),
-        var(--brand-b) 52%,
-        var(--brand-c)
-      );
-    }
-
-    .my-tests-page .nav-pills.bg-black.bg-opacity-25 {
-      background: #eef5ff !important;
-      border: 1px solid #dbeafe;
-    }
-
     .my-tests-page .btn-outline-light {
       color: #2563eb;
       background: #ffffff;
@@ -275,6 +255,113 @@
       color: #64748b;
     }
 
+    .my-tests-page .level-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.42rem 0.8rem;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #241c43, #17112c);
+      border: 1px solid rgba(146, 125, 255, 0.24);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 10px 20px rgba(15, 23, 42, 0.12);
+      color: #c4b5fd;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .my-tests-page .level-pill-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 999px;
+      background: rgba(250, 204, 21, 0.14);
+      color: #facc15;
+      font-size: 0.82rem;
+      line-height: 1;
+    }
+
+    .my-tests-page .level-pill-text {
+      font-size: 0.96rem;
+      line-height: 1;
+      color: #d8cbff;
+    }
+
+    .my-tests-page .student-switch {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      padding: 0.45rem;
+      background: linear-gradient(180deg, #edf4ff, #f6faff);
+      border: 1px solid #d7e6fb;
+      border-radius: 1.35rem;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.78),
+        0 12px 30px rgba(37, 99, 235, 0.08);
+    }
+
+    .my-tests-page .student-switch-btn {
+      min-height: 3.1rem;
+      border: 0;
+      border-radius: 1rem;
+      background: transparent;
+      color: #475569;
+      font-weight: 700;
+      transition:
+        transform 0.22s ease,
+        box-shadow 0.22s ease,
+        background 0.22s ease,
+        color 0.22s ease;
+    }
+
+    .my-tests-page .student-switch-btn:hover,
+    .my-tests-page .student-switch-btn:focus-visible {
+      color: #1e293b;
+      background: rgba(255, 255, 255, 0.72);
+      transform: translateY(-1px);
+      box-shadow: inset 0 0 0 1px rgba(191, 219, 254, 0.85);
+    }
+
+    .my-tests-page .student-switch-btn.active {
+      color: #fff;
+      background: linear-gradient(
+        135deg,
+        var(--brand-a),
+        var(--brand-b) 52%,
+        var(--brand-c)
+      );
+      box-shadow:
+        0 14px 26px rgba(37, 99, 235, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .my-tests-page .test-slot-btn {
+      min-height: 2.85rem;
+      padding-inline: 1rem;
+      border-radius: 999px;
+      transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease;
+    }
+
+    .my-tests-page .test-slot-btn:hover:not(:disabled),
+    .my-tests-page .test-slot-btn:focus-visible:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.12);
+    }
+
+    .my-tests-page .test-slot-btn:disabled {
+      opacity: 0.72;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
     @media (max-width: 767.98px) {
       .my-tests-page {
         padding: 1rem 0 1.5rem;
@@ -291,26 +378,23 @@
       <span id="onlineBadge" class="badge rounded-pill"></span>
     </div>
 
-    <div class="mb-2">
-      <span id="levelBadge" class="badge rounded-pill text-bg-info"></span>
+    <div class="mb-3">
+      <span id="levelBadge" class="level-pill">
+        <span class="level-pill-icon" aria-hidden="true">⚡</span>
+        <span id="levelBadgeText" class="level-pill-text"></span>
+      </span>
     </div>
 
-    <ul id="studentTabs" class="nav nav-pills bg-black bg-opacity-25 rounded-pill p-1 mb-3">
-      <li class="nav-item flex-fill">
-        <button type="button" class="nav-link w-100 active" data-tab="home">Home</button>
-      </li>
-      <li class="nav-item flex-fill">
-        <button type="button" class="nav-link w-100" data-tab="analytics">Analytics</button>
-      </li>
-      <li class="nav-item flex-fill">
-        <button type="button" class="nav-link w-100" data-tab="rewards">Rewards</button>
-      </li>
-    </ul>
+    <div id="studentTabs" class="student-switch mb-3">
+      <button type="button" class="student-switch-btn active" data-tab="home">Home</button>
+      <button type="button" class="student-switch-btn" data-tab="analytics">Analytics</button>
+      <button type="button" class="student-switch-btn" data-tab="rewards">Rewards</button>
+    </div>
 
     <div id="testSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
-      <button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-test-id="T01"></button>
-      <button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-test-id="T02"></button>
-      <button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-test-id="T03"></button>
+      <button type="button" class="btn btn-sm mono flex-shrink-0 test-slot-btn" data-slot-index="0"></button>
+      <button type="button" class="btn btn-sm mono flex-shrink-0 test-slot-btn" data-slot-index="1"></button>
+      <button type="button" class="btn btn-sm mono flex-shrink-0 test-slot-btn" data-slot-index="2"></button>
     </div>
 
     <section id="homeSection" class="section-panel active">
@@ -524,6 +608,8 @@
   </template>
 </div>
 
+{{ my_tests_payload|json_script:"my-tests-payload" }}
+
 <script>
   (() => {
     const SUBJECTS = ["Physics", "Chemistry", "Maths"];
@@ -638,24 +724,30 @@
       batch: "{{ student.batch|escapejs }}",
       parentPhone: "{{ student.contact|escapejs }}",
     };
-    const TESTS = [
+    const MY_TESTS_PAYLOAD = JSON.parse(
+      document.getElementById("my-tests-payload").textContent,
+    );
+    const BASE_COMPLETED_TESTS = [
       {
         id: "T01",
         name: "Mock Test 01",
         date: "15 Apr 2026",
         shortDate: "Apr 15",
+        sortAt: "2026-04-15T00:00:00+05:30",
       },
       {
         id: "T02",
         name: "Mock Test 02",
         date: "22 Apr 2026",
         shortDate: "Apr 22",
+        sortAt: "2026-04-22T00:00:00+05:30",
       },
       {
         id: "T03",
         name: "Mock Test 03",
         date: "29 Apr 2026",
         shortDate: "Apr 29",
+        sortAt: "2026-04-29T00:00:00+05:30",
       },
     ];
     const CLUSTER_SCHEDULE = {
@@ -709,10 +801,42 @@
 
     const STUDENTS = studentsSeed;
     const CURRENT_STUDENT_ID = STUDENTS[0].id;
+    const SCHOLARSHIP_COMPLETED_TESTS = (MY_TESTS_PAYLOAD.completedTests || []).map(
+      (test) => ({
+        ...test,
+        kind: "completed",
+      }),
+    );
+    const TESTS = [...BASE_COMPLETED_TESTS, ...SCHOLARSHIP_COMPLETED_TESTS].sort(
+      (left, right) => new Date(left.sortAt) - new Date(right.sortAt),
+    );
+    const VISIBLE_COMPLETED_TESTS = TESTS.slice(-2);
+    const UPCOMING_TEST_SLOT = MY_TESTS_PAYLOAD.upcomingTest
+      ? {
+          ...MY_TESTS_PAYLOAD.upcomingTest,
+          kind: "upcoming",
+        }
+      : {
+          id: "upcoming-placeholder",
+          name: "Upcoming Test",
+          date: "Awaiting schedule",
+          shortDate: "Soon",
+          kind: "placeholder",
+          canLaunchNow: false,
+          launchUrl: "",
+        };
+    const TEST_SELECTOR_SLOTS = [
+      VISIBLE_COMPLETED_TESTS[0] || TESTS[TESTS.length - 1] || null,
+      VISIBLE_COMPLETED_TESTS[1] || VISIBLE_COMPLETED_TESTS[0] || TESTS[TESTS.length - 1] || null,
+      UPCOMING_TEST_SLOT,
+    ];
     const state = {
       studentTab: "home",
       studentLeaderboardOpen: false,
-      testId: TESTS[TESTS.length - 1].id,
+      testId:
+        (VISIBLE_COMPLETED_TESTS[1] && VISIBLE_COMPLETED_TESTS[1].id) ||
+        (VISIBLE_COMPLETED_TESTS[0] && VISIBLE_COMPLETED_TESTS[0].id) ||
+        TESTS[TESTS.length - 1].id,
       online: navigator.onLine,
       attendance: blankAttendance(),
     };
@@ -721,9 +845,9 @@
     );
     const refs = {
       onlineBadge: document.getElementById("onlineBadge"),
-      levelBadge: document.getElementById("levelBadge"),
+      levelBadgeText: document.getElementById("levelBadgeText"),
       tabButtons: [...document.querySelectorAll("#studentTabs [data-tab]")],
-      testButtons: [...document.querySelectorAll("#testSelector [data-test-id]")],
+      testButtons: [...document.querySelectorAll("#testSelector [data-slot-index]")],
       homeSection: document.getElementById("homeSection"),
       analyticsSection: document.getElementById("analyticsSection"),
       rewardsSection: document.getElementById("rewardsSection"),
@@ -1018,22 +1142,60 @@
       bar.style.background = background;
     }
 
+    function applyTestSlotButtonState(button, slot) {
+      button.classList.remove("btn-brand", "btn-outline-light");
+      button.disabled = false;
+      button.title = "";
+
+      if (!slot) {
+        button.textContent = "Unavailable";
+        button.disabled = true;
+        button.classList.add("btn-outline-light");
+        return;
+      }
+
+      if (slot.kind === "completed") {
+        button.textContent = `${slot.name} - ${slot.date}`;
+        const isActive = slot.id === state.testId;
+        button.classList.add(isActive ? "btn-brand" : "btn-outline-light");
+        return;
+      }
+
+      if (slot.kind === "placeholder") {
+        button.textContent = `${slot.name} - ${slot.date}`;
+      } else if (slot.isLive) {
+        button.textContent = `${slot.name} - Live Now`;
+      } else if (slot.canLaunchNow) {
+        button.textContent = `${slot.name} - Starts Soon`;
+      } else {
+        button.textContent = `${slot.name} - ${slot.date}`;
+      }
+
+      const isLaunchable = slot.kind === "upcoming" && slot.canLaunchNow;
+      button.classList.add(isLaunchable ? "btn-brand" : "btn-outline-light");
+      button.disabled = !isLaunchable;
+
+      if (slot.kind === "placeholder") {
+        button.title = "No upcoming test has been scheduled yet.";
+      } else if (!isLaunchable) {
+        button.title = "This test opens 10 minutes before the scheduled start time.";
+      }
+    }
+
     function renderHeader(xp) {
       refs.onlineBadge.className = `badge rounded-pill ${
         state.online ? "text-bg-success" : "text-bg-danger"
       }`;
       refs.onlineBadge.textContent = state.online ? "ONLINE" : "OFFLINE";
-      refs.levelBadge.textContent = `LVL ${xp.level}`;
+      refs.levelBadgeText.textContent = `LVL ${xp.level}`;
 
       refs.tabButtons.forEach((button) => {
         button.classList.toggle("active", button.dataset.tab === state.studentTab);
       });
 
       refs.testButtons.forEach((button) => {
-        const test = TESTS.find((item) => item.id === button.dataset.testId);
-        button.textContent = `${test.name} - ${test.date}`;
-        button.classList.toggle("btn-brand", button.dataset.testId === state.testId);
-        button.classList.toggle("btn-outline-light", button.dataset.testId !== state.testId);
+        const slot = TEST_SELECTOR_SLOTS[Number(button.dataset.slotIndex)];
+        applyTestSlotButtonState(button, slot);
       });
 
       refs.homeSection.classList.toggle("active", state.studentTab === "home");
@@ -1375,10 +1537,23 @@
 
     refs.testButtons.forEach((button) => {
       button.addEventListener("click", () => {
-        state.testId = button.dataset.testId;
+        const slot = TEST_SELECTOR_SLOTS[Number(button.dataset.slotIndex)];
+        if (!slot) return;
+
+        if (slot.kind === "completed") {
+          state.testId = slot.id;
+          state.studentLeaderboardOpen = false;
+          loadAttendance();
+          render();
+          return;
+        }
+
+        if (slot.kind === "upcoming" && slot.canLaunchNow && slot.launchUrl) {
+          window.location.href = slot.launchUrl;
+          return;
+        }
+
         state.studentLeaderboardOpen = false;
-        loadAttendance();
-        render();
       });
     });
 

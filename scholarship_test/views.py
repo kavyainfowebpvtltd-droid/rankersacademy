@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from datetime import datetime
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -1051,6 +1052,7 @@ def api_get_tests(request):
             'duration_minutes': test.duration_minutes,
             'tags': test.tags,
             'status': test.status,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
         })
     return JsonResponse({'tests': data})
 
@@ -1087,6 +1089,10 @@ def api_create_test(request):
     except (TypeError, ValueError):
         return JsonResponse({'error': 'Invalid duration'}, status=400)
     duration_hours, duration_minutes = duration_parts or (1, 0)
+    try:
+        scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
+    except ValueError:
+        return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
     
     test = ScholarshipTest.objects.create(
         name=name,
@@ -1095,6 +1101,7 @@ def api_create_test(request):
         duration_hours=duration_hours,
         duration_minutes=duration_minutes,
         status=status,
+        scheduled_start_at=scheduled_start_at,
     )
     
     ScholarshipTestConfig.objects.create(
@@ -1114,6 +1121,7 @@ def api_create_test(request):
             'duration_minutes': test.duration_minutes,
             'tags': test.tags,
             'status': test.status,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
         }
     })
 
@@ -1159,6 +1167,11 @@ def api_update_test(request, test_id):
         if status not in valid_statuses:
             return JsonResponse({'error': 'Invalid status'}, status=400)
         test.status = status
+    if 'scheduled_start_at' in data:
+        try:
+            test.scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
+        except ValueError:
+            return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
     
     test.save()
     
@@ -1171,6 +1184,7 @@ def api_update_test(request, test_id):
         'duration_minutes': test.duration_minutes,
         'tags': test.tags,
         'status': test.status,
+        'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
     }})
 
 
@@ -1432,6 +1446,31 @@ def _format_test_duration(hours, minutes):
     return f"{total:.2f}".rstrip('0').rstrip('.')
 
 
+def _serialize_scheduled_start_at(value):
+    if not value:
+        return None
+    return timezone.localtime(value).isoformat()
+
+
+def _parse_scheduled_start_at(raw_value):
+    if raw_value in [None, ""]:
+        return None
+
+    if isinstance(raw_value, datetime):
+        parsed = raw_value
+    else:
+        normalized = str(raw_value).strip().replace("Z", "+00:00")
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError as exc:
+            raise ValueError("Invalid scheduled start time") from exc
+
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+
+    return parsed
+
+
 def _parse_test_duration(data):
     if 'duration_hours' in data or 'duration_minutes' in data:
         hours = int(data.get('duration_hours') or 0)
@@ -1529,6 +1568,7 @@ def api_get_test_details(request, test_id):
             'duration_hours': test.duration_hours,
             'duration_minutes': test.duration_minutes,
             'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
             'instructions': config.instructions if config else '',
             'default_pos_marks': config.default_pos_marks if config else 2,
             'default_neg_marks': config.default_neg_marks if config else 1,
@@ -1568,6 +1608,11 @@ def api_save_test_details(request, test_id):
         if status not in valid_statuses:
             return JsonResponse({'error': 'Invalid status'}, status=400)
         test.status = status
+    if 'scheduled_start_at' in data:
+        try:
+            test.scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
+        except ValueError:
+            return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
     
     test.save()
     

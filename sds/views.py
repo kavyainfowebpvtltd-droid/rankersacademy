@@ -38,8 +38,10 @@ import re
 import requests
 from zoneinfo import ZoneInfo
 from urllib.parse import urlencode, urlsplit
+from datetime import timedelta
 
 from .models import *
+from scholarship_test.models import ScholarshipTest
 from .password_policy import (
     DEFAULT_ONE_TIME_PASSWORD,
     clear_password_change_flag,
@@ -3554,6 +3556,57 @@ def submit_self_diagnostic(request):
 
 
 
+def _build_my_tests_payload():
+    now = timezone.localtime()
+    completed_tests = []
+    upcoming_test = None
+
+    published_tests = (
+        ScholarshipTest.objects
+        .filter(status="published", scheduled_start_at__isnull=False)
+        .order_by("scheduled_start_at", "id")
+        .prefetch_related("sections__questions")
+    )
+
+    for test in published_tests:
+        if not test.sections.filter(questions__isnull=False).exists():
+            continue
+
+        start_at = timezone.localtime(test.scheduled_start_at)
+        end_at = start_at + timedelta(
+            hours=int(test.duration_hours or 0),
+            minutes=int(test.duration_minutes or 0),
+        )
+        item = {
+            "id": f"SCH{test.id}",
+            "external_id": test.id,
+            "name": test.name,
+            "date": start_at.strftime("%d %b %Y"),
+            "shortDate": start_at.strftime("%b %d"),
+            "sortAt": start_at.isoformat(),
+            "scheduledStartAt": start_at.isoformat(),
+            "scheduledEndAt": end_at.isoformat(),
+            "launchUrl": reverse("scholarship_test:scholarship_launch_test", args=[test.id]),
+        }
+
+        if end_at <= now:
+            completed_tests.append(item)
+            continue
+
+        if upcoming_test is None:
+            launch_window_opens_at = start_at - timedelta(minutes=10)
+            upcoming_test = {
+                **item,
+                "canLaunchNow": launch_window_opens_at <= now < end_at,
+                "isLive": start_at <= now < end_at,
+            }
+
+    return {
+        "completedTests": completed_tests,
+        "upcomingTest": upcoming_test,
+    }
+
+
 @login_required
 def my_tests(request):
     if not hasattr(request.user, "student"):
@@ -3564,6 +3617,7 @@ def my_tests(request):
         "my-tests.html",
         {
             "student": request.user.student,
+            "my_tests_payload": _build_my_tests_payload(),
         },
     )
 
