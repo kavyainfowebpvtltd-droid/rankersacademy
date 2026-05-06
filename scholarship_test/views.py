@@ -1,18 +1,16 @@
 import json
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.utils import timezone
 from django.db import transaction, IntegrityError
-from django.db.models import Prefetch
 
 from scholarship_test.models import (
     RankPredictorLead,
@@ -1031,208 +1029,6 @@ def scholarship_logout(request):
 
 def scholarshiptest_management(request):
     return render(request, "scholarshiptest-management.html")
-
-
-@login_required
-def scholarship_test_analysis(request):
-    teacher = getattr(request.user, "teacheradmin", None)
-    normalized_role = ""
-    if teacher:
-        normalized_role = re.sub(r"\s+", " ", (teacher.role or "").strip()).lower()
-
-    session_mode = (request.session.get("staff_portal_mode") or "").strip().lower()
-    is_admin = request.user.is_superuser or session_mode == "admin" or normalized_role == "admin"
-    is_teacher = session_mode == "teacher" or (normalized_role == "teacher" and not is_admin)
-
-    if teacher and not (is_teacher or is_admin):
-        is_teacher = True
-
-    if not (is_teacher or is_admin):
-        return HttpResponseForbidden("Only teacher and admin users can access Test Analysis.")
-
-    allowed_subjects = [
-        part.strip()
-        for part in (teacher.subjects or "").split(",")
-        if part.strip()
-    ] if teacher else []
-    teacher_subject = next(
-        (
-            subject
-            for subject in allowed_subjects
-            if subject in {"Physics", "Chemistry", "Maths"}
-        ),
-        "Physics",
-    )
-    teacher_context = {
-        "username": request.user.username,
-        "name": teacher.name if teacher and teacher.name else (request.user.get_full_name() or request.user.username),
-    }
-
-    completed_statuses = {"completed", "expired"}
-    tests = list(
-        ScholarshipTest.objects
-        .prefetch_related(
-            Prefetch(
-                "attempts",
-                queryset=ScholarshipTestAttempt.objects.select_related(
-                    "student",
-                    "portal_student",
-                ).order_by("-score", "test_completed_at", "test_started_at", "id"),
-            ),
-            "sections__questions",
-        )
-        .order_by("-created_at")
-    )
-
-    now = timezone.localtime()
-    test_rows = []
-    all_completed_attempts = []
-
-    for test in tests:
-        sections = list(test.sections.all())
-        total_questions = sum(section.questions.count() for section in sections)
-        total_marks = sum(
-            int(question.pos_marks or 0)
-            for section in sections
-            for question in section.questions.all()
-        )
-        attempts = list(test.attempts.all())
-        completed_attempts = [
-            attempt for attempt in attempts if attempt.status in completed_statuses
-        ]
-        all_completed_attempts.extend(
-            [(test, attempt) for attempt in completed_attempts]
-        )
-
-        attempt_count = len(completed_attempts)
-        avg_score = round(
-            sum(int(attempt.score or 0) for attempt in completed_attempts) / attempt_count,
-            1,
-        ) if attempt_count else 0
-        avg_percentage = round(
-            sum(
-                ((attempt.score or 0) / max(int(attempt.total_marks or 0), 1)) * 100
-                for attempt in completed_attempts
-            ) / attempt_count,
-            1,
-        ) if attempt_count else 0
-        top_attempt = completed_attempts[0] if completed_attempts else None
-        unique_students = len(
-            {
-                attempt.portal_student_id or f"scholar-{attempt.student_id}"
-                for attempt in completed_attempts
-            }
-        )
-
-        if top_attempt and top_attempt.portal_student and top_attempt.portal_student.student_name:
-            top_student_name = top_attempt.portal_student.student_name
-        elif top_attempt:
-            top_student_name = top_attempt.student.name
-        else:
-            top_student_name = "-"
-
-        is_live = False
-        if test.scheduled_start_at:
-            start_at = timezone.localtime(test.scheduled_start_at)
-            end_at = start_at + timedelta(
-                hours=int(test.duration_hours or 0),
-                minutes=int(test.duration_minutes or 0),
-            )
-            is_live = start_at <= now < end_at
-            schedule_display = start_at.strftime("%d %b %Y, %I:%M %p")
-        else:
-            schedule_display = "Not scheduled"
-
-        test_rows.append(
-            {
-                "id": test.id,
-                "name": test.name,
-                "status": test.status.title(),
-                "folder": test.folder.name if test.folder else "Unfiled",
-                "scheduled_start": schedule_display,
-                "is_live": is_live,
-                "duration": test.get_duration_display(),
-                "question_count": total_questions,
-                "total_marks": total_marks,
-                "attempt_count": attempt_count,
-                "unique_students": unique_students,
-                "avg_score": avg_score,
-                "avg_percentage": avg_percentage,
-                "top_score": int(top_attempt.score or 0) if top_attempt else 0,
-                "top_student_name": top_student_name,
-            }
-        )
-
-    top_attempt_rows = []
-    for test, attempt in sorted(
-        all_completed_attempts,
-        key=lambda item: (
-            -(item[1].score or 0),
-            item[1].test_completed_at or item[1].test_started_at or timezone.now(),
-            item[1].id,
-        ),
-    )[:8]:
-        if attempt.portal_student and attempt.portal_student.student_name:
-            student_name = attempt.portal_student.student_name
-        else:
-            student_name = attempt.student.name
-
-        top_attempt_rows.append(
-            {
-                "student_name": student_name,
-                "test_name": test.name,
-                "score": int(attempt.score or 0),
-                "total_marks": int(attempt.total_marks or 0),
-                "scholarship_percentage": int(attempt.scholarship_percentage or 0),
-                "status": attempt.status.title(),
-            }
-        )
-
-    total_tests = len(test_rows)
-    published_tests = sum(1 for row in test_rows if row["status"] == "Published")
-    live_tests = sum(1 for row in test_rows if row["is_live"])
-    total_attempts = sum(row["attempt_count"] for row in test_rows)
-    avg_attempts = round(total_attempts / total_tests, 1) if total_tests else 0
-
-    context = {
-        "teacher": teacher_context,
-        "teacher_subject": teacher_subject,
-        "summary_cards": [
-            {
-                "label": "Total Tests",
-                "value": total_tests,
-                "meta": f"{published_tests} published",
-                "tone": "primary",
-                "icon": "bi-journal-text",
-            },
-            {
-                "label": "Live Tests",
-                "value": live_tests,
-                "meta": "currently active",
-                "tone": "success",
-                "icon": "bi-broadcast",
-            },
-            {
-                "label": "Completed Attempts",
-                "value": total_attempts,
-                "meta": f"{avg_attempts} avg per test",
-                "tone": "info",
-                "icon": "bi-people",
-            },
-            {
-                "label": "Question Bank",
-                "value": sum(row["question_count"] for row in test_rows),
-                "meta": "across all tests",
-                "tone": "warning",
-                "icon": "bi-patch-question",
-            },
-        ],
-        "test_rows": test_rows[:12],
-        "top_attempt_rows": top_attempt_rows,
-    }
-    template_name = "test-analysis.html" if is_admin else "test-analysis-teacher.html"
-    return render(request, template_name, context)
-
 
 def scholarship_create_test(request):
     response = render(request, "create_test.html")

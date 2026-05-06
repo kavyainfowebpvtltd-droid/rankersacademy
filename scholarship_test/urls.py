@@ -15,7 +15,6 @@ urlpatterns = [
     
     # Admin Management
     path('scholarshiptest-management/', views.scholarshiptest_management, name="scholarshiptest_management"),
-    path('test-analysis/', views.scholarship_test_analysis, name="scholarship_test_analysis"),
     path('create-test/', views.scholarship_create_test, name="scholarship_create_test"),
     
     # Test Management APIs
