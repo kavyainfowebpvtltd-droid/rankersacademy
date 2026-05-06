@@ -1224,7 +1224,8 @@ def scholarship_test_analysis(request):
         "test_rows": test_rows[:12],
         "top_attempt_rows": top_attempt_rows,
     }
-    return render(request, "test-analysis.html", context)
+    template_name = "test-analysis.html" if is_admin else "test-analysis-teacher.html"
+    return render(request, template_name, context)
 
 
 def scholarship_create_test(request):
