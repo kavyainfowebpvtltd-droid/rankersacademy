@@ -52,12 +52,6 @@
       color: transparent;
     }
 
-    .my-tests-page .glass {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      backdrop-filter: none;
-    }
-
     .my-tests-page .btn-brand {
       --bs-btn-color: #fff;
       --bs-btn-border-color: transparent;
@@ -69,6 +63,8 @@
         var(--brand-b) 52%,
         var(--brand-c)
       );
+      border-color: transparent;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
     }
 
     .my-tests-page .hover-card {
@@ -99,12 +95,13 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.9rem;
-      height: 1.9rem;
+      width: 1.4rem;
+      height: 1.4rem;
+      margin-left: 0.2rem;
       border-radius: 999px;
       background: #eef5ff;
       box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
-      font-size: 1.25rem;
+      font-size: 0.95rem;
       line-height: 1;
     }
 
@@ -112,15 +109,6 @@
       width: 1%;
       white-space: nowrap;
       padding-right: 0.25rem !important;
-    }
-
-    .my-tests-page .leaderboard-rank .rank-medal {
-      width: 1.4rem;
-      height: 1.4rem;
-      margin-left: 0.2rem;
-      background: transparent;
-      box-shadow: none;
-      font-size: 1rem;
     }
 
     .my-tests-page .leaderboard-student {
@@ -143,7 +131,7 @@
       );
       box-shadow: 0 0.5rem 1.4rem rgba(37, 99, 235, 0.18);
       color: #fff;
-      font-size: 1.15rem;
+      font-size: 0.9rem;
       line-height: 1;
     }
 
@@ -197,22 +185,6 @@
       );
     }
 
-    .my-tests-page .table-dark {
-      --bs-table-bg: transparent;
-      --bs-table-color: #0f172a;
-      --bs-table-border-color: #e5edf8;
-      --bs-table-striped-color: #0f172a;
-      --bs-table-striped-bg: #f8fbff;
-      --bs-table-hover-color: #0f172a;
-      --bs-table-hover-bg: #eef5ff;
-      margin-bottom: 0;
-    }
-
-    .my-tests-page .progress {
-      overflow: hidden;
-      background: #e8edf3;
-    }
-
     .my-tests-page .nav-pills.bg-black.bg-opacity-25 {
       background: #eef5ff !important;
       border: 1px solid #dbeafe;
@@ -232,9 +204,15 @@
       border-color: #bfdbfe;
     }
 
-    .my-tests-page .btn-brand {
-      border-color: transparent;
-      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    .my-tests-page .table-dark {
+      --bs-table-bg: transparent;
+      --bs-table-color: #0f172a;
+      --bs-table-border-color: #e5edf8;
+      --bs-table-striped-color: #0f172a;
+      --bs-table-striped-bg: #f8fbff;
+      --bs-table-hover-color: #0f172a;
+      --bs-table-hover-bg: #eef5ff;
+      margin-bottom: 0;
     }
 
     .my-tests-page .table thead th {
@@ -250,20 +228,326 @@
       border-bottom-color: #eef2f7;
     }
 
-    .my-tests-page .text-white {
-      color: #ffffff !important;
+    .my-tests-page .progress {
+      overflow: hidden;
+      background: #e8edf3;
+      height: 8px;
+    }
+
+    .my-tests-page .section-panel {
+      display: none;
+    }
+
+    .my-tests-page .section-panel.active {
+      display: block;
+    }
+
+    .my-tests-page .hero-orb {
+      width: 220px;
+      height: 220px;
+      filter: blur(55px);
+    }
+
+    .my-tests-page .summary-orb {
+      width: 180px;
+      height: 180px;
+      filter: blur(45px);
+    }
+
+    .my-tests-page .rank-hero-number {
+      font-size: 4rem;
+    }
+
+    .my-tests-page .top-performer-card {
+      width: 140px;
+    }
+
+    .my-tests-page .summary-card-title {
+      color: #64748b;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      font-family: "DM Mono", monospace;
+    }
+
+    .my-tests-page .summary-card-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .my-tests-page .summary-card-extra {
+      font-size: 0.85rem;
+      color: #64748b;
     }
 
     @media (max-width: 767.98px) {
       .my-tests-page {
         padding: 1rem 0 1.5rem;
       }
+
+      .my-tests-page .rank-hero-number {
+        font-size: 3rem;
+      }
     }
   </style>
 
   <div class="container-fluid px-3 px-lg-4">
-    <div id="my-tests-app"></div>
+    <div class="position-fixed top-0 end-0 m-3" style="z-index: 3">
+      <span id="onlineBadge" class="badge rounded-pill"></span>
+    </div>
+
+    <section class="card app-card p-4 mb-4 rise overflow-hidden position-relative">
+      <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle hero-orb"></div>
+      <div class="position-relative">
+        <div class="soft text-uppercase small fw-bold mono mb-2">Student Portal</div>
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center">
+          <div>
+            <h1 class="display fw-bold mb-1">My Tests</h1>
+            <div class="soft">Climb Smarter. <span class="brand-text">Rank Higher.</span></div>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div id="studentAvatar"></div>
+            <div>
+              <div id="studentName" class="fw-bold"></div>
+              <div id="studentMeta" class="small soft mono"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="mb-2">
+      <span id="levelBadge" class="badge rounded-pill text-bg-info"></span>
+    </div>
+
+    <ul id="studentTabs" class="nav nav-pills bg-black bg-opacity-25 rounded-pill p-1 mb-3">
+      <li class="nav-item flex-fill">
+        <button type="button" class="nav-link w-100 active" data-tab="home">Home</button>
+      </li>
+      <li class="nav-item flex-fill">
+        <button type="button" class="nav-link w-100" data-tab="analytics">Analytics</button>
+      </li>
+      <li class="nav-item flex-fill">
+        <button type="button" class="nav-link w-100" data-tab="rewards">Rewards</button>
+      </li>
+    </ul>
+
+    <div id="testSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
+      <button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-test-id="T01"></button>
+      <button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-test-id="T02"></button>
+      <button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-test-id="T03"></button>
+    </div>
+
+    <section id="homeSection" class="section-panel active">
+      <div class="card app-card p-4 mb-4 rise position-relative overflow-hidden">
+        <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle summary-orb"></div>
+        <div class="position-relative">
+          <span id="rankTierBadge" class="badge rounded-pill"></span>
+          <h2 id="rankValue" class="display fw-bold mt-2 mb-0 rank-hero-number"></h2>
+          <div id="rankSummary" class="soft"></div>
+          <div id="homeKpiRow" class="row g-2 mt-3"></div>
+        </div>
+      </div>
+
+      <div id="coachingSection" class="card app-card p-3 mb-4 d-none">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h5 id="coachingTitle" class="display fw-bold mb-1"></h5>
+            <div id="coachingSchedule" class="small soft"></div>
+          </div>
+          <span id="coachingDurationBadge" class="badge rounded-pill text-bg-primary"></span>
+        </div>
+        <div id="coachingItems" class="row g-2 mt-2"></div>
+      </div>
+
+      <h5 class="display fw-bold">Subject Performance</h5>
+      <div id="subjectCards" class="row g-3 mb-4"></div>
+
+      <h5 class="display fw-bold">Top Performers</h5>
+      <div id="topPerformers" class="d-flex gap-2 overflow-auto pb-1 mb-4"></div>
+
+      <div class="card app-card p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="display fw-bold mb-0">Leaderboard</h5>
+          <span id="leaderboardCountBadge" class="badge rounded-pill text-bg-info"></span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-dark table-striped table-hover align-middle">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>PHY</th>
+                <th>CHM</th>
+                <th>MTH</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div id="leaderboardFooterText" class="small soft"></div>
+          <button id="leaderboardToggleBtn" type="button" class="btn btn-outline-light btn-sm rounded-pill">View All</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="analyticsSection" class="section-panel">
+      <div class="card app-card p-4 mb-4">
+        <h5 class="display fw-bold">Rank Journey</h5>
+        <div id="rankJourneyRow" class="row g-2"></div>
+      </div>
+
+      <h5 class="display fw-bold">Topic Analytics</h5>
+      <div id="topicAnalyticsContainer" class="vstack gap-3 mb-4"></div>
+    </section>
+
+    <section id="rewardsSection" class="section-panel">
+      <div class="card app-card p-4 mb-4">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h5 id="rewardLevelTitle" class="display fw-bold"></h5>
+            <div id="rewardXpText" class="soft small"></div>
+          </div>
+          <span id="rewardStreakBadge" class="badge rounded-pill text-bg-warning text-dark"></span>
+        </div>
+        <div class="mt-3">
+          <div class="progress">
+            <div id="rewardProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rewardsGrid" class="row g-3"></div>
+    </section>
   </div>
+
+  <template id="kpiTemplate">
+    <div class="col-6 col-lg-3">
+      <div class="card app-card-soft hover-card p-3 h-100">
+        <div class="summary-card-title"></div>
+        <div class="summary-card-value"></div>
+        <div class="summary-card-extra"></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="clusterItemTemplate">
+    <div class="col-md-4">
+      <div class="card app-card-soft hover-card p-2 d-flex align-items-center gap-2">
+        <div class="cluster-icon"></div>
+        <div class="flex-grow-1">
+          <b class="cluster-subject"></b>
+          <div class="small soft cluster-faculty"></div>
+        </div>
+        <div class="cluster-status"></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="subjectCardTemplate">
+    <div class="col-md-4">
+      <div class="card app-card hover-card p-3 h-100 subject-card">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="subject-icon"></div>
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <b class="subject-title"></b>
+              <div class="subject-boost"></div>
+            </div>
+            <div class="small soft subject-rank"></div>
+          </div>
+        </div>
+        <div class="display fs-2 fw-bold subject-score"></div>
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped progress-bar-animated subject-progress-fill"></div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span class="small soft subject-average"></span>
+          <div class="subject-delta"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="topPerformerTemplate">
+    <div class="card app-card-soft hover-card p-3 text-center flex-shrink-0 position-relative top-performer-card">
+      <div class="top-performer-rank mb-1"></div>
+      <div class="top-performer-avatar d-flex justify-content-center"></div>
+      <div class="fw-bold mt-2 text-truncate top-performer-name"></div>
+      <div class="mono soft top-performer-meta"></div>
+    </div>
+  </template>
+
+  <template id="leaderboardRowTemplate">
+    <tr>
+      <td class="mono leaderboard-rank">
+        <span class="leaderboard-rank-text"></span>
+        <span class="leaderboard-rank-medal"></span>
+      </td>
+      <td class="leaderboard-student">
+        <div class="d-flex align-items-center gap-2">
+          <div class="leaderboard-avatar"></div>
+          <div class="overflow-hidden">
+            <div class="fw-semibold d-flex align-items-center gap-2">
+              <span class="leaderboard-name"></span>
+              <span class="leaderboard-you"></span>
+            </div>
+            <div class="small soft mono leaderboard-id"></div>
+          </div>
+        </div>
+      </td>
+      <td class="leaderboard-physics"></td>
+      <td class="leaderboard-chemistry"></td>
+      <td class="leaderboard-maths"></td>
+      <td><b class="leaderboard-total"></b></td>
+    </tr>
+  </template>
+
+  <template id="topicCardTemplate">
+    <div class="card app-card hover-card p-3">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="topic-subject-icon"></div>
+          <div>
+            <b class="topic-subject-name"></b>
+            <div class="small soft">Topic-wise mastery</div>
+          </div>
+        </div>
+        <span class="mono topic-subject-score"></span>
+      </div>
+      <div class="topic-rows"></div>
+    </div>
+  </template>
+
+  <template id="topicRowTemplate">
+    <div class="mt-2">
+      <div class="d-flex justify-content-between small">
+        <span class="topic-name"></span>
+        <span class="soft topic-score"></span>
+      </div>
+      <div class="progress">
+        <div class="progress-bar progress-bar-striped progress-bar-animated topic-progress-fill"></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="rewardCardTemplate">
+    <div class="col-md-6">
+      <div class="card app-card hover-card p-3 h-100 reward-card-shell">
+        <div class="d-flex gap-3">
+          <div class="reward-icon reward-icon-text"></div>
+          <div>
+            <b class="reward-name"></b>
+            <div class="small soft reward-desc"></div>
+            <div class="small mono soft text-uppercase reward-meta"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
 </div>
 
 <script>
@@ -426,16 +710,19 @@
       ["attend_perfect", "ATT", "Revision Warrior", "Attended every assigned booster session", "silver"],
       ["no_cluster", "CLR", "Concept Clear Badge", "Stayed out of coaching clusters this test", "bronze"],
     ].map(([id, icon, name, desc, tier]) => ({ id, icon, name, desc, tier }));
-
     const StorageKeys = {
       attendance: (testId) => `tra4_att:${testId}`,
     };
-
-    const studentsSeed = STUDENT_NAMES.map((name, i) => ({
-      id: `TRA${String(i + 1).padStart(3, "0")}`,
+    const MEDALS = {
+      1: { icon: "🥇", label: "Gold medal" },
+      2: { icon: "🥈", label: "Silver medal" },
+      3: { icon: "🥉", label: "Bronze medal" },
+    };
+    const studentsSeed = STUDENT_NAMES.map((name, index) => ({
+      id: `TRA${String(index + 1).padStart(3, "0")}`,
       name,
-      batch: i < 25 ? "Alpha" : "Star-01",
-      parentPhone: `+91 9${String(800000000 + i * 13579).slice(0, 9)}`,
+      batch: index < 25 ? "Alpha" : "Star-01",
+      parentPhone: `+91 9${String(800000000 + index * 13579).slice(0, 9)}`,
     }));
 
     studentsSeed[0] = {
@@ -458,7 +745,40 @@
     const allScores = Object.fromEntries(
       TESTS.map((test) => [test.id, generateScores(test.id)]),
     );
-    const app = document.getElementById("my-tests-app");
+    const refs = {
+      onlineBadge: document.getElementById("onlineBadge"),
+      studentAvatar: document.getElementById("studentAvatar"),
+      studentName: document.getElementById("studentName"),
+      studentMeta: document.getElementById("studentMeta"),
+      levelBadge: document.getElementById("levelBadge"),
+      tabButtons: [...document.querySelectorAll("#studentTabs [data-tab]")],
+      testButtons: [...document.querySelectorAll("#testSelector [data-test-id]")],
+      homeSection: document.getElementById("homeSection"),
+      analyticsSection: document.getElementById("analyticsSection"),
+      rewardsSection: document.getElementById("rewardsSection"),
+      rankTierBadge: document.getElementById("rankTierBadge"),
+      rankValue: document.getElementById("rankValue"),
+      rankSummary: document.getElementById("rankSummary"),
+      homeKpiRow: document.getElementById("homeKpiRow"),
+      coachingSection: document.getElementById("coachingSection"),
+      coachingTitle: document.getElementById("coachingTitle"),
+      coachingSchedule: document.getElementById("coachingSchedule"),
+      coachingDurationBadge: document.getElementById("coachingDurationBadge"),
+      coachingItems: document.getElementById("coachingItems"),
+      subjectCards: document.getElementById("subjectCards"),
+      topPerformers: document.getElementById("topPerformers"),
+      leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
+      leaderboardBody: document.getElementById("leaderboardBody"),
+      leaderboardFooterText: document.getElementById("leaderboardFooterText"),
+      leaderboardToggleBtn: document.getElementById("leaderboardToggleBtn"),
+      rankJourneyRow: document.getElementById("rankJourneyRow"),
+      topicAnalyticsContainer: document.getElementById("topicAnalyticsContainer"),
+      rewardLevelTitle: document.getElementById("rewardLevelTitle"),
+      rewardXpText: document.getElementById("rewardXpText"),
+      rewardStreakBadge: document.getElementById("rewardStreakBadge"),
+      rewardProgressBar: document.getElementById("rewardProgressBar"),
+      rewardsGrid: document.getElementById("rewardsGrid"),
+    };
 
     function blankAttendance() {
       return { Physics: {}, Chemistry: {}, Maths: {}, finalized: {} };
@@ -476,20 +796,6 @@
       state.attendance = getStore(
         StorageKeys.attendance(state.testId),
         blankAttendance(),
-      );
-    }
-
-    function esc(value) {
-      return String(value ?? "").replace(
-        /[&<>"']/g,
-        (char) =>
-          ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;",
-          })[char],
       );
     }
 
@@ -547,10 +853,6 @@
 
     function currentTest() {
       return TESTS.find((test) => test.id === state.testId);
-    }
-
-    function scoreStudent(score) {
-      return { ...score, ...STUDENTS.find((student) => student.id === score.studentId) };
     }
 
     function getRankings(scores, key = "total") {
@@ -647,8 +949,12 @@
       if (streak >= 2) earned.add("streak_3");
       if (ever90) earned.add("subject_90");
 
-      const flags = getStudentClusterFlags(studentId, allScores[TESTS[TESTS.length - 1].id]);
+      const flags = getStudentClusterFlags(
+        studentId,
+        allScores[TESTS[TESTS.length - 1].id],
+      );
       const flaggedSubjects = SUBJECTS.filter((subject) => flags[subject]);
+
       if (!flaggedSubjects.length) earned.add("no_cluster");
       if (
         flaggedSubjects.length &&
@@ -677,55 +983,219 @@
       return { improveStreak };
     }
 
-    function avatar(name, size = 38) {
+    function clearNode(node) {
+      while (node.firstChild) {
+        node.removeChild(node.firstChild);
+      }
+    }
+
+    function cloneTemplate(id) {
+      return document.getElementById(id).content.firstElementChild.cloneNode(true);
+    }
+
+    function createAvatar(name, size = 38) {
+      const span = document.createElement("span");
       const initials = name
         .split(" ")
         .map((part) => part[0])
         .slice(0, 2)
         .join("");
-      return `<span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient flex-shrink-0" style="width:${size}px;height:${size}px;font-size:${Math.max(10, size * 0.32)}px">${esc(initials)}</span>`;
+
+      span.className =
+        "d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient flex-shrink-0";
+      span.style.width = `${size}px`;
+      span.style.height = `${size}px`;
+      span.style.fontSize = `${Math.max(10, size * 0.32)}px`;
+      span.textContent = initials;
+      return span;
     }
 
-    function badge(text, tone = "text-bg-secondary", style = "") {
-      const map = {
-        present: "text-bg-success",
-        late: "text-bg-warning text-dark",
-        absent: "text-bg-danger",
-        pending: "text-bg-secondary",
-      };
-      return `<span class="badge rounded-pill ${map[tone] || tone}" style="${style}">${esc(text)}</span>`;
+    function createBadge(text, className) {
+      const span = document.createElement("span");
+      span.className = `badge rounded-pill ${className}`;
+      span.textContent = text;
+      return span;
     }
 
-    function progress(value, color) {
-      return `<div class="progress bg-black bg-opacity-25" style="height:8px"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:${Math.max(0, Math.min(100, value))}%;background:${color}"></div></div>`;
-    }
-
-    function subjectIcon(subject) {
+    function createSubjectIcon(subject) {
       const theme = SUBJECT_THEMES[subject];
-      return `<span class="d-inline-flex align-items-center justify-content-center rounded-3 text-white fw-bold flex-shrink-0" style="width:36px;height:36px;background:linear-gradient(135deg,${theme.from},${theme.to})">${theme.icon}</span>`;
+      const span = document.createElement("span");
+      span.className =
+        "d-inline-flex align-items-center justify-content-center rounded-3 text-white fw-bold flex-shrink-0";
+      span.style.width = "36px";
+      span.style.height = "36px";
+      span.style.background = `linear-gradient(135deg, ${theme.from}, ${theme.to})`;
+      span.textContent = theme.icon;
+      return span;
     }
 
-    function card(classes = "p-3", body = "") {
-      return `<div class="card app-card hover-card ${classes}">${body}</div>`;
+    function createRankMedal(rank) {
+      const medal = MEDALS[rank];
+      if (!medal) return null;
+
+      const span = document.createElement("span");
+      span.className = "rank-medal";
+      span.setAttribute("role", "img");
+      span.setAttribute("aria-label", medal.label);
+      span.title = medal.label;
+      span.textContent = medal.icon;
+      return span;
     }
 
-    function mini(classes = "p-3", body = "") {
-      return `<div class="card app-card-soft hover-card ${classes}">${body}</div>`;
+    function setProgressBar(bar, value, background) {
+      bar.style.width = `${Math.max(0, Math.min(100, value))}%`;
+      bar.style.background = background;
     }
 
-    function kpi(label, value, extra = "") {
-      return `<div class="col-6 col-lg-3">${mini("p-3 h-100", `<div class="soft small text-uppercase fw-bold mono">${esc(label)}</div><div class="display fs-4 fw-bold">${esc(value)}</div><div class="small soft">${esc(extra)}</div>`)}</div>`;
+    function renderHeader(student, xp) {
+      refs.onlineBadge.className = `badge rounded-pill ${
+        state.online ? "text-bg-success" : "text-bg-danger"
+      }`;
+      refs.onlineBadge.textContent = state.online ? "ONLINE" : "OFFLINE";
+
+      clearNode(refs.studentAvatar);
+      refs.studentAvatar.appendChild(createAvatar(student.name, 52));
+      refs.studentName.textContent = student.name;
+      refs.studentMeta.textContent = student.batch
+        ? `${student.id} - ${student.batch}`
+        : student.id;
+      refs.levelBadge.textContent = `LVL ${xp.level}`;
+
+      refs.tabButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.tab === state.studentTab);
+      });
+
+      refs.testButtons.forEach((button) => {
+        const test = TESTS.find((item) => item.id === button.dataset.testId);
+        button.textContent = `${test.name} - ${test.date}`;
+        button.classList.toggle("btn-brand", button.dataset.testId === state.testId);
+        button.classList.toggle("btn-outline-light", button.dataset.testId !== state.testId);
+      });
+
+      refs.homeSection.classList.toggle("active", state.studentTab === "home");
+      refs.analyticsSection.classList.toggle("active", state.studentTab === "analytics");
+      refs.rewardsSection.classList.toggle("active", state.studentTab === "rewards");
     }
 
-    function rankMedal(rank) {
-      const medals = {
-        1: { icon: "&#129351;", label: "Gold medal" },
-        2: { icon: "&#129352;", label: "Silver medal" },
-        3: { icon: "&#129353;", label: "Bronze medal" },
-      };
-      const medal = medals[rank];
-      if (!medal) return "";
-      return `<span class="rank-medal" role="img" aria-label="${medal.label}" title="${medal.label}">${medal.icon}</span>`;
+    function renderKpiRow(container, items) {
+      clearNode(container);
+      items.forEach((item) => {
+        const node = cloneTemplate("kpiTemplate");
+        node.querySelector(".summary-card-title").textContent = item.label;
+        node.querySelector(".summary-card-value").textContent = item.value;
+        node.querySelector(".summary-card-extra").textContent = item.extra;
+        container.appendChild(node);
+      });
+    }
+
+    function renderCoaching(studentId, flaggedSubjects) {
+      if (!flaggedSubjects.length) {
+        refs.coachingSection.classList.add("d-none");
+        return;
+      }
+
+      refs.coachingSection.classList.remove("d-none");
+      const allSubjects = flaggedSubjects.length === 3;
+      refs.coachingTitle.textContent = allSubjects
+        ? "All-Subjects Coaching Cluster"
+        : "Coaching Cluster";
+      refs.coachingSchedule.textContent = allSubjects
+        ? "4:00 - 5:30 PM - 90 minutes"
+        : flaggedSubjects
+            .map((subject) => `${subject}: ${CLUSTER_SCHEDULE[subject].time}`)
+            .join(" | ");
+      refs.coachingDurationBadge.textContent = allSubjects ? "90 MIN" : "30 MIN";
+
+      clearNode(refs.coachingItems);
+      flaggedSubjects.forEach((subject) => {
+        const node = cloneTemplate("clusterItemTemplate");
+        node.querySelector(".cluster-icon").appendChild(createSubjectIcon(subject));
+        node.querySelector(".cluster-subject").textContent = subject;
+        node.querySelector(".cluster-faculty").textContent = CLUSTER_SCHEDULE[subject].faculty;
+        node
+          .querySelector(".cluster-status")
+          .appendChild(
+            createBadge(
+              state.attendance[subject]?.[studentId] || "pending",
+              {
+                present: "text-bg-success",
+                late: "text-bg-warning text-dark",
+                absent: "text-bg-danger",
+                pending: "text-bg-secondary",
+              }[state.attendance[subject]?.[studentId] || "pending"],
+            ),
+          );
+        refs.coachingItems.appendChild(node);
+      });
+    }
+
+    function renderSubjectCards(score, studentId) {
+      const flags = getStudentClusterFlags(studentId, currentScores());
+      clearNode(refs.subjectCards);
+
+      SUBJECTS.forEach((subject) => {
+        const theme = SUBJECT_THEMES[subject];
+        const average = Math.round(
+          currentScores().reduce((sum, entry) => sum + entry[subject], 0) /
+            STUDENTS.length,
+        );
+        const rank = getRankings(currentScores(), subject).find(
+          (entry) => entry.studentId === studentId,
+        ).rank;
+        const delta = score[subject] - average;
+        const node = cloneTemplate("subjectCardTemplate");
+
+        node.querySelector(".subject-icon").appendChild(createSubjectIcon(subject));
+        node.querySelector(".subject-title").textContent = subject;
+        node.querySelector(".subject-rank").textContent = `Subject rank #${rank}`;
+        node.querySelector(".subject-score").textContent = score[subject];
+        node.querySelector(".subject-score").style.color = theme.accent;
+        node.querySelector(".subject-average").textContent = `Class avg ${average}/100`;
+        setProgressBar(
+          node.querySelector(".subject-progress-fill"),
+          score[subject],
+          `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+        );
+
+        if (subject === "Maths" && flags[subject]) {
+          node
+            .querySelector(".subject-boost")
+            .appendChild(createBadge("Boost", "text-bg-warning text-dark"));
+        }
+
+        node
+          .querySelector(".subject-delta")
+          .appendChild(
+            createBadge(
+              delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`,
+              delta >= 0 ? "text-bg-success" : "text-bg-danger",
+            ),
+          );
+
+        refs.subjectCards.appendChild(node);
+      });
+
+      return flags;
+    }
+
+    function renderTopPerformers(ranked) {
+      clearNode(refs.topPerformers);
+
+      ranked.slice(0, 5).forEach((entry) => {
+        const student = STUDENTS.find((item) => item.id === entry.studentId);
+        const node = cloneTemplate("topPerformerTemplate");
+        const medal = createRankMedal(entry.rank);
+
+        node.querySelector(".top-performer-rank").textContent = `#${entry.rank}`;
+        if (medal) {
+          node.querySelector(".top-performer-rank").appendChild(medal);
+        }
+
+        node.querySelector(".top-performer-avatar").appendChild(createAvatar(student.name, 42));
+        node.querySelector(".top-performer-name").textContent = student.name;
+        node.querySelector(".top-performer-meta").textContent = `#${entry.rank} - ${entry.total}`;
+        refs.topPerformers.appendChild(node);
+      });
     }
 
     function leaderboardRows(ranked, highlightId, collapsed) {
@@ -737,58 +1207,58 @@
         : topFive;
     }
 
-    function leaderboard(ranked, highlightId = "", collapsible = false) {
+    function renderLeaderboard(ranked, highlightId) {
+      refs.leaderboardCountBadge.textContent = `${ranked.length} students`;
+      clearNode(refs.leaderboardBody);
+
       const rows = leaderboardRows(
         ranked,
         highlightId,
-        collapsible && !state.studentLeaderboardOpen,
+        !state.studentLeaderboardOpen,
       );
-      const footer = collapsible
-        ? `<div class="d-flex justify-content-between align-items-center mt-3">
-            <div class="small soft">${state.studentLeaderboardOpen ? `Showing all ${ranked.length} students` : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`}</div>
-            <button class="btn btn-outline-light btn-sm rounded-pill" onclick="window.myTestsToggleLeaderboard()">${state.studentLeaderboardOpen ? "Show Less" : "View All"}</button>
-          </div>`
-        : "";
 
-      return card(
-        "p-3 mb-4",
-        `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${rows
-          .map((row) => {
-            const student = STUDENTS.find((entry) => entry.id === row.studentId);
-            const mine = student.id === highlightId;
-            return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${row.rank}</span>${rankMedal(row.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(student.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(student.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(student.id)}</div></div></div></td><td>${row.Physics}</td><td>${row.Chemistry}</td><td>${row.Maths}</td><td><b>${row.total}</b></td></tr>`;
-          })
-          .join("")}</tbody></table></div>${footer}`,
-      );
+      rows.forEach((row) => {
+        const student = STUDENTS.find((item) => item.id === row.studentId);
+        const node = cloneTemplate("leaderboardRowTemplate");
+        const mine = student.id === highlightId;
+        const medal = createRankMedal(row.rank);
+
+        if (mine) {
+          node.classList.add("table-active", "student-highlight");
+        }
+
+        node.querySelector(".leaderboard-rank-text").textContent = `#${row.rank}`;
+        if (medal) {
+          node.querySelector(".leaderboard-rank-medal").appendChild(medal);
+        }
+
+        node.querySelector(".leaderboard-avatar").appendChild(createAvatar(student.name, 28));
+        node.querySelector(".leaderboard-name").textContent = student.name;
+        node.querySelector(".leaderboard-id").textContent = student.id;
+        node.querySelector(".leaderboard-physics").textContent = row.Physics;
+        node.querySelector(".leaderboard-chemistry").textContent = row.Chemistry;
+        node.querySelector(".leaderboard-maths").textContent = row.Maths;
+        node.querySelector(".leaderboard-total").textContent = row.total;
+
+        if (mine) {
+          node
+            .querySelector(".leaderboard-you")
+            .appendChild(createBadge("You", "text-bg-info"));
+        }
+
+        refs.leaderboardBody.appendChild(node);
+      });
+
+      refs.leaderboardFooterText.textContent = state.studentLeaderboardOpen
+        ? `Showing all ${ranked.length} students`
+        : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`;
+      refs.leaderboardToggleBtn.textContent = state.studentLeaderboardOpen
+        ? "Show Less"
+        : "View All";
     }
 
-    function coaching(studentId, flaggedSubjects) {
-      const allSubjects = flaggedSubjects.length === 3;
-      return card(
-        "p-3 mb-4",
-        `<div class="d-flex justify-content-between align-items-start"><div><h5 class="display fw-bold mb-1">${allSubjects ? "All-Subjects Coaching Cluster" : "Coaching Cluster"}</h5><div class="small soft">${allSubjects ? "4:00 - 5:30 PM - 90 minutes" : flaggedSubjects.map((subject) => `${subject}: ${CLUSTER_SCHEDULE[subject].time}`).join(" | ")}</div></div>${badge(allSubjects ? "90 MIN" : "30 MIN", "text-bg-primary")}</div><div class="row g-2 mt-2">${flaggedSubjects.map((subject) => `<div class="col-md-4">${mini("p-2 d-flex align-items-center gap-2", `${subjectIcon(subject)}<div class="flex-grow-1"><b>${subject}</b><div class="small soft">${CLUSTER_SCHEDULE[subject].faculty}</div></div>${badge(state.attendance[subject]?.[studentId] || "pending", state.attendance[subject]?.[studentId] || "pending")}`)}</div>`).join("")}</div>`,
-      );
-    }
-
-    function subjectCard(subject, score, flagged) {
-      const theme = SUBJECT_THEMES[subject];
-      const average = Math.round(
-        currentScores().reduce((sum, entry) => sum + entry[subject], 0) / STUDENTS.length,
-      );
-      const rank = getRankings(currentScores(), subject).find(
-        (entry) => entry.studentId === score.studentId,
-      ).rank;
-      const delta = score[subject] - average;
-      const boostBadge =
-        subject === "Maths" && flagged
-          ? ` ${badge("Boost", "text-bg-warning text-dark")}`
-          : "";
-
-      return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(subject)}<div><b>${subject}</b>${boostBadge}<div class="small soft">Subject rank #${rank}</div></div></div><div class="display fs-2 fw-bold" style="color:${theme.accent}">${score[subject]}</div>${progress(score[subject], theme.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${average}/100</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>`)}</div>`;
-    }
-
-    function studentHome(student, score, rank, ranked) {
-      const flags = getStudentClusterFlags(student.id, currentScores());
+    function renderHome(student, score, rank, ranked) {
+      const flags = renderSubjectCards(score, student.id);
       const flaggedSubjects = SUBJECTS.filter((subject) => flags[subject]);
       const testIndex = TESTS.findIndex((test) => test.id === state.testId);
       const previousRank = testIndex
@@ -798,35 +1268,125 @@
         : null;
       const delta = previousRank ? previousRank - rank : null;
 
-      return `${card("p-4 mb-4 rise position-relative overflow-hidden", `<div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:180px;height:180px;filter:blur(45px)"></div><div class="position-relative">${badge(rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD")}<h2 class="display fw-bold mt-2 mb-0" style="font-size:4rem">#${rank}</h2><div class="soft">of ${STUDENTS.length} students - ${esc(currentTest().name)}</div><div class="row g-2 mt-3">${kpi("Total", `${score.total}/300`, delta === null ? "First test" : delta > 0 ? `Up ${delta} ranks` : delta < 0 ? `Down ${Math.abs(delta)} ranks` : "No rank change")}${kpi("Cluster", flaggedSubjects.length ? flaggedSubjects.join(", ") : "None", flaggedSubjects.length === 3 ? "All-subjects session" : "Targeted revision")}</div></div>`)}
-        ${flaggedSubjects.length ? coaching(student.id, flaggedSubjects) : ""}
-        <h5 class="display fw-bold">Subject Performance</h5>
-        <div class="row g-3 mb-4">${SUBJECTS.map((subject) => subjectCard(subject, score, flags[subject])).join("")}</div>
-        <h5 class="display fw-bold">Top Performers</h5>
-        <div class="d-flex gap-2 overflow-auto pb-1 mb-4">${ranked.slice(0, 5).map((entry) => {
-          const topStudent = STUDENTS.find((studentItem) => studentItem.id === entry.studentId);
-          return mini("p-3 text-center flex-shrink-0 position-relative", `${rankMedal(entry.rank)}${avatar(topStudent.name, 42)}<div class="fw-bold mt-2 text-truncate" style="width:120px">${esc(topStudent.name)}</div><div class="mono soft">#${entry.rank} - ${entry.total}</div>`);
-        }).join("")}</div>
-        ${leaderboard(ranked, student.id, true)}`;
+      refs.rankTierBadge.className = `badge rounded-pill ${
+        rank <= 10
+          ? "text-bg-info"
+          : rank <= 25
+            ? "text-bg-primary"
+            : "text-bg-secondary"
+      }`;
+      refs.rankTierBadge.textContent =
+        rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD";
+      refs.rankValue.textContent = `#${rank}`;
+      refs.rankSummary.textContent = `of ${STUDENTS.length} students - ${currentTest().name}`;
+
+      renderKpiRow(refs.homeKpiRow, [
+        {
+          label: "Total",
+          value: `${score.total}/300`,
+          extra:
+            delta === null
+              ? "First test"
+              : delta > 0
+                ? `Up ${delta} ranks`
+                : delta < 0
+                  ? `Down ${Math.abs(delta)} ranks`
+                  : "No rank change",
+        },
+        {
+          label: "Cluster",
+          value: flaggedSubjects.length ? flaggedSubjects.join(", ") : "None",
+          extra:
+            flaggedSubjects.length === 3
+              ? "All-subjects session"
+              : "Targeted revision",
+        },
+      ]);
+
+      renderCoaching(student.id, flaggedSubjects);
+      renderTopPerformers(ranked);
+      renderLeaderboard(ranked, student.id);
     }
 
-    function studentAnalytics(student, score) {
+    function renderAnalytics(student, score) {
       const ranks = TESTS.map(
-        (test) => getRankings(allScores[test.id]).find((entry) => entry.studentId === student.id).rank,
+        (test) =>
+          getRankings(allScores[test.id]).find(
+            (entry) => entry.studentId === student.id,
+          ).rank,
       );
-      return `${card("p-4 mb-4", `<h5 class="display fw-bold">Rank Journey</h5><div class="row g-2">${TESTS.map((test, index) => kpi(test.shortDate, `#${ranks[index]}`, index ? `${ranks[index - 1] - ranks[index] >= 0 ? "Up" : "Down"} ${Math.abs(ranks[index - 1] - ranks[index])}` : "Baseline")).join("")}</div>`)}
-        <h5 class="display fw-bold">Topic Analytics</h5>
-        <div class="vstack gap-3 mb-4">${SUBJECTS.map((subject) => {
-          const theme = SUBJECT_THEMES[subject];
-          return card("p-3", `<div class="d-flex align-items-center justify-content-between mb-2"><div class="d-flex align-items-center gap-2">${subjectIcon(subject)}<div><b style="color:${theme.accent}">${subject}</b><div class="small soft">Topic-wise mastery</div></div></div><span class="mono">${score[subject]}/100</span></div>${generateTopicMastery(student.id, state.testId, subject).map((topicItem) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(topicItem.topic)}</span><span class="soft">${topicItem.score}%</span></div>${progress(topicItem.score, theme.accent)}</div>`).join("")}`);
-        }).join("")}</div>`;
+
+      renderKpiRow(
+        refs.rankJourneyRow,
+        TESTS.map((test, index) => ({
+          label: test.shortDate,
+          value: `#${ranks[index]}`,
+          extra: index
+            ? `${ranks[index - 1] - ranks[index] >= 0 ? "Up" : "Down"} ${Math.abs(
+                ranks[index - 1] - ranks[index],
+              )}`
+            : "Baseline",
+        })),
+      );
+
+      clearNode(refs.topicAnalyticsContainer);
+      SUBJECTS.forEach((subject) => {
+        const theme = SUBJECT_THEMES[subject];
+        const node = cloneTemplate("topicCardTemplate");
+        const rowsContainer = node.querySelector(".topic-rows");
+
+        node.querySelector(".topic-subject-icon").appendChild(createSubjectIcon(subject));
+        node.querySelector(".topic-subject-name").textContent = subject;
+        node.querySelector(".topic-subject-name").style.color = theme.accent;
+        node.querySelector(".topic-subject-score").textContent = `${score[subject]}/100`;
+
+        generateTopicMastery(student.id, state.testId, subject).forEach((topicItem) => {
+          const row = cloneTemplate("topicRowTemplate");
+          row.querySelector(".topic-name").textContent = topicItem.topic;
+          row.querySelector(".topic-score").textContent = `${topicItem.score}%`;
+          setProgressBar(
+            row.querySelector(".topic-progress-fill"),
+            topicItem.score,
+            `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+          );
+          rowsContainer.appendChild(row);
+        });
+
+        refs.topicAnalyticsContainer.appendChild(node);
+      });
     }
 
-    function studentRewards(student, xp) {
+    function renderRewards(student) {
+      const xp = calculateXP(student.id);
       const earned = getEarnedBadges(student.id);
       const streak = calculateStreaks(student.id).improveStreak;
-      return `${card("p-4 mb-4", `<div class="d-flex justify-content-between"><div><h5 class="display fw-bold">Level ${xp.level}</h5><div class="soft small">${xp.xp} XP earned</div></div>${badge(`${streak} TEST STREAK`, "text-bg-warning text-dark")}</div><div class="mt-3">${progress(Math.round(xp.progress * 100), "linear-gradient(135deg,#ff8a00,#e52e71,#7c3aed)")}</div>`)}
-        <div class="row g-3">${BADGES.map((badgeItem) => `<div class="col-md-6">${card(`p-3 h-100 ${earned.has(badgeItem.id) ? "" : "opacity-50"}`, `<div class="d-flex gap-3"><div class="reward-icon">${esc(badgeItem.icon)}</div><div><b>${esc(badgeItem.name)}</b><div class="small soft">${esc(badgeItem.desc)}</div><div class="small mono soft text-uppercase">${earned.has(badgeItem.id) ? "earned" : "locked"} - ${esc(badgeItem.tier)}</div></div></div>`)}</div>`).join("")}</div>`;
+
+      refs.rewardLevelTitle.textContent = `Level ${xp.level}`;
+      refs.rewardXpText.textContent = `${xp.xp} XP earned`;
+      refs.rewardStreakBadge.textContent = `${streak} TEST STREAK`;
+      setProgressBar(
+        refs.rewardProgressBar,
+        Math.round(xp.progress * 100),
+        "linear-gradient(135deg, #2563eb, #0d6efd 52%, #06b6d4)",
+      );
+
+      clearNode(refs.rewardsGrid);
+      BADGES.forEach((badgeItem) => {
+        const node = cloneTemplate("rewardCardTemplate");
+        const shell = node.querySelector(".reward-card-shell");
+        node.querySelector(".reward-icon-text").textContent = badgeItem.icon;
+        node.querySelector(".reward-name").textContent = badgeItem.name;
+        node.querySelector(".reward-desc").textContent = badgeItem.desc;
+        node.querySelector(".reward-meta").textContent = `${
+          earned.has(badgeItem.id) ? "earned" : "locked"
+        } - ${badgeItem.tier}`;
+
+        if (!earned.has(badgeItem.id)) {
+          shell.classList.add("opacity-50");
+        }
+
+        refs.rewardsGrid.appendChild(node);
+      });
     }
 
     function render() {
@@ -836,36 +1396,32 @@
       const rank = ranked.find((entry) => entry.studentId === student.id).rank;
       const xp = calculateXP(student.id);
 
-      app.innerHTML = `<div class="position-fixed top-0 end-0 m-3" style="z-index:3">${badge(state.online ? "ONLINE" : "OFFLINE", state.online ? "text-bg-success" : "text-bg-danger")}</div>
-        ${card("p-4 mb-4 rise overflow-hidden position-relative", `<div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:220px;height:220px;filter:blur(55px)"></div><div class="position-relative"><div class="soft text-uppercase small fw-bold mono mb-2">Student Portal</div><div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center"><div><h1 class="display fw-bold mb-1">My Tests</h1><div class="soft">Climb Smarter. <span class="brand-text">Rank Higher.</span></div></div><div class="d-flex align-items-center gap-3">${avatar(student.name, 52)}<div><div class="fw-bold">${esc(student.name)}</div><div class="small soft mono">${esc(student.id)}${student.batch ? ` - ${esc(student.batch)}` : ""}</div></div></div></div></div>`)}
-        <div class="mb-2">${badge(`LVL ${xp.level}`, "text-bg-info")}</div>
-        <ul class="nav nav-pills bg-black bg-opacity-25 rounded-pill p-1 mb-3">
-          ${[
-            ["home", "Home"],
-            ["analytics", "Analytics"],
-            ["rewards", "Rewards"],
-          ].map(([id, label]) => `<li class="nav-item flex-fill"><button class="nav-link w-100 ${state.studentTab === id ? "active" : ""}" onclick="window.myTestsSetTab('${id}')">${label}</button></li>`).join("")}
-        </ul>
-        <div class="d-flex gap-2 overflow-auto pb-1 mb-3">${TESTS.map((test) => `<button class="btn btn-sm ${state.testId === test.id ? "btn-brand" : "btn-outline-light"} rounded-pill mono flex-shrink-0" onclick="window.myTestsSetTest('${test.id}')">${test.name} - ${test.date}</button>`).join("")}</div>
-        ${state.studentTab === "home" ? studentHome(student, score, rank, ranked) : state.studentTab === "analytics" ? studentAnalytics(student, score) : studentRewards(student, xp)}`;
+      renderHeader(student, xp);
+      renderHome(student, score, rank, ranked);
+      renderAnalytics(student, score);
+      renderRewards(student);
     }
 
-    window.myTestsSetTab = (tab) => {
-      state.studentTab = tab;
-      render();
-    };
+    refs.tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.studentTab = button.dataset.tab;
+        render();
+      });
+    });
 
-    window.myTestsSetTest = (testId) => {
-      state.testId = testId;
-      state.studentLeaderboardOpen = false;
-      loadAttendance();
-      render();
-    };
+    refs.testButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.testId = button.dataset.testId;
+        state.studentLeaderboardOpen = false;
+        loadAttendance();
+        render();
+      });
+    });
 
-    window.myTestsToggleLeaderboard = () => {
+    refs.leaderboardToggleBtn.addEventListener("click", () => {
       state.studentLeaderboardOpen = !state.studentLeaderboardOpen;
       render();
-    };
+    });
 
     window.addEventListener("online", () => {
       state.online = true;
