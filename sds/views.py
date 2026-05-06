@@ -900,7 +900,7 @@ def _normalize_gender(val: str) -> str:
 
 def _is_valid_person_name(name: str) -> bool:
     cleaned = (name or "").strip()
-    return bool(cleaned) and bool(re.fullmatch(r"[A-Za-z ]+", cleaned))
+    return bool(cleaned) and bool(re.fullmatch(r"[A-Za-z .]+", cleaned))
 
 
 def _normalize_grade(val: str) -> str:
@@ -1038,7 +1038,7 @@ def register_student(request):
             return redirect("register")
 
         if not _is_valid_person_name(full_name):
-            error_msg = "Full name should contain only letters and spaces"
+            error_msg = "Full name should contain only letters, spaces, and dots"
             if is_ajax:
                 return JsonResponse({"ok": False, "msg": error_msg, "field": "fullName"}, status=400)
             messages.error(request, error_msg)
@@ -1389,7 +1389,7 @@ def add_user(request):
         return redirect("user-management")
 
     if not _is_valid_person_name(name):
-        messages.error(request, "Name should contain only letters and spaces.")
+        messages.error(request, "Name should contain only letters, spaces, and dots.")
         return redirect("user-management")
 
     if contact and len(contact) != 10:
@@ -1398,11 +1398,11 @@ def add_user(request):
 
     if user_type == "student":
         if father_name and not _is_valid_person_name(father_name):
-            messages.error(request, "Father's name should contain only letters and spaces.")
+            messages.error(request, "Father's name should contain only letters, spaces, and dots.")
             return redirect("user-management")
 
         if emergency_contact_name and not _is_valid_person_name(emergency_contact_name):
-            messages.error(request, "Emergency contact name should contain only letters and spaces.")
+            messages.error(request, "Emergency contact name should contain only letters, spaces, and dots.")
             return redirect("user-management")
 
         if emergency_contact and len(emergency_contact) != 10:
@@ -1549,15 +1549,15 @@ def edit_student(request, id):
 
     student_name = (request.POST.get("name") or "").strip()
     if not _is_valid_person_name(student_name):
-        messages.error(request, "Name should contain only letters and spaces.")
+        messages.error(request, "Name should contain only letters, spaces, and dots.")
         return redirect("user-management")
 
     if father_name and not _is_valid_person_name(father_name):
-        messages.error(request, "Father's name should contain only letters and spaces.")
+        messages.error(request, "Father's name should contain only letters, spaces, and dots.")
         return redirect("user-management")
 
     if emergency_contact_name and not _is_valid_person_name(emergency_contact_name):
-        messages.error(request, "Emergency contact name should contain only letters and spaces.")
+        messages.error(request, "Emergency contact name should contain only letters, spaces, and dots.")
         return redirect("user-management")
 
     if not new_username:
@@ -1679,7 +1679,7 @@ def edit_teacher(request, id):
   
     teacher_name = (request.POST.get("name") or "").strip()
     if not _is_valid_person_name(teacher_name):
-        messages.error(request, "Name should contain only letters and spaces.")
+        messages.error(request, "Name should contain only letters, spaces, and dots.")
         return redirect("user-management")
 
     teacher.name = teacher_name

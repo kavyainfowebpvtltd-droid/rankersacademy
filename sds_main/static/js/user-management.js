@@ -323,7 +323,7 @@ function validateAndSubmitAddUser() {
   clearAllAddUserErrors();
 
   let isValid = true;
-  const nameRegex = /^[a-zA-Z\s]+$/;
+  const nameRegex = /^[a-zA-Z\s.]+$/;
   const nameValue = nameInput ? nameInput.value.trim() : "";
   if (!nameValue) {
     setValidationError(
@@ -336,7 +336,7 @@ function validateAndSubmitAddUser() {
     setValidationError(
       nameInput,
       userType === "student" ? "studentNameError" : "teacherNameError",
-      "Name should contain only letters and spaces",
+      "Name should contain only letters, spaces, and dots",
     );
     isValid = false;
   }
@@ -466,7 +466,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("input", (e) => {
   if (e.target.classList.contains("alpha-only")) {
-    e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+    e.target.value = e.target.value.replace(/[^a-zA-Z\s.]/g, "");
   }
 
   if (e.target.classList.contains("number-only")) {
