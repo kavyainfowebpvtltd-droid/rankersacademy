@@ -168,11 +168,17 @@
         { id: "T02", name: "Mock Test 02", date: "22 Apr 2026", shortDate: "Apr 22" },
         { id: "T03", name: "Mock Test 03", date: "29 Apr 2026", shortDate: "Apr 29" }
       ];
-      const ADMIN_COMPLETED_TESTS = TESTS.slice(0, -1);
-      const ADMIN_UPCOMING_TEST = TESTS.at(-1) || null;
+      const ADMIN_VISIBLE_COMPLETED_TESTS = TESTS.slice(-2);
+      const ADMIN_UPCOMING_TEST = {
+        id: "",
+        name: "Upcoming Test",
+        date: "Awaiting schedule",
+        shortDate: "Soon",
+        kind: "placeholder",
+      };
       const ADMIN_TEST_SELECTOR_SLOTS = [
-        ADMIN_COMPLETED_TESTS.at(-2) || ADMIN_COMPLETED_TESTS.at(-1) || null,
-        ADMIN_COMPLETED_TESTS.at(-1) || ADMIN_COMPLETED_TESTS.at(-2) || null,
+        ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
+        ADMIN_VISIBLE_COMPLETED_TESTS[1] || ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
         ADMIN_UPCOMING_TEST,
       ];
       const CLUSTER_SCHEDULE = {
@@ -220,7 +226,7 @@
           (document.body.dataset.page === "admin" &&
             ((ADMIN_TEST_SELECTOR_SLOTS[1] && ADMIN_TEST_SELECTOR_SLOTS[1].id) ||
               (ADMIN_TEST_SELECTOR_SLOTS[0] && ADMIN_TEST_SELECTOR_SLOTS[0].id) ||
-              (ADMIN_TEST_SELECTOR_SLOTS[2] && ADMIN_TEST_SELECTOR_SLOTS[2].id))) ||
+              TESTS.at(-1)?.id)) ||
           TESTS.at(-1).id,
         studentTab: "home",
         studentLeaderboardOpen: false,
@@ -549,6 +555,14 @@
         if (!test) {
           button.textContent = "Unavailable";
           button.disabled = true;
+          button.classList.add("btn-outline-light");
+          return;
+        }
+
+        if (test.kind === "placeholder") {
+          button.textContent = `${test.name} - ${test.date}`;
+          button.disabled = true;
+          button.title = "No upcoming test has been scheduled yet.";
           button.classList.add("btn-outline-light");
           return;
         }
