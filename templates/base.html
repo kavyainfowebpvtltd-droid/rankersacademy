@@ -6,6 +6,7 @@
     <title>Student Diagnostic System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="{% static 'img/logo.webp' %}" />
+    <script src="{% static 'js/admin-theme.js' %}"></script>
 
     <link rel="stylesheet" href="{% static 'css/student-dashboard.css' %}" />
     <link rel="stylesheet" href="{% static 'css/gap-analysis.css' %}" />
@@ -63,7 +64,8 @@
         flex: 1 0 auto;
       }
     </style>
-    <link rel="stylesheet" href="{% static 'css/student-analytics-theme.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/student-analytics-theme.css' %}" data-theme-dark-link />
+    <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
   </head>
 
   <body>
@@ -94,6 +96,16 @@
               Grade {{student.grade}} ({{student.board}})
             </div>
           </div>
+          <button
+            type="button"
+            class="admin-theme-toggle me-2"
+            id="adminThemeToggle"
+            aria-label="Toggle theme"
+            aria-pressed="true"
+          >
+            <i class="bi bi-moon-stars"></i>
+            <span class="admin-theme-toggle-label d-none d-sm-inline">Dark</span>
+          </button>
           <!-- <div class="avatar-circle me-3">JS</div> -->
           <a
             href="{% url 'logout' %}"

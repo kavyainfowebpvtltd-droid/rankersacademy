@@ -19,7 +19,9 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
       rel="stylesheet"
     />
+    <script src="{% static 'js/admin-theme.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/login.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap");
 
@@ -1010,9 +1012,108 @@
       .btn-close {
         filter: none;
       }
+
+      .login-theme-toggle {
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        z-index: 20;
+      }
+
+      html[data-admin-theme="dark"] body.login-page-body {
+        color: #fafafa;
+        background:
+          radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.2), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(229, 46, 113, 0.13), transparent 60%),
+          radial-gradient(ellipse 60% 50% at 0% 100%, rgba(255, 138, 0, 0.1), transparent 60%),
+          #06060a;
+      }
+
+      html[data-admin-theme="dark"] .brand-orb-a {
+        background: rgba(124, 58, 237, 0.24);
+      }
+
+      html[data-admin-theme="dark"] .brand-orb-b {
+        background: rgba(229, 46, 113, 0.18);
+      }
+
+      html[data-admin-theme="dark"] .brand-orb-c {
+        background: rgba(255, 138, 0, 0.14);
+      }
+
+      html[data-admin-theme="dark"] .brand-kicker,
+      html[data-admin-theme="dark"] .mono-label {
+        color: var(--muted);
+      }
+
+      html[data-admin-theme="dark"] .brand-text {
+        background: linear-gradient(135deg, #ffb55a, #f72585 50%, #a78bfa);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+
+      html[data-admin-theme="dark"] .display-brand,
+      html[data-admin-theme="dark"] .display-title,
+      html[data-admin-theme="dark"] .role strong {
+        color: #fafafa;
+      }
+
+      html[data-admin-theme="dark"] .login-surface,
+      html[data-admin-theme="dark"] .modal-content {
+        background: var(--surface);
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.32);
+        backdrop-filter: blur(18px) saturate(160%);
+      }
+
+      html[data-admin-theme="dark"] .form-control,
+      html[data-admin-theme="dark"] .form-select,
+      html[data-admin-theme="dark"] .input-group-text {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #fafafa;
+      }
+
+      html[data-admin-theme="dark"] .form-control::placeholder {
+        color: rgba(250, 250, 250, 0.46);
+      }
+
+      html[data-admin-theme="dark"] .password-toggle,
+      html[data-admin-theme="dark"] .google-btn,
+      html[data-admin-theme="dark"] .btn-outline-primary,
+      html[data-admin-theme="dark"] .btn-outline-secondary,
+      html[data-admin-theme="dark"] .btn-outline-success {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #fafafa;
+      }
+
+      html[data-admin-theme="dark"] .role-switch {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      html[data-admin-theme="dark"] .role {
+        color: rgba(250, 250, 250, 0.72);
+      }
+
+      html[data-admin-theme="dark"] .role.active,
+      html[data-admin-theme="dark"] .btn-primary {
+        background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+        color: #ffffff;
+      }
     </style>
   </head>
   <body class="login-page-body {% if test_login_ui %}test-login-ui{% endif %}">
+    <button
+      type="button"
+      class="admin-theme-toggle login-theme-toggle"
+      id="adminThemeToggle"
+      aria-label="Toggle theme"
+      aria-pressed="true"
+    >
+      <i class="bi bi-moon-stars"></i>
+      <span class="admin-theme-toggle-label">Dark</span>
+    </button>
     <div class="login-page">
       <div class="brand-orb brand-orb-a"></div>
       <div class="brand-orb brand-orb-b"></div>

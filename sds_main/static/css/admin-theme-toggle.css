@@ -195,3 +195,31 @@ html[data-admin-theme="light"] .card-box {
   border-color: #e2e8f0 !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
 }
+
+html[data-admin-theme="light"] .glass,
+html[data-admin-theme="light"] .hover-card,
+html[data-admin-theme="light"] .mini,
+html[data-admin-theme="light"] .modal-content {
+  background: #ffffff !important;
+  border-color: #dbeafe !important;
+  color: #0f172a !important;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-admin-theme="light"] .soft,
+html[data-admin-theme="light"] .mono,
+html[data-admin-theme="light"] .text-secondary,
+html[data-admin-theme="light"] .text-opacity-75 {
+  color: #64748b !important;
+}
+
+html[data-admin-theme="light"] .btn-outline-light {
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .brand-text {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}

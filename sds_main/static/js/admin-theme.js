@@ -13,7 +13,7 @@
 
   function syncDarkOverrideLinks(doc, theme) {
     if (!doc) return;
-    doc.querySelectorAll('link[href*="admin-dark-overrides.css"]').forEach((link) => {
+    doc.querySelectorAll('link[href*="admin-dark-overrides.css"], link[data-theme-dark-link]').forEach((link) => {
       link.disabled = theme === "light";
     });
   }
