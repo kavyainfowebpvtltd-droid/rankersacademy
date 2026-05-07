@@ -82,21 +82,12 @@
     <!-- NAVBAR BELOW HEADER -->
     <div class="tabs">
       <div class="tabs-left">
-        <a
-          href="{% url 'admin-dashboard' %}"
-          class="{% if '/dashboard/admin-dashboard/' in request.path %}active{% endif %}"
-        >
-          <i class="bi bi-book"></i>
-          <span>Dashboard</span>
+        {% for tab in admin_portal_tabs %}
+        <a href="{{ tab.href }}" class="{% if tab.active %}active{% endif %}">
+          <i class="{{ tab.icon }}"></i>
+          <span>{{ tab.label }}</span>
         </a>
-
-        <a
-          href="{% url 'system-management' %}"
-          class="{% if '/system-management' in request.path %}active{% endif %}"
-        >
-          <i class="bi bi-gear"></i>
-          <span>System Management</span>
-        </a>
+        {% endfor %}
       </div>
     </div>
 
