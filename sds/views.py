@@ -38,7 +38,7 @@ import re
 import requests
 from zoneinfo import ZoneInfo
 from urllib.parse import urlencode, urlsplit
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from .models import *
 from scholarship_test.models import ScholarshipTest, ScholarshipTestAttempt
@@ -359,32 +359,7 @@ def _msg91_mobile(phone_10: str) -> str:
 def _msg91_send_otp(phone_10: str, template_id: str, params: dict | None = None) -> dict:
    
     import logging
-logger = logging.getLogger(__name__)
-
-ACADEMY_TIMEZONE = ZoneInfo("Asia/Kolkata")
-UTC_TIMEZONE = ZoneInfo("UTC")
-
-
-def _academy_localtime(value=None):
-    if value is None:
-        value = timezone.now()
-    return timezone.localtime(value, ACADEMY_TIMEZONE)
-
-
-def _academy_test_start_at(test):
-    start_at = _academy_localtime(test.scheduled_start_at)
-    if not start_at or not getattr(test, "date", None):
-        return start_at
-
-    if start_at.date() == test.date:
-        return start_at
-
-    # Backward-compatibility for tests saved before scheduled datetimes were
-    # interpreted in academy local time. Those rows typically have the correct
-    # wall-clock time stored against UTC, which shifts the local date.
-    stored_utc_time = timezone.localtime(test.scheduled_start_at, UTC_TIMEZONE).time()
-    corrected = datetime.combine(test.date, stored_utc_time)
-    return timezone.make_aware(corrected, ACADEMY_TIMEZONE)
+    logger = logging.getLogger(__name__)
     
     
     url = "https://control.msg91.com/api/v5/otp"
@@ -3966,7 +3941,7 @@ def _build_rewards_payload(completed_tests):
 
 
 def _build_my_tests_payload(student):
-    now = _academy_localtime()
+    now = timezone.localtime()
     completed_published_tests = []
     upcoming_test = None
 
@@ -3981,7 +3956,7 @@ def _build_my_tests_payload(student):
         if not scholarship_test_service.get_runtime_questions_for_test(test):
             continue
 
-        start_at = _academy_test_start_at(test)
+        start_at = timezone.localtime(test.scheduled_start_at)
         end_at = start_at + timedelta(
             hours=int(test.duration_hours or 0),
             minutes=int(test.duration_minutes or 0),
@@ -4191,7 +4166,7 @@ def _latest_analysis_attempts_for_test(test):
 
 
 def _build_admin_test_analysis_payload():
-    now = _academy_localtime()
+    now = timezone.localtime()
     completed_tests = []
     upcoming_test = None
     students_by_id = {}
@@ -4208,7 +4183,7 @@ def _build_admin_test_analysis_payload():
         if not scholarship_test_service.get_runtime_questions_for_test(test):
             continue
 
-        start_at = _academy_test_start_at(test)
+        start_at = timezone.localtime(test.scheduled_start_at)
         end_at = start_at + timedelta(
             hours=int(test.duration_hours or 0),
             minutes=int(test.duration_minutes or 0),

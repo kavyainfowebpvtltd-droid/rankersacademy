@@ -1196,57 +1196,58 @@
 
       if (slot.kind === "placeholder") {
         button.textContent = `${slot.name} - ${slot.date}`;
-        button.title = "No upcoming test has been scheduled yet.";
-        button.classList.add("btn-outline-light");
-        button.disabled = true;
+      } else {
+        const runtimeSlot = getUpcomingSlotRuntimeState(slot);
+        const layout = document.createElement("span");
+        layout.className = "test-slot-layout";
+
+        const titleRow = document.createElement("span");
+        titleRow.className = "test-slot-title-row";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "test-slot-name";
+        nameSpan.textContent = runtimeSlot.name;
+        titleRow.appendChild(nameSpan);
+        titleRow.appendChild(
+          createBadge(
+            runtimeSlot.isLive ? "Live" : "Upcoming",
+            runtimeSlot.isLive ? "text-bg-danger test-slot-badge" : "text-bg-warning test-slot-badge",
+          ),
+        );
+
+        const metaSpan = document.createElement("span");
+        metaSpan.className = "test-slot-meta";
+        if (runtimeSlot.hasEnded) {
+          metaSpan.textContent = "This test window has closed.";
+        } else if (runtimeSlot.isLive) {
+          metaSpan.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""} • Live now`;
+        } else if (runtimeSlot.canLaunchNow) {
+          metaSpan.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""} • Opens now`;
+        } else {
+          metaSpan.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""}`;
+        }
+
+        layout.appendChild(titleRow);
+        layout.appendChild(metaSpan);
+        button.appendChild(layout);
+
+        const isLaunchable = runtimeSlot.canLaunchNow && !!runtimeSlot.launchUrl;
+        button.classList.add(isLaunchable ? "btn-brand" : "btn-outline-light");
+        button.disabled = !isLaunchable;
+
+        if (!isLaunchable) {
+          button.title = runtimeSlot.hasEnded
+            ? "This test window has closed."
+            : "This test opens 10 minutes before the scheduled start time.";
+        }
         return;
       }
 
-      const runtimeSlot = getUpcomingSlotRuntimeState(slot);
-      const layout = document.createElement("span");
-      layout.className = "test-slot-layout";
-
-      const titleRow = document.createElement("span");
-      titleRow.className = "test-slot-title-row";
-
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "test-slot-name";
-      nameSpan.textContent = runtimeSlot.name;
-      titleRow.appendChild(nameSpan);
-      titleRow.appendChild(
-        createBadge(
-          runtimeSlot.isLive ? "Live" : "Upcoming",
-          runtimeSlot.isLive
-            ? "text-bg-danger test-slot-badge"
-            : "text-bg-warning test-slot-badge",
-        ),
-      );
-
-      const metaSpan = document.createElement("span");
-      metaSpan.className = "test-slot-meta";
-      if (runtimeSlot.hasEnded) {
-        metaSpan.textContent = "This test window has closed.";
-      } else if (runtimeSlot.isLive) {
-        metaSpan.textContent = `${runtimeSlot.date} | ${runtimeSlot.time || ""} | Live now`;
-      } else if (runtimeSlot.canLaunchNow) {
-        metaSpan.textContent = `${runtimeSlot.date} | ${runtimeSlot.time || ""} | Opens now`;
-      } else {
-        metaSpan.textContent = `${runtimeSlot.date} | ${runtimeSlot.time || ""}`;
+      if (slot.kind === "placeholder") {
+        button.title = "No upcoming test has been scheduled yet.";
       }
-
-      layout.appendChild(titleRow);
-      layout.appendChild(metaSpan);
-      button.appendChild(layout);
-
-      const isLaunchable = runtimeSlot.canLaunchNow && !!runtimeSlot.launchUrl;
-      button.classList.add(isLaunchable ? "btn-brand" : "btn-outline-light");
-      button.disabled = !isLaunchable;
-
-      if (!isLaunchable) {
-        button.title = runtimeSlot.hasEnded
-          ? "This test window has closed."
-          : "This test opens 10 minutes before the scheduled start time.";
-      }
+      button.classList.add("btn-outline-light");
+      button.disabled = true;
     }
 
     function renderHeader() {
@@ -2113,14 +2114,9 @@
         render();
       }
     });
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        renderHeader();
-      }
-    });
     setInterval(() => {
       renderHeader();
-    }, 5000);
+    }, 30000);
     render();
   })();
 </script>

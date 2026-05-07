@@ -2,7 +2,6 @@ import json
 import logging
 import re
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -40,15 +39,6 @@ from scholarship_test.services import (
     sms_service,
     word_import_service,
 )
-
-
-ACADEMY_TIMEZONE = ZoneInfo("Asia/Kolkata")
-
-
-def _academy_localtime(value):
-    if not value:
-        return None
-    return timezone.localtime(value, ACADEMY_TIMEZONE)
 
 logger = logging.getLogger(__name__)
 
@@ -967,7 +957,7 @@ def scholarship_success(request, attempt_id):
         attempt.total_marks,
     )
     completed_at_display = (
-        _academy_localtime(attempt.test_completed_at).strftime('%d %b %Y, %I:%M %p')
+        timezone.localtime(attempt.test_completed_at).strftime('%d %b %Y, %I:%M %p')
         if attempt.test_completed_at
         else None
     )
@@ -1499,13 +1489,13 @@ def _format_test_duration(hours, minutes):
 def _serialize_scheduled_start_at(value):
     if not value:
         return None
-    return _academy_localtime(value).isoformat()
+    return timezone.localtime(value).isoformat()
 
 
 def _serialize_test_start_time(value):
     if not value:
         return None
-    return _academy_localtime(value).strftime("%H:%M")
+    return timezone.localtime(value).strftime("%H:%M")
 
 
 def _parse_test_date(raw_value):
@@ -1532,7 +1522,7 @@ def _parse_scheduled_start_at(raw_value):
             raise ValueError("Invalid scheduled start time") from exc
 
     if timezone.is_naive(parsed):
-        parsed = timezone.make_aware(parsed, ACADEMY_TIMEZONE)
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
 
     return parsed
 
@@ -1545,7 +1535,7 @@ def _parse_test_start_datetime(test_date, raw_time, raw_datetime):
             raise ValueError("Invalid scheduled start time") from exc
 
         combined = datetime.combine(test_date, parsed_time)
-        return timezone.make_aware(combined, ACADEMY_TIMEZONE)
+        return timezone.make_aware(combined, timezone.get_current_timezone())
 
     return _parse_scheduled_start_at(raw_datetime)
 
@@ -1699,7 +1689,7 @@ def api_save_test_details(request, test_id):
         except ValueError:
             return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
         if test.scheduled_start_at:
-            test.date = _academy_localtime(test.scheduled_start_at).date()
+            test.date = timezone.localtime(test.scheduled_start_at).date()
 
     test.save()
     
