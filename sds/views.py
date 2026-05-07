@@ -2231,6 +2231,7 @@ def admin_dashboard(request):
         "students_page": students_page,
         "search_query": search_query,
         "active_search_query": search_query,
+        "admin_portal_tabs": _build_admin_portal_tabs("dashboard"),
     }
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -2315,14 +2316,88 @@ def delete_student(request, id):
 
 @login_required
 def system_management(request):
-    test_analysis_session = json.dumps(_build_test_analysis_session(request.user))
+    management_sections = _build_management_sections()
+    active_section = request.GET.get("section", "syllabus")
+    if active_section not in management_sections:
+        active_section = "syllabus"
+
     context = {
          "teacher_name": _display_name(request.user),
          "is_teacher": _is_teacher_user(request.user),
          "is_admin": _is_admin_user(request.user) or request.user.is_superuser,
-         "test_analysis_session": test_analysis_session,
+         "active_management_section": active_section,
+         "management_iframe_url": management_sections[active_section]["iframe_url"],
+         "admin_portal_tabs": _build_admin_portal_tabs(active_section),
     }
     return render(request, "system-management.html", context)
+
+
+def _build_management_sections():
+    return {
+        "syllabus": {
+            "label": "Syllabus Management",
+            "icon": "bi bi-book-open",
+            "iframe_url": reverse("syllabus-management"),
+        },
+        "test-management": {
+            "label": "Test Management",
+            "icon": "bi bi-mortarboard",
+            "iframe_url": reverse("scholarship_test:scholarshiptest_management"),
+        },
+        "test-analysis": {
+            "label": "Test Analysis",
+            "icon": "bi bi-bar-chart-line",
+            "iframe_url": reverse("test-analysis"),
+        },
+        "bridge-course-management": {
+            "label": "Bridge Course Management",
+            "icon": "bi bi-award",
+            "iframe_url": reverse("bridgecourse:bridgecourse-management"),
+        },
+        "user-management": {
+            "label": "User Management",
+            "icon": "bi bi-people",
+            "iframe_url": reverse("user-management"),
+        },
+        "attendance": {
+            "label": "Attendance",
+            "icon": "bi bi-calendar-check",
+            "iframe_url": reverse("attendance"),
+        },
+        "staff-attendance": {
+            "label": "Staff Attendance",
+            "icon": "bi bi-person-badge",
+            "iframe_url": reverse("staff_attendance"),
+        },
+        "teachers-schedule": {
+            "label": "Teacher's Schedule",
+            "icon": "bi bi-calendar-week",
+            "iframe_url": reverse("teacherschedule:index"),
+        },
+    }
+
+
+def _build_admin_portal_tabs(active_key: str):
+    tabs = [
+        {
+            "label": "Dashboard",
+            "icon": "bi bi-book",
+            "href": reverse("admin-dashboard"),
+            "active": active_key == "dashboard",
+        }
+    ]
+
+    for key, section in _build_management_sections().items():
+        tabs.append(
+            {
+                "label": section["label"],
+                "icon": section["icon"],
+                "href": f"{reverse('system-management')}?{urlencode({'section': key})}",
+                "active": active_key == key,
+            }
+        )
+
+    return tabs
 
 
 def _normalize_test_analysis_subject_name(name: str) -> str:

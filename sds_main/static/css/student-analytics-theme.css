@@ -699,15 +699,6 @@ footer a {
   .my-attendance-header {
     border-radius: 18px !important;
   }
-
-  .rank-hero-number {
-    font-size: 3rem !important;
-  }
-
-  .attendance-summary-grid > [class*="col-"] {
-    flex: 0 0 50%;
-    max-width: 50%;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
