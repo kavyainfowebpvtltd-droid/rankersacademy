@@ -228,13 +228,23 @@ a,
   border-bottom-color: var(--admin-border) !important;
 }
 
-.brand-gradient,
-.brand-text,
+.brand-gradient {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+}
+
+.brand-text {
+  background: var(--admin-gradient) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
 .banner-content h3,
 .page-title,
 .priority-title {
-  background: var(--admin-gradient) !important;
-  color: #ffffff !important;
+  background: none !important;
+  color: var(--admin-text) !important;
 }
 
 .tabs-left a.active::after {
@@ -290,11 +300,18 @@ a,
 
 /* Links and primary actions */
 [data-admin-theme="light"] a,
-[data-admin-theme="light"] .text-primary,
-[data-admin-theme="light"] .btn-primary {
+[data-admin-theme="light"] .text-primary {
+  color: var(--admin-blue) !important;
+}
+
+[data-admin-theme="light"] .btn-primary,
+[data-admin-theme="light"] .btn-brand,
+[data-admin-theme="light"] .btn-new,
+[data-admin-theme="light"] .download-btn,
+[data-admin-theme="light"] .start-btn {
   color: #ffffff !important;
-  background: var(--admin-blue) !important;
-  border-color: var(--admin-blue) !important;
+  background: var(--admin-gradient) !important;
+  border-color: transparent !important;
 }
 
 /* Login page specific overrides (replace orange/pink gradients with blue) */
@@ -331,4 +348,201 @@ a,
 [data-admin-theme="light"] html .btn-primary {
   background: linear-gradient(135deg, var(--admin-blue), var(--admin-blue-strong)) !important;
   box-shadow: 0 0.9rem 1.8rem rgba(0,119,255,0.14) !important;
+}
+
+/* Student dashboard consistency in light mode */
+[data-admin-theme="light"] .test-banner {
+  background: linear-gradient(90deg, #eff6ff, #f0f9ff) !important;
+  border: 1px solid #dbeafe !important;
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.08) !important;
+  backdrop-filter: none !important;
+}
+
+[data-admin-theme="light"] .test-banner::before {
+  background:
+    linear-gradient(115deg, transparent, rgba(59, 130, 246, 0.08), transparent 36%),
+    repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.04) 0 1px, transparent 1px 16px) !important;
+  opacity: 1 !important;
+}
+
+[data-admin-theme="light"] .test-banner::after,
+[data-admin-theme="light"] .banner-curve {
+  border-color: rgba(37, 99, 235, 0.14) !important;
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .banner-content h3,
+[data-admin-theme="light"] .page-title,
+[data-admin-theme="light"] .priority-title,
+[data-admin-theme="light"] .overall-title,
+[data-admin-theme="light"] .subject-name,
+[data-admin-theme="light"] .focus-title,
+[data-admin-theme="light"] .summary-card h2,
+[data-admin-theme="light"] .stat-number,
+[data-admin-theme="light"] .summary-number,
+[data-admin-theme="light"] .home-score-value,
+[data-admin-theme="light"] .subject-percent {
+  color: #0f172a !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+}
+
+[data-admin-theme="light"] .banner-content p,
+[data-admin-theme="light"] .overall-sub,
+[data-admin-theme="light"] .completed-text,
+[data-admin-theme="light"] .pending-text,
+[data-admin-theme="light"] .focus-text,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 small,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 p,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 li,
+[data-admin-theme="light"] .text-muted {
+  color: #64748b !important;
+}
+
+[data-admin-theme="light"] .icon-box,
+[data-admin-theme="light"] .focus-icon,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 .d-flex > div:first-child {
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18) !important;
+}
+
+[data-admin-theme="light"] .icon-box i,
+[data-admin-theme="light"] .focus-icon i {
+  color: #ffffff !important;
+}
+
+[data-admin-theme="light"] .download-btn,
+[data-admin-theme="light"] .start-btn {
+  background: linear-gradient(90deg, #2563eb, #06b6d4) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.18) !important;
+}
+
+[data-admin-theme="light"] .download-btn:hover,
+[data-admin-theme="light"] .start-btn:hover {
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24) !important;
+}
+
+[data-admin-theme="light"] .overall-progress-card,
+[data-admin-theme="light"] .progress-card,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100,
+[data-admin-theme="light"] .focus-section {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: none !important;
+}
+
+[data-admin-theme="light"] .overall-progress-card::before,
+[data-admin-theme="light"] .progress-card::before,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100::before,
+[data-admin-theme="light"] .focus-section::before {
+  background: none !important;
+  opacity: 1 !important;
+}
+
+[data-admin-theme="light"] .overall-progress-card:hover,
+[data-admin-theme="light"] .progress-card:hover,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100:hover {
+  background: #ffffff !important;
+  border-color: #bfdbfe !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.1) !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 h4,
+[data-admin-theme="light"] .overall-progress-circle span {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 > span,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 > span,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 > span,
+[data-admin-theme="light"] .focus-tag,
+[data-admin-theme="light"] .badge-excellent,
+[data-admin-theme="light"] .badge-good,
+[data-admin-theme="light"] .badge-poor {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .overall-progress-circle {
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .overall-progress-circle::before {
+  background: #ffffff !important;
+  border-color: #dbeafe !important;
+}
+
+[data-admin-theme="light"] .progress {
+  background: #e5edf8 !important;
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .progress-excellent,
+[data-admin-theme="light"] .progress-good,
+[data-admin-theme="light"] .progress-average,
+[data-admin-theme="light"] .subject-progress-bar,
+[data-admin-theme="light"] .progress-bar,
+[data-admin-theme="light"] .subject-progress-fill,
+[data-admin-theme="light"] .topic-progress-fill {
+  background: linear-gradient(90deg, #2563eb, #06b6d4) !important;
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .progress-poor {
+  background: linear-gradient(90deg, #60a5fa, #38bdf8) !important;
+}
+
+[data-admin-theme="light"] .table {
+  --bs-table-bg: #ffffff !important;
+  --bs-table-color: #0f172a !important;
+  --bs-table-hover-bg: #f8fbff !important;
+  --bs-table-hover-color: #0f172a !important;
+  --bs-table-border-color: #e2e8f0 !important;
+}
+
+[data-admin-theme="light"] .table thead th {
+  background: #f8fbff !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-admin-theme="light"] .table tbody td,
+[data-admin-theme="light"] .table tbody th {
+  background: #ffffff !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-admin-theme="light"] .form-control,
+[data-admin-theme="light"] .form-select,
+[data-admin-theme="light"] .input-group-text {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #dbe5f0 !important;
+}
+
+[data-admin-theme="light"] .form-control:focus,
+[data-admin-theme="light"] .form-select:focus {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 0 0 0.22rem rgba(37, 99, 235, 0.12) !important;
 }
