@@ -91,12 +91,6 @@
           </div>
         </div>
         <div class="ms-auto d-flex align-items-center">
-          <div class="text-end me-3 d-none d-md-block">
-            <div class="fw-bold text-dark fs-6">{{student.student_name}}</div>
-            <div class="text-muted" style="font-size: 0.75rem">
-              Grade {{student.grade}} ({{student.board}})
-            </div>
-          </div>
           <button
             type="button"
             class="admin-theme-toggle me-2"
@@ -107,6 +101,12 @@
             <i class="bi bi-moon-stars"></i>
             <span class="admin-theme-toggle-label d-none d-sm-inline">Dark</span>
           </button>
+          <div class="text-end me-3 d-none d-md-block">
+            <div class="fw-bold text-dark fs-6">{{student.student_name}}</div>
+            <div class="text-muted" style="font-size: 0.75rem">
+              Grade {{student.grade}} ({{student.board}})
+            </div>
+          </div>
           <!-- <div class="avatar-circle me-3">JS</div> -->
           <a
             href="{% url 'logout' %}"

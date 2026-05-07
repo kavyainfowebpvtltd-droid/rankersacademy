@@ -496,6 +496,18 @@ footer a {
   color: #ffb15f !important;
 }
 
+html[data-admin-theme="dark"] body:not(.login-page-body) footer,
+html[data-admin-theme="dark"] body:not(.login-page-body) footer.bg-light {
+  background: #07070d !important;
+  border-top: 1px solid var(--student-border) !important;
+  color: var(--student-muted) !important;
+}
+
+html[data-admin-theme="dark"] body:not(.login-page-body) footer a {
+  color: #ffb15f !important;
+  font-weight: 700;
+}
+
 .overall-progress-card,
 .mainbody [style*="background: #ecfdf5"],
 .mainbody [style*="background: #fff7ed"],

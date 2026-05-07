@@ -484,7 +484,14 @@ html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-pag
 html[data-admin-theme="light"] body:not(.login-page-body) footer,
 html[data-admin-theme="light"] body:not(.login-page-body) footer.bg-light {
   background: #ffffff !important;
-  border-top-color: var(--student-light-border) !important;
+  border-top: 1px solid var(--student-light-border) !important;
+  color: #475569 !important;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) footer .container-fluid,
+html[data-admin-theme="light"] body:not(.login-page-body) footer .d-flex,
+html[data-admin-theme="light"] body:not(.login-page-body) footer div {
   color: #475569 !important;
 }
 
