@@ -5,6 +5,22 @@ let isInsideFolderView = false;
 let pendingDeleteFolders = [];
 let currentFolderId = null;
 
+function initializeCreateTestDateTimeFields() {
+  const dateInput = document.getElementById("test-date-input");
+  const timeInput = document.getElementById("test-start-time-input");
+  const now = new Date();
+
+  if (dateInput && !dateInput.value) {
+    dateInput.value = now.toISOString().split("T")[0];
+  }
+
+  if (timeInput && !timeInput.value) {
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    timeInput.value = `${hours}:${minutes}`;
+  }
+}
+
 function updatePrimaryActionButton() {
   const label = document.getElementById("primary-action-label");
   if (!label) return;
@@ -164,10 +180,15 @@ document.addEventListener("DOMContentLoaded", () => {
       minuteSelect.innerHTML += `<option>${i}</option>`;
     }
   }
+  initializeCreateTestDateTimeFields();
 
-  document
-    .getElementById("createTestModal")
-    .addEventListener("show.bs.modal", updateFolderSelect);
+  document.getElementById("createTestModal").addEventListener("show.bs.modal", () => {
+    updateFolderSelect();
+    initializeCreateTestDateTimeFields();
+  });
+  document.getElementById("createTestModal").addEventListener("hidden.bs.modal", () => {
+    initializeCreateTestDateTimeFields();
+  });
   const copyModalEl = document.getElementById("copyTestModal");
   if (copyModalEl) {
     copyModalEl.addEventListener("hidden.bs.modal", () => {
@@ -209,13 +230,21 @@ function handleCreateTest() {
 
   const hourSelect = document.getElementById("hour-select");
   const minuteSelect = document.getElementById("minute-select");
+  const testDateInput = document.getElementById("test-date-input");
+  const testStartTimeInput = document.getElementById("test-start-time-input");
   const tagsInput = document.getElementById("test-tags-input");
+  const testDate = testDateInput.value;
+  const testStartTime = testStartTimeInput.value;
+
+  if (!testDate || !testStartTime) return;
 
   const data = {
     name: name,
     folderId: isInsideFolderView ? currentFolderId : null,
     duration_hours: parseInt(hourSelect.value) || 0,
     duration_minutes: parseInt(minuteSelect.value) || 30,
+    test_date: testDate,
+    test_start_time: testStartTime,
     tags: tagsInput.value.trim() || "",
   };
 
@@ -251,6 +280,7 @@ function handleCreateTest() {
           renderTest(test, false);
         }
         document.getElementById("create-test-form").reset();
+        initializeCreateTestDateTimeFields();
         const modal = bootstrap.Modal.getInstance(
           document.getElementById("createTestModal"),
         );

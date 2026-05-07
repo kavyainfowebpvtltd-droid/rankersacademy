@@ -225,7 +225,7 @@ class ScholarshipTestFolder(models.Model):
 
 class ScholarshipTest(models.Model):
     name = models.CharField(max_length=100)
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField(default=timezone.localdate)
     duration_hours = models.IntegerField(default=1)
     duration_minutes = models.IntegerField(default=0)
     folder = models.ForeignKey(
