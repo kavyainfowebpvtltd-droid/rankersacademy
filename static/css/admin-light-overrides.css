@@ -249,3 +249,50 @@ a,
 .card:hover {
   box-shadow: 0 8px 20px rgba(14,165,255,0.08) !important;
 }
+
+/* Force-replace common hard-coded orange accents when light theme is active */
+[data-admin-theme="light"] {
+  --student-orange: var(--admin-blue) !important;
+  --student-g1: linear-gradient(90deg, var(--admin-blue) 0%, var(--admin-blue-strong) 100%) !important;
+  --brand-a: var(--admin-blue) !important;
+  --brand-b: var(--admin-blue-strong) !important;
+}
+
+/* Replace inline styles or background gradients that include orange hex codes */
+[data-admin-theme="light"] [style*="#ff8a1f"],
+[data-admin-theme="light"] [style*="#ffb15f"],
+[data-admin-theme="light"] [style*="#ff7a1a"],
+[data-admin-theme="light"] [style*="#ff6b6b"] {
+  background: var(--admin-gradient) !important;
+  background-image: linear-gradient(135deg, var(--admin-blue), var(--admin-blue-strong)) !important;
+  color: var(--admin-blue) !important;
+  border-color: var(--admin-blue) !important;
+}
+
+/* Replace elements with inline color styles using orange */
+[data-admin-theme="light"] [style*="#ffb15f" i],
+[data-admin-theme="light"] [style*="#ff8a1f" i] {
+  color: var(--admin-blue) !important;
+}
+
+/* Catch gradient declarations in style attributes */
+[data-admin-theme="light"] [style*="linear-gradient" i][style*="#ff8a1f" i] {
+  background-image: linear-gradient(135deg, var(--admin-blue), var(--admin-blue-strong)) !important;
+}
+
+/* Specific class fallbacks */
+[data-admin-theme="light"] .student-g1,
+[data-admin-theme="light"] .brand-gradient,
+[data-admin-theme="light"] .student-g2,
+[data-admin-theme="light"] .student-g3 {
+  background: var(--admin-gradient) !important;
+}
+
+/* Links and primary actions */
+[data-admin-theme="light"] a,
+[data-admin-theme="light"] .text-primary,
+[data-admin-theme="light"] .btn-primary {
+  color: #ffffff !important;
+  background: var(--admin-blue) !important;
+  border-color: var(--admin-blue) !important;
+}
