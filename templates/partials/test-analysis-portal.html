@@ -168,6 +168,13 @@
         { id: "T02", name: "Mock Test 02", date: "22 Apr 2026", shortDate: "Apr 22" },
         { id: "T03", name: "Mock Test 03", date: "29 Apr 2026", shortDate: "Apr 29" }
       ];
+      const ADMIN_COMPLETED_TESTS = TESTS.slice(0, -1);
+      const ADMIN_UPCOMING_TEST = TESTS.at(-1) || null;
+      const ADMIN_TEST_SELECTOR_SLOTS = [
+        ADMIN_COMPLETED_TESTS.at(-2) || ADMIN_COMPLETED_TESTS.at(-1) || null,
+        ADMIN_COMPLETED_TESTS.at(-1) || ADMIN_COMPLETED_TESTS.at(-2) || null,
+        ADMIN_UPCOMING_TEST,
+      ];
       const CLUSTER_SCHEDULE = {
         Physics: { time: "4:00 - 4:30 PM", faculty: "Mr. Rajesh Kumar", room: "Conference Room A" },
         Chemistry: { time: "4:30 - 5:00 PM", faculty: "Dr. Priya Verma", room: "Conference Room A" },
@@ -209,7 +216,12 @@
         page: document.body.dataset.page || "login",
         user: SERVER_SESSION || getStore(StorageKeys.session, null),
         loginMode: "student",
-        testId: TESTS.at(-1).id,
+        testId:
+          (document.body.dataset.page === "admin" &&
+            ((ADMIN_TEST_SELECTOR_SLOTS[1] && ADMIN_TEST_SELECTOR_SLOTS[1].id) ||
+              (ADMIN_TEST_SELECTOR_SLOTS[0] && ADMIN_TEST_SELECTOR_SLOTS[0].id) ||
+              (ADMIN_TEST_SELECTOR_SLOTS[2] && ADMIN_TEST_SELECTOR_SLOTS[2].id))) ||
+          TESTS.at(-1).id,
         studentTab: "home",
         studentLeaderboardOpen: false,
         facultyTab: "attend",
@@ -547,13 +559,19 @@
 
       function adminTestSelector() {
         return `<div id="adminTestSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
-          ${TESTS.map((_, index) => `<button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-slot-index="${index}" onclick="setTest(TESTS[${index}].id)"></button>`).join("")}
+          ${ADMIN_TEST_SELECTOR_SLOTS.map((_, index) => `<button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-slot-index="${index}" onclick="setAdminSlotTest(${index})"></button>`).join("")}
         </div>`;
+      }
+
+      function setAdminSlotTest(index) {
+        const slot = ADMIN_TEST_SELECTOR_SLOTS[index];
+        if (!slot?.id) return;
+        setTest(slot.id);
       }
 
       function hydrateAdminTestSelector() {
         document.querySelectorAll("#adminTestSelector [data-slot-index]").forEach((button) => {
-          const test = TESTS[Number(button.dataset.slotIndex)];
+          const test = ADMIN_TEST_SELECTOR_SLOTS[Number(button.dataset.slotIndex)];
           applyAnalysisTestSlotButtonState(button, test);
         });
       }
