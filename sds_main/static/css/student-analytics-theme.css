@@ -5,46 +5,32 @@
   --student-bg-primary: #050816;
   --student-bg-secondary: #0b1023;
   --student-card: #0f172a;
-  --student-card-soft: rgba(15, 23, 42, 0.78);
-  --student-hover: rgba(30, 41, 59, 0.76);
   --student-border: rgba(255, 255, 255, 0.08);
   --student-border-strong: rgba(255, 255, 255, 0.16);
   --student-heading: #ffffff;
   --student-text: #e2e8f0;
-  --student-secondary: #94a3b8;
-  --student-muted: #64748b;
+  --student-muted: #94a3b8;
+  --student-deep-muted: #64748b;
   --student-success: #22c55e;
   --student-warning: #f59e0b;
   --student-danger: #ef4444;
   --student-g1: linear-gradient(90deg, #ff8a00 0%, #ff4d8d 50%, #8b5cf6 100%);
   --student-g2: linear-gradient(90deg, #00c2ff 0%, #3b82f6 52%, #7c3aed 100%);
   --student-g3: linear-gradient(90deg, #22d3ee 0%, #06b6d4 100%);
-  --student-radius: 22px;
-  --student-radius-sm: 18px;
-  --student-shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
-  --student-glow-purple: 0 0 30px rgba(168, 85, 247, 0.35);
-  --student-glow-blue: 0 0 30px rgba(59, 130, 246, 0.26);
-  --student-glow-orange: 0 0 28px rgba(255, 138, 0, 0.24);
+  --student-shadow: 0 0 20px rgba(168, 85, 247, 0.18);
+  --student-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
 * {
-  scrollbar-width: thin;
   scrollbar-color: #8b5cf6 #0b1023;
 }
 
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
 *::-webkit-scrollbar-track {
-  background: #0b1023;
+  background: var(--student-bg-secondary);
 }
 
 *::-webkit-scrollbar-thumb {
   background: var(--student-g1);
-  border: 2px solid #050816;
-  border-radius: 999px;
 }
 
 html,
@@ -53,31 +39,12 @@ body {
 }
 
 body {
-  min-height: 100vh;
   color: var(--student-text) !important;
   font-family: "Inter", "DM Sans", system-ui, sans-serif !important;
   background:
-    radial-gradient(circle at 18% 0%, rgba(124, 58, 237, 0.22), transparent 32rem),
-    radial-gradient(circle at 86% 16%, rgba(0, 194, 255, 0.12), transparent 28rem),
-    radial-gradient(circle at 12% 82%, rgba(255, 77, 141, 0.12), transparent 28rem),
-    linear-gradient(180deg, #050816 0%, #070b1a 46%, #050816 100%) !important;
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), transparent 76%);
-}
-
-.page-shell {
-  position: relative;
+    radial-gradient(circle at 18% 0%, rgba(124, 58, 237, 0.16), transparent 32rem),
+    radial-gradient(circle at 86% 16%, rgba(0, 194, 255, 0.08), transparent 28rem),
+    linear-gradient(180deg, #050816 0%, #070b1a 48%, #050816 100%) !important;
 }
 
 h1,
@@ -110,7 +77,7 @@ li,
 .matrix-header p,
 .text-muted,
 small {
-  color: var(--student-secondary) !important;
+  color: var(--student-muted) !important;
 }
 
 a {
@@ -123,65 +90,50 @@ a:hover {
 
 .navbar {
   background: rgba(5, 8, 22, 0.78) !important;
-  border-bottom: 1px solid var(--student-border) !important;
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(18px) saturate(150%);
+  border-bottom-color: var(--student-border) !important;
+  box-shadow: var(--student-shadow-soft);
+  backdrop-filter: blur(14px) saturate(140%);
 }
 
-.navbar .brand-icon {
-  background: rgba(15, 23, 42, 0.62) !important;
-  border: 1px solid var(--student-border);
-  border-radius: 18px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--student-glow-blue);
-}
-
-.navbar h5 {
-  font-size: 1.12rem !important;
-  font-weight: 900 !important;
-  color: var(--student-heading) !important;
+.navbar .brand-icon,
+.navbar .btn-light {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.16);
 }
 
 .navbar .text-dark,
-.navbar .fw-bold {
+.navbar .fw-bold,
+.navbar h5 {
   color: var(--student-heading) !important;
 }
 
-.navbar .btn-light {
-  background: rgba(15, 23, 42, 0.82) !important;
-  border: 1px solid var(--student-border-strong) !important;
+.navbar .btn-light,
+.navbar .btn-light i {
   color: var(--student-text) !important;
-}
-
-.navbar .btn-light:hover {
-  transform: translateY(-2px);
-  border-color: rgba(139, 92, 246, 0.5) !important;
-  box-shadow: var(--student-glow-purple);
 }
 
 .tabs {
   background: rgba(5, 8, 22, 0.84) !important;
-  border-bottom: 1px solid var(--student-border) !important;
-  box-shadow: inset 0 -1px 0 rgba(139, 92, 246, 0.12);
-  backdrop-filter: blur(18px);
+  border-bottom-color: var(--student-border) !important;
+  backdrop-filter: blur(14px);
 }
 
 .tabs-left a {
-  color: var(--student-secondary) !important;
-  border: 1px solid transparent;
-  border-radius: 999px !important;
-  font-weight: 800;
+  color: var(--student-muted) !important;
+  border-color: transparent;
 }
 
 .tabs-left a i {
-  color: var(--student-secondary) !important;
+  color: var(--student-muted) !important;
 }
 
 .tabs-left a:hover,
 .tabs-left a.active {
   color: var(--student-heading) !important;
-  background: rgba(15, 23, 42, 0.72) !important;
+  background: rgba(15, 23, 42, 0.68) !important;
   border-color: var(--student-border-strong);
-  transform: translateY(-1px);
+  box-shadow: var(--student-shadow);
 }
 
 .tabs-left a:hover i,
@@ -191,9 +143,7 @@ a:hover {
 
 .tabs-left a.active::after {
   background: var(--student-g1) !important;
-  box-shadow: var(--student-glow-orange), var(--student-glow-purple);
-  height: 3px !important;
-  border-radius: 999px;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
 }
 
 .download-btn,
@@ -206,25 +156,24 @@ a:hover {
 .student-switch-btn.active,
 .test-slot-btn.active {
   background: var(--student-g1) !important;
-  border: 0 !important;
+  border-color: transparent !important;
   color: #ffffff !important;
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.35) !important;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25) !important;
 }
 
 .btn,
 button,
 .subject-btn,
 .student-switch-btn,
-.test-slot-btn {
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-.btn:hover,
-button:hover,
-.subject-btn:hover,
-.student-switch-btn:hover,
-.test-slot-btn:hover {
-  transform: translateY(-2px);
+.test-slot-btn,
+.hover-card,
+.app-card,
+.app-card-soft,
+.summary-card,
+.chapter-card,
+.stat-card,
+.focus-card {
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
 .card,
@@ -245,46 +194,11 @@ button:hover,
 .inner-card,
 .test-banner,
 .my-attendance-header {
-  position: relative;
-  border: 1px solid var(--student-border) !important;
-  border-radius: var(--student-radius) !important;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(11, 16, 35, 0.86)) !important;
-  box-shadow: var(--student-shadow);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(11, 16, 35, 0.9)) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: var(--student-shadow-soft);
   color: var(--student-text) !important;
-  backdrop-filter: blur(18px) saturate(145%);
-}
-
-.card::before,
-.app-card::before,
-.summary-card::before,
-.chapter-card::before,
-.stat-card::before,
-.matrix-card::before,
-.focus-card::before,
-.student-info-card::before,
-.attendance-table::before,
-.test-banner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 34%);
-  opacity: 0.9;
-}
-
-.card > *,
-.app-card > *,
-.summary-card > *,
-.chapter-card > *,
-.stat-card > *,
-.matrix-card > *,
-.focus-card > *,
-.student-info-card > *,
-.attendance-table > *,
-.test-banner > * {
-  position: relative;
-  z-index: 1;
+  backdrop-filter: blur(12px) saturate(135%);
 }
 
 .hover-card:hover,
@@ -295,9 +209,8 @@ button:hover,
 .stat-card:hover,
 .focus-card:hover,
 .student-info-card:hover {
-  transform: translateY(-4px) scale(1.005);
   border-color: rgba(139, 92, 246, 0.34) !important;
-  box-shadow: var(--student-shadow), var(--student-glow-purple) !important;
+  box-shadow: var(--student-shadow-soft), var(--student-shadow) !important;
 }
 
 .brand-gradient,
@@ -316,9 +229,8 @@ button:hover,
 .priority-wrapper,
 .personalized-recommendations {
   background:
-    linear-gradient(135deg, rgba(255, 138, 0, 0.18), rgba(255, 77, 141, 0.14), rgba(139, 92, 246, 0.2)),
+    linear-gradient(135deg, rgba(255, 138, 0, 0.16), rgba(255, 77, 141, 0.12), rgba(139, 92, 246, 0.18)),
     linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(11, 16, 35, 0.92)) !important;
-  overflow: hidden;
 }
 
 .icon-box,
@@ -332,31 +244,8 @@ button:hover,
 .leaderboard-avatar {
   background: var(--student-g2) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: var(--student-glow-blue);
-}
-
-.summary-card.known .icon-circle,
-.present-days .summary-number,
-.status-present,
-.pill-green,
-.status-excellent {
-  color: #86efac !important;
-}
-
-.summary-card.partial .icon-circle,
-.late-days .summary-number,
-.status-late,
-.status-good {
-  color: #fcd34d !important;
-}
-
-.summary-card.unknown .icon-circle,
-.absent-days .summary-number,
-.status-absent,
-.pill-red,
-.status-work {
-  color: #fca5a5 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.22);
 }
 
 .summary-card h2,
@@ -365,20 +254,18 @@ button:hover,
 .rank-hero-number,
 .home-score-value,
 .summary-card-value,
-.subject-score {
+.subject-score,
+.home-score-chip-value,
+.home-score-outof,
+.home-score-chip-name {
   color: var(--student-heading) !important;
-  font-weight: 900 !important;
 }
 
 .summary-card .title,
 .stat-content h6,
 .summary-card-title,
 .home-score-label {
-  color: var(--student-secondary) !important;
-  font-size: 0.78rem;
-  font-weight: 800 !important;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--student-muted) !important;
 }
 
 .student-switch,
@@ -396,58 +283,23 @@ button:hover,
 .status-excellent,
 .status-good,
 .status-work {
-  border: 1px solid var(--student-border-strong) !important;
-  border-radius: 999px !important;
   background: rgba(15, 23, 42, 0.72) !important;
+  border-color: var(--student-border-strong) !important;
   color: var(--student-text) !important;
-}
-
-.student-switch {
-  padding: 0.45rem !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.student-switch-btn,
-.test-slot-btn,
-.subject-btn {
-  color: var(--student-secondary) !important;
-}
-
-.test-slot-btn.active,
-.student-switch-btn.active,
-.subject-btn.active {
-  color: #ffffff !important;
 }
 
 .progress,
 .progress-bar-custom {
-  height: 9px !important;
-  border-radius: 999px !important;
-  overflow: hidden;
   background: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.28);
 }
 
 .progress-bar,
 .progress-bar-fill,
 .subject-progress-fill,
 .topic-progress-fill {
-  border-radius: 999px !important;
   background: var(--student-g2) !important;
-  box-shadow: 0 0 18px rgba(59, 130, 246, 0.42);
-  animation: studentProgressIn 0.9s ease both;
-}
-
-@keyframes studentProgressIn {
-  from {
-    filter: brightness(0.8);
-    transform: scaleX(0.94);
-    transform-origin: left;
-  }
-  to {
-    filter: brightness(1);
-    transform: scaleX(1);
-  }
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.34);
 }
 
 .table,
@@ -465,11 +317,8 @@ button:hover,
 .table thead th,
 .attendance-table thead {
   background: rgba(255, 255, 255, 0.045) !important;
-  color: var(--student-secondary) !important;
+  color: var(--student-muted) !important;
   border-color: var(--student-border) !important;
-  text-transform: uppercase;
-  font-size: 0.76rem;
-  letter-spacing: 0.04em;
 }
 
 .table tbody td,
@@ -493,9 +342,8 @@ input,
 select {
   background: rgba(5, 8, 22, 0.72) !important;
   color: var(--student-text) !important;
-  border: 1px solid var(--student-border-strong) !important;
-  border-radius: 16px !important;
-  box-shadow: inset 0 1px 18px rgba(0, 0, 0, 0.2);
+  border-color: var(--student-border-strong) !important;
+  box-shadow: inset 0 1px 14px rgba(0, 0, 0, 0.2);
 }
 
 .form-control:focus,
@@ -504,19 +352,19 @@ select {
 input:focus,
 select:focus {
   border-color: rgba(139, 92, 246, 0.6) !important;
-  box-shadow: 0 0 0 0.22rem rgba(139, 92, 246, 0.18), var(--student-glow-purple) !important;
+  box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.16), var(--student-shadow) !important;
 }
 
 .circular-progress,
 .overall-progress-circle {
   background: conic-gradient(#ff8a00 calc(var(--p, 75) * 1%), rgba(255, 255, 255, 0.08) 0deg) !important;
-  box-shadow: 0 0 30px rgba(255, 138, 0, 0.22), inset 0 0 18px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 18px rgba(255, 138, 0, 0.18), inset 0 0 14px rgba(139, 92, 246, 0.16);
 }
 
 .inner-circle,
 .overall-progress-circle::before {
   background: #0b1023 !important;
-  border: 1px solid var(--student-border) !important;
+  border-color: var(--student-border) !important;
 }
 
 .inner-circle,
@@ -528,7 +376,7 @@ select:focus {
   --brand-a: #ff8a00 !important;
   --brand-b: #ff4d8d !important;
   --brand-c: #8b5cf6 !important;
-  --muted: var(--student-secondary) !important;
+  --muted: var(--student-muted) !important;
   --panel: rgba(15, 23, 42, 0.88) !important;
   --panel-soft: rgba(11, 16, 35, 0.82) !important;
   --panel-border: var(--student-border) !important;
@@ -536,39 +384,10 @@ select:focus {
   color: var(--student-text) !important;
 }
 
-.my-tests-page .table thead th,
-.my-tests-page .table tbody td {
-  color: var(--student-text) !important;
-}
-
-.my-tests-page .btn-outline-light,
-.btn-outline-dark,
-.leaderboardToggleBtn {
-  color: var(--student-text) !important;
-  background: rgba(15, 23, 42, 0.72) !important;
-  border-color: var(--student-border-strong) !important;
-}
-
-.home-score-card,
-.home-score-chip {
-  border-radius: 20px !important;
-}
-
-.home-score-chip-value,
-.home-score-outof,
-.home-score-chip-name {
-  color: var(--student-heading) !important;
-}
-
-.rank-medal {
-  background: rgba(255, 138, 0, 0.15) !important;
-  color: #fed7aa !important;
-  box-shadow: inset 0 0 0 1px rgba(255, 138, 0, 0.22) !important;
-}
-
+.rank-medal,
 .student-highlight {
-  outline: 2px solid rgba(139, 92, 246, 0.38) !important;
   background: rgba(139, 92, 246, 0.12) !important;
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.24) !important;
 }
 
 .chapter-header:hover,
@@ -578,7 +397,7 @@ select:focus {
 
 .arrow-btn {
   background: rgba(15, 23, 42, 0.82) !important;
-  border: 1px solid var(--student-border-strong) !important;
+  border-color: var(--student-border-strong) !important;
   color: var(--student-text) !important;
 }
 
@@ -588,15 +407,21 @@ select:focus {
 
 .hover-popup {
   background: #0f172a !important;
-  border: 1px solid var(--student-border-strong);
+  border-color: var(--student-border-strong) !important;
   color: var(--student-text) !important;
-  box-shadow: var(--student-shadow), var(--student-glow-purple) !important;
+  box-shadow: var(--student-shadow-soft), var(--student-shadow) !important;
 }
 
 .hover-popup h6,
 .hover-popup li,
-.hover-popup p {
-  color: var(--student-text) !important;
+.hover-popup p,
+.personalized-recommendations h5,
+.personalized-recommendations h6,
+.inner-card h6,
+.focus-card h5,
+.student-info-card h5,
+.my-attendance-header h3 {
+  color: var(--student-heading) !important;
 }
 
 .row-excellent,
@@ -614,11 +439,16 @@ select:focus {
   background: var(--student-g1) !important;
 }
 
-.weak-text {
+.weak-text,
+.status-absent,
+.pill-red,
+.status-work {
   color: #fca5a5 !important;
 }
 
-.unknown-text {
+.unknown-text,
+.status-late,
+.status-good {
   color: #fcd34d !important;
 }
 
@@ -626,13 +456,10 @@ select:focus {
   color: #67e8f9 !important;
 }
 
-.personalized-recommendations h5,
-.personalized-recommendations h6,
-.inner-card h6,
-.focus-card h5,
-.student-info-card h5,
-.my-attendance-header h3 {
-  color: var(--student-heading) !important;
+.status-present,
+.pill-green,
+.status-excellent {
+  color: #86efac !important;
 }
 
 .status-present {
@@ -656,14 +483,14 @@ select:focus {
 
 canvas,
 .chart-container {
-  filter: drop-shadow(0 0 18px rgba(124, 58, 237, 0.22));
+  filter: drop-shadow(0 0 14px rgba(124, 58, 237, 0.18));
 }
 
 footer {
   background: rgba(5, 8, 22, 0.86) !important;
-  border-top: 1px solid var(--student-border) !important;
-  color: var(--student-secondary) !important;
-  backdrop-filter: blur(18px);
+  border-top-color: var(--student-border) !important;
+  color: var(--student-muted) !important;
+  backdrop-filter: blur(14px);
 }
 
 footer a {
@@ -671,42 +498,8 @@ footer a {
 }
 
 @media (max-width: 1024px) {
-  .tabs {
-    background: rgba(5, 8, 22, 0.94) !important;
-  }
-
   .tabs-left a.active {
     background: var(--student-g1) !important;
     color: #ffffff !important;
-  }
-
-  .tabs-left a.active::after {
-    display: none !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .card,
-  .app-card,
-  .summary-card,
-  .chapter-card,
-  .stat-card,
-  .matrix-card,
-  .focus-card,
-  .student-info-card,
-  .attendance-table,
-  .test-banner,
-  .my-attendance-header {
-    border-radius: 18px !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
   }
 }
