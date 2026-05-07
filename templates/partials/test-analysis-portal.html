@@ -203,7 +203,7 @@
 
       const state = {
         page: document.body.dataset.page || "login",
-        user: getStore(StorageKeys.session, null) || SERVER_SESSION,
+        user: SERVER_SESSION || getStore(StorageKeys.session, null),
         loginMode: "student",
         testId: TESTS.at(-1).id,
         studentTab: "home",
@@ -221,7 +221,7 @@
       };
       window.state = state;
 
-      if (SERVER_SESSION && !getStore(StorageKeys.session, null)) {
+      if (SERVER_SESSION) {
         setStore(StorageKeys.session, SERVER_SESSION);
       }
 
