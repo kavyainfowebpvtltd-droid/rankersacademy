@@ -149,6 +149,9 @@
         Chemistry: ["Atomic Structure", "Chemical Bonding", "Thermochemistry", "Equilibrium", "Organic Reactions", "Coordination Compounds", "Electrochemistry", "Periodic Table"],
         Maths: ["Algebra", "Quadratic Equations", "Trigonometry", "Coordinate Geometry", "Differential Calculus", "Integral Calculus", "Vectors & 3D", "Probability"]
       };
+      const ANALYSIS_PAYLOAD = JSON.parse('{{ test_analysis_payload|default:"{}"|escapejs }}');
+      const ADMIN_ANALYSIS = ANALYSIS_PAYLOAD.admin || null;
+      const IS_ADMIN_PAGE = document.body.dataset.page === "admin";
       const STUDENT_NAMES = [
         "Aarav Sharma","Vivaan Gupta","Aditya Patel","Vihaan Iyer","Arjun Reddy","Sai Kumar","Reyansh Joshi","Krishna Mehta","Ishaan Singh","Shaurya Malhotra",
         "Ananya Verma","Diya Kapoor","Aanya Rao","Saanvi Bhat","Aaradhya Nair","Kavya Pillai","Pari Desai","Riya Khanna","Anika Bose","Navya Menon",
@@ -156,26 +159,34 @@
         "Myra Bansal","Aadhya Goyal","Sara Sinha","Ira Choudhury","Tara Pandey","Kiara Sehgal","Pihu Kashyap","Avni Mahajan","Anaya Shukla","Ishita Yadav",
         "Daksh Dewan","Parth Bedi","Aaryan Bali","Rohit Anand","Karan Bajaj","Riya Sood","Tanvi Bhalla","Suhani Walia","Mahi Sethi","Naina Gera"
       ];
-      const STUDENTS = STUDENT_NAMES.map((name, i) => ({
+      const DEMO_STUDENTS = STUDENT_NAMES.map((name, i) => ({
         id: `TRA${String(i + 1).padStart(3, "0")}`,
         name,
         password: `demo${String(i + 1).padStart(3, "0")}`,
         batch: i < 25 ? "Alpha" : "Star-01",
         parentPhone: `+91 9${String(800000000 + i * 13579).slice(0, 9)}`
       }));
-      const TESTS = [
+      const DEMO_TESTS = [
         { id: "T01", name: "Mock Test 01", date: "15 Apr 2026", shortDate: "Apr 15" },
         { id: "T02", name: "Mock Test 02", date: "22 Apr 2026", shortDate: "Apr 22" },
         { id: "T03", name: "Mock Test 03", date: "29 Apr 2026", shortDate: "Apr 29" }
       ];
+      const USE_BACKEND_ADMIN_DATA = Boolean(IS_ADMIN_PAGE && ADMIN_ANALYSIS);
+      const STUDENTS = USE_BACKEND_ADMIN_DATA ? (ADMIN_ANALYSIS.students || []) : DEMO_STUDENTS;
+      const TESTS = USE_BACKEND_ADMIN_DATA ? (ADMIN_ANALYSIS.completedTests || []) : DEMO_TESTS;
       const ADMIN_VISIBLE_COMPLETED_TESTS = TESTS.slice(-2);
-      const ADMIN_UPCOMING_TEST = {
+      const DEFAULT_ADMIN_UPCOMING_TEST = {
         id: "",
         name: "Upcoming Test",
         date: "Awaiting schedule",
         shortDate: "Soon",
         kind: "placeholder",
+        canLaunchNow: false,
+        isLive: false,
       };
+      const ADMIN_UPCOMING_TEST = USE_BACKEND_ADMIN_DATA
+        ? (ADMIN_ANALYSIS.upcomingTest || DEFAULT_ADMIN_UPCOMING_TEST)
+        : DEFAULT_ADMIN_UPCOMING_TEST;
       const ADMIN_TEST_SELECTOR_SLOTS = [
         ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
         ADMIN_VISIBLE_COMPLETED_TESTS[1] || ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
@@ -226,8 +237,10 @@
           (document.body.dataset.page === "admin" &&
             ((ADMIN_TEST_SELECTOR_SLOTS[1] && ADMIN_TEST_SELECTOR_SLOTS[1].id) ||
               (ADMIN_TEST_SELECTOR_SLOTS[0] && ADMIN_TEST_SELECTOR_SLOTS[0].id) ||
-              TESTS.at(-1)?.id)) ||
-          TESTS.at(-1).id,
+              TESTS.at(-1)?.id ||
+              "")) ||
+          TESTS.at(-1)?.id ||
+          "",
         studentTab: "home",
         studentLeaderboardOpen: false,
         facultyTab: "attend",
@@ -247,7 +260,28 @@
         setStore(StorageKeys.session, SERVER_SESSION);
       }
 
-      const allScores = Object.fromEntries(TESTS.map((t) => [t.id, generateScores(t.id)]));
+      const allScores = USE_BACKEND_ADMIN_DATA
+        ? Object.fromEntries(
+            TESTS.map((t) => [
+              t.id,
+              ((ADMIN_ANALYSIS.scoresByTest && ADMIN_ANALYSIS.scoresByTest[t.id]) || []).map((row) => ({
+                studentId: row.studentId,
+                testId: row.testId || t.id,
+                Physics: Number(row.Physics) || 0,
+                Chemistry: Number(row.Chemistry) || 0,
+                Maths: Number(row.Maths) || 0,
+                total: Number(row.total) || 0,
+              })),
+            ])
+          )
+        : Object.fromEntries(TESTS.map((t) => [t.id, generateScores(t.id)]));
+      const STUDENT_LOOKUP = new Map(STUDENTS.map((student) => [student.id, student]));
+      const ALL_STUDENT_IDS = Array.from(
+        new Set([
+          ...STUDENTS.map((student) => student.id),
+          ...Object.values(allScores).flatMap((scores) => scores.map((score) => score.studentId)),
+        ])
+      );
       const app = document.getElementById("app");
 
       window.addEventListener("online", () => { state.online = true; render(); });
@@ -336,14 +370,16 @@
       function calculateXP(studentId) {
         let xp = 0;
         TESTS.forEach((t, ti) => {
-          const scores = allScores[t.id];
+          const scores = allScores[t.id] || [];
           const me = scores.find((s) => s.studentId === studentId);
-          const rank = getRankings(scores).find((s) => s.studentId === studentId).rank;
+          const rankEntry = getRankings(scores).find((s) => s.studentId === studentId);
+          if (!me || !rankEntry) return;
+          const rank = rankEntry.rank;
           xp += Math.floor(me.total / 3);
           xp += rank === 1 ? 200 : rank <= 3 ? 120 : rank <= 10 ? 60 : rank <= 25 ? 25 : 0;
           if (ti) {
-            const prev = getRankings(allScores[TESTS[ti - 1].id]).find((s) => s.studentId === studentId).rank;
-            if (prev > rank) xp += (prev - rank) * 10;
+            const prevEntry = getRankings(allScores[TESTS[ti - 1].id] || []).find((s) => s.studentId === studentId);
+            if (prevEntry && prevEntry.rank > rank) xp += (prevEntry.rank - rank) * 10;
           }
         });
         const level = Math.floor(Math.sqrt(xp / 30)) + 1;
@@ -356,14 +392,18 @@
         const earned = new Set(["first_test"]);
         let bestRank = 999, ever90 = false, climbedFive = false, streak = 0;
         TESTS.forEach((t, i) => {
-          const scores = allScores[t.id], me = scores.find((s) => s.studentId === studentId);
-          const rank = getRankings(scores).find((s) => s.studentId === studentId).rank;
+          const scores = allScores[t.id] || [], me = scores.find((s) => s.studentId === studentId);
+          const rankEntry = getRankings(scores).find((s) => s.studentId === studentId);
+          if (!me || !rankEntry) return;
+          const rank = rankEntry.rank;
           bestRank = Math.min(bestRank, rank);
           ever90 ||= me.Physics >= 90 || me.Chemistry >= 90 || me.Maths >= 90;
           if (i) {
-            const prev = getRankings(allScores[TESTS[i - 1].id]).find((s) => s.studentId === studentId).rank;
-            if (prev - rank >= 5) climbedFive = true;
-            streak = prev > rank ? streak + 1 : 0;
+            const prevEntry = getRankings(allScores[TESTS[i - 1].id] || []).find((s) => s.studentId === studentId);
+            if (prevEntry) {
+              if (prevEntry.rank - rank >= 5) climbedFive = true;
+              streak = prevEntry.rank > rank ? streak + 1 : 0;
+            }
           }
         });
         if (bestRank <= 25) earned.add("top_25");
@@ -373,7 +413,8 @@
         if (climbedFive) earned.add("climb_5");
         if (streak >= 2) earned.add("streak_3");
         if (ever90) earned.add("subject_90");
-        const flags = getStudentClusterFlags(studentId, allScores[TESTS.at(-1).id]);
+        const latestTestId = TESTS.at(-1)?.id;
+        const flags = latestTestId ? getStudentClusterFlags(studentId, allScores[latestTestId] || []) : {};
         const flagged = SUBJECTS.filter((s) => flags[s]);
         if (!flagged.length) earned.add("no_cluster");
         if (flagged.length && flagged.every((s) => ["present", "late"].includes(state.attendance[s]?.[studentId]))) earned.add("attend_perfect");
@@ -383,8 +424,11 @@
       function calculateStreaks(studentId) {
         let improveStreak = 0;
         for (let i = TESTS.length - 1; i > 0; i--) {
-          const cur = getRankings(allScores[TESTS[i].id]).find((s) => s.studentId === studentId).rank;
-          const prev = getRankings(allScores[TESTS[i - 1].id]).find((s) => s.studentId === studentId).rank;
+          const curEntry = getRankings(allScores[TESTS[i].id] || []).find((s) => s.studentId === studentId);
+          const prevEntry = getRankings(allScores[TESTS[i - 1].id] || []).find((s) => s.studentId === studentId);
+          if (!curEntry || !prevEntry) break;
+          const cur = curEntry.rank;
+          const prev = prevEntry.rank;
           if (prev > cur) improveStreak++;
           else break;
         }
@@ -393,24 +437,40 @@
 
       function getPredictiveAlerts() {
         const alerts = [];
-        STUDENTS.forEach((stu) => {
+        ALL_STUDENT_IDS.forEach((studentId) => {
+          const stu = getStudentById(studentId) || { id: studentId, name: studentId, parentPhone: "", batch: "" };
           const reasons = [];
           let severity = 0;
-          const ranks = TESTS.map((t) => getRankings(allScores[t.id]).find((s) => s.studentId === stu.id).rank);
-          const drop = ranks.at(-1) - ranks.at(-2);
-          if (drop >= 8) { reasons.push(`Dropped ${drop} ranks vs last test`); severity += 3; }
-          else if (drop >= 4) { reasons.push(`Dropped ${drop} ranks vs last test`); severity += 1; }
-          if (ranks.every((r) => r > 35)) { reasons.push("Bottom-15 in all tests"); severity += 2; }
-          const clusterCount = TESTS.reduce((n, t) => n + Object.values(getStudentClusterFlags(stu.id, allScores[t.id])).filter(Boolean).length, 0);
+          const ranks = TESTS.map((t) => {
+            const rankEntry = getRankings(allScores[t.id] || []).find((s) => s.studentId === studentId);
+            return rankEntry ? rankEntry.rank : null;
+          });
+          const recentRanks = ranks.filter((rank) => Number.isInteger(rank));
+          if (!recentRanks.length) return;
+          if (recentRanks.length >= 2) {
+            const drop = recentRanks.at(-1) - recentRanks.at(-2);
+            if (drop >= 8) { reasons.push(`Dropped ${drop} ranks vs last test`); severity += 3; }
+            else if (drop >= 4) { reasons.push(`Dropped ${drop} ranks vs last test`); severity += 1; }
+          }
+          if (TESTS.length && TESTS.every((t, index) => {
+            const totalStudents = (allScores[t.id] || []).length;
+            const rank = ranks[index];
+            return totalStudents > 0 && rank !== null && rank > Math.max(0, totalStudents - 15);
+          })) { reasons.push("Bottom-15 in all tests"); severity += 2; }
+          const clusterCount = TESTS.reduce((n, t) => {
+            const testScores = allScores[t.id] || [];
+            if (!testScores.some((score) => score.studentId === studentId)) return n;
+            return n + Object.values(getStudentClusterFlags(studentId, testScores)).filter(Boolean).length;
+          }, 0);
           if (clusterCount >= 6) { reasons.push(`In ${clusterCount} subject clusters across ${TESTS.length} tests`); severity += 2; }
           let absent = 0, marked = 0;
           SUBJECTS.forEach((sub) => {
-            const status = state.attendance[sub]?.[stu.id];
+            const status = state.attendance[sub]?.[studentId];
             if (status) marked++;
             if (status === "absent") absent++;
           });
           if (marked && absent / marked >= .5) { reasons.push(`${absent}/${marked} sessions absent`); severity += 2; }
-          if (reasons.length) alerts.push({ ...stu, reasons, severity, ranks });
+          if (reasons.length) alerts.push({ ...stu, reasons, severity, ranks: ranks.map((rank) => rank ?? "NA") });
         });
         return alerts.sort((a, b) => b.severity - a.severity);
       }
@@ -421,12 +481,36 @@
       function loadAttendance() { state.attendance = getStore(StorageKeys.attendance(state.testId), blankAttendance()); }
       function saveAttendance() { setStore(StorageKeys.attendance(state.testId), state.attendance); }
       function esc(v) { return String(v ?? "").replace(/[&<>\"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); }
-      function currentScores() { return allScores[state.testId]; }
-      function currentTest() { return TESTS.find((t) => t.id === state.testId); }
-      function scoreStudent(score) { return { ...score, ...STUDENTS.find((s) => s.id === score.studentId) }; }
+      function currentScores() { return allScores[state.testId] || []; }
+      function currentTest() {
+        return (
+          TESTS.find((t) => t.id === state.testId) ||
+          ADMIN_TEST_SELECTOR_SLOTS.find((t) => t?.id === state.testId) ||
+          TESTS.at(-1) ||
+          ADMIN_UPCOMING_TEST ||
+          { id: "", name: "Test", date: "", shortDate: "" }
+        );
+      }
+      function getStudentById(studentId) {
+        return STUDENT_LOOKUP.get(studentId) || null;
+      }
+      function scoreStudent(score) {
+        if (!score) {
+          return { studentId: "", id: "", name: "", batch: "", parentPhone: "", studentRef: "" };
+        }
+        const student = getStudentById(score.studentId) || {
+          id: score.studentId,
+          name: score.studentId,
+          batch: "",
+          parentPhone: "",
+          studentRef: score.studentId,
+        };
+        return { ...score, ...student };
+      }
 
       function avatar(name, size = 38) {
-        const initials = name.split(" ").map((x) => x[0]).slice(0, 2).join("");
+        const safeName = String(name || "Student").trim() || "Student";
+        const initials = safeName.split(" ").map((x) => x[0]).slice(0, 2).join("");
         return `<span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient flex-shrink-0" style="width:${size}px;height:${size}px;font-size:${Math.max(10, size * .32)}px">${esc(initials)}</span>`;
       }
 
@@ -630,7 +714,7 @@
         <div class="row g-3 mb-4">${SUBJECTS.map((sub) => subjectCard(sub, score, flags[sub])).join("")}</div>
         <h5 class="display fw-bold">Top Performers</h5>
         <div class="d-flex gap-2 overflow-auto pb-1 mb-4">${ranked.slice(0, 5).map((r) => {
-          const stu = STUDENTS.find((s) => s.id === r.studentId);
+          const stu = scoreStudent(r);
           return mini("p-3 text-center flex-shrink-0 position-relative", `${rankMedal(r.rank)}${avatar(stu.name, 42)}<div class="fw-bold mt-2 text-truncate" style="width:120px">${esc(stu.name)}</div><div class="mono soft">#${r.rank} - ${r.total}</div>`);
         }).join("")}</div>
         ${leaderboard(ranked, student.id, true)}`;
@@ -683,7 +767,7 @@
           <button class="btn btn-outline-light btn-sm rounded-pill" onclick="toggleStudentLeaderboard()">${state.studentLeaderboardOpen ? "Show Less" : "View All"}</button>
         </div>` : "";
         return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${rows.map((r) => {
-          const stu = STUDENTS.find((s) => s.id === r.studentId);
+          const stu = scoreStudent(r);
           const mine = stu.id === highlightId;
           return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${stu.id}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Maths}</td><td><b>${r.total}</b></td></tr>`;
         }).join("")}</tbody></table></div>${footer}`);
@@ -803,11 +887,14 @@
       }
 
       function adminOverview() {
-        const ranked = getRankings(currentScores());
-        const avg = Math.round(currentScores().reduce((n, s) => n + s.total, 0) / STUDENTS.length);
-        return `<div class="row g-3 mb-4">${kpi("Class Average", `${avg}/300`, currentTest().name)}${kpi("Top Score", ranked[0].total, STUDENTS.find((s) => s.id === ranked[0].studentId).name)}${kpi("All-Subject Cluster", getAllThreeSet(currentScores()).size, "students")}${kpi("At-Risk Alerts", getPredictiveAlerts().length, "predictive warnings")}</div>
+        const scores = currentScores();
+        const ranked = getRankings(scores);
+        const participantCount = scores.length;
+        const avg = participantCount ? Math.round(scores.reduce((n, s) => n + s.total, 0) / participantCount) : 0;
+        const topStudent = ranked[0] ? scoreStudent(ranked[0]).name : "No attempts yet";
+        return `<div class="row g-3 mb-4">${kpi("Class Average", `${avg}/300`, currentTest().name)}${kpi("Top Score", ranked[0]?.total || 0, topStudent)}${kpi("All-Subject Cluster", getAllThreeSet(scores).size, "students")}${kpi("At-Risk Alerts", getPredictiveAlerts().length, "predictive warnings")}</div>
         ${card("p-4 mb-4", `<h5 class="display fw-bold">Subject Averages</h5><div class="row g-3">${SUBJECTS.map((sub) => {
-          const avgSub = Math.round(currentScores().reduce((n, s) => n + s[sub], 0) / STUDENTS.length);
+          const avgSub = participantCount ? Math.round(scores.reduce((n, s) => n + s[sub], 0) / participantCount) : 0;
           return `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="display fs-3 fw-bold mt-2">${avgSub}</div>${progress(avgSub, SUBJECT_THEMES[sub].accent)}`)}</div>`;
         }).join("")}</div>`)}${leaderboard(ranked.slice(0, 10))}`;
       }
@@ -822,7 +909,7 @@
 
       function adminStudents() {
         const q = state.adminSearch.toLowerCase();
-        const ranked = getRankings(currentScores(), state.adminSort).map(scoreStudent).filter((s) => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q));
+        const ranked = getRankings(currentScores(), state.adminSort).map(scoreStudent).filter((s) => !q || s.name.toLowerCase().includes(q) || String(s.id || s.studentRef || "").toLowerCase().includes(q));
         return card("p-3 mb-4", `<div class="row g-2 mb-3"><div class="col-md"><input class="form-control" value="${esc(state.adminSearch)}" placeholder="Search name or ID" oninput="state.adminSearch=this.value;render()"></div><div class="col-md-auto"><select class="form-select" onchange="state.adminSort=this.value;render()">${["total","Physics","Chemistry","Maths"].map((k) => `<option ${state.adminSort === k ? "selected" : ""} value="${k}">${k}</option>`).join("")}</select></div></div>${leaderboard(ranked)}`);
       }
 
@@ -859,7 +946,7 @@
         return card("p-4 mb-4", `<h5 class="display fw-bold">Attendance Records</h5>${SUBJECTS.map((sub) => {
           const cluster = getBottomCluster(currentScores(), sub), att = state.attendance[sub] || {};
           const present = cluster.filter((s) => ["present", "late"].includes(att[s.studentId])).length;
-          const rate = Math.round(present / cluster.length * 100);
+          const rate = cluster.length ? Math.round(present / cluster.length * 100) : 0;
           const absent = cluster.map(scoreStudent).filter((s) => att[s.studentId] === "absent");
           return mini("p-3 mb-3", `<div class="d-flex justify-content-between align-items-center"><div>${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft">${CLUSTER_SCHEDULE[sub].time}</div></div>${badge(`${rate}%`, rate >= 80 ? "text-bg-success" : rate >= 50 ? "text-bg-warning text-dark" : "text-bg-danger")}</div><div class="mt-2">${progress(rate, SUBJECT_THEMES[sub].accent)}</div>${absent.length ? `<div class="small text-danger mt-2">Absentees: ${absent.map((s) => `${esc(s.name)} (${s.id})`).join(", ")}</div>` : ""}`);
         }).join("")}`);
@@ -874,23 +961,25 @@
 
       function postTestMessages() {
         const ranked = getRankings(currentScores());
-        return STUDENTS.map((stu) => {
+        return currentScores().map(scoreStudent).map((stu) => {
           const me = currentScores().find((s) => s.studentId === stu.id);
-          const rank = ranked.find((s) => s.studentId === stu.id).rank;
+          const rankEntry = ranked.find((s) => s.studentId === stu.id);
+          if (!me || !rankEntry) return null;
+          const rank = rankEntry.rank;
           const flagged = SUBJECTS.filter((s) => getStudentClusterFlags(stu.id, currentScores())[s]);
           const tone = rank <= 10 ? "Celebrate" : rank <= 25 ? "Positive" : flagged.length === 3 ? "Concerned" : "Support";
-          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/300 - Rank: #${rank} of ${STUDENTS.length}\nPhysics: ${me.Physics} - Chemistry: ${me.Chemistry} - Maths: ${me.Maths}\n\n`;
+          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/300 - Rank: #${rank} of ${currentScores().length}\nPhysics: ${me.Physics} - Chemistry: ${me.Chemistry} - Maths: ${me.Maths}\n\n`;
           body += tone === "Celebrate" ? `Outstanding performance. ${stu.name.split(" ")[0]} cracked the top 10. Congratulations!` : tone === "Positive" ? `Solid showing this round. Encourage ${stu.name.split(" ")[0]} to keep the momentum.` : flagged.length ? `${stu.name.split(" ")[0]} will join faculty-led revision for ${flagged.join(", ")} after class. Please ensure attendance.` : "Steady performance. Keep up the consistency.";
           body += "\n\n- The Rankers Academy";
           return { studentId: stu.id, student: stu, tone, body, type: "post-test" };
-        });
+        }).filter(Boolean);
       }
 
       function absenceMessages() {
         const messages = [];
         SUBJECTS.forEach((sub) => Object.entries(state.attendance[sub] || {}).forEach(([sid, status]) => {
           if (status !== "absent") return;
-          const stu = STUDENTS.find((s) => s.id === sid);
+          const stu = getStudentById(sid) || { id: sid, name: sid, parentPhone: "" };
           messages.push({ studentId: sid, student: stu, subject: sub, type: "absence", tone: "Absence", body: `Dear Parent,\n\n${stu.name} was marked ABSENT for the ${sub} revision session today (${CLUSTER_SCHEDULE[sub].time}).\n\nThis was a faculty-led targeted coaching session for students who scored below the threshold. Missing it directly impacts ${stu.name.split(" ")[0]}'s performance.\n\nPlease discuss this at home.\n\n- ${CLUSTER_SCHEDULE[sub].faculty}\n  The Rankers Academy` });
         }));
         return messages;
