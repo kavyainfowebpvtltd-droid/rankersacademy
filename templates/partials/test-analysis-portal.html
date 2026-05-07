@@ -131,26 +131,6 @@
         white-space: pre-wrap;
         font-size: .78rem;
       }
-      .test-slot-btn {
-        min-height: 2.85rem;
-        padding-inline: 1rem;
-        border-radius: 999px;
-        transition:
-          transform 0.18s ease,
-          box-shadow 0.18s ease,
-          background 0.18s ease,
-          border-color 0.18s ease;
-      }
-      .test-slot-btn:hover:not(:disabled),
-      .test-slot-btn:focus-visible:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 10px 22px rgba(255, 138, 0, 0.14);
-      }
-      .test-slot-btn:disabled {
-        opacity: 0.72;
-        cursor: not-allowed;
-        box-shadow: none;
-      }
     </style>
   </head>
   <body data-page="{{ analysis_page }}">
@@ -187,6 +167,19 @@
         { id: "T01", name: "Mock Test 01", date: "15 Apr 2026", shortDate: "Apr 15" },
         { id: "T02", name: "Mock Test 02", date: "22 Apr 2026", shortDate: "Apr 22" },
         { id: "T03", name: "Mock Test 03", date: "29 Apr 2026", shortDate: "Apr 29" }
+      ];
+      const ADMIN_VISIBLE_COMPLETED_TESTS = TESTS.slice(-2);
+      const ADMIN_UPCOMING_TEST = {
+        id: "",
+        name: "Upcoming Test",
+        date: "Awaiting schedule",
+        shortDate: "Soon",
+        kind: "placeholder",
+      };
+      const ADMIN_TEST_SELECTOR_SLOTS = [
+        ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
+        ADMIN_VISIBLE_COMPLETED_TESTS[1] || ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
+        ADMIN_UPCOMING_TEST,
       ];
       const CLUSTER_SCHEDULE = {
         Physics: { time: "4:00 - 4:30 PM", faculty: "Mr. Rajesh Kumar", room: "Conference Room A" },
@@ -229,7 +222,12 @@
         page: document.body.dataset.page || "login",
         user: SERVER_SESSION || getStore(StorageKeys.session, null),
         loginMode: "student",
-        testId: TESTS.at(-1).id,
+        testId:
+          (document.body.dataset.page === "admin" &&
+            ((ADMIN_TEST_SELECTOR_SLOTS[1] && ADMIN_TEST_SELECTOR_SLOTS[1].id) ||
+              (ADMIN_TEST_SELECTOR_SLOTS[0] && ADMIN_TEST_SELECTOR_SLOTS[0].id) ||
+              TESTS.at(-1)?.id)) ||
+          TESTS.at(-1).id,
         studentTab: "home",
         studentLeaderboardOpen: false,
         facultyTab: "attend",
@@ -561,19 +559,33 @@
           return;
         }
 
+        if (test.kind === "placeholder") {
+          button.textContent = `${test.name} - ${test.date}`;
+          button.disabled = true;
+          button.title = "No upcoming test has been scheduled yet.";
+          button.classList.add("btn-outline-light");
+          return;
+        }
+
         button.textContent = `${test.name} - ${test.date}`;
         button.classList.add(test.id === state.testId ? "btn-brand" : "btn-outline-light");
       }
 
       function adminTestSelector() {
         return `<div id="adminTestSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
-          ${TESTS.map((_, index) => `<button type="button" class="btn btn-sm mono flex-shrink-0 test-slot-btn" data-slot-index="${index}" onclick="setTest(TESTS[${index}].id)"></button>`).join("")}
+          ${ADMIN_TEST_SELECTOR_SLOTS.map((_, index) => `<button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-slot-index="${index}" onclick="setAdminSlotTest(${index})"></button>`).join("")}
         </div>`;
+      }
+
+      function setAdminSlotTest(index) {
+        const slot = ADMIN_TEST_SELECTOR_SLOTS[index];
+        if (!slot?.id) return;
+        setTest(slot.id);
       }
 
       function hydrateAdminTestSelector() {
         document.querySelectorAll("#adminTestSelector [data-slot-index]").forEach((button) => {
-          const test = TESTS[Number(button.dataset.slotIndex)];
+          const test = ADMIN_TEST_SELECTOR_SLOTS[Number(button.dataset.slotIndex)];
           applyAnalysisTestSlotButtonState(button, test);
         });
       }
