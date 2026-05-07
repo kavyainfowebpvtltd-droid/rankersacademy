@@ -1,4 +1,8 @@
-function loadPage(page, btn) {
+function loadPage(page, btn, sessionPayload) {
+  if (sessionPayload) {
+    localStorage.setItem("tra4_session", sessionPayload);
+  }
+
   document.getElementById("contentFrame").src = page;
 
   document

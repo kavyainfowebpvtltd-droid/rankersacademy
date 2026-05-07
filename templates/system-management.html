@@ -13,6 +13,9 @@
       <button class="btn nav-btn" onclick="loadPage('{% url 'scholarship_test:scholarshiptest_management' %}', this)">
         <i class="bi bi-mortarboard"></i> Test Management
       </button>
+      <button class="btn nav-btn" onclick="loadPage('{% url 'test-analysis' %}', this, '{{ test_analysis_session|escapejs }}')">
+        <i class="bi bi-bar-chart-line"></i> Test Analysis
+      </button>
       <button class="btn nav-btn" onclick="loadPage('{% url 'bridgecourse:bridgecourse-management' %}', this)">
         <i class="bi bi-award"></i> Bridge Course Management
       </button>

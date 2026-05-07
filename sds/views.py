@@ -2315,12 +2315,78 @@ def delete_student(request, id):
 
 @login_required
 def system_management(request):
+    test_analysis_session = json.dumps(_build_test_analysis_session(request.user))
     context = {
          "teacher_name": _display_name(request.user),
          "is_teacher": _is_teacher_user(request.user),
          "is_admin": _is_admin_user(request.user) or request.user.is_superuser,
+         "test_analysis_session": test_analysis_session,
     }
     return render(request, "system-management.html", context)
+
+
+def _normalize_test_analysis_subject_name(name: str) -> str:
+    value = _norm(name)
+    if value in {"physics", "phy"}:
+        return "Physics"
+    if value in {"chemistry", "chem"}:
+        return "Chemistry"
+    if value in {"maths", "math", "mathematics", "mathmatics"}:
+        return "Maths"
+    return ""
+
+
+def _faculty_test_analysis_subject(user) -> str:
+    ta = _teacheradmin(user)
+    if not ta:
+        return "Physics"
+
+    for subject_name in _teacher_allowed_subject_names(ta):
+        mapped = _normalize_test_analysis_subject_name(subject_name)
+        if mapped:
+            return mapped
+
+    return "Physics"
+
+
+def _build_test_analysis_session(user) -> dict:
+    if _is_superadmin(user) or _is_admin_user(user):
+        return {"type": "admin"}
+
+    return {
+        "type": "faculty",
+        "faculty": {
+            "name": _display_name(user),
+            "subject": _faculty_test_analysis_subject(user),
+        },
+    }
+
+
+@login_required
+def test_analysis(request):
+    if _is_superadmin(request.user) or _is_admin_user(request.user):
+        return render(request, "test-analysis-admin.html")
+    if _is_teacher_user(request.user):
+        return render(request, "test-analysis-faculty.html")
+    return redirect("login")
+
+
+@login_required
+def test_analysis_admin_page(request):
+    if not (_is_superadmin(request.user) or _is_admin_user(request.user)):
+        return redirect("test-analysis")
+    return render(request, "test-analysis-admin.html")
+
+
+@login_required
+def test_analysis_faculty_page(request):
+    if not _is_teacher_user(request.user):
+        return redirect("test-analysis")
+    return render(request, "test-analysis-faculty.html")
+
+
+def test_analysis_login_page(request):
+    return logout_view(request)
 
 
 

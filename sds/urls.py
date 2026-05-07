@@ -70,6 +70,10 @@ urlpatterns = [
     # Admin Module
 
     path("system-management/", views.system_management, name="system-management"),
+    path("test-analysis/", views.test_analysis, name="test-analysis"),
+    path("test-analysis/admin.html", views.test_analysis_admin_page, name="test-analysis-admin-page"),
+    path("test-analysis/teacher.html", views.test_analysis_faculty_page, name="test-analysis-faculty-page"),
+    path("test-analysis/login.html", views.test_analysis_login_page, name="test-analysis-login-page"),
     path("syllabus-management/", views.syllabus_management, name="syllabus-management"),
 
     path("add-subject/", views.add_subject, name="add_subject"),
