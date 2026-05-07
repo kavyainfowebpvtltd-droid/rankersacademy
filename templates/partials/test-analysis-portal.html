@@ -131,26 +131,6 @@
         white-space: pre-wrap;
         font-size: .78rem;
       }
-      .test-slot-btn {
-        min-height: 2.85rem;
-        padding-inline: 1rem;
-        border-radius: 999px;
-        transition:
-          transform 0.18s ease,
-          box-shadow 0.18s ease,
-          background 0.18s ease,
-          border-color 0.18s ease;
-      }
-      .test-slot-btn:hover:not(:disabled),
-      .test-slot-btn:focus-visible:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 10px 22px rgba(255, 138, 0, 0.14);
-      }
-      .test-slot-btn:disabled {
-        opacity: 0.72;
-        cursor: not-allowed;
-        box-shadow: none;
-      }
     </style>
   </head>
   <body data-page="{{ analysis_page }}">
@@ -567,7 +547,7 @@
 
       function adminTestSelector() {
         return `<div id="adminTestSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
-          ${TESTS.map((_, index) => `<button type="button" class="btn btn-sm mono flex-shrink-0 test-slot-btn" data-slot-index="${index}" onclick="setTest(TESTS[${index}].id)"></button>`).join("")}
+          ${TESTS.map((_, index) => `<button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-slot-index="${index}" onclick="setTest(TESTS[${index}].id)"></button>`).join("")}
         </div>`;
       }
 
