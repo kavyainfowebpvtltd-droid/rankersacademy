@@ -1688,7 +1688,9 @@ def api_save_test_details(request, test_id):
             test.scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
         except ValueError:
             return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
-    
+        if test.scheduled_start_at:
+            test.date = timezone.localtime(test.scheduled_start_at).date()
+
     test.save()
     
     config, _ = ScholarshipTestConfig.objects.get_or_create(test=test)

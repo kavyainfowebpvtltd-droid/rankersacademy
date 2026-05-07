@@ -1070,3 +1070,30 @@ class ScholarshipCreateTestApiTests(TestCase):
         payload = response.json()
         self.assertEqual(payload['test']['batch'], 'Alpha')
         self.assertEqual(payload['test']['stream'], 'JEE')
+
+    def test_save_test_details_updates_scheduled_start_and_test_date(self):
+        test = ScholarshipTest.objects.create(
+            name='Timing Test',
+            date=timezone.datetime(2026, 5, 20).date(),
+            duration_hours=1,
+            duration_minutes=0,
+        )
+        ScholarshipTestConfig.objects.create(test=test)
+
+        response = self.client.post(
+            reverse('scholarship_test:api_save_test_details', args=[test.id]),
+            data=json.dumps(
+                {
+                    'scheduled_start_at': '2026-05-25T08:45',
+                }
+            ),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        test.refresh_from_db()
+        self.assertIsNotNone(test.scheduled_start_at)
+        local_start = timezone.localtime(test.scheduled_start_at)
+        self.assertEqual(local_start.date().isoformat(), '2026-05-25')
+        self.assertEqual(local_start.strftime('%H:%M'), '08:45')
+        self.assertEqual(test.date.isoformat(), '2026-05-25')

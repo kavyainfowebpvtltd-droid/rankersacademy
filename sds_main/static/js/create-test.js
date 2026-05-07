@@ -4,6 +4,7 @@ var defaultS = {
   batch: "",
   stream: "",
   tags: "SCHOLARSHIP TEST",
+  scheduledStartAt: "",
   instructions: "",
   defaultPosMarks: 2,
   defaultNegMarks: 1,
@@ -169,6 +170,33 @@ function formatDurationLabel(durationValue) {
   return parts.join(" ");
 }
 
+function formatDateTimeLocalValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  var date = new Date(value);
+  if (isNaN(date.getTime())) {
+    return "";
+  }
+
+  var pad = function (part) {
+    return String(part).padStart(2, "0");
+  };
+
+  return (
+    date.getFullYear() +
+    "-" +
+    pad(date.getMonth() + 1) +
+    "-" +
+    pad(date.getDate()) +
+    "T" +
+    pad(date.getHours()) +
+    ":" +
+    pad(date.getMinutes())
+  );
+}
+
 function syncGradingFromInputs() {
   var posInput = document.getElementById("default-pos-marks");
   var negInput = document.getElementById("default-neg-marks");
@@ -200,6 +228,7 @@ function getTestDetailsPayload() {
     batch: S.batch || "",
     stream: S.stream || "",
     tags: S.tags,
+    scheduled_start_at: S.scheduledStartAt || "",
     instructions: S.instructions,
     default_pos_marks: S.defaultPosMarks,
     default_neg_marks: S.defaultNegMarks,
@@ -237,6 +266,7 @@ function loadData() {
             batch: data.test.batch || "",
             stream: data.test.stream || "",
             tags: data.test.tags,
+            scheduledStartAt: data.test.scheduled_start_at || "",
             instructions: data.test.instructions,
             defaultPosMarks: data.test.default_pos_marks,
             defaultNegMarks: data.test.default_neg_marks,
@@ -1882,6 +1912,7 @@ window.delQ = function (qId, secId) {
 
 window.openTestDetails = function () {
   var duration = getDurationParts(S.duration);
+  var scheduledStartAt = formatDateTimeLocalValue(S.scheduledStartAt);
   showModal(
     '<div class="modal-header"><span class="modal-title">Test Details</span><button class="modal-close" onclick="closeModal()">×</button></div>' +
       '<div class="modal-body">' +
@@ -1909,6 +1940,11 @@ window.openTestDetails = function () {
       e(S.tags) +
       '"></div>' +
       "</div>" +
+      '<div class="form-row">' +
+      '<div class="form-group"><div class="form-label">Test Date & Time</div><input class="form-input" type="datetime-local" id="td-scheduled-start" value="' +
+      e(scheduledStartAt) +
+      '"></div>' +
+      "</div>" +
       '<div class="form-group"><div class="form-label">Instructions</div><textarea class="form-input" id="td-instr" placeholder="Enter instructions...">' +
       e(S.instructions) +
       "</textarea></div>" +
@@ -1926,6 +1962,9 @@ window.saveTestDetails = function () {
   S.batch = document.getElementById("td-batch").value.trim();
   S.stream = document.getElementById("td-stream").value.trim();
   S.tags = document.getElementById("td-tags").value.trim();
+  S.scheduledStartAt = document
+    .getElementById("td-scheduled-start")
+    .value.trim();
   S.instructions = document.getElementById("td-instr").value.trim();
   saveData();
   closeModal();
@@ -1950,6 +1989,7 @@ window._legacySaveTest = function () {
       batch: S.batch || "",
       stream: S.stream || "",
       tags: tags,
+      scheduled_start_at: S.scheduledStartAt || "",
       status: "published",
     };
 
@@ -2198,6 +2238,7 @@ window.saveTest = function () {
       batch: S.batch || "",
       stream: S.stream || "",
       tags: S.tags || "",
+      scheduled_start_at: S.scheduledStartAt || "",
       status: "published",
     };
 
