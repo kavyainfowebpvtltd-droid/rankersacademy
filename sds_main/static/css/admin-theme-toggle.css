@@ -18,79 +18,25 @@
   color: #ffffff;
 }
 
-html[data-admin-theme="light"] {
-  color-scheme: light;
-}
-
 html[data-admin-theme="light"] body,
 html[data-admin-theme="light"] body.bg-light {
-  --admin-active-tab-bg: #fff3e0;
-  --student-bg-primary: #fff8f1;
-  --student-bg-secondary: #ffffff;
-  --student-card: #ffffff;
-  --student-border: #f1dec9;
-  --student-border-strong: #ffc078;
-  --student-heading: #1f2937;
-  --student-text: #334155;
-  --student-muted: #64748b;
-  --student-deep-muted: #94a3b8;
-  --student-g1: linear-gradient(90deg, #ff8a00 0%, #f97316 54%, #fb923c 100%);
-  --student-g2: linear-gradient(90deg, #ffb347 0%, #ff8a00 100%);
-  --student-shadow: 0 12px 28px rgba(249, 115, 22, 0.14);
-  --student-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
-  --game-bg: #fff8f1;
-  --game-bg-2: #fff3e0;
-  --game-panel: #ffffff;
-  --game-card: #ffffff;
-  --game-card-hover: #fff7ed;
-  --game-orange: #ff8a00;
-  --game-pink: #f97316;
-  --game-purple: #fb923c;
-  --game-text: #1f2937;
-  --game-muted: #64748b;
-  --game-soft: #475569;
-  --game-border: #f1dec9;
-  --game-border-strong: #ffc078;
-  --game-glass: rgba(255, 255, 255, 0.92);
-  --game-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
-  --game-gradient-primary: linear-gradient(90deg, #ff8a00, #f97316 56%, #fb923c);
-  --game-gradient-panel: linear-gradient(180deg, #ffffff, #fffaf5);
-  color-scheme: light;
-  background:
-    radial-gradient(circle at 14% 0%, rgba(255, 138, 0, 0.12), transparent 28rem),
-    linear-gradient(180deg, #fff8f1 0%, #ffffff 44%, #fffaf5 100%) !important;
-  color: #334155 !important;
-  transition: background 0.25s ease, color 0.25s ease;
-}
-
-html[data-admin-theme="light"] body::before {
-  display: none !important;
-}
-
-html[data-admin-theme="light"] * {
-  scrollbar-color: #fb923c #fff3e0;
+  --admin-active-tab-bg: #e6f4fb;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
 }
 
 html[data-admin-theme="light"] .navbar,
 html[data-admin-theme="light"] .navbar.bg-white,
 html[data-admin-theme="light"] .navbar-light {
   background: #ffffff !important;
-  border-bottom-color: #f1dec9 !important;
-  color: #1f2937 !important;
-  box-shadow: 0 10px 28px rgba(249, 115, 22, 0.09) !important;
-  backdrop-filter: blur(14px) saturate(145%);
-}
-
-html[data-admin-theme="light"] .navbar .brand-icon {
-  background: #fff7ed !important;
-  border: 1px solid #fed7aa !important;
-  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.12) !important;
+  border-bottom-color: #e5e7eb !important;
+  color: #0f172a !important;
 }
 
 html[data-admin-theme="light"] .navbar h5,
 html[data-admin-theme="light"] .navbar .fw-bold,
 html[data-admin-theme="light"] .text-dark {
-  color: #1f2937 !important;
+  color: #0f172a !important;
 }
 
 html[data-admin-theme="light"] .navbar small,
@@ -102,524 +48,178 @@ html[data-admin-theme="light"] .form-text {
 
 html[data-admin-theme="light"] .tabs {
   background: #ffffff !important;
-  border-bottom-color: #f1dec9 !important;
-  box-shadow: 0 8px 22px rgba(249, 115, 22, 0.06) !important;
+  border-bottom-color: #e5e7eb !important;
 }
 
 html[data-admin-theme="light"] .tabs-left a,
 html[data-admin-theme="light"] .tabs-left a i {
-  color: #475569 !important;
+  color: #000000 !important;
 }
 
 html[data-admin-theme="light"] .tabs-left a.active,
 html[data-admin-theme="light"] .tabs-left a.active i,
 html[data-admin-theme="light"] .tabs-left a:hover,
 html[data-admin-theme="light"] .tabs-left a:hover i {
-  color: #c2410c !important;
-  background: #fff3e0 !important;
-  border-color: #fed7aa !important;
-  box-shadow: 0 10px 22px rgba(249, 115, 22, 0.12) !important;
+  color: #2563eb !important;
 }
 
 html[data-admin-theme="light"] .tabs-left a.active::after {
-  background: #f97316 !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.22) !important;
+  background: #2563eb !important;
 }
 
 html[data-admin-theme="light"] .card,
 html[data-admin-theme="light"] .card.bg-white,
 html[data-admin-theme="light"] .bg-white,
-html[data-admin-theme="light"] .table-responsive.bg-white,
-html[data-admin-theme="light"] .app-card,
-html[data-admin-theme="light"] .app-card-soft,
-html[data-admin-theme="light"] .home-score-card,
-html[data-admin-theme="light"] .home-score-chip,
-html[data-admin-theme="light"] .summary-card,
-html[data-admin-theme="light"] .chapter-card,
-html[data-admin-theme="light"] .topic-row,
-html[data-admin-theme="light"] .stat-card,
-html[data-admin-theme="light"] .matrix-card,
-html[data-admin-theme="light"] .focus-card,
-html[data-admin-theme="light"] .priority-wrapper,
-html[data-admin-theme="light"] .student-info-card,
-html[data-admin-theme="light"] .attendance-table,
-html[data-admin-theme="light"] .personalized-recommendations,
-html[data-admin-theme="light"] .inner-card,
-html[data-admin-theme="light"] .test-banner,
-html[data-admin-theme="light"] .my-attendance-header,
-html[data-admin-theme="light"] .card-box,
-html[data-admin-theme="light"] .glass,
-html[data-admin-theme="light"] .hover-card,
-html[data-admin-theme="light"] .mini,
-html[data-admin-theme="light"] .modal-content {
+html[data-admin-theme="light"] .table-responsive.bg-white {
   background-color: #ffffff !important;
-  background-image: none !important;
-  border-color: #f1dec9 !important;
-  color: #334155 !important;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08) !important;
-  backdrop-filter: none !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 html[data-admin-theme="light"] .shadow-sm {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07) !important;
-}
-
-html[data-admin-theme="light"] .text-primary {
-  color: #f97316 !important;
-}
-
-html[data-admin-theme="light"] .text-success {
-  color: #16a34a !important;
-}
-
-html[data-admin-theme="light"] .text-danger {
-  color: #dc2626 !important;
-}
-
-html[data-admin-theme="light"] .text-purple {
-  color: #c2410c !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
 }
 
 html[data-admin-theme="light"] .page-shell > .container:first-child .rounded-4.p-4.text-white.mb-4 {
-  background: linear-gradient(90deg, #ff8a00, #f97316) !important;
+  background: linear-gradient(90deg, #7f00ff, #e100ff) !important;
   border: 0;
-  box-shadow: 0 16px 34px rgba(249, 115, 22, 0.18) !important;
+  box-shadow: none;
 }
 
-html[data-admin-theme="light"] .download-btn,
-html[data-admin-theme="light"] .btn-brand,
-html[data-admin-theme="light"] .btn-primary,
-html[data-admin-theme="light"] .start-btn,
-html[data-admin-theme="light"] .show-more-btn,
-html[data-admin-theme="light"] .hover-popup button,
-html[data-admin-theme="light"] .subject-btn.active,
-html[data-admin-theme="light"] .student-switch-btn.active,
-html[data-admin-theme="light"] .test-slot-btn.active,
-html[data-admin-theme="light"] .nav-btn.active {
-  background: linear-gradient(90deg, #ff8a00, #f97316) !important;
+html[data-admin-theme="light"] .admin-stats-card {
   border-color: transparent !important;
-  color: #ffffff !important;
-  box-shadow: 0 12px 24px rgba(249, 115, 22, 0.22) !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-card .rounded-3 {
+  border: 0 !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(1) .admin-stats-card .rounded-3 {
+  background: #e8f0ff !important;
+  color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(2) .admin-stats-card .rounded-3 {
+  background: #eafaf0 !important;
+  color: #16a34a !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(3) .admin-stats-card .rounded-3 {
+  background: #fff4e5 !important;
+  color: #f97316 !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(4) .admin-stats-card .rounded-3 {
+  background: #f3e8ff !important;
+  color: #9333ea !important;
+}
+
+html[data-admin-theme="light"] .text-primary {
+  color: #0d6efd !important;
+}
+
+html[data-admin-theme="light"] .text-success {
+  color: #198754 !important;
+}
+
+html[data-admin-theme="light"] .text-danger {
+  color: #dc3545 !important;
+}
+
+html[data-admin-theme="light"] .text-purple {
+  color: #9333ea !important;
+}
+
+html[data-admin-theme="light"] .input-group-text,
+html[data-admin-theme="light"] .form-control {
+  background-color: #ffffff !important;
+  border-color: #dee2e6 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .form-control::placeholder {
+  color: #6c757d !important;
 }
 
 html[data-admin-theme="light"] .table {
   --bs-table-bg: #ffffff;
-  --bs-table-color: #334155;
-  --bs-table-hover-bg: #fff7ed;
-  --bs-table-hover-color: #1f2937;
-  --bs-table-border-color: #f1dec9;
-  border-color: #f1dec9 !important;
-  color: #334155 !important;
+  --bs-table-color: #0f172a;
+  --bs-table-hover-bg: #f8f9fa;
+  --bs-table-hover-color: #0f172a;
+  border-color: #dee2e6 !important;
 }
 
 html[data-admin-theme="light"] .table thead tr th,
-html[data-admin-theme="light"] .table thead th,
-html[data-admin-theme="light"] .attendance-table thead,
 html[data-admin-theme="light"] .table-light {
-  --bs-table-bg: #fff7ed;
-  --bs-table-color: #9a3412;
-  background-color: #fff7ed !important;
-  color: #9a3412 !important;
-  border-color: #fed7aa !important;
+  --bs-table-bg: #f8f9fa;
+  --bs-table-color: #64748b;
+  background-color: #f5f7f8 !important;
+  color: #64748b !important;
 }
 
 html[data-admin-theme="light"] .table tbody tr,
 html[data-admin-theme="light"] .table td,
-html[data-admin-theme="light"] .table th,
-html[data-admin-theme="light"] .attendance-table td,
-html[data-admin-theme="light"] .attendance-table th {
-  background: transparent !important;
-  color: #334155 !important;
-  border-color: #f1dec9 !important;
-}
-
-html[data-admin-theme="light"] .table tbody tr:hover,
-html[data-admin-theme="light"] .attendance-table tbody tr:hover,
-html[data-admin-theme="light"] .attendance-table tbody tr.current-date {
-  background: #fff7ed !important;
-}
-
-html[data-admin-theme="light"] .input-group-text,
-html[data-admin-theme="light"] .form-control,
-html[data-admin-theme="light"] .form-select,
-html[data-admin-theme="light"] .month-selector,
-html[data-admin-theme="light"] input,
-html[data-admin-theme="light"] select {
-  background-color: #ffffff !important;
-  border-color: #fed7aa !important;
-  color: #1f2937 !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .form-control::placeholder {
-  color: #94a3b8 !important;
-}
-
-html[data-admin-theme="light"] .form-control:focus,
-html[data-admin-theme="light"] .form-select:focus,
-html[data-admin-theme="light"] input:focus,
-html[data-admin-theme="light"] select:focus {
-  border-color: #fb923c !important;
-  box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.16) !important;
+html[data-admin-theme="light"] .table th {
+  border-color: #dee2e6 !important;
 }
 
 html[data-admin-theme="light"] .navbar .btn.btn-light.btn-sm.rounded-circle {
-  background: #fff7ed !important;
-  border-color: #fed7aa !important;
-  color: #c2410c !important;
-}
-
-html[data-admin-theme="light"] .navbar .btn.btn-light.btn-sm.rounded-circle:hover {
-  border-color: #fb923c !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12) !important;
+  background: #f8f9fa !important;
+  border-color: transparent !important;
+  color: #0f172a !important;
 }
 
 html[data-admin-theme="light"] .admin-theme-toggle {
-  background: #fff7ed;
-  border-color: #fed7aa;
-  color: #c2410c;
-  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.12);
-}
-
-html[data-admin-theme="light"] .admin-theme-toggle:hover {
-  background: linear-gradient(135deg, #ff8a00, #f97316);
-  border-color: transparent;
-  color: #ffffff;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #0f172a;
 }
 
 html[data-admin-theme="light"] footer,
 html[data-admin-theme="light"] footer.bg-light {
+  background: #f8f9fa !important;
+  border-top-color: #dee2e6 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] footer a {
+  color: #0d6efd !important;
+}
+
+html[data-admin-theme="light"] .nav-btn.active {
+  background: linear-gradient(to right, #2563eb, #06b6d4) !important;
+}
+
+html[data-admin-theme="light"] .card-box {
   background: #ffffff !important;
-  border-top-color: #f1dec9 !important;
-  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
 }
 
-html[data-admin-theme="light"] footer a,
-html[data-admin-theme="light"] a {
-  color: #ea580c !important;
+html[data-admin-theme="light"] .glass,
+html[data-admin-theme="light"] .hover-card,
+html[data-admin-theme="light"] .mini,
+html[data-admin-theme="light"] .modal-content {
+  background: #ffffff !important;
+  border-color: #dbeafe !important;
+  color: #0f172a !important;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08) !important;
 }
 
-html[data-admin-theme="light"] a:hover {
-  color: #9a3412 !important;
-}
-
-html[data-admin-theme="light"] h1,
-html[data-admin-theme="light"] h2,
-html[data-admin-theme="light"] h3,
-html[data-admin-theme="light"] h4,
-html[data-admin-theme="light"] h5,
-html[data-admin-theme="light"] h6,
-html[data-admin-theme="light"] .fw-bold,
-html[data-admin-theme="light"] .fw-semibold,
-html[data-admin-theme="light"] .display,
-html[data-admin-theme="light"] .page-title,
-html[data-admin-theme="light"] .priority-title,
-html[data-admin-theme="light"] .matrix-header h4,
-html[data-admin-theme="light"] .chapter-title,
-html[data-admin-theme="light"] .subject-name,
-html[data-admin-theme="light"] .summary-card h2,
-html[data-admin-theme="light"] .summary-number,
-html[data-admin-theme="light"] .stat-number,
-html[data-admin-theme="light"] .rank-hero-number,
-html[data-admin-theme="light"] .home-score-value,
-html[data-admin-theme="light"] .summary-card-value,
-html[data-admin-theme="light"] .subject-score,
-html[data-admin-theme="light"] .home-score-chip-value,
-html[data-admin-theme="light"] .home-score-outof,
-html[data-admin-theme="light"] .home-score-chip-name {
-  color: #1f2937 !important;
-}
-
-html[data-admin-theme="light"] p,
-html[data-admin-theme="light"] td,
-html[data-admin-theme="light"] li,
-html[data-admin-theme="light"] .small,
 html[data-admin-theme="light"] .soft,
 html[data-admin-theme="light"] .mono,
-html[data-admin-theme="light"] .summary-label,
-html[data-admin-theme="light"] .summary-card-extra,
-html[data-admin-theme="light"] .home-score-meta,
-html[data-admin-theme="light"] .chapter-line,
-html[data-admin-theme="light"] .sub-topics,
-html[data-admin-theme="light"] .matrix-header p,
 html[data-admin-theme="light"] .text-secondary,
 html[data-admin-theme="light"] .text-opacity-75 {
   color: #64748b !important;
 }
 
-html[data-admin-theme="light"] .btn-outline-light,
-html[data-admin-theme="light"] .student-switch,
-html[data-admin-theme="light"] .test-slot-btn,
-html[data-admin-theme="light"] .subject-btn,
-html[data-admin-theme="light"] .level-pill,
-html[data-admin-theme="light"] .streak-pill,
-html[data-admin-theme="light"] .rank-shift-pill,
-html[data-admin-theme="light"] .focus-tag,
-html[data-admin-theme="light"] .focus-badge,
-html[data-admin-theme="light"] .badge,
-html[data-admin-theme="light"] .status-badge {
-  background: #fff7ed !important;
-  border-color: #fed7aa !important;
-  color: #9a3412 !important;
+html[data-admin-theme="light"] .btn-outline-light {
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 
-html[data-admin-theme="light"] .brand-gradient,
-html[data-admin-theme="light"] .brand-text,
-html[data-admin-theme="light"] .banner-content h3,
-html[data-admin-theme="light"] .page-title,
-html[data-admin-theme="light"] .priority-title {
-  background: linear-gradient(135deg, #ff8a00, #f97316) !important;
+html[data-admin-theme="light"] .brand-text {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
-  color: transparent !important;
-}
-
-html[data-admin-theme="light"] .icon-box,
-html[data-admin-theme="light"] .icon-circle,
-html[data-admin-theme="light"] .icon-square,
-html[data-admin-theme="light"] .subject-icon,
-html[data-admin-theme="light"] .topic-subject-icon,
-html[data-admin-theme="light"] .reward-icon,
-html[data-admin-theme="light"] .cluster-icon,
-html[data-admin-theme="light"] .top-performer-avatar,
-html[data-admin-theme="light"] .leaderboard-avatar,
-html[data-admin-theme="light"] .weak-icon,
-html[data-admin-theme="light"] .unknown-icon,
-html[data-admin-theme="light"] .coverage-icon {
-  background: linear-gradient(135deg, #ff8a00, #f97316) !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
-  box-shadow: 0 10px 22px rgba(249, 115, 22, 0.18) !important;
-}
-
-html[data-admin-theme="light"] .progress,
-html[data-admin-theme="light"] .progress-bar-custom {
-  background: #ffedd5 !important;
-  box-shadow: inset 0 0 8px rgba(249, 115, 22, 0.08) !important;
-}
-
-html[data-admin-theme="light"] .progress-bar,
-html[data-admin-theme="light"] .progress-bar-fill,
-html[data-admin-theme="light"] .subject-progress-fill,
-html[data-admin-theme="light"] .topic-progress-fill {
-  background: linear-gradient(90deg, #ff8a00, #f97316) !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .inner-circle,
-html[data-admin-theme="light"] .overall-progress-circle::before {
-  background: #ffffff !important;
-  border-color: #f1dec9 !important;
-}
-
-html[data-admin-theme="light"] canvas,
-html[data-admin-theme="light"] .chart-container {
-  filter: none !important;
-}
-
-html[data-admin-theme="light"] {
-  --game-bg: #f1f5f9;
-  --game-bg-2: #f8fbff;
-  --game-panel: #ffffff;
-  --game-card: #ffffff;
-  --game-card-hover: #f8fafc;
-  --game-cyan: #06b6d4;
-  --game-purple: #2563eb;
-  --game-green: #16a34a;
-  --game-orange: #f97316;
-  --game-pink: #0ea5e9;
-  --game-text: #0f172a;
-  --game-muted: #64748b;
-  --game-soft: #334155;
-  --game-border: #e2e8f0;
-  --game-border-strong: #bfdbfe;
-  --game-border-purple: #bfdbfe;
-  --game-glass: #ffffff;
-  --game-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  --game-cyan-glow: none;
-  --game-purple-glow: none;
-  --game-orange-glow: none;
-  --game-pink-glow: none;
-  --game-gradient-primary: linear-gradient(90deg, #2563eb, #06b6d4);
-  --game-gradient-success: linear-gradient(90deg, #16a34a, #06b6d4);
-  --game-gradient-warning: linear-gradient(90deg, #f97316, #2563eb);
-  --game-gradient-panel: #ffffff;
-}
-
-html[data-admin-theme="light"] body {
-  background: #f1f5f9 !important;
-  background-image: none !important;
-  color: #0f172a !important;
-}
-
-html[data-admin-theme="light"] body::before {
-  display: none !important;
-}
-
-html[data-admin-theme="light"] .navbar .brand-icon {
-  background: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .tabs-left a {
-  background: transparent !important;
-  border-color: transparent !important;
-  color: #0f172a !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .tabs-left a:hover,
-html[data-admin-theme="light"] .tabs-left a.active {
-  background: #e6f4fb !important;
-  border-color: transparent !important;
-  color: #2563eb !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .tabs-left a:hover i,
-html[data-admin-theme="light"] .tabs-left a.active i {
-  color: #2563eb !important;
-}
-
-html[data-admin-theme="light"] .download-btn,
-html[data-admin-theme="light"] .start-btn,
-html[data-admin-theme="light"] .show-more-btn,
-html[data-admin-theme="light"] .subject-btn.active,
-html[data-admin-theme="light"] .student-switch-btn.active,
-html[data-admin-theme="light"] .test-slot-btn.active {
-  background: linear-gradient(90deg, #0d6efd, #0891b2) !important;
-  border-color: transparent !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22) !important;
-}
-
-html[data-admin-theme="light"] .test-banner,
-html[data-admin-theme="light"] .overall-progress-card,
-html[data-admin-theme="light"] .summary-card,
-html[data-admin-theme="light"] .chapter-card,
-html[data-admin-theme="light"] .stat-card,
-html[data-admin-theme="light"] .focus-card,
-html[data-admin-theme="light"] .student-info-card,
-html[data-admin-theme="light"] .home-score-card,
-html[data-admin-theme="light"] .home-score-chip,
-html[data-admin-theme="light"] .app-card,
-html[data-admin-theme="light"] .app-card-soft,
-html[data-admin-theme="light"] .matrix-card,
-html[data-admin-theme="light"] .priority-wrapper,
-html[data-admin-theme="light"] .personalized-recommendations,
-html[data-admin-theme="light"] .inner-card,
-html[data-admin-theme="light"] .my-attendance-header {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
-  backdrop-filter: none !important;
-}
-
-html[data-admin-theme="light"] .test-banner {
-  background: linear-gradient(90deg, #e8f0ff, #eefbff) !important;
-}
-
-html[data-admin-theme="light"] .test-banner h3,
-html[data-admin-theme="light"] .banner-content h3,
-html[data-admin-theme="light"] .page-title,
-html[data-admin-theme="light"] .priority-title {
-  background: none !important;
-  -webkit-background-clip: initial !important;
-  background-clip: initial !important;
-  color: #0f172a !important;
-}
-
-html[data-admin-theme="light"] .icon-box,
-html[data-admin-theme="light"] .icon-circle,
-html[data-admin-theme="light"] .icon-square,
-html[data-admin-theme="light"] .subject-icon,
-html[data-admin-theme="light"] .topic-subject-icon,
-html[data-admin-theme="light"] .reward-icon,
-html[data-admin-theme="light"] .cluster-icon,
-html[data-admin-theme="light"] .top-performer-avatar,
-html[data-admin-theme="light"] .leaderboard-avatar {
-  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22) !important;
-}
-
-html[data-admin-theme="light"] .subject-btn,
-html[data-admin-theme="light"] .student-switch-btn,
-html[data-admin-theme="light"] .test-slot-btn,
-html[data-admin-theme="light"] .level-pill,
-html[data-admin-theme="light"] .streak-pill,
-html[data-admin-theme="light"] .rank-shift-pill,
-html[data-admin-theme="light"] .focus-tag,
-html[data-admin-theme="light"] .focus-badge,
-html[data-admin-theme="light"] .badge,
-html[data-admin-theme="light"] .status-badge {
-  background: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-  color: #334155 !important;
-}
-
-html[data-admin-theme="light"] .progress,
-html[data-admin-theme="light"] .progress-bar-custom {
-  background: #e5e7eb !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .progress-bar,
-html[data-admin-theme="light"] .progress-bar-fill,
-html[data-admin-theme="light"] .subject-progress-fill,
-html[data-admin-theme="light"] .topic-progress-fill {
-  background: linear-gradient(90deg, #2563eb, #06b6d4) !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .overall-progress-circle,
-html[data-admin-theme="light"] .circular-progress {
-  background: conic-gradient(#5bb2e2 var(--p, 75%), #e5e7eb 0deg) !important;
-  box-shadow: none !important;
-}
-
-html[data-admin-theme="light"] .inner-circle,
-html[data-admin-theme="light"] .overall-progress-circle::before {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-}
-
-html[data-admin-theme="light"] .inner-circle,
-html[data-admin-theme="light"] .overall-progress-circle span,
-html[data-admin-theme="light"] .summary-number,
-html[data-admin-theme="light"] .summary-card h2,
-html[data-admin-theme="light"] .stat-number,
-html[data-admin-theme="light"] .home-score-value {
-  color: #0f172a !important;
-}
-
-html[data-admin-theme="light"] .table,
-html[data-admin-theme="light"] .attendance-table {
-  --bs-table-bg: #ffffff !important;
-  --bs-table-color: #0f172a !important;
-  --bs-table-hover-bg: #f8fafc !important;
-  color: #0f172a !important;
-}
-
-html[data-admin-theme="light"] .table thead th,
-html[data-admin-theme="light"] .attendance-table thead {
-  background: #f8fafc !important;
-  color: #334155 !important;
-}
-
-html[data-admin-theme="light"] .table tbody td,
-html[data-admin-theme="light"] .attendance-table td,
-html[data-admin-theme="light"] .attendance-table th {
-  background: transparent !important;
-  color: #334155 !important;
-  border-color: #e2e8f0 !important;
-}
-
-html[data-admin-theme="light"] footer {
-  background: #f8f9fa !important;
-  border-top-color: #dee2e6 !important;
-  color: #0f172a !important;
 }

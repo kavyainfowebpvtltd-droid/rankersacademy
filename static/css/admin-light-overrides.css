@@ -296,3 +296,39 @@ a,
   background: var(--admin-blue) !important;
   border-color: var(--admin-blue) !important;
 }
+
+/* Login page specific overrides (replace orange/pink gradients with blue) */
+[data-admin-theme="light"] .brand-text {
+  background: linear-gradient(135deg, var(--admin-blue), var(--admin-blue-strong) 52%, #5b8cff) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+[data-admin-theme="light"] .brand-orb-c {
+  background: rgba(14,165,255,0.14) !important;
+}
+
+[data-admin-theme="light"] .login-surface::after {
+  background: linear-gradient(135deg, rgba(14,165,255,0.12), rgba(0,119,255,0.12)) !important;
+}
+
+[data-admin-theme="light"] .brand-logo-shell {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42), 0 0 34px rgba(14,165,255,0.18), 0 0 62px rgba(0,119,255,0.14) !important;
+}
+
+[data-admin-theme="light"] .panel-item-icon,
+[data-admin-theme="light"] .feature-icon,
+[data-admin-theme="light"] .utility-icon {
+  background: linear-gradient(135deg, var(--admin-blue), var(--admin-blue-strong)) !important;
+  box-shadow: 0 0 1.8rem rgba(14,165,255,0.14) !important;
+}
+
+[data-admin-theme="light"] .display-brand {
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.12), 0 0 22px rgba(14,165,255,0.12) !important;
+}
+
+[data-admin-theme="light"] html .btn-primary {
+  background: linear-gradient(135deg, var(--admin-blue), var(--admin-blue-strong)) !important;
+  box-shadow: 0 0.9rem 1.8rem rgba(0,119,255,0.14) !important;
+}
