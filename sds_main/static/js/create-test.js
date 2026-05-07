@@ -1,6 +1,8 @@
 var defaultS = {
   testName: "Mathematics",
   duration: "1",
+  batch: "",
+  stream: "",
   tags: "SCHOLARSHIP TEST",
   instructions: "",
   defaultPosMarks: 2,
@@ -195,6 +197,8 @@ function getTestDetailsPayload() {
     duration: duration.value,
     duration_hours: duration.hours,
     duration_minutes: duration.minutes,
+    batch: S.batch || "",
+    stream: S.stream || "",
     tags: S.tags,
     instructions: S.instructions,
     default_pos_marks: S.defaultPosMarks,
@@ -230,6 +234,8 @@ function loadData() {
               data.test.duration_hours,
               data.test.duration_minutes,
             ),
+            batch: data.test.batch || "",
+            stream: data.test.stream || "",
             tags: data.test.tags,
             instructions: data.test.instructions,
             defaultPosMarks: data.test.default_pos_marks,
@@ -528,6 +534,10 @@ function render() {
   document.getElementById("meta-duration").textContent = formatDurationLabel(
     S.duration,
   );
+  var metaBatch = document.getElementById("meta-batch");
+  var metaStream = document.getElementById("meta-stream");
+  if (metaBatch) metaBatch.textContent = S.batch || "Not set";
+  if (metaStream) metaStream.textContent = S.stream || "Not set";
   document.getElementById("meta-tags").textContent = S.tags;
   document.getElementById("instructions-text").textContent = S.instructions
     ? "Instructions: " + S.instructions
@@ -1887,6 +1897,14 @@ window.openTestDetails = function () {
       '" min="0" max="59" step="1"></div>' +
       "</div>" +
       '<div class="form-row">' +
+      '<div class="form-group"><div class="form-label">Batch</div><input class="form-input" id="td-batch" value="' +
+      e(S.batch || "") +
+      '"></div>' +
+      '<div class="form-group"><div class="form-label">Stream</div><input class="form-input" id="td-stream" value="' +
+      e(S.stream || "") +
+      '"></div>' +
+      "</div>" +
+      '<div class="form-row">' +
       '<div class="form-group"><div class="form-label">Tags</div><input class="form-input" id="td-tags" value="' +
       e(S.tags) +
       '"></div>' +
@@ -1905,6 +1923,8 @@ window.saveTestDetails = function () {
 
   S.testName = document.getElementById("td-name").value.trim() || S.testName;
   S.duration = normalizeDurationValue(null, durationHours, durationMinutes);
+  S.batch = document.getElementById("td-batch").value.trim();
+  S.stream = document.getElementById("td-stream").value.trim();
   S.tags = document.getElementById("td-tags").value.trim();
   S.instructions = document.getElementById("td-instr").value.trim();
   saveData();
@@ -1927,6 +1947,8 @@ window._legacySaveTest = function () {
       name: testName,
       duration_hours: duration.hours,
       duration_minutes: duration.minutes,
+      batch: S.batch || "",
+      stream: S.stream || "",
       tags: tags,
       status: "published",
     };
@@ -2173,6 +2195,8 @@ window.saveTest = function () {
       name: S.testName || "Untitled Test",
       duration_hours: duration.hours,
       duration_minutes: duration.minutes,
+      batch: S.batch || "",
+      stream: S.stream || "",
       tags: S.tags || "",
       status: "published",
     };
