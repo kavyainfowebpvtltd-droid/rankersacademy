@@ -14,15 +14,12 @@
   function syncThemeLinks(doc, theme) {
     if (!doc) return;
     doc.querySelectorAll('link[href*="admin-dark-overrides.css"], link[data-theme-dark-link], link[href*="admin-light-overrides.css"], link[data-theme-light-link]').forEach((link) => {
-      try {
-        const href = link.getAttribute('href') || '';
-        const isDark = link.hasAttribute('data-theme-dark-link') || href.indexOf('admin-dark-overrides.css') !== -1;
-        const isLight = link.hasAttribute('data-theme-light-link') || href.indexOf('admin-light-overrides.css') !== -1;
-        if (isDark) link.disabled = theme !== 'dark';
-        if (isLight) link.disabled = theme !== 'light';
-      } catch (err) {
-        // ignore malformed link
-      }
+      const href = link.getAttribute("href") || "";
+      const isDark = link.hasAttribute("data-theme-dark-link") || href.includes("admin-dark-overrides.css");
+      const isLight = link.hasAttribute("data-theme-light-link") || href.includes("admin-light-overrides.css");
+
+      if (isDark) link.disabled = theme !== "dark";
+      if (isLight) link.disabled = theme !== "light";
     });
   }
 
@@ -79,6 +76,7 @@
 
   const initialTheme = getTheme();
   setThemeAttribute(document, initialTheme);
+  syncThemeLinks(document, initialTheme);
   watchForThemeLinks();
 
   window.AdminTheme = {
