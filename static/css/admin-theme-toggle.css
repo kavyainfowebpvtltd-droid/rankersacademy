@@ -223,3 +223,210 @@ html[data-admin-theme="light"] .brand-text {
   -webkit-background-clip: text !important;
   background-clip: text !important;
 }
+
+html[data-admin-theme="light"] {
+  --game-bg: #f1f5f9;
+  --game-bg-2: #f8fbff;
+  --game-panel: #ffffff;
+  --game-card: #ffffff;
+  --game-card-hover: #f8fafc;
+  --game-cyan: #06b6d4;
+  --game-purple: #2563eb;
+  --game-green: #16a34a;
+  --game-orange: #f97316;
+  --game-pink: #0ea5e9;
+  --game-text: #0f172a;
+  --game-muted: #64748b;
+  --game-soft: #334155;
+  --game-border: #e2e8f0;
+  --game-border-strong: #bfdbfe;
+  --game-border-purple: #bfdbfe;
+  --game-glass: #ffffff;
+  --game-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --game-cyan-glow: none;
+  --game-purple-glow: none;
+  --game-orange-glow: none;
+  --game-pink-glow: none;
+  --game-gradient-primary: linear-gradient(90deg, #2563eb, #06b6d4);
+  --game-gradient-success: linear-gradient(90deg, #16a34a, #06b6d4);
+  --game-gradient-warning: linear-gradient(90deg, #f97316, #2563eb);
+  --game-gradient-panel: #ffffff;
+}
+
+html[data-admin-theme="light"] body {
+  background: #f1f5f9 !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] body::before {
+  display: none !important;
+}
+
+html[data-admin-theme="light"] .navbar .brand-icon {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] .tabs-left a {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] .tabs-left a:hover,
+html[data-admin-theme="light"] .tabs-left a.active {
+  background: #e6f4fb !important;
+  border-color: transparent !important;
+  color: #2563eb !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] .tabs-left a:hover i,
+html[data-admin-theme="light"] .tabs-left a.active i {
+  color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] .download-btn,
+html[data-admin-theme="light"] .start-btn,
+html[data-admin-theme="light"] .show-more-btn,
+html[data-admin-theme="light"] .subject-btn.active,
+html[data-admin-theme="light"] .student-switch-btn.active,
+html[data-admin-theme="light"] .test-slot-btn.active {
+  background: linear-gradient(90deg, #0d6efd, #0891b2) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22) !important;
+}
+
+html[data-admin-theme="light"] .test-banner,
+html[data-admin-theme="light"] .overall-progress-card,
+html[data-admin-theme="light"] .summary-card,
+html[data-admin-theme="light"] .chapter-card,
+html[data-admin-theme="light"] .stat-card,
+html[data-admin-theme="light"] .focus-card,
+html[data-admin-theme="light"] .student-info-card,
+html[data-admin-theme="light"] .home-score-card,
+html[data-admin-theme="light"] .home-score-chip,
+html[data-admin-theme="light"] .app-card,
+html[data-admin-theme="light"] .app-card-soft,
+html[data-admin-theme="light"] .matrix-card,
+html[data-admin-theme="light"] .priority-wrapper,
+html[data-admin-theme="light"] .personalized-recommendations,
+html[data-admin-theme="light"] .inner-card,
+html[data-admin-theme="light"] .my-attendance-header {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: none !important;
+}
+
+html[data-admin-theme="light"] .test-banner {
+  background: linear-gradient(90deg, #e8f0ff, #eefbff) !important;
+}
+
+html[data-admin-theme="light"] .test-banner h3,
+html[data-admin-theme="light"] .banner-content h3,
+html[data-admin-theme="light"] .page-title,
+html[data-admin-theme="light"] .priority-title {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .icon-box,
+html[data-admin-theme="light"] .icon-circle,
+html[data-admin-theme="light"] .icon-square,
+html[data-admin-theme="light"] .subject-icon,
+html[data-admin-theme="light"] .topic-subject-icon,
+html[data-admin-theme="light"] .reward-icon,
+html[data-admin-theme="light"] .cluster-icon,
+html[data-admin-theme="light"] .top-performer-avatar,
+html[data-admin-theme="light"] .leaderboard-avatar {
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22) !important;
+}
+
+html[data-admin-theme="light"] .subject-btn,
+html[data-admin-theme="light"] .student-switch-btn,
+html[data-admin-theme="light"] .test-slot-btn,
+html[data-admin-theme="light"] .level-pill,
+html[data-admin-theme="light"] .streak-pill,
+html[data-admin-theme="light"] .rank-shift-pill,
+html[data-admin-theme="light"] .focus-tag,
+html[data-admin-theme="light"] .focus-badge,
+html[data-admin-theme="light"] .badge,
+html[data-admin-theme="light"] .status-badge {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+html[data-admin-theme="light"] .progress,
+html[data-admin-theme="light"] .progress-bar-custom {
+  background: #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] .progress-bar,
+html[data-admin-theme="light"] .progress-bar-fill,
+html[data-admin-theme="light"] .subject-progress-fill,
+html[data-admin-theme="light"] .topic-progress-fill {
+  background: linear-gradient(90deg, #2563eb, #06b6d4) !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] .overall-progress-circle,
+html[data-admin-theme="light"] .circular-progress {
+  background: conic-gradient(#5bb2e2 var(--p, 75%), #e5e7eb 0deg) !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] .inner-circle,
+html[data-admin-theme="light"] .overall-progress-circle::before {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html[data-admin-theme="light"] .inner-circle,
+html[data-admin-theme="light"] .overall-progress-circle span,
+html[data-admin-theme="light"] .summary-number,
+html[data-admin-theme="light"] .summary-card h2,
+html[data-admin-theme="light"] .stat-number,
+html[data-admin-theme="light"] .home-score-value {
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .table,
+html[data-admin-theme="light"] .attendance-table {
+  --bs-table-bg: #ffffff !important;
+  --bs-table-color: #0f172a !important;
+  --bs-table-hover-bg: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .table thead th,
+html[data-admin-theme="light"] .attendance-table thead {
+  background: #f8fafc !important;
+  color: #334155 !important;
+}
+
+html[data-admin-theme="light"] .table tbody td,
+html[data-admin-theme="light"] .attendance-table td,
+html[data-admin-theme="light"] .attendance-table th {
+  background: transparent !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html[data-admin-theme="light"] footer {
+  background: #f8f9fa !important;
+  border-top-color: #dee2e6 !important;
+  color: #0f172a !important;
+}

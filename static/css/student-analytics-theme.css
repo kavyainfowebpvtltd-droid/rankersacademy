@@ -2,27 +2,31 @@
 
 :root {
   color-scheme: dark;
-  --student-bg-primary: #050816;
-  --student-bg-secondary: #0b1023;
-  --student-card: #0f172a;
-  --student-border: rgba(255, 255, 255, 0.08);
-  --student-border-strong: rgba(255, 255, 255, 0.16);
-  --student-heading: #ffffff;
-  --student-text: #e2e8f0;
-  --student-muted: #94a3b8;
-  --student-deep-muted: #64748b;
-  --student-success: #22c55e;
-  --student-warning: #f59e0b;
-  --student-danger: #ef4444;
-  --student-g1: linear-gradient(90deg, #ff8a00 0%, #ff4d8d 50%, #8b5cf6 100%);
-  --student-g2: linear-gradient(90deg, #00c2ff 0%, #3b82f6 52%, #7c3aed 100%);
-  --student-g3: linear-gradient(90deg, #22d3ee 0%, #06b6d4 100%);
-  --student-shadow: 0 0 20px rgba(168, 85, 247, 0.18);
-  --student-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.28);
+  --student-bg-primary: #05050a;
+  --student-bg-secondary: #07070d;
+  --student-card: #0b0c12;
+  --student-panel-soft: #10131b;
+  --student-border: #262a35;
+  --student-border-strong: #343846;
+  --student-heading: #f8f9ff;
+  --student-text: #f4f5fb;
+  --student-muted: #aeb4c2;
+  --student-deep-muted: #8f94a3;
+  --student-success: #33d6a6;
+  --student-warning: #ffb15f;
+  --student-danger: #ff6b6b;
+  --student-blue: #7ad7ff;
+  --student-orange: #ff8a1f;
+  --student-purple: #8b35ff;
+  --student-g1: linear-gradient(90deg, #ff8a1f 0%, #8b35ff 100%);
+  --student-g2: linear-gradient(135deg, #ff8a1f 0%, #8b35ff 100%);
+  --student-g3: linear-gradient(90deg, #ff8a1f 0%, #8b35ff 100%);
+  --student-shadow: 0 18px 40px rgba(139, 53, 255, 0.2);
+  --student-shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.34);
 }
 
 * {
-  scrollbar-color: #8b5cf6 #0b1023;
+  scrollbar-color: #8b35ff #07070d;
 }
 
 *::-webkit-scrollbar-track {
@@ -41,10 +45,7 @@ body {
 body {
   color: var(--student-text) !important;
   font-family: "Inter", "DM Sans", system-ui, sans-serif !important;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(124, 58, 237, 0.16), transparent 32rem),
-    radial-gradient(circle at 86% 16%, rgba(0, 194, 255, 0.08), transparent 28rem),
-    linear-gradient(180deg, #050816 0%, #070b1a 48%, #050816 100%) !important;
+  background: #05050a !important;
 }
 
 h1,
@@ -81,7 +82,7 @@ small {
 }
 
 a {
-  color: #c4b5fd;
+  color: #ffb15f;
 }
 
 a:hover {
@@ -89,17 +90,16 @@ a:hover {
 }
 
 .navbar {
-  background: rgba(5, 8, 22, 0.78) !important;
+  background: #080812 !important;
   border-bottom-color: var(--student-border) !important;
   box-shadow: var(--student-shadow-soft);
-  backdrop-filter: blur(14px) saturate(140%);
 }
 
 .navbar .brand-icon,
 .navbar .btn-light {
-  background: rgba(15, 23, 42, 0.72) !important;
+  background: #0f1118 !important;
   border-color: var(--student-border) !important;
-  box-shadow: 0 0 18px rgba(59, 130, 246, 0.16);
+  box-shadow: none;
 }
 
 .navbar .text-dark,
@@ -114,9 +114,8 @@ a:hover {
 }
 
 .tabs {
-  background: rgba(5, 8, 22, 0.84) !important;
+  background: #07070d !important;
   border-bottom-color: var(--student-border) !important;
-  backdrop-filter: blur(14px);
 }
 
 .tabs-left a {
@@ -131,9 +130,9 @@ a:hover {
 .tabs-left a:hover,
 .tabs-left a.active {
   color: var(--student-heading) !important;
-  background: rgba(15, 23, 42, 0.68) !important;
+  background: #0f1118 !important;
   border-color: var(--student-border-strong);
-  box-shadow: var(--student-shadow);
+  box-shadow: none;
 }
 
 .tabs-left a:hover i,
@@ -143,7 +142,7 @@ a:hover {
 
 .tabs-left a.active::after {
   background: var(--student-g1) !important;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+  box-shadow: none;
 }
 
 .download-btn,
@@ -158,7 +157,7 @@ a:hover {
   background: var(--student-g1) !important;
   border-color: transparent !important;
   color: #ffffff !important;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25) !important;
+  box-shadow: 0 10px 24px rgba(139, 53, 255, 0.22) !important;
 }
 
 .btn,
@@ -194,11 +193,10 @@ button,
 .inner-card,
 .test-banner,
 .my-attendance-header {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(11, 16, 35, 0.9)) !important;
+  background: #0b0c12 !important;
   border-color: var(--student-border) !important;
   box-shadow: var(--student-shadow-soft);
   color: var(--student-text) !important;
-  backdrop-filter: blur(12px) saturate(135%);
 }
 
 .hover-card:hover,
@@ -209,8 +207,9 @@ button,
 .stat-card:hover,
 .focus-card:hover,
 .student-info-card:hover {
-  border-color: rgba(139, 92, 246, 0.34) !important;
-  box-shadow: var(--student-shadow-soft), var(--student-shadow) !important;
+  background: var(--student-panel-soft) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: var(--student-shadow-soft) !important;
 }
 
 .brand-gradient,
@@ -229,8 +228,8 @@ button,
 .priority-wrapper,
 .personalized-recommendations {
   background:
-    linear-gradient(135deg, rgba(255, 138, 0, 0.16), rgba(255, 77, 141, 0.12), rgba(139, 92, 246, 0.18)),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(11, 16, 35, 0.92)) !important;
+    linear-gradient(135deg, rgba(255, 138, 31, 0.12), rgba(139, 53, 255, 0.14)),
+    #0b0c12 !important;
 }
 
 .icon-box,
@@ -244,8 +243,8 @@ button,
 .leaderboard-avatar {
   background: var(--student-g2) !important;
   color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 0 18px rgba(59, 130, 246, 0.22);
+  border-color: transparent !important;
+  box-shadow: none;
 }
 
 .summary-card h2,
@@ -290,7 +289,7 @@ button,
 
 .progress,
 .progress-bar-custom {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: #171a22 !important;
   box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.28);
 }
 
@@ -298,8 +297,8 @@ button,
 .progress-bar-fill,
 .subject-progress-fill,
 .topic-progress-fill {
-  background: var(--student-g2) !important;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.34);
+  background: var(--student-g1) !important;
+  box-shadow: none;
 }
 
 .table,
@@ -309,7 +308,7 @@ button,
   --bs-table-border-color: var(--student-border) !important;
   --bs-table-striped-bg: rgba(255, 255, 255, 0.035) !important;
   --bs-table-striped-color: var(--student-text) !important;
-  --bs-table-hover-bg: rgba(124, 58, 237, 0.12) !important;
+  --bs-table-hover-bg: #141721 !important;
   --bs-table-hover-color: #ffffff !important;
   color: var(--student-text) !important;
 }
@@ -332,7 +331,7 @@ button,
 .table tbody tr:hover,
 .attendance-table tbody tr:hover,
 .attendance-table tbody tr.current-date {
-  background: rgba(124, 58, 237, 0.12) !important;
+  background: #141721 !important;
 }
 
 .form-control,
@@ -351,19 +350,19 @@ select {
 .month-selector:focus,
 input:focus,
 select:focus {
-  border-color: rgba(139, 92, 246, 0.6) !important;
-  box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.16), var(--student-shadow) !important;
+  border-color: rgba(255, 138, 31, 0.62) !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 138, 31, 0.16) !important;
 }
 
 .circular-progress,
 .overall-progress-circle {
-  background: conic-gradient(#ff8a00 calc(var(--p, 75) * 1%), rgba(255, 255, 255, 0.08) 0deg) !important;
-  box-shadow: 0 0 18px rgba(255, 138, 0, 0.18), inset 0 0 14px rgba(139, 92, 246, 0.16);
+  background: conic-gradient(#ff8a1f calc(var(--p, 75) * 1%), #171a22 0deg) !important;
+  box-shadow: none;
 }
 
 .inner-circle,
 .overall-progress-circle::before {
-  background: #0b1023 !important;
+  background: #0b0c12 !important;
   border-color: var(--student-border) !important;
 }
 
@@ -373,12 +372,12 @@ select:focus {
 }
 
 .my-tests-page {
-  --brand-a: #ff8a00 !important;
-  --brand-b: #ff4d8d !important;
-  --brand-c: #8b5cf6 !important;
+  --brand-a: #ff8a1f !important;
+  --brand-b: #ff8a1f !important;
+  --brand-c: #8b35ff !important;
   --muted: var(--student-muted) !important;
-  --panel: rgba(15, 23, 42, 0.88) !important;
-  --panel-soft: rgba(11, 16, 35, 0.82) !important;
+  --panel: #0b0c12 !important;
+  --panel-soft: #10131b !important;
   --panel-border: var(--student-border) !important;
   background: transparent !important;
   color: var(--student-text) !important;
@@ -386,17 +385,17 @@ select:focus {
 
 .rank-medal,
 .student-highlight {
-  background: rgba(139, 92, 246, 0.12) !important;
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.24) !important;
+  background: rgba(139, 53, 255, 0.14) !important;
+  box-shadow: inset 0 0 0 1px rgba(139, 53, 255, 0.28) !important;
 }
 
 .chapter-header:hover,
 .topic-row:hover {
-  background: rgba(124, 58, 237, 0.12) !important;
+  background: #141721 !important;
 }
 
 .arrow-btn {
-  background: rgba(15, 23, 42, 0.82) !important;
+  background: #0f1118 !important;
   border-color: var(--student-border-strong) !important;
   color: var(--student-text) !important;
 }
@@ -406,10 +405,10 @@ select:focus {
 }
 
 .hover-popup {
-  background: #0f172a !important;
+  background: #0b0c12 !important;
   border-color: var(--student-border-strong) !important;
   color: var(--student-text) !important;
-  box-shadow: var(--student-shadow-soft), var(--student-shadow) !important;
+  box-shadow: var(--student-shadow-soft) !important;
 }
 
 .hover-popup h6,
@@ -430,7 +429,8 @@ select:focus {
 .weak-bg,
 .unknown-bg,
 .coverage-bg {
-  background: rgba(15, 23, 42, 0.64) !important;
+  background: #0f1118 !important;
+  border-color: var(--student-border) !important;
 }
 
 .weak-icon,
@@ -443,58 +443,92 @@ select:focus {
 .status-absent,
 .pill-red,
 .status-work {
-  color: #fca5a5 !important;
+  color: var(--student-danger) !important;
 }
 
 .unknown-text,
 .status-late,
 .status-good {
-  color: #fcd34d !important;
+  color: var(--student-warning) !important;
 }
 
 .coverage-text {
-  color: #67e8f9 !important;
+  color: var(--student-blue) !important;
 }
 
 .status-present,
 .pill-green,
 .status-excellent {
-  color: #86efac !important;
+  color: var(--student-success) !important;
 }
 
 .status-present {
-  background: rgba(34, 197, 94, 0.14) !important;
-  border-color: rgba(34, 197, 94, 0.22) !important;
+  background: rgba(51, 214, 166, 0.16) !important;
+  border-color: rgba(51, 214, 166, 0.26) !important;
 }
 
 .status-late {
-  background: rgba(245, 158, 11, 0.14) !important;
-  border-color: rgba(245, 158, 11, 0.22) !important;
+  background: rgba(255, 138, 31, 0.18) !important;
+  border-color: rgba(255, 138, 31, 0.28) !important;
 }
 
 .status-absent {
-  background: rgba(239, 68, 68, 0.14) !important;
-  border-color: rgba(239, 68, 68, 0.22) !important;
+  background: rgba(255, 107, 107, 0.16) !important;
+  border-color: rgba(255, 107, 107, 0.26) !important;
 }
 
 .progress-present {
-  background: linear-gradient(90deg, #22c55e, #22d3ee) !important;
+  background: linear-gradient(90deg, #33d6a6, #ff8a1f) !important;
 }
 
 canvas,
 .chart-container {
-  filter: drop-shadow(0 0 14px rgba(124, 58, 237, 0.18));
+  filter: none;
 }
 
 footer {
-  background: rgba(5, 8, 22, 0.86) !important;
+  background: #07070d !important;
   border-top-color: var(--student-border) !important;
   color: var(--student-muted) !important;
-  backdrop-filter: blur(14px);
 }
 
 footer a {
-  color: #c4b5fd !important;
+  color: #ffb15f !important;
+}
+
+.overall-progress-card,
+.mainbody [style*="background: #ecfdf5"],
+.mainbody [style*="background: #fff7ed"],
+.mainbody [style*="background: #eff6ff"],
+.mainbody [style*="background: #f8fafc"],
+.mainbody [style*="background:#ecfdf5"],
+.mainbody [style*="background:#fff7ed"],
+.mainbody [style*="background:#eff6ff"],
+.mainbody [style*="background:#f8fafc"] {
+  background: #0b0c12 !important;
+  border: 1px solid var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow-soft) !important;
+}
+
+.mainbody [style*="background: #dcfce7"],
+.mainbody [style*="background: #ffedd5"],
+.mainbody [style*="background: #dbeafe"],
+.mainbody [style*="background:#dcfce7"],
+.mainbody [style*="background:#ffedd5"],
+.mainbody [style*="background:#dbeafe"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--student-muted) !important;
+}
+
+.mainbody [style*="color: #15803d"],
+.mainbody [style*="color:#15803d"] {
+  color: var(--student-success) !important;
+}
+
+.mainbody [style*="color: #c2410c"],
+.mainbody [style*="color:#c2410c"] {
+  color: var(--student-warning) !important;
 }
 
 @media (max-width: 1024px) {
