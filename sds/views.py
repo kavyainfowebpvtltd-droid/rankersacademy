@@ -3967,6 +3967,7 @@ def _build_my_tests_payload(student):
             "name": test.name,
             "date": start_at.strftime("%d %b %Y"),
             "shortDate": start_at.strftime("%b %d"),
+            "time": start_at.strftime("%I:%M %p").lstrip("0"),
             "sortAt": start_at.isoformat(),
             "scheduledStartAt": start_at.isoformat(),
             "scheduledEndAt": end_at.isoformat(),
