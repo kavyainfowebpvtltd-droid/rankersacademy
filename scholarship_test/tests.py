@@ -1015,3 +1015,35 @@ class ScholarshipSectionApiTests(TestCase):
             response.json()['error'],
             'A section with this name already exists in this test',
         )
+
+
+class ScholarshipCreateTestApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_create_test_persists_selected_date_and_start_time(self):
+        response = self.client.post(
+            reverse('scholarship_test:api_create_test'),
+            data=json.dumps(
+                {
+                    'name': 'Scheduled Mock Test',
+                    'duration_hours': 1,
+                    'duration_minutes': 30,
+                    'test_date': '2026-05-20',
+                    'test_start_time': '09:15',
+                    'tags': 'mock, jee',
+                }
+            ),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload['success'])
+
+        created_test = ScholarshipTest.objects.get(id=payload['test']['id'])
+        self.assertEqual(created_test.date.isoformat(), '2026-05-20')
+        self.assertIsNotNone(created_test.scheduled_start_at)
+        local_start = timezone.localtime(created_test.scheduled_start_at)
+        self.assertEqual(local_start.date().isoformat(), '2026-05-20')
+        self.assertEqual(local_start.strftime('%H:%M'), '09:15')

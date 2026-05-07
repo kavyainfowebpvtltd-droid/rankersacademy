@@ -1053,6 +1053,7 @@ def api_get_tests(request):
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
         })
     return JsonResponse({'tests': data})
 
@@ -1090,12 +1091,21 @@ def api_create_test(request):
         return JsonResponse({'error': 'Invalid duration'}, status=400)
     duration_hours, duration_minutes = duration_parts or (1, 0)
     try:
-        scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
+        test_date = _parse_test_date(data.get('test_date'))
+    except ValueError:
+        return JsonResponse({'error': 'Invalid test date'}, status=400)
+    try:
+        scheduled_start_at = _parse_test_start_datetime(
+            test_date,
+            data.get('test_start_time'),
+            data.get('scheduled_start_at'),
+        )
     except ValueError:
         return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
     
     test = ScholarshipTest.objects.create(
         name=name,
+        date=test_date,
         folder=folder,
         tags=tags,
         duration_hours=duration_hours,
@@ -1122,6 +1132,7 @@ def api_create_test(request):
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
         }
     })
 
@@ -1157,6 +1168,11 @@ def api_update_test(request, test_id):
     
     if 'tags' in data:
         test.tags = data.get('tags', '')
+    if 'test_date' in data:
+        try:
+            test.date = _parse_test_date(data.get('test_date'))
+        except ValueError:
+            return JsonResponse({'error': 'Invalid test date'}, status=400)
     if 'duration_hours' in data:
         test.duration_hours = data.get('duration_hours')
     if 'duration_minutes' in data:
@@ -1167,9 +1183,16 @@ def api_update_test(request, test_id):
         if status not in valid_statuses:
             return JsonResponse({'error': 'Invalid status'}, status=400)
         test.status = status
-    if 'scheduled_start_at' in data:
+    if 'test_start_time' in data or 'scheduled_start_at' in data:
         try:
-            test.scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
+            base_date = test.date
+            if 'test_date' in data:
+                base_date = _parse_test_date(data.get('test_date'))
+            test.scheduled_start_at = _parse_test_start_datetime(
+                base_date,
+                data.get('test_start_time'),
+                data.get('scheduled_start_at'),
+            )
         except ValueError:
             return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
     
@@ -1185,6 +1208,7 @@ def api_update_test(request, test_id):
         'tags': test.tags,
         'status': test.status,
         'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+        'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
     }})
 
 
@@ -1452,6 +1476,22 @@ def _serialize_scheduled_start_at(value):
     return timezone.localtime(value).isoformat()
 
 
+def _serialize_test_start_time(value):
+    if not value:
+        return None
+    return timezone.localtime(value).strftime("%H:%M")
+
+
+def _parse_test_date(raw_value):
+    if raw_value in [None, ""]:
+        return timezone.localdate()
+
+    try:
+        return datetime.strptime(str(raw_value).strip(), "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("Invalid test date") from exc
+
+
 def _parse_scheduled_start_at(raw_value):
     if raw_value in [None, ""]:
         return None
@@ -1469,6 +1509,19 @@ def _parse_scheduled_start_at(raw_value):
         parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
 
     return parsed
+
+
+def _parse_test_start_datetime(test_date, raw_time, raw_datetime):
+    if raw_time not in [None, ""]:
+        try:
+            parsed_time = datetime.strptime(str(raw_time).strip(), "%H:%M").time()
+        except ValueError as exc:
+            raise ValueError("Invalid scheduled start time") from exc
+
+        combined = datetime.combine(test_date, parsed_time)
+        return timezone.make_aware(combined, timezone.get_current_timezone())
+
+    return _parse_scheduled_start_at(raw_datetime)
 
 
 def _parse_test_duration(data):
