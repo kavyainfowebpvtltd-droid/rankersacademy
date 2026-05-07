@@ -348,6 +348,16 @@ def scholarship_launch_test(request, test_id):
         messages.error(request, "This scholarship test is not ready yet.")
         return redirect('login')
 
+    launch_state = test_service.get_test_launch_state(selected_test)
+    if not launch_state["can_launch"]:
+        messages.error(
+            request,
+            launch_state["message"] or "This test is not available right now.",
+        )
+        if getattr(request.user, "is_authenticated", False) and hasattr(request.user, "student"):
+            return redirect("my_tests")
+        return redirect("login")
+
     _set_selected_test(request, selected_test)
     _finalize_expired_attempts_for_test(selected_test)
     if _requires_otp_login(selected_test):

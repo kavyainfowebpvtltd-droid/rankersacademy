@@ -1196,6 +1196,10 @@
 
       if (slot.kind === "placeholder") {
         button.textContent = `${slot.name} - ${slot.date}`;
+        button.title = "No upcoming test has been scheduled yet.";
+        button.classList.add("btn-outline-light");
+        button.disabled = true;
+        return;
       } else {
         const runtimeSlot = getUpcomingSlotRuntimeState(slot);
         const layout = document.createElement("span");
@@ -1243,9 +1247,6 @@
         return;
       }
 
-      if (slot.kind === "placeholder") {
-        button.title = "No upcoming test has been scheduled yet.";
-      }
       button.classList.add("btn-outline-light");
       button.disabled = true;
     }
@@ -2114,9 +2115,14 @@
         render();
       }
     });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        renderHeader();
+      }
+    });
     setInterval(() => {
       renderHeader();
-    }, 30000);
+    }, 5000);
     render();
   })();
 </script>
