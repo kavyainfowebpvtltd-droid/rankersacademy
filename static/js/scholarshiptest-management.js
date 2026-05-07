@@ -232,6 +232,8 @@ function handleCreateTest() {
   const minuteSelect = document.getElementById("minute-select");
   const testDateInput = document.getElementById("test-date-input");
   const testStartTimeInput = document.getElementById("test-start-time-input");
+  const testBatchInput = document.getElementById("test-batch-input");
+  const testStreamInput = document.getElementById("test-stream-input");
   const tagsInput = document.getElementById("test-tags-input");
   const testDate = testDateInput.value;
   const testStartTime = testStartTimeInput.value;
@@ -245,6 +247,8 @@ function handleCreateTest() {
     duration_minutes: parseInt(minuteSelect.value) || 30,
     test_date: testDate,
     test_start_time: testStartTime,
+    batch: testBatchInput ? testBatchInput.value.trim() : "",
+    stream: testStreamInput ? testStreamInput.value.trim() : "",
     tags: tagsInput.value.trim() || "",
   };
 
@@ -297,11 +301,8 @@ function handleCreateFolder() {
   const name = document.getElementById("folder-name-input").value;
   if (!name.trim()) return;
 
-  const tagsSelect = document.querySelector("#createFolderModal .form-select");
-
   const data = {
     name: name,
-    tags: tagsSelect ? tagsSelect.value : "",
   };
 
   fetch("/scholarship/api/folders/create/", {

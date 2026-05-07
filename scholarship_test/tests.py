@@ -1031,6 +1031,8 @@ class ScholarshipCreateTestApiTests(TestCase):
                     'duration_minutes': 30,
                     'test_date': '2026-05-20',
                     'test_start_time': '09:15',
+                    'batch': 'Star 01',
+                    'stream': 'NEET',
                     'tags': 'mock, jee',
                 }
             ),
@@ -1044,6 +1046,27 @@ class ScholarshipCreateTestApiTests(TestCase):
         created_test = ScholarshipTest.objects.get(id=payload['test']['id'])
         self.assertEqual(created_test.date.isoformat(), '2026-05-20')
         self.assertIsNotNone(created_test.scheduled_start_at)
+        self.assertEqual(created_test.batch, 'Star 01')
+        self.assertEqual(created_test.stream, 'NEET')
         local_start = timezone.localtime(created_test.scheduled_start_at)
         self.assertEqual(local_start.date().isoformat(), '2026-05-20')
         self.assertEqual(local_start.strftime('%H:%M'), '09:15')
+
+    def test_get_test_details_returns_batch_and_stream(self):
+        test = ScholarshipTest.objects.create(
+            name='Scoped Test',
+            batch='Alpha',
+            stream='JEE',
+            duration_hours=1,
+            duration_minutes=0,
+        )
+        ScholarshipTestConfig.objects.create(test=test)
+
+        response = self.client.get(
+            reverse('scholarship_test:api_get_test_details', args=[test.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['test']['batch'], 'Alpha')
+        self.assertEqual(payload['test']['stream'], 'JEE')

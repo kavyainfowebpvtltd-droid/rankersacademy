@@ -1050,6 +1050,8 @@ def api_get_tests(request):
             'folderId': test.folder.id if test.folder else None,
             'duration_hours': test.duration_hours,
             'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1081,6 +1083,8 @@ def api_create_test(request):
             pass
     
     tags = data.get('tags', '')
+    batch = (data.get('batch') or '').strip()
+    stream = (data.get('stream') or '').strip()
     status = data.get('status', 'draft')
     valid_statuses = {choice[0] for choice in ScholarshipTest._meta.get_field('status').choices}
     if status not in valid_statuses:
@@ -1107,6 +1111,8 @@ def api_create_test(request):
         name=name,
         date=test_date,
         folder=folder,
+        batch=batch,
+        stream=stream,
         tags=tags,
         duration_hours=duration_hours,
         duration_minutes=duration_minutes,
@@ -1129,6 +1135,8 @@ def api_create_test(request):
             'folderId': test.folder.id if test.folder else None,
             'duration_hours': test.duration_hours,
             'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1168,6 +1176,10 @@ def api_update_test(request, test_id):
     
     if 'tags' in data:
         test.tags = data.get('tags', '')
+    if 'batch' in data:
+        test.batch = (data.get('batch') or '').strip()
+    if 'stream' in data:
+        test.stream = (data.get('stream') or '').strip()
     if 'test_date' in data:
         try:
             test.date = _parse_test_date(data.get('test_date'))
@@ -1205,6 +1217,8 @@ def api_update_test(request, test_id):
         'folderId': test.folder.id if test.folder else None,
         'duration_hours': test.duration_hours,
         'duration_minutes': test.duration_minutes,
+        'batch': test.batch,
+        'stream': test.stream,
         'tags': test.tags,
         'status': test.status,
         'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1395,6 +1409,8 @@ def api_copy_test(request, test_id):
     new_test = ScholarshipTest.objects.create(
         name=new_name,
         folder=original_test.folder,
+        batch=original_test.batch,
+        stream=original_test.stream,
         tags=original_test.tags,
         duration_hours=original_test.duration_hours,
         duration_minutes=original_test.duration_minutes,
@@ -1620,6 +1636,8 @@ def api_get_test_details(request, test_id):
             'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
             'duration_hours': test.duration_hours,
             'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
             'tags': test.tags,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
             'instructions': config.instructions if config else '',
@@ -1653,6 +1671,10 @@ def api_save_test_details(request, test_id):
         return JsonResponse({'error': 'Invalid duration'}, status=400)
     if duration_parts is not None:
         test.duration_hours, test.duration_minutes = duration_parts
+    if 'batch' in data:
+        test.batch = (data.get('batch') or '').strip()
+    if 'stream' in data:
+        test.stream = (data.get('stream') or '').strip()
     if 'tags' in data:
         test.tags = data['tags']
     if 'status' in data:
