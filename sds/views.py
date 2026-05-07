@@ -2440,6 +2440,11 @@ def _build_test_analysis_session(user) -> dict:
 def _render_test_analysis_template(request, template_name: str):
     context = {
         "test_analysis_session": json.dumps(_build_test_analysis_session(request.user)),
+        "test_analysis_payload": json.dumps(
+            _build_admin_test_analysis_payload()
+            if template_name == "test-analysis-admin.html"
+            else {}
+        ),
     }
     return render(request, template_name, context)
 
@@ -4072,6 +4077,185 @@ def _build_my_tests_payload(student):
         "completedTests": student_completed_tests,
         "upcomingTest": upcoming_test,
         "rewards": rewards,
+    }
+
+
+ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Maths"]
+
+
+def _normalize_analysis_subject_name(name: str) -> str:
+    value = _norm(name)
+    if "physics" in value or value == "phy":
+        return "Physics"
+    if "chemistry" in value or value == "chem":
+        return "Chemistry"
+    if value in {"maths", "math", "mathematics", "mathmatics"} or "math" in value:
+        return "Maths"
+    return ""
+
+
+def _analysis_subject_scores_from_breakdown(section_breakdown):
+    scores = {subject: 0 for subject in ANALYSIS_SUBJECT_ORDER}
+
+    for index, item in enumerate(section_breakdown):
+        mapped = _normalize_analysis_subject_name(item.get("name", ""))
+        if not mapped and index < len(ANALYSIS_SUBJECT_ORDER):
+            mapped = ANALYSIS_SUBJECT_ORDER[index]
+        if not mapped or mapped not in scores:
+            continue
+        scores[mapped] = int(round(float(item.get("percentage") or 0)))
+
+    return scores
+
+
+def _analysis_attempt_student_id(attempt):
+    portal_student = getattr(attempt, "portal_student", None)
+    if portal_student:
+        return f"portal-{portal_student.id}"
+    return f"scholar-{attempt.student_id}"
+
+
+def _analysis_student_record_from_attempt(attempt):
+    portal_student = getattr(attempt, "portal_student", None)
+    phone = ""
+    batch = ""
+    student_ref = ""
+    name = attempt.student.name
+    profile_photo_url = None
+
+    if portal_student:
+        phone = (
+            getattr(portal_student, "emergency_contact", "")
+            or getattr(portal_student, "contact", "")
+            or attempt.student.phone_number
+        )
+        batch = getattr(portal_student, "batch", "") or getattr(attempt, "student_batch", "")
+        student_ref = getattr(portal_student, "username", "") or attempt.student.phone_number
+        name = getattr(portal_student, "student_name", "") or attempt.student.name
+        profile_photo_url = _student_photo_url(portal_student)
+    else:
+        phone = attempt.student.phone_number
+        batch = getattr(attempt, "student_batch", "")
+        student_ref = attempt.student.phone_number
+
+    return {
+        "id": _analysis_attempt_student_id(attempt),
+        "name": name,
+        "batch": batch,
+        "parentPhone": phone,
+        "studentRef": student_ref,
+        "profilePhotoUrl": profile_photo_url,
+    }
+
+
+def _latest_analysis_attempts_for_test(test):
+    attempts = (
+        ScholarshipTestAttempt.objects
+        .filter(test=test, status__in=["completed", "expired"])
+        .select_related("student", "portal_student")
+        .prefetch_related("answers__question__section", "test__sections__questions")
+        .order_by("test_completed_at", "id")
+    )
+
+    latest_by_student = {}
+    for attempt in attempts:
+        latest_by_student[_analysis_attempt_student_id(attempt)] = attempt
+
+    return list(latest_by_student.values())
+
+
+def _build_admin_test_analysis_payload():
+    now = timezone.localtime()
+    completed_tests = []
+    upcoming_test = None
+    students_by_id = {}
+    scores_by_test = {}
+
+    published_tests = (
+        ScholarshipTest.objects
+        .filter(status="published", scheduled_start_at__isnull=False)
+        .order_by("scheduled_start_at", "id")
+        .prefetch_related("sections__questions")
+    )
+
+    for test in published_tests:
+        if not scholarship_test_service.get_runtime_questions_for_test(test):
+            continue
+
+        start_at = timezone.localtime(test.scheduled_start_at)
+        end_at = start_at + timedelta(
+            hours=int(test.duration_hours or 0),
+            minutes=int(test.duration_minutes or 0),
+        )
+        test_item = {
+            "id": f"SCH{test.id}",
+            "external_id": test.id,
+            "name": test.name,
+            "date": start_at.strftime("%d %b %Y"),
+            "shortDate": start_at.strftime("%b %d"),
+            "sortAt": start_at.isoformat(),
+            "kind": "completed",
+        }
+
+        if end_at > now:
+            if upcoming_test is None:
+                upcoming_test = {
+                    "id": f"SCH{test.id}",
+                    "external_id": test.id,
+                    "name": test.name,
+                    "date": start_at.strftime("%d %b %Y"),
+                    "shortDate": start_at.strftime("%b %d"),
+                    "sortAt": start_at.isoformat(),
+                    "kind": "upcoming",
+                    "canLaunchNow": False,
+                    "isLive": start_at <= now < end_at,
+                }
+            continue
+
+        latest_attempts = _latest_analysis_attempts_for_test(test)
+        score_rows = []
+        for attempt in latest_attempts:
+            section_breakdown = _build_attempt_section_breakdown(attempt)
+            subject_scores = _analysis_subject_scores_from_breakdown(section_breakdown)
+            score_rows.append(
+                {
+                    "studentId": _analysis_attempt_student_id(attempt),
+                    "testId": test_item["id"],
+                    "Physics": subject_scores["Physics"],
+                    "Chemistry": subject_scores["Chemistry"],
+                    "Maths": subject_scores["Maths"],
+                    "total": sum(subject_scores.values()),
+                }
+            )
+            student_record = _analysis_student_record_from_attempt(attempt)
+            students_by_id[student_record["id"]] = student_record
+
+        completed_tests.append(test_item)
+        scores_by_test[test_item["id"]] = score_rows
+
+    if upcoming_test is None:
+        upcoming_test = {
+            "id": "",
+            "external_id": None,
+            "name": "Upcoming Test",
+            "date": "Awaiting schedule",
+            "shortDate": "Soon",
+            "sortAt": "",
+            "kind": "placeholder",
+            "canLaunchNow": False,
+            "isLive": False,
+        }
+
+    return {
+        "admin": {
+            "students": sorted(
+                students_by_id.values(),
+                key=lambda item: ((item.get("name") or "").lower(), item.get("id") or ""),
+            ),
+            "completedTests": completed_tests,
+            "upcomingTest": upcoming_test,
+            "scoresByTest": scores_by_test,
+        }
     }
 
 
