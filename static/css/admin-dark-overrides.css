@@ -307,3 +307,68 @@ a {
   background: var(--admin-panel-soft) !important;
   color: #ffb15f !important;
 }
+
+.summary-stat {
+  background: var(--admin-panel-soft) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28) !important;
+}
+
+.stat-number {
+  color: var(--admin-blue) !important;
+}
+
+.stat-label {
+  color: var(--admin-muted) !important;
+}
+
+.view-toggle {
+  background: #0f1118 !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+.view-toggle button {
+  color: var(--admin-muted) !important;
+}
+
+.view-toggle button.active {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(139, 53, 255, 0.24) !important;
+}
+
+.calendar-view > .text-center {
+  color: var(--admin-muted) !important;
+}
+
+.calendar-day {
+  background: #0f1118 !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+.calendar-day.today {
+  background: rgba(122, 215, 255, 0.12) !important;
+  border-color: rgba(122, 215, 255, 0.45) !important;
+}
+
+.calendar-day.has-event {
+  background: rgba(139, 53, 255, 0.14) !important;
+  border-color: rgba(139, 53, 255, 0.38) !important;
+}
+
+.calendar-day.today.has-event {
+  background: linear-gradient(135deg, rgba(255, 138, 31, 0.18), rgba(139, 53, 255, 0.18)) !important;
+  border-color: rgba(255, 177, 95, 0.5) !important;
+}
+
+.calendar-date {
+  color: var(--admin-text) !important;
+}
+
+.calendar-event {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+}
