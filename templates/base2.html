@@ -28,6 +28,8 @@
       html,
       body {
         height: 100%;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
       }
 
       body {
@@ -38,6 +40,36 @@
 
       .page-shell {
         flex: 1 0 auto;
+      }
+
+      * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      *::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+
+      .tabs-left {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        white-space: nowrap;
+        padding-bottom: 2px;
+      }
+
+      .tabs-left::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tabs-left a {
+        flex: 0 0 auto;
       }
     </style>
   </head>
