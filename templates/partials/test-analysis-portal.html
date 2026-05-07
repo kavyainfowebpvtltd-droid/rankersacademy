@@ -508,7 +508,7 @@
       function setTest(id) { state.testId = id; state.studentLeaderboardOpen = false; loadAttendance(); render(); }
 
       function shell(title, subtitle, icon, max = "760px") {
-        return `<div class="app-shell pb-5">${onlineBadge()}<div class="container" style="max-width:${max}">
+        return `<div class="app-shell pb-5">${onlineBadge()}<div class="container-fluid px-3 px-lg-4">
           <header class="sticky-head glass border-bottom border-secondary border-opacity-25 py-3 mb-3 d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">${icon}<div><div class="soft text-uppercase small fw-bold mono">${subtitle}</div><div class="fw-bold">${title}</div></div></div>
             <button class="btn btn-sm btn-outline-light fw-bold" onclick="logout()">Sign out</button>
