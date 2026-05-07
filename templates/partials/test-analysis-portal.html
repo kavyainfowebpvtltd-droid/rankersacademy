@@ -131,6 +131,26 @@
         white-space: pre-wrap;
         font-size: .78rem;
       }
+      .test-slot-btn {
+        min-height: 2.85rem;
+        padding-inline: 1rem;
+        border-radius: 999px;
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          background 0.18s ease,
+          border-color 0.18s ease;
+      }
+      .test-slot-btn:hover:not(:disabled),
+      .test-slot-btn:focus-visible:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px rgba(255, 138, 0, 0.14);
+      }
+      .test-slot-btn:disabled {
+        opacity: 0.72;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
     </style>
   </head>
   <body data-page="{{ analysis_page }}">
@@ -437,6 +457,7 @@
       function render() {
         app.innerHTML = !state.user ? loginView() : state.user.type === "student" ? studentView() : state.user.type === "faculty" ? facultyView() : adminView();
         if (state.modal) app.insertAdjacentHTML("beforeend", state.modal);
+        if (state.user?.type === "admin") hydrateAdminTestSelector();
         if (window.AdminTheme) window.AdminTheme.apply(window.AdminTheme.get());
       }
 
@@ -526,6 +547,35 @@
 
       function testSelector() {
         return `<div class="d-flex gap-2 overflow-auto pb-1 mb-3">${TESTS.map((t) => `<button class="btn btn-sm ${state.testId === t.id ? "btn-brand" : "btn-outline-light"} rounded-pill mono flex-shrink-0" onclick="setTest('${t.id}')">${t.name} - ${t.date}</button>`).join("")}</div>`;
+      }
+
+      function applyAnalysisTestSlotButtonState(button, test) {
+        button.classList.remove("btn-brand", "btn-outline-light");
+        button.disabled = false;
+        button.title = "";
+
+        if (!test) {
+          button.textContent = "Unavailable";
+          button.disabled = true;
+          button.classList.add("btn-outline-light");
+          return;
+        }
+
+        button.textContent = `${test.name} - ${test.date}`;
+        button.classList.add(test.id === state.testId ? "btn-brand" : "btn-outline-light");
+      }
+
+      function adminTestSelector() {
+        return `<div id="adminTestSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
+          ${TESTS.map((_, index) => `<button type="button" class="btn btn-sm mono flex-shrink-0 test-slot-btn" data-slot-index="${index}" onclick="setTest(TESTS[${index}].id)"></button>`).join("")}
+        </div>`;
+      }
+
+      function hydrateAdminTestSelector() {
+        document.querySelectorAll("#adminTestSelector [data-slot-index]").forEach((button) => {
+          const test = TESTS[Number(button.dataset.slotIndex)];
+          applyAnalysisTestSlotButtonState(button, test);
+        });
       }
 
       function nav(items, active, setter) {
@@ -735,7 +785,7 @@
       function adminView() {
         const tabs = [["overview","Overview"],["predict","At Risk"],["students","Students"],["clusters","Clusters"],["attend","Attendance"],["comms","Comms"]];
         return `<div class="app-shell pb-5"><div class="container-fluid px-3 px-lg-4">
-          ${testSelector()}<div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
+          ${adminTestSelector()}<div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
           ${state.adminTab === "overview" ? adminOverview() : state.adminTab === "predict" ? adminPredict() : state.adminTab === "students" ? adminStudents() : state.adminTab === "clusters" ? adminClusters() : state.adminTab === "attend" ? adminAttendance() : parentComms()}
         </div></div>`;
       }
