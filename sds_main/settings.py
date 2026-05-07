@@ -86,10 +86,10 @@ WSGI_APPLICATION = 'sds_main.wsgi.application'
 DATABASES = {
    'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'rankers',
+        'NAME': 'rankers_db',
         'USER': 'root',
-        'PASSWORD': 'Nayan@4664',
-        'HOST': 'localhost',
+        'PASSWORD': 'Vishal@2026',
+        'HOST': 'db',
         'PORT': '3306',
     }
 }
