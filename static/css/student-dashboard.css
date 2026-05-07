@@ -200,8 +200,8 @@ small,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 8px 16px;
+  gap: 0;
+  padding: 0 16px;
   background: rgba(5, 6, 13, 0.92);
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: none;
@@ -210,7 +210,7 @@ small,
 
 .tabs-left {
   display: flex;
-  gap: 12px;
+  gap: 20px;
 }
 
 .tabs-left a {
@@ -218,7 +218,6 @@ small,
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 42px;
   padding: 12px 14px;
   border: 1px solid transparent;
   border-radius: var(--game-pill-radius);
@@ -256,7 +255,7 @@ small,
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -9px;
+  bottom: 0;
   height: 3px;
   border-radius: 999px;
   background: var(--game-gradient-primary);
@@ -311,10 +310,10 @@ small,
 .test-banner {
   position: relative;
   overflow: hidden;
-  min-height: 88px;
-  padding: 16px 22px;
+  min-height: 80px;
+  padding: 14px 20px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 18px;
+  border-radius: 22px;
   background:
     linear-gradient(120deg, rgba(255, 122, 24, 0.18), rgba(143, 53, 255, 0.2) 56%, rgba(217, 54, 255, 0.14)),
     linear-gradient(180deg, #080911, #05060d);
@@ -363,8 +362,8 @@ small,
 .icon-box {
   position: relative;
   z-index: 1;
-  width: 56px;
-  height: 56px;
+  width: 55px;
+  height: 55px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 14px;
   background: var(--game-gradient-primary);
@@ -376,7 +375,7 @@ small,
 
 .icon-box i {
   color: var(--game-text);
-  font-size: 27px;
+  font-size: 26px;
   line-height: 1;
   text-shadow: none;
 }
@@ -388,7 +387,7 @@ small,
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
 }
 
@@ -399,8 +398,7 @@ small,
 }
 
 .start-btn {
-  min-height: 40px;
-  padding: 8px 20px;
+  padding: 8px 18px;
   font-size: 14px;
 }
 
@@ -410,7 +408,7 @@ small,
   position: relative;
   overflow: hidden;
   border: 1px solid var(--game-border);
-  border-radius: var(--game-radius) !important;
+  border-radius: 22px !important;
   background: var(--game-gradient-panel) !important;
   box-shadow: none;
   backdrop-filter: blur(18px) saturate(150%);
@@ -556,6 +554,7 @@ small,
 
 .progress-card {
   padding: 22px;
+  border-radius: 16px !important;
 }
 
 .subject-name {
@@ -800,7 +799,7 @@ footer a {
   }
 
   .tabs-left {
-    gap: 10px;
+    gap: 12px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -810,9 +809,8 @@ footer a {
   }
 
   .tabs-left a {
-    min-height: 40px;
     padding: 10px 12px;
-    border-radius: 12px;
+    border-radius: 8px;
     font-size: 12px;
   }
 
