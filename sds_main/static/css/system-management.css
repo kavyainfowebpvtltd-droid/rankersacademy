@@ -1,15 +1,18 @@
 body {
-  background: #f1f5f9;
+  background: #05050a !important;
+  color: #f4f5fb;
 }
 
 .card-box {
-  background: white;
+  background: #0b0c12;
   border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  border: 1px solid #242733;
 }
 
 .nav-btn {
+  border: 1px solid #f3f4f8;
+  color: #f8f9ff;
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
   font-weight: 500;
@@ -19,6 +22,11 @@ body {
   gap: 4px;
   white-space: nowrap;
   margin: 0 2px;
+}
+
+.nav-btn:hover {
+  border-color: #ffb15f;
+  color: #ffb15f;
 }
 
 .d-flex.gap-3 {
@@ -45,7 +53,8 @@ body {
 }
 
 .nav-btn.active {
-  background: linear-gradient(to right, #2563eb, #06b6d4);
+  background: linear-gradient(to right, #ff8a1f, #8b35ff);
+  border-color: transparent;
   color: white;
 }
 
