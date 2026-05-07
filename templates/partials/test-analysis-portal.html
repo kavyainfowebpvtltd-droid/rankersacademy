@@ -194,15 +194,16 @@
         session: "tra4_session"
       };
       const ROUTES = {
-        login: "login.html",
-        student: "student.html",
-        faculty: "teacher.html",
-        admin: "admin.html"
+        login: "{% url 'login' %}",
+        student: "{% url 'login' %}",
+        faculty: "{% url 'test-analysis-faculty-page' %}",
+        admin: "{% url 'test-analysis-admin-page' %}"
       };
+      const SERVER_SESSION = JSON.parse('{{ test_analysis_session|escapejs }}');
 
       const state = {
         page: document.body.dataset.page || "login",
-        user: getStore(StorageKeys.session, null),
+        user: getStore(StorageKeys.session, null) || SERVER_SESSION,
         loginMode: "student",
         testId: TESTS.at(-1).id,
         studentTab: "home",
@@ -219,6 +220,10 @@
         modal: ""
       };
       window.state = state;
+
+      if (SERVER_SESSION && !getStore(StorageKeys.session, null)) {
+        setStore(StorageKeys.session, SERVER_SESSION);
+      }
 
       const allScores = Object.fromEntries(TESTS.map((t) => [t.id, generateScores(t.id)]));
       const app = document.getElementById("app");

@@ -2362,12 +2362,19 @@ def _build_test_analysis_session(user) -> dict:
     }
 
 
+def _render_test_analysis_template(request, template_name: str):
+    context = {
+        "test_analysis_session": json.dumps(_build_test_analysis_session(request.user)),
+    }
+    return render(request, template_name, context)
+
+
 @login_required
 def test_analysis(request):
     if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return render(request, "test-analysis-admin.html")
+        return _render_test_analysis_template(request, "test-analysis-admin.html")
     if _is_teacher_user(request.user):
-        return render(request, "test-analysis-faculty.html")
+        return _render_test_analysis_template(request, "test-analysis-faculty.html")
     return redirect("login")
 
 
@@ -2375,14 +2382,14 @@ def test_analysis(request):
 def test_analysis_admin_page(request):
     if not (_is_superadmin(request.user) or _is_admin_user(request.user)):
         return redirect("test-analysis")
-    return render(request, "test-analysis-admin.html")
+    return _render_test_analysis_template(request, "test-analysis-admin.html")
 
 
 @login_required
 def test_analysis_faculty_page(request):
     if not _is_teacher_user(request.user):
         return redirect("test-analysis")
-    return render(request, "test-analysis-faculty.html")
+    return _render_test_analysis_template(request, "test-analysis-faculty.html")
 
 
 def test_analysis_login_page(request):
