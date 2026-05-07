@@ -1,0 +1,251 @@
+:root {
+  --admin-bg: #ffffff;
+  --admin-panel: #ffffff;
+  --admin-panel-soft: #f6fbff;
+  --admin-border: #e6eef9;
+  --admin-text: #0f1724;
+  --admin-muted: #6b7280;
+  --admin-blue: #0ea5ff;
+  --admin-blue-strong: #0077ff;
+  --admin-green: #10b981;
+  --admin-red: #ef4444;
+  --admin-gradient: linear-gradient(135deg, var(--admin-blue), var(--admin-blue-strong));
+}
+
+html,
+body {
+  background: var(--admin-bg) !important;
+  color: var(--admin-text) !important;
+}
+
+.container,
+.container-fluid,
+.page-shell,
+.scholarship-page,
+.layout-stack {
+  background: transparent !important;
+}
+
+.card,
+.card-box,
+.subject-card,
+.chapter-card,
+.topic-card,
+.topic-item,
+.folder-card,
+.test-item,
+.panel-card,
+.summary-card,
+.info-card,
+.container:not(.container-fluid),
+.modal-content,
+.dropdown-menu,
+.empty-state,
+.question-editor-box,
+.topbar,
+.sidebar,
+.system-header,
+.main-navbar {
+  background: var(--admin-panel) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  box-shadow: none !important;
+}
+
+.text-primary,
+.hover-actions a,
+a {
+  color: var(--admin-blue) !important;
+}
+
+.btn-primary,
+.btn-new,
+.btn-brand,
+.nav-btn.active,
+.sub-menu .btn-primary,
+.card .btn-primary,
+.page-header,
+.attendance-header,
+.hero-card,
+.btn-success {
+  background: var(--admin-gradient) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+.btn-light,
+.btn-outline,
+.view-all-btn,
+.back-btn,
+.folder-action-btn,
+.btn-icon,
+.test-actions-btn,
+.page-link {
+  background: #ffffff !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+.btn-light:hover,
+.btn-outline:hover,
+.view-all-btn:hover,
+.back-btn:hover,
+.folder-action-btn:hover,
+.btn-icon:hover,
+.test-actions-btn:hover,
+.page-link:hover {
+  border-color: var(--admin-blue) !important;
+  color: var(--admin-blue) !important;
+}
+
+input,
+select,
+textarea,
+.form-control,
+.form-select,
+.search-box,
+.filter-select,
+.month-select,
+.batch-select,
+.toolbar-input,
+.toolbar-select,
+.input-group-text {
+  background: #ffffff !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--admin-blue) !important;
+  box-shadow: 0 0 0 3px rgba(14, 165, 255, 0.12) !important;
+}
+
+.badge.blue,
+.badge-published,
+.badge-cbse,
+.badge-teacher,
+.badge-subject,
+.time-pill,
+.status-published {
+  background: rgba(10, 165, 255, 0.08) !important;
+  color: var(--admin-blue) !important;
+}
+
+.status-present,
+.metric-present,
+.percent-high {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: var(--admin-green) !important;
+}
+
+.status-absent,
+.metric-absent,
+.percent-low,
+.badge-admin,
+.badge-danger,
+.badge.bg-danger-subtle {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: var(--admin-red) !important;
+}
+
+.icon-box.blue,
+.icon-box.purple,
+.logo-icon,
+.reward-icon,
+.outcome-rank,
+.summary-icon,
+.folder-icon,
+.sb-icon {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.modal-overlay {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dropdown-item:hover {
+  background: var(--admin-panel-soft) !important;
+  color: var(--admin-blue) !important;
+}
+
+.stat-number {
+  color: var(--admin-blue) !important;
+}
+
+.view-toggle {
+  background: #ffffff !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+.view-toggle button {
+  color: var(--admin-muted) !important;
+}
+
+.view-toggle button.active {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+}
+
+.calendar-day.today {
+  background: rgba(14, 165, 255, 0.08) !important;
+  border-color: rgba(14, 165, 255, 0.28) !important;
+}
+
+.calendar-event {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+}
+
+.modal {
+  background: var(--admin-panel) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+/* Target common elements that previously used orange */
+.text-warning,
+.warning-pill,
+.summary-value.warn {
+  color: var(--admin-blue) !important;
+}
+
+/* Ensure links and primary actions flip to blue on light mode */
+a,
+.text-primary {
+  color: var(--admin-blue) !important;
+}
+
+/* Additional common overrides to replace orange accents with blue in light mode */
+.navbar {
+  background: #ffffff !important;
+  border-bottom-color: var(--admin-border) !important;
+}
+
+.brand-gradient,
+.brand-text,
+.banner-content h3,
+.page-title,
+.priority-title {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+}
+
+.tabs-left a.active::after {
+  background: var(--admin-gradient) !important;
+}
+
+.tabs-left a.active,
+.tabs-left a:hover {
+  color: var(--admin-text) !important;
+}
+
+.card:hover {
+  box-shadow: 0 8px 20px rgba(14,165,255,0.08) !important;
+}
