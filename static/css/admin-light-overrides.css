@@ -462,10 +462,48 @@ a,
   border-color: #e2e8f0 !important;
 }
 
+[data-admin-theme="light"] .overall-progress-card {
+  background: #ffffff !important;
+  border-color: #dbeafe !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 {
+  background: #ecfdf3 !important;
+  border-color: #bbf7d0 !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 {
+  background: #fff7ed !important;
+  border-color: #fed7aa !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
 [data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 h4,
 [data-admin-theme="light"] .overall-progress-circle span {
   color: #0f172a !important;
   text-shadow: none !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 h4,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 li,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 p {
+  color: #16a34a !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 h4,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 li,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 p {
+  color: #ea580c !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 h4,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 li,
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 p {
+  color: #1d4ed8 !important;
 }
 
 [data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3 > .h-100 > span,
@@ -479,6 +517,72 @@ a,
   border-color: #bfdbfe !important;
   color: #1d4ed8 !important;
   box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 > span {
+  background: #dcfce7 !important;
+  border-color: #bbf7d0 !important;
+  color: #15803d !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 > span {
+  background: #ffedd5 !important;
+  border-color: #fdba74 !important;
+  color: #c2410c !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 > span {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 .d-flex > div:first-child {
+  background: #22c55e !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 .d-flex > div:first-child {
+  background: transparent !important;
+  border: 3px solid #f97316 !important;
+  color: #f97316 !important;
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 .d-flex > div:first-child {
+  background: #3b82f6 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-admin-theme="light"] .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 .d-flex > div:first-child i {
+  color: #f97316 !important;
+}
+
+[data-admin-theme="light"] .progress-card.subject-card,
+[data-admin-theme="light"] .chapter-card,
+[data-admin-theme="light"] .topic-row {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-admin-theme="light"] .focus-section {
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+[data-admin-theme="light"] .focus-section .focus-title,
+[data-admin-theme="light"] .focus-section .focus-text {
+  color: #ffffff !important;
+}
+
+[data-admin-theme="light"] .focus-section .focus-tag {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
 }
 
 [data-admin-theme="light"] .overall-progress-circle {
