@@ -734,7 +734,7 @@
 
       function adminView() {
         const tabs = [["overview","Overview"],["predict","At Risk"],["students","Students"],["clusters","Clusters"],["attend","Attendance"],["comms","Comms"]];
-        return `${shell("Admin - The Rankers Academy", "Console", `<div class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient" style="width:38px;height:38px">A</div>`, "940px")}
+        return `<div class="app-shell pb-5">${onlineBadge()}<div class="container-fluid px-3 px-lg-4">
           ${testSelector()}<div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
           ${state.adminTab === "overview" ? adminOverview() : state.adminTab === "predict" ? adminPredict() : state.adminTab === "students" ? adminStudents() : state.adminTab === "clusters" ? adminClusters() : state.adminTab === "attend" ? adminAttendance() : parentComms()}
         </div></div>`;
