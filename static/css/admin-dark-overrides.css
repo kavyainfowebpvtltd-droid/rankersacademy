@@ -163,6 +163,13 @@ td {
   filter: brightness(1.08);
 }
 
+.scholarship-page .page-header {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
 .btn-light,
 .btn-outline,
 .view-all-btn,
