@@ -3972,6 +3972,7 @@ def _build_my_tests_payload(student):
             "sortAt": start_at.isoformat(),
             "scheduledStartAt": start_at.isoformat(),
             "scheduledEndAt": end_at.isoformat(),
+            "launchWindowOpensAt": launch_window_opens_at.isoformat(),
             "launchUrl": reverse("scholarship_test:scholarship_launch_test", args=[test.id]),
         }
 
@@ -4067,6 +4068,7 @@ def _build_my_tests_payload(student):
     rewards = _build_rewards_payload(student_completed_tests)
 
     return {
+        "serverNow": now.isoformat(),
         "student": {
             "id": f"portal-{student.id}",
             "name": student.student_name,

@@ -1216,8 +1216,10 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             [item["external_id"] for item in payload["completedTests"]],
             [completed_match.id],
         )
+        self.assertTrue(payload.get("serverNow"))
         self.assertEqual(payload["upcomingTest"]["external_id"], upcoming_match.id)
         self.assertEqual(payload["upcomingTest"]["name"], "Star 01 JEE Upcoming")
+        self.assertTrue(payload["upcomingTest"].get("launchWindowOpensAt"))
 
     def test_launch_view_redirects_logged_in_portal_student_to_dashboard_for_rtse_test(self):
         test = self.create_runtime_test(

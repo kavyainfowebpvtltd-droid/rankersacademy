@@ -833,6 +833,8 @@
     const MY_TESTS_PAYLOAD = JSON.parse(
       document.getElementById("my-tests-payload").textContent,
     );
+    const CLIENT_BOOTSTRAP_MS = Date.now();
+    const SERVER_BOOTSTRAP_NOW = parseIsoDate(MY_TESTS_PAYLOAD.serverNow);
     const BASE_COMPLETED_TESTS = [];
     const CLUSTER_SCHEDULE = {};
     const BADGES = [
@@ -1116,6 +1118,16 @@
       return Number.isNaN(date.getTime()) ? null : date;
     }
 
+    function getServerSynchronizedNow() {
+      if (!SERVER_BOOTSTRAP_NOW) {
+        return new Date();
+      }
+
+      return new Date(
+        SERVER_BOOTSTRAP_NOW.getTime() + (Date.now() - CLIENT_BOOTSTRAP_MS),
+      );
+    }
+
     function getUpcomingSlotRuntimeState(slot) {
       if (!slot || slot.kind !== "upcoming") {
         return slot;
@@ -1123,6 +1135,9 @@
 
       const startAt = parseIsoDate(slot.scheduledStartAt);
       const endAt = parseIsoDate(slot.scheduledEndAt);
+      const launchWindowOpensAt =
+        parseIsoDate(slot.launchWindowOpensAt) ||
+        (startAt ? new Date(startAt.getTime() - 10 * 60 * 1000) : null);
       if (!startAt || !endAt) {
         return {
           ...slot,
@@ -1132,12 +1147,11 @@
         };
       }
 
-      const now = new Date();
-      const launchWindowOpensAt = new Date(startAt.getTime() - 10 * 60 * 1000);
+      const now = getServerSynchronizedNow();
 
       return {
         ...slot,
-        canLaunchNow: now >= launchWindowOpensAt && now < endAt,
+        canLaunchNow: !!launchWindowOpensAt && now >= launchWindowOpensAt && now < endAt,
         isLive: now >= startAt && now < endAt,
         hasEnded: now >= endAt,
       };
