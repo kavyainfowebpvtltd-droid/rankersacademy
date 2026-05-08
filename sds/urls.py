@@ -94,6 +94,16 @@ urlpatterns = [
         views.test_analysis_note_delete_api,
         name="test-analysis-note-delete-api",
     ),
+    path(
+        "test-analysis/api/parent-alerts/send/",
+        views.test_analysis_parent_alert_send_api,
+        name="test-analysis-parent-alert-send-api",
+    ),
+    path(
+        "test-analysis/api/parent-alerts/send-all/",
+        views.test_analysis_parent_alert_send_all_api,
+        name="test-analysis-parent-alert-send-all-api",
+    ),
     path("syllabus-management/", views.syllabus_management, name="syllabus-management"),
 
     path("add-subject/", views.add_subject, name="add_subject"),
