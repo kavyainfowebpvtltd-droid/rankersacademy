@@ -240,10 +240,30 @@ def _get_portal_student(request):
     return getattr(user, 'student', None)
 
 
-def _sync_portal_student_session(request, selected_test):
-    if _requires_otp_login(selected_test):
-        return None, None
+def _portal_student_has_test_access(selected_test, portal_student) -> bool:
+    if not selected_test or not portal_student:
+        return True
 
+    return test_service.is_test_assigned_to_portal_student(
+        selected_test,
+        portal_student,
+    )
+
+
+def _redirect_if_portal_student_cannot_access_test(request, selected_test):
+    portal_student = _get_portal_student(request)
+    if _portal_student_has_test_access(selected_test, portal_student):
+        return None
+
+    _set_selected_test(request, None)
+    messages.error(
+        request,
+        "This test is not assigned to your batch and stream.",
+    )
+    return redirect("my_tests")
+
+
+def _sync_portal_student_session(request, selected_test):
     portal_student = _get_portal_student(request)
     if not portal_student:
         return None, None
@@ -360,12 +380,19 @@ def scholarship_launch_test(request, test_id):
 
     _set_selected_test(request, selected_test)
     _finalize_expired_attempts_for_test(selected_test)
-    if _requires_otp_login(selected_test):
-        return redirect('scholarship_test:scholarship_landing')
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
 
     scholarship_student, _ = _sync_portal_student_session(request, selected_test)
     if scholarship_student:
         return redirect('scholarship_test:scholarship_dashboard')
+
+    if _requires_otp_login(selected_test):
+        return redirect('scholarship_test:scholarship_landing')
 
     return redirect(_build_portal_login_url(selected_test))
 
@@ -604,6 +631,12 @@ def scholarship_dashboard(request):
     if selected_test:
         _set_selected_test(request, selected_test)
     _finalize_expired_attempts_for_test(selected_test)
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
 
     scholarship_student, _ = _sync_portal_student_session(request, selected_test)
 
@@ -655,6 +688,12 @@ def scholarship_start_test(request):
     if selected_test:
         _set_selected_test(request, selected_test)
     _finalize_expired_attempts_for_test(selected_test)
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
 
     scholarship_student, portal_student = _sync_portal_student_session(request, selected_test)
 

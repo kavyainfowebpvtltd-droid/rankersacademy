@@ -72,6 +72,57 @@ def _academy_localtime(value=None):
     return timezone.localtime(value, ACADEMY_TIMEZONE)
 
 
+def _normalize_scope_value(value) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
+
+
+def _split_scope_values(raw_value) -> set[str]:
+    values = set()
+    for part in re.split(r"[,/&|]+", str(raw_value or "")):
+        normalized = _normalize_scope_value(part)
+        if normalized:
+            values.add(normalized)
+    return values
+
+
+def get_portal_student_stream_values(portal_student) -> set[str]:
+    if not portal_student:
+        return set()
+
+    stream_values = _split_scope_values(getattr(portal_student, "stream", ""))
+    interested_exams = getattr(portal_student, "interested_exams", []) or []
+
+    for exam in interested_exams:
+        exam_text = str(exam or "")
+        stream_values.update(_split_scope_values(exam_text))
+        exam_upper = exam_text.upper()
+        for stream_name in ("JEE", "NEET", "MHTCET"):
+            if stream_name in exam_upper:
+                stream_values.add(_normalize_scope_value(stream_name))
+
+    return stream_values
+
+
+def is_test_assigned_to_portal_student(test, portal_student) -> bool:
+    if not test or not portal_student:
+        return False
+
+    test_batch = _normalize_scope_value(getattr(test, "batch", ""))
+    student_batch = _normalize_scope_value(getattr(portal_student, "batch", ""))
+    if test_batch and test_batch != student_batch:
+        return False
+
+    test_stream_values = _split_scope_values(getattr(test, "stream", ""))
+    if not test_stream_values:
+        return True
+
+    student_stream_values = get_portal_student_stream_values(portal_student)
+    if not student_stream_values:
+        return False
+
+    return not test_stream_values.isdisjoint(student_stream_values)
+
+
 def get_test_scheduled_start_at(test):
     if not test or not getattr(test, "scheduled_start_at", None):
         return None

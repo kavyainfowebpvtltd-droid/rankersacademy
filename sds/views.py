@@ -3955,12 +3955,13 @@ def _build_my_tests_payload(student):
     for test in published_tests:
         if not scholarship_test_service.get_runtime_questions_for_test(test):
             continue
+        if not scholarship_test_service.is_test_assigned_to_portal_student(test, student):
+            continue
 
-        start_at = timezone.localtime(test.scheduled_start_at)
-        end_at = start_at + timedelta(
-            hours=int(test.duration_hours or 0),
-            minutes=int(test.duration_minutes or 0),
-        )
+        start_at, end_at, launch_window_opens_at = scholarship_test_service.get_test_launch_window(test)
+        if not start_at or not end_at or not launch_window_opens_at:
+            continue
+
         item = {
             "id": f"SCH{test.id}",
             "external_id": test.id,
@@ -3979,7 +3980,6 @@ def _build_my_tests_payload(student):
             continue
 
         if upcoming_test is None:
-            launch_window_opens_at = start_at - timedelta(minutes=10)
             upcoming_test = {
                 **item,
                 "canLaunchNow": launch_window_opens_at <= now < end_at,
