@@ -1423,6 +1423,31 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             board=peer_portal_student.board,
             otp_verified=True,
         )
+        outsider_user = User.objects.create_user(
+            username="student-star02-neet",
+            email="student-star02-neet@example.com",
+            password="StudentPass@2026",
+        )
+        outsider_portal_student = Student.objects.create(
+            user=outsider_user,
+            student_name="Outsider Student",
+            username="student-star02-neet",
+            contact="9876500003",
+            email="student-star02-neet@example.com",
+            school="Rankers School",
+            stream="NEET",
+            board="CBSE",
+            grade="11th",
+            batch="Star 02",
+            gender="Male",
+        )
+        outsider_scholarship_student = ScholarshipStudent.objects.create(
+            name=outsider_portal_student.student_name,
+            phone_number=outsider_portal_student.contact,
+            grade=outsider_portal_student.grade,
+            board=outsider_portal_student.board,
+            otp_verified=True,
+        )
 
         ScholarshipTestAttempt.objects.create(
             student=peer_scholarship_student,
@@ -1444,6 +1469,16 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             total_marks=2,
             test_completed_at=now - timedelta(hours=2, minutes=20),
         )
+        ScholarshipTestAttempt.objects.create(
+            student=outsider_scholarship_student,
+            portal_student=outsider_portal_student,
+            test=recent_test,
+            status="completed",
+            score=2,
+            total_questions=1,
+            total_marks=2,
+            test_completed_at=now - timedelta(hours=2, minutes=10),
+        )
 
         payload = _build_my_tests_payload(self.portal_student)
 
@@ -1453,10 +1488,24 @@ class PortalStudentScheduledTestFlowTests(TestCase):
         )
         self.assertEqual([item["attempted"] for item in payload["completedTests"]], [False, False])
         self.assertEqual([item["attemptId"] for item in payload["completedTests"]], [None, None])
-        self.assertEqual(payload["completedTests"][1]["totalStudents"], 1)
+        self.assertEqual(payload["completedTests"][1]["totalStudents"], 2)
+        self.assertEqual(
+            {item["studentId"] for item in payload["completedTests"][1]["leaderboard"]},
+            {
+                f"portal-{self.portal_student.id}",
+                f"portal-{peer_portal_student.id}",
+            },
+        )
         self.assertEqual(
             payload["completedTests"][1]["leaderboard"][0]["studentId"],
             f"portal-{peer_portal_student.id}",
+        )
+        self.assertEqual(payload["completedTests"][1]["leaderboard"][1]["score"], 0)
+        self.assertFalse(
+            any(
+                item["studentId"] == f"portal-{outsider_portal_student.id}"
+                for item in payload["completedTests"][1]["leaderboard"]
+            )
         )
         self.assertEqual(payload["rewards"]["xp"], 0)
 
