@@ -97,6 +97,18 @@
   font-size: 18px;
 }
 
+.admin-header-logo-dark {
+  display: none;
+}
+
+html[data-admin-theme="dark"] .admin-header-logo-light {
+  display: none;
+}
+
+html[data-admin-theme="dark"] .admin-header-logo-dark {
+  display: block;
+}
+
 .tabs {
   background: #07070d;
   padding: 0 16px;
@@ -342,6 +354,19 @@ body.bg-light {
 .attention-topic-badge {
   background: #171a22 !important;
   border-color: #353a48 !important;
+  color: #ffffff !important;
+}
+
+.attention-page .attention-back-dashboard-btn {
+  border-color: #ff8a1f !important;
+  color: #ffb15f !important;
+  background: transparent !important;
+}
+
+.attention-page .attention-back-dashboard-btn:hover,
+.attention-page .attention-back-dashboard-btn:focus {
+  background: #ff8a1f !important;
+  border-color: #ff8a1f !important;
   color: #ffffff !important;
 }
 

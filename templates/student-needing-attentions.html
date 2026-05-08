@@ -44,7 +44,13 @@
           <img
             src="{% static 'img/logo.webp' %}"
             alt="Ranker's Academy Logo"
-            class="me-2"
+            class="admin-header-logo admin-header-logo-light me-2"
+            style="height: 60px; width: auto; object-fit: contain"
+          />
+          <img
+            src="{% static 'img/logo-dark-mode-preview.png' %}"
+            alt="Ranker's Academy Logo"
+            class="admin-header-logo admin-header-logo-dark me-2"
             style="height: 60px; width: auto; object-fit: contain"
           />
           <div>
@@ -84,7 +90,7 @@
     <div class="container my-4">
       <a
         href="{% url 'admin-dashboard' %}"
-        class="btn btn-outline-primary rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center"
+        class="btn btn-outline-primary attention-back-dashboard-btn rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center"
       >
         <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
       </a>
