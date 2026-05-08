@@ -1454,7 +1454,23 @@ def api_move_test(request, test_id):
             test.folder = None
         test.save()
     
-    return JsonResponse({'success': True})
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'instructions': config.instructions,
+            'default_pos_marks': config.default_pos_marks,
+            'default_neg_marks': config.default_neg_marks,
+        }
+    })
 
 
 @csrf_exempt
