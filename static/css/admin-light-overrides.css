@@ -497,14 +497,22 @@ html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-pag
 
 html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-section {
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 18px),
-    linear-gradient(100deg, #0d244c 0%, #18275a 48%, #302064 100%) !important;
-  border-color: rgba(148, 163, 184, 0.32) !important;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22) !important;
+    linear-gradient(115deg, rgba(255, 255, 255, 0.08), transparent 34%, rgba(255, 255, 255, 0.06)),
+    linear-gradient(105deg, #6d28d9 0%, #d946ef 46%, #fb7185 72%, #fb923c 100%) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 20px 46px rgba(217, 70, 239, 0.2), 0 12px 30px rgba(251, 146, 60, 0.12) !important;
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-section::before {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 34%, rgba(139, 53, 255, 0.14)) !important;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 18px),
+    radial-gradient(circle at 8% 18%, rgba(255, 255, 255, 0.18), transparent 12rem) !important;
+  opacity: 0.56 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-section:hover {
+  border-color: rgba(255, 255, 255, 0.38) !important;
+  box-shadow: 0 24px 54px rgba(217, 70, 239, 0.26), 0 16px 34px rgba(251, 146, 60, 0.16) !important;
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-icon {
@@ -517,14 +525,15 @@ html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-pag
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-text {
-  color: rgba(255, 255, 255, 0.82) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-tag {
-  background: #eef5ff !important;
-  border-color: rgba(18, 104, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.46) !important;
   color: #1e293b !important;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.14) !important;
+  backdrop-filter: blur(8px);
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .subject-card {
