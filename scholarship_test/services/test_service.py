@@ -148,6 +148,16 @@ def get_test_launch_window(test):
     return start_at, end_at, launch_opens_at
 
 
+def get_test_start_window(test):
+    start_at = get_test_scheduled_start_at(test)
+    if not start_at:
+        return None, None, None
+
+    end_at = start_at + timedelta(minutes=get_test_duration_minutes(test))
+    start_button_opens_at = start_at - timedelta(minutes=1)
+    return start_at, end_at, start_button_opens_at
+
+
 def get_test_launch_state(test, now=None):
     if now is None:
         now = _academy_localtime()
@@ -183,6 +193,47 @@ def get_test_launch_state(test, now=None):
     return {
         "scheduled": True,
         "can_launch": True,
+        "is_live": start_at <= now < end_at,
+        "has_ended": False,
+        "message": "",
+    }
+
+
+def get_test_start_state(test, now=None):
+    if now is None:
+        now = _academy_localtime()
+
+    start_at, end_at, start_button_opens_at = get_test_start_window(test)
+    if not start_at or not end_at or not start_button_opens_at:
+        return {
+            "scheduled": False,
+            "can_start": True,
+            "is_live": False,
+            "has_ended": False,
+            "message": "",
+        }
+
+    if now >= end_at:
+        return {
+            "scheduled": True,
+            "can_start": False,
+            "is_live": False,
+            "has_ended": True,
+            "message": "This test window has closed.",
+        }
+
+    if now < start_button_opens_at:
+        return {
+            "scheduled": True,
+            "can_start": False,
+            "is_live": False,
+            "has_ended": False,
+            "message": "The Start button activates 1 minute before the scheduled start time.",
+        }
+
+    return {
+        "scheduled": True,
+        "can_start": True,
         "is_live": start_at <= now < end_at,
         "has_ended": False,
         "message": "",

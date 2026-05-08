@@ -306,6 +306,51 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
             1,
         )
 
+    def test_dashboard_allows_access_before_start_but_disables_start_until_one_minute_window(self):
+        runtime_test, section = self.create_runtime_test(name='Scheduled Dashboard Test')
+        self.add_mcq_question(section)
+        ScholarshipTest.objects.filter(id=runtime_test.id).update(
+            scheduled_start_at=timezone.now() + timedelta(minutes=5),
+            date=timezone.localdate(),
+        )
+        runtime_test.refresh_from_db()
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session['scholarship_selected_test_id'] = runtime_test.id
+        session.save()
+
+        response = client.get(reverse('scholarship_test:scholarship_dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['can_attempt'])
+        self.assertFalse(response.context['can_start_test'])
+        self.assertContains(response, "activates 1 minute before")
+
+    def test_start_test_redirects_to_dashboard_before_one_minute_start_window(self):
+        runtime_test, section = self.create_runtime_test(name='Delayed Start Test')
+        self.add_mcq_question(section)
+        ScholarshipTest.objects.filter(id=runtime_test.id).update(
+            scheduled_start_at=timezone.now() + timedelta(minutes=5),
+            date=timezone.localdate(),
+        )
+        runtime_test.refresh_from_db()
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session['scholarship_selected_test_id'] = runtime_test.id
+        session.save()
+
+        response = client.get(reverse('scholarship_test:scholarship_start_test'))
+
+        self.assertRedirects(response, reverse('scholarship_test:scholarship_dashboard'))
+        self.assertEqual(
+            ScholarshipTestAttempt.objects.filter(student=self.student, test=runtime_test).count(),
+            0,
+        )
+
     def test_save_progress_persists_answers_and_current_question(self):
         runtime_test, section = self.create_runtime_test()
         question = self.add_mcq_question(section)
