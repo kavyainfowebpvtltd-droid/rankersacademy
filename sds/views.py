@@ -48,7 +48,6 @@ from scholarship_test.models import (
     ScholarshipTestFacultyAttendance,
     ScholarshipTestFacultyAttendanceSession,
     ScholarshipTestFacultyNote,
-    ScholarshipTestParentCommunication,
 )
 from scholarship_test.services import test_service as scholarship_test_service
 from .password_policy import (
@@ -2551,38 +2550,6 @@ def _serialize_faculty_note(note):
     }
 
 
-def _can_manage_analysis_parent_comms(user):
-    return _is_superadmin(user) or _is_admin_user(user)
-
-
-def _serialize_analysis_parent_alert(alert):
-    test_key = f"SCH{alert.test_id}"
-    student_id = f"portal-{alert.portal_student_id}"
-    return {
-        "id": _analysis_parent_message_id(
-            test_key=test_key,
-            student_id=student_id,
-            message_type=alert.message_type,
-            subject=alert.subject,
-        ),
-        "studentId": student_id,
-        "type": alert.message_type,
-        "subject": alert.subject,
-        "tone": alert.tone,
-        "body": alert.message_body,
-        "testId": test_key,
-        "sentAt": alert.sent_at.isoformat(),
-        "student": {
-            "id": student_id,
-            "name": getattr(alert.portal_student, "student_name", "") or student_id,
-            "parentPhone": alert.parent_phone
-            or getattr(alert.portal_student, "emergency_contact", "")
-            or getattr(alert.portal_student, "contact", ""),
-            "studentRef": getattr(alert.portal_student, "username", "") or getattr(alert.portal_student, "contact", ""),
-        },
-    }
-
-
 @csrf_exempt
 @login_required
 def test_analysis_attendance_status_api(request):
@@ -2737,116 +2704,6 @@ def test_analysis_note_delete_api(request):
 
     note.delete()
     return JsonResponse({"success": True})
-
-
-def _persist_analysis_parent_alert(*, user, test, portal_student, message_type, subject, tone, body, parent_phone):
-    alert, _ = ScholarshipTestParentCommunication.objects.update_or_create(
-        test=test,
-        portal_student=portal_student,
-        message_type=message_type,
-        subject=subject or "",
-        defaults={
-            "tone": tone or "",
-            "parent_phone": parent_phone or "",
-            "message_body": body or "",
-            "sent_by": user,
-            "sent_at": timezone.now(),
-        },
-    )
-    return alert
-
-
-@csrf_exempt
-@login_required
-def test_analysis_parent_alert_send_api(request):
-    if request.method != "POST" or not _can_manage_analysis_parent_comms(request.user):
-        return JsonResponse({"error": "Forbidden"}, status=403)
-
-    try:
-        data = json.loads(request.body or "{}")
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    test = _coerce_analysis_test(data.get("test_id"))
-    portal_student_id = _analysis_portal_student_id(data.get("student_id"))
-    message_type = str(data.get("message_type") or "").strip()
-    subject = _normalize_analysis_subject_or_none(data.get("subject")) if data.get("subject") else ""
-    tone = str(data.get("tone") or "").strip()
-    body = str(data.get("body") or "").strip()
-    parent_phone = str(data.get("parent_phone") or "").strip()
-
-    if not test or not portal_student_id or message_type not in {"post-test", "absence"} or not body:
-        return JsonResponse({"error": "Invalid payload"}, status=400)
-
-    portal_student = Student.objects.filter(id=portal_student_id).first()
-    if not portal_student or not scholarship_test_service.is_test_assigned_to_portal_student(test, portal_student):
-        return JsonResponse({"error": "Student not assigned to this test"}, status=400)
-    if message_type == "absence" and not subject:
-        return JsonResponse({"error": "Subject is required for absence alerts"}, status=400)
-
-    alert = _persist_analysis_parent_alert(
-        user=request.user,
-        test=test,
-        portal_student=portal_student,
-        message_type=message_type,
-        subject=subject,
-        tone=tone,
-        body=body,
-        parent_phone=parent_phone,
-    )
-    return JsonResponse({"success": True, "alert": _serialize_analysis_parent_alert(alert)})
-
-
-@csrf_exempt
-@login_required
-def test_analysis_parent_alert_send_all_api(request):
-    if request.method != "POST" or not _can_manage_analysis_parent_comms(request.user):
-        return JsonResponse({"error": "Forbidden"}, status=403)
-
-    try:
-        data = json.loads(request.body or "{}")
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    messages = data.get("messages") or []
-    if not isinstance(messages, list):
-        return JsonResponse({"error": "Invalid payload"}, status=400)
-
-    saved_alerts = []
-    for item in messages:
-        if not isinstance(item, dict):
-            continue
-
-        test = _coerce_analysis_test(item.get("test_id"))
-        portal_student_id = _analysis_portal_student_id(item.get("student_id"))
-        message_type = str(item.get("message_type") or "").strip()
-        subject = _normalize_analysis_subject_or_none(item.get("subject")) if item.get("subject") else ""
-        tone = str(item.get("tone") or "").strip()
-        body = str(item.get("body") or "").strip()
-        parent_phone = str(item.get("parent_phone") or "").strip()
-
-        if not test or not portal_student_id or message_type not in {"post-test", "absence"} or not body:
-            continue
-
-        portal_student = Student.objects.filter(id=portal_student_id).first()
-        if not portal_student or not scholarship_test_service.is_test_assigned_to_portal_student(test, portal_student):
-            continue
-        if message_type == "absence" and not subject:
-            continue
-
-        alert = _persist_analysis_parent_alert(
-            user=request.user,
-            test=test,
-            portal_student=portal_student,
-            message_type=message_type,
-            subject=subject,
-            tone=tone,
-            body=body,
-            parent_phone=parent_phone,
-        )
-        saved_alerts.append(_serialize_analysis_parent_alert(alert))
-
-    return JsonResponse({"success": True, "alerts": saved_alerts})
 
 
 def test_analysis_login_page(request):
@@ -4929,61 +4786,17 @@ def _build_note_state_payload(user, test_ids=None, subject=None):
     return notes_by_test
 
 
-def _analysis_parent_message_id(*, test_key, student_id, message_type, subject=""):
-    return f"{student_id}-{message_type}-{subject or ''}-{test_key}"
-
-
-def _build_parent_alert_state_payload(test_ids=None):
-    alerts = {}
-    qs = ScholarshipTestParentCommunication.objects.select_related("portal_student", "test")
-    if test_ids is not None:
-        qs = qs.filter(test_id__in=test_ids)
-
-    for alert in qs:
-        test_key = f"SCH{alert.test_id}"
-        student_id = f"portal-{alert.portal_student_id}"
-        key = _analysis_parent_message_id(
-            test_key=test_key,
-            student_id=student_id,
-            message_type=alert.message_type,
-            subject=alert.subject,
-        )
-        alerts[key] = {
-            "studentId": student_id,
-            "type": alert.message_type,
-            "subject": alert.subject,
-            "tone": alert.tone,
-            "body": alert.message_body,
-            "testId": test_key,
-            "sentAt": alert.sent_at.isoformat(),
-            "student": {
-                "id": student_id,
-                "name": getattr(alert.portal_student, "student_name", "") or student_id,
-                "parentPhone": alert.parent_phone
-                or getattr(alert.portal_student, "emergency_contact", "")
-                or getattr(alert.portal_student, "contact", ""),
-                "studentRef": getattr(alert.portal_student, "username", "") or getattr(alert.portal_student, "contact", ""),
-            },
-        }
-
-    return alerts
-
-
 def _build_admin_test_analysis_payload():
     base_payload = _build_test_analysis_base_payload()
-    completed_test_ids = [test["external_id"] for test in base_payload["completedTests"]]
     return {
         "admin": {
             **base_payload,
             "attendanceByTest": _build_attendance_state_payload(
-                test_ids=completed_test_ids,
+                test_ids=[test["external_id"] for test in base_payload["completedTests"]],
             ),
             "notesByTest": _build_note_state_payload(
                 None,
-                test_ids=completed_test_ids,
-            ),
-            "parentAlerts": _build_parent_alert_state_payload(
-                test_ids=completed_test_ids,
+                test_ids=[test["external_id"] for test in base_payload["completedTests"]],
             ),
         }
     }

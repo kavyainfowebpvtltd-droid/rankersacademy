@@ -234,9 +234,7 @@
         attendanceStatus: "{% url 'test-analysis-attendance-status-api' %}",
         attendanceFinalize: "{% url 'test-analysis-attendance-finalize-api' %}",
         noteCreate: "{% url 'test-analysis-note-create-api' %}",
-        noteDelete: "{% url 'test-analysis-note-delete-api' %}",
-        parentAlertSend: "{% url 'test-analysis-parent-alert-send-api' %}",
-        parentAlertSendAll: "{% url 'test-analysis-parent-alert-send-all-api' %}"
+        noteDelete: "{% url 'test-analysis-note-delete-api' %}"
       };
       const SERVER_SESSION = JSON.parse('{{ test_analysis_session|escapejs }}');
 
@@ -262,7 +260,7 @@
         online: navigator.onLine,
         attendance: blankAttendance(),
         facultyNotes: {},
-        parentAlerts: (IS_ADMIN_PAGE && USE_BACKEND_ANALYSIS_DATA) ? ((ACTIVE_ANALYSIS && ACTIVE_ANALYSIS.parentAlerts) || {}) : getStore(StorageKeys.parentAlerts, {}),
+        parentAlerts: getStore(StorageKeys.parentAlerts, {}),
         modal: ""
       };
       window.state = state;
@@ -275,7 +273,6 @@
       const BACKEND_FOCUS_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.focusByTest || {}) : {};
       const BACKEND_ATTENDANCE_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.attendanceByTest || {}) : {};
       const BACKEND_NOTES_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.notesByTest || {}) : {};
-      const BACKEND_PARENT_ALERTS = IS_ADMIN_PAGE && USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.parentAlerts || {}) : {};
       const allScores = USE_BACKEND_ANALYSIS_DATA
         ? Object.fromEntries(
             TESTS.map((t) => [
@@ -1171,70 +1168,19 @@
 
       function toggleMessage(id) { document.getElementById(`body-${id}`)?.classList.toggle("d-none"); }
 
-      async function sendMessage(id) {
+      function sendMessage(id) {
         const msg = [...postTestMessages(), ...absenceMessages()].find((m) => msgId(m) === id);
-        if (!msg) return;
-        if (IS_ADMIN_PAGE && USE_BACKEND_ANALYSIS_DATA) {
-          try {
-            const response = await postAnalysisJson(ANALYSIS_API.parentAlertSend, {
-              test_id: currentBackendTestId(),
-              student_id: msg.studentId,
-              message_type: msg.type,
-              subject: msg.subject || "",
-              tone: msg.tone || "",
-              body: msg.body,
-              parent_phone: msg.student?.parentPhone || "",
-            });
-            if (response.alert?.id) {
-              state.parentAlerts[response.alert.id] = response.alert;
-              BACKEND_PARENT_ALERTS[response.alert.id] = response.alert;
-            }
-          } catch (error) {
-            window.alert(error.message || "Unable to save parent communication.");
-            return;
-          }
-        } else {
-          state.parentAlerts[id] = { ...msg, sentAt: new Date().toISOString(), testId: state.testId };
-          setStore(StorageKeys.parentAlerts, state.parentAlerts);
-        }
-        render();
+        state.parentAlerts[id] = { ...msg, sentAt: new Date().toISOString(), testId: state.testId };
+        setStore(StorageKeys.parentAlerts, state.parentAlerts); render();
       }
 
-      async function sendAllMessages() {
+      function sendAllMessages() {
         const messages = state.commsTab === "post-test" ? postTestMessages() : absenceMessages();
-        if (IS_ADMIN_PAGE && USE_BACKEND_ANALYSIS_DATA) {
-          const unsent = messages.filter((m) => !state.parentAlerts[msgId(m)]);
-          if (unsent.length) {
-            try {
-              const response = await postAnalysisJson(ANALYSIS_API.parentAlertSendAll, {
-                messages: unsent.map((m) => ({
-                  test_id: currentBackendTestId(),
-                  student_id: m.studentId,
-                  message_type: m.type,
-                  subject: m.subject || "",
-                  tone: m.tone || "",
-                  body: m.body,
-                  parent_phone: m.student?.parentPhone || "",
-                })),
-              });
-              (response.alerts || []).forEach((alert) => {
-                if (!alert?.id) return;
-                state.parentAlerts[alert.id] = alert;
-                BACKEND_PARENT_ALERTS[alert.id] = alert;
-              });
-            } catch (error) {
-              window.alert(error.message || "Unable to save parent communications.");
-              return;
-            }
-          }
-        } else {
-          messages.forEach((m) => {
-            const id = msgId(m);
-            if (!state.parentAlerts[id]) state.parentAlerts[id] = { ...m, sentAt: new Date().toISOString(), testId: state.testId };
-          });
-          setStore(StorageKeys.parentAlerts, state.parentAlerts);
-        }
-        render();
+        messages.forEach((m) => {
+          const id = msgId(m);
+          if (!state.parentAlerts[id]) state.parentAlerts[id] = { ...m, sentAt: new Date().toISOString(), testId: state.testId };
+        });
+        setStore(StorageKeys.parentAlerts, state.parentAlerts); render();
       }
     </script>
   </body>

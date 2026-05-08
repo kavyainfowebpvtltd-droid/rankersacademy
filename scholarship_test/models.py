@@ -278,45 +278,6 @@ class ScholarshipTestFacultyNote(models.Model):
         return f"{self.test.name} - {self.portal_student_id} - {self.subject} note"
 
 
-class ScholarshipTestParentCommunication(models.Model):
-    MESSAGE_TYPE_CHOICES = [
-        ('post-test', 'Post-Test'),
-        ('absence', 'Absence'),
-    ]
-
-    test = models.ForeignKey(
-        'ScholarshipTest',
-        on_delete=models.CASCADE,
-        related_name='parent_communications',
-    )
-    portal_student = models.ForeignKey(
-        'sds.Student',
-        on_delete=models.CASCADE,
-        related_name='scholarship_test_parent_communications',
-    )
-    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPE_CHOICES)
-    subject = models.CharField(max_length=20, blank=True, default="")
-    tone = models.CharField(max_length=30, blank=True, default="")
-    parent_phone = models.CharField(max_length=20, blank=True, default="")
-    message_body = models.TextField(blank=True, default="")
-    sent_by = models.ForeignKey(
-        'auth.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='scholarship_test_parent_communications_sent',
-    )
-    sent_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ['test', 'portal_student', 'message_type', 'subject']
-        ordering = ['-sent_at', '-id']
-
-    def __str__(self):
-        return f"{self.test.name} - {self.portal_student_id} - {self.message_type}"
-
-
 class ScholarshipStudentAnswer(models.Model):
     
     attempt = models.ForeignKey(
