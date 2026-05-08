@@ -777,30 +777,49 @@
         justify-content: center;
       }
 
-      .brand-header {
-        max-width: 420px;
-        margin: 0 auto 1.8rem;
-        padding: 0;
-        display: flex !important;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.45rem;
-        text-align: center;
-        background: transparent !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        transition: none !important;
-      }
+       .brand-header {
+         max-width: 420px;
+         margin: 0 auto 1.8rem;
+         padding: 0;
+         display: flex !important;
+         flex-direction: column;
+         align-items: center;
+         justify-content: center;
+         gap: 0.45rem;
+         text-align: center;
+         background: transparent !important;
+         border: 0 !important;
+         box-shadow: none !important;
+         backdrop-filter: none !important;
+         -webkit-backdrop-filter: none !important;
+         transition: none !important;
+       }
 
-      .brand-header:hover {
-        transform: none !important;
-        border-color: transparent !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
+       .brand-header:hover {
+         transform: none !important;
+         border-color: transparent !important;
+         background: transparent !important;
+         box-shadow: none !important;
+       }
+
+       /* Logo visibility in dark mode */
+       html[data-admin-theme="dark"] .logo-light {
+         display: none !important;
+       }
+       
+       html[data-admin-theme="dark"] .logo-dark {
+         display: block !important;
+       }
+       
+       /* Logo visibility in light mode */
+       html[data-admin-theme="light"] .logo-light,
+       html[data-admin-theme="light"] .logo-dark {
+         display: block !important;
+       }
+       
+       html[data-admin-theme="light"] .logo-dark {
+         display: none !important;
+       }
 
       .brand-logo-shell {
         width: 92px;
@@ -1247,14 +1266,23 @@
       
       /* Make logo visible in dark mode */
       html[data-admin-theme="dark"] .brand-logo-shell {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(255,255,255,0.04);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 28px rgba(14,165,255,0.06) inset;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 36px rgba(14,165,255,0.12) inset;
       }
-
+      
       html[data-admin-theme="dark"] .brand-logo-shell img {
-        filter: brightness(1.8) saturate(1.2) drop-shadow(0 8px 20px rgba(14,165,255,0.18));
-        mix-blend-mode: screen;
+        filter: brightness(2.2) saturate(1.3) drop-shadow(0 0 20px rgba(255,255,255,0.4));
+        mix-blend-mode: normal;
+      }
+      
+      /* Ensure logo visibility in all dark mode contexts */
+      html[data-admin-theme="dark"] .brand-header .brand-logo-shell {
+        background: rgba(255,255,255,0.03);
+      }
+      
+      html[data-admin-theme="dark"] .brand-header .brand-logo-shell img {
+        filter: brightness(2.5) contrast(1.1) drop-shadow(0 0 24px rgba(255,255,255,0.45));
       }
     </style>
   </head>
@@ -1277,9 +1305,10 @@
       <div class="container py-5">
         <section class="login-shell">
           <div class="brand-header">
-            <div class="brand-logo-shell">
-              <img src="{% static 'img/Rankers_logo.png' %}" alt="The Rankers Academy logo" />
-            </div>
+             <div class="brand-logo-shell">
+               <img src="{% static 'img/Rankers_logo.png' %}" alt="The Rankers Academy logo" class="logo-light" />
+               <img src="{% static 'img/logo-crop.png' %}" alt="The Rankers Academy logo" class="logo-dark" />
+             </div>
             <h1 class="display-brand">Climb Smarter.<br /><span class="brand-text">Rank Higher.</span></h1>
           </div>
 

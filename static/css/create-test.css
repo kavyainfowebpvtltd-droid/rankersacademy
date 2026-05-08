@@ -1420,3 +1420,246 @@ input:checked + .toggle-slider::before {
   background: var(--blue-dark);
   transform: translateY(-1px);
 }
+
+body.create-test-page {
+  --blue: #ffffff;
+  --blue-light: rgba(255, 255, 255, 0.1);
+  --blue-dark: #e5e7eb;
+  --green: #39d98a;
+  --green-light: rgba(57, 217, 138, 0.16);
+  --red: #ff6b6b;
+  --red-light: rgba(255, 107, 107, 0.16);
+  --gray-50: #05050a;
+  --gray-100: #11131a;
+  --gray-200: #252936;
+  --gray-300: #353a48;
+  --gray-400: #8b93a5;
+  --gray-500: #a8afbd;
+  --gray-600: #c3c8d4;
+  --gray-700: #e2e6ee;
+  --gray-800: #f2f4f8;
+  --gray-900: #ffffff;
+  --white: #0b0c12;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 14px 34px rgba(0, 0, 0, 0.34);
+  --shadow-lg: 0 22px 60px rgba(0, 0, 0, 0.52);
+  background: #05050a !important;
+  color: #ffffff !important;
+  color-scheme: dark;
+}
+
+body.create-test-page .app,
+body.create-test-page .body,
+body.create-test-page .main {
+  background: #05050a !important;
+  color: #ffffff !important;
+}
+
+body.create-test-page .topbar,
+body.create-test-page .sidebar,
+body.create-test-page .test-meta-card,
+body.create-test-page .section-card,
+body.create-test-page .modal,
+body.create-test-page .img-modal-box,
+body.create-test-page .rte-wrapper {
+  background: #0b0c12 !important;
+  border-color: #252936 !important;
+  color: #ffffff !important;
+}
+
+body.create-test-page .topbar,
+body.create-test-page .modal-header,
+body.create-test-page .img-modal-hdr {
+  background: #0b0c12 !important;
+  border-color: #252936 !important;
+}
+
+body.create-test-page .section-header,
+body.create-test-page .section-meta,
+body.create-test-page .section-add-q,
+body.create-test-page .modal-footer,
+body.create-test-page .img-modal-ftr,
+body.create-test-page .rte-toolbar,
+body.create-test-page .q-marks-row {
+  background: #11131a !important;
+  border-color: #252936 !important;
+  color: #e2e6ee !important;
+}
+
+body.create-test-page .sb-section,
+body.create-test-page .question-item,
+body.create-test-page .toggle-row,
+body.create-test-page .section-divider-line,
+body.create-test-page .img-tabs {
+  border-color: #252936 !important;
+}
+
+body.create-test-page .back-btn,
+body.create-test-page .sb-header-left,
+body.create-test-page .test-meta-title,
+body.create-test-page .section-name,
+body.create-test-page .q-text,
+body.create-test-page .modal-title,
+body.create-test-page .upload-card-title,
+body.create-test-page .toggle-info-title,
+body.create-test-page .img-modal-ttl,
+body.create-test-page .rte-body,
+body.create-test-page .meta-chip strong,
+body.create-test-page .section-meta strong {
+  color: #ffffff !important;
+}
+
+body.create-test-page .meta-chip,
+body.create-test-page .test-instructions,
+body.create-test-page .section-qcount,
+body.create-test-page .q-num,
+body.create-test-page .form-label,
+body.create-test-page .mcq-opt,
+body.create-test-page .toggle-info-sub,
+body.create-test-page .upload-card-sub,
+body.create-test-page .empty-state,
+body.create-test-page .empty-state-title,
+body.create-test-page .confirm-msg,
+body.create-test-page .section-divider-text,
+body.create-test-page .drop-zone-text,
+body.create-test-page .drop-zone-sub {
+  color: #c3c8d4 !important;
+}
+
+body.create-test-page .sb-arrow,
+body.create-test-page .collapse-btn,
+body.create-test-page .modal-close,
+body.create-test-page .img-x,
+body.create-test-page .option-delete {
+  color: #a8afbd !important;
+}
+
+body.create-test-page .back-btn:hover,
+body.create-test-page .sb-header:hover,
+body.create-test-page .q-type-btn:hover,
+body.create-test-page .question-item:hover,
+body.create-test-page .collapse-btn:hover,
+body.create-test-page .modal-close:hover,
+body.create-test-page .img-x:hover,
+body.create-test-page .tb-btn:hover {
+  background: #161922 !important;
+  color: #ffffff !important;
+}
+
+body.create-test-page .form-input,
+body.create-test-page .option-input,
+body.create-test-page .img-inp,
+body.create-test-page .tb-sel,
+body.create-test-page .rte-body {
+  background: #05050a !important;
+  border-color: #353a48 !important;
+  color: #ffffff !important;
+}
+
+body.create-test-page .form-input::placeholder,
+body.create-test-page .option-input::placeholder,
+body.create-test-page .img-inp::placeholder,
+body.create-test-page .rte-body:empty::before {
+  color: #8b93a5 !important;
+}
+
+body.create-test-page .test-instructions,
+body.create-test-page .add-section-btn,
+body.create-test-page .add-option-btn,
+body.create-test-page .drop-zone,
+body.create-test-page .img-preview-box {
+  background: transparent !important;
+  border-color: #353a48 !important;
+  color: #c3c8d4 !important;
+}
+
+body.create-test-page .test-instructions:hover,
+body.create-test-page .add-section-btn:hover,
+body.create-test-page .add-option-btn:hover,
+body.create-test-page .drop-zone:hover,
+body.create-test-page .drop-zone.drag-over,
+body.create-test-page .upload-card:hover,
+body.create-test-page .upload-card.selected {
+  background: #161922 !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.create-test-page .btn-primary {
+  background: linear-gradient(135deg, #ff8a1f, #8b35ff) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+body.create-test-page .btn-secondary,
+body.create-test-page .import-btn {
+  background: #0f1118 !important;
+  border-color: #353a48 !important;
+  color: #ffffff !important;
+}
+
+body.create-test-page .btn-secondary:hover,
+body.create-test-page .import-btn:hover {
+  background: #161922 !important;
+  border-color: #ffffff !important;
+}
+
+body.create-test-page .edit-icon,
+body.create-test-page .sec-action-btn,
+body.create-test-page .q-act-btn,
+body.create-test-page .section-add-q,
+body.create-test-page .sample-link,
+body.create-test-page .adv-settings,
+body.create-test-page .partial-link,
+body.create-test-page .img-tab.active {
+  color: #ffffff !important;
+}
+
+body.create-test-page .sec-action-btn:hover,
+body.create-test-page .q-act-btn:hover,
+body.create-test-page .edit-icon:hover,
+body.create-test-page .img-tab:hover:not(.active) {
+  background: #161922 !important;
+  color: #ffffff !important;
+}
+
+body.create-test-page .sec-action-btn.danger,
+body.create-test-page .q-act-btn.danger,
+body.create-test-page .option-delete:hover {
+  color: #ff6b6b !important;
+}
+
+body.create-test-page .sec-action-btn.danger:hover,
+body.create-test-page .q-act-btn.danger:hover {
+  background: rgba(255, 107, 107, 0.16) !important;
+}
+
+body.create-test-page .q-answer-box,
+body.create-test-page .badge-tag,
+body.create-test-page .badge-type,
+body.create-test-page .partial-info {
+  background: #161922 !important;
+  border-color: #252936 !important;
+  color: #e2e6ee !important;
+}
+
+body.create-test-page .upload-card {
+  background: #0b0c12 !important;
+  border-color: #252936 !important;
+}
+
+body.create-test-page .tb-btn {
+  color: #e2e6ee !important;
+}
+
+body.create-test-page .fill-blank {
+  border-bottom-color: #ffffff !important;
+}
+
+body.create-test-page .q-type-dot {
+  background: #a8afbd !important;
+}
+
+body.create-test-page .q-type-btn:hover .q-type-dot {
+  background: #ffffff !important;
+}
