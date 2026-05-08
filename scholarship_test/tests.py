@@ -558,6 +558,50 @@ class ScholarshipWordImportTests(TestCase):
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         )
 
+    def build_docx_upload_with_body_items(self, body_items, name='sample.docx'):
+        document_xml = [
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">',
+            '<w:body>',
+        ]
+
+        def escape_xml(value):
+            return (
+                str(value)
+                .replace('&', '&amp;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+            )
+
+        for item in body_items:
+            if item['type'] == 'paragraph':
+                document_xml.append(
+                    f'<w:p><w:r><w:t xml:space="preserve">{escape_xml(item["text"])}</w:t></w:r></w:p>'
+                )
+                continue
+
+            if item['type'] == 'table':
+                document_xml.append('<w:tbl><w:tr>')
+                for cell_text in item.get('cells', []):
+                    document_xml.append(
+                        '<w:tc><w:p><w:r><w:t xml:space="preserve">'
+                        + escape_xml(cell_text)
+                        + '</w:t></w:r></w:p></w:tc>'
+                    )
+                document_xml.append('</w:tr></w:tbl>')
+
+        document_xml.extend(['</w:body>', '</w:document>'])
+
+        buffer = io.BytesIO()
+        with ZipFile(buffer, 'w') as archive:
+            archive.writestr('word/document.xml', ''.join(document_xml))
+
+        return SimpleUploadedFile(
+            name,
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        )
+
     def test_word_import_service_parses_sample_format(self):
         upload = self.build_docx_upload(
             [
@@ -911,6 +955,48 @@ class ScholarshipWordImportTests(TestCase):
         )
         self.assertEqual(len(imported['sections'][2]['questions']), 1)
         self.assertEqual(imported['sections'][2]['questions'][0]['options'][2], 'C2')
+
+    def test_word_import_service_parses_online_test_minimal_table_format(self):
+        upload = self.build_docx_upload_with_body_items(
+            [
+                {'type': 'paragraph', 'text': 'VECTOR ADDITION - ONLINE TEST'},
+                {
+                    'type': 'paragraph',
+                    'text': '10 Single-Correct MCQs - Each question is followed by its answer',
+                },
+                {
+                    'type': 'paragraph',
+                    'text': 'Two forces of magnitudes 8 N and 15 N act at a point. Their resultant has magnitude 17 N. The angle between the two forces is',
+                },
+                {'type': 'table', 'cells': ['Q1.', 'Resultant Magnitude']},
+                {'type': 'table', 'cells': ['(A) 0°', '(B) 45°', '(C) 90°', '(D) 180°']},
+                {'type': 'table', 'cells': ['Answer: (C) 90°']},
+                {
+                    'type': 'paragraph',
+                    'text': 'Two equal forces of magnitude F act on a body. The angle between them is 120°. The magnitude of the resultant is',
+                },
+                {'type': 'table', 'cells': ['Q2.', 'Equal Forces - Parallelogram Law']},
+                {'type': 'table', 'cells': ['(A) F/2', '(B) F', '(C) F√2', '(D) F√3']},
+                {'type': 'table', 'cells': ['Answer: (B) F']},
+            ],
+            name='vector-addition-online-test-minimal.docx',
+        )
+
+        imported = word_import_service.import_questions_from_docx(upload)
+
+        self.assertEqual(imported['test_name'], 'VECTOR ADDITION - ONLINE TEST')
+        self.assertEqual(imported['section_name'], 'VECTOR ADDITION - ONLINE TEST')
+        self.assertEqual(len(imported['sections']), 1)
+        self.assertEqual(len(imported['sections'][0]['questions']), 2)
+        self.assertEqual(imported['sections'][0]['questions'][0]['type'], 'mcq')
+        self.assertIn('Two forces of magnitudes 8 N and 15 N', imported['sections'][0]['questions'][0]['text'])
+        self.assertEqual(
+            imported['sections'][0]['questions'][0]['options'],
+            ['0°', '45°', '90°', '180°'],
+        )
+        self.assertEqual(imported['sections'][0]['questions'][0]['correct_options'], [2])
+        self.assertEqual(imported['sections'][0]['questions'][1]['correct_options'], [1])
+        self.assertFalse(imported['warnings'])
 
 
 class ScholarshipSectionApiTests(TestCase):
