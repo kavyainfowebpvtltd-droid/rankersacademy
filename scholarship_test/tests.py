@@ -1194,6 +1194,31 @@ class ScholarshipCreateTestApiTests(TestCase):
         self.assertEqual(local_start.strftime('%H:%M'), '08:45')
         self.assertEqual(test.date.isoformat(), '2026-05-25')
 
+    def test_save_test_details_returns_saved_duration_payload(self):
+        test = ScholarshipTest.objects.create(
+            name='Duration Test',
+            duration_hours=0,
+            duration_minutes=30,
+        )
+        ScholarshipTestConfig.objects.create(test=test)
+
+        response = self.client.post(
+            reverse('scholarship_test:api_save_test_details', args=[test.id]),
+            data=json.dumps(
+                {
+                    'duration_hours': 0,
+                    'duration_minutes': 20,
+                }
+            ),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload['success'])
+        self.assertEqual(payload['test']['duration_hours'], 0)
+        self.assertEqual(payload['test']['duration_minutes'], 20)
+
 
 @override_settings(ROOT_URLCONF="sds_main.urls")
 class PortalStudentScheduledTestFlowTests(TestCase):
