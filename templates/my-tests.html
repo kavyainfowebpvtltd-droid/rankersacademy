@@ -106,13 +106,118 @@
     }
 
     .my-tests-page .leaderboard-rank {
-      width: 1%;
+      width: 6rem;
       white-space: nowrap;
-      padding-right: 0.25rem !important;
+      padding-right: 0.5rem !important;
+      font-weight: 700;
     }
 
     .my-tests-page .leaderboard-student {
-      padding-left: 0.15rem !important;
+      padding-left: 0.35rem !important;
+      min-width: 16rem;
+    }
+
+    .my-tests-page .leaderboard-table {
+      table-layout: fixed;
+      margin-bottom: 0;
+    }
+
+    .my-tests-page .leaderboard-table thead th:first-child {
+      width: 6rem;
+      text-align: center;
+    }
+
+    .my-tests-page .leaderboard-table thead th:nth-child(2) {
+      text-align: left;
+    }
+
+    .my-tests-page .leaderboard-table thead th:last-child {
+      width: 8.5rem;
+      text-align: right;
+    }
+
+    .my-tests-page .leaderboard-table tbody td {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+
+    .my-tests-page .leaderboard-table .leaderboard-rank {
+      text-align: center;
+    }
+
+    .my-tests-page .leaderboard-rank-text {
+      font-size: 1.05rem;
+    }
+
+    .my-tests-page .leaderboard-student-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      min-width: 0;
+    }
+
+    .my-tests-page .leaderboard-avatar {
+      width: 2.6rem;
+      height: 2.6rem;
+      flex: 0 0 2.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 999px;
+    }
+
+    .my-tests-page .leaderboard-student-copy {
+      min-width: 0;
+    }
+
+    .my-tests-page .leaderboard-name-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      line-height: 1.15;
+    }
+
+    .my-tests-page .leaderboard-name {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .my-tests-page .leaderboard-total-cell {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .my-tests-page .leaderboard-total {
+      font-size: 1.15rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 767.98px) {
+      .my-tests-page .leaderboard-table {
+        table-layout: auto;
+      }
+
+      .my-tests-page .leaderboard-table thead th:first-child {
+        width: 4.5rem;
+      }
+
+      .my-tests-page .leaderboard-table thead th:last-child {
+        width: 6rem;
+      }
+
+      .my-tests-page .leaderboard-table tbody td {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+      }
+
+      .my-tests-page .leaderboard-student {
+        min-width: 12rem;
+      }
     }
 
     .my-tests-page .reward-icon {
@@ -627,7 +732,7 @@
           <span id="leaderboardCountBadge" class="badge rounded-pill text-bg-info"></span>
         </div>
         <div class="table-responsive">
-          <table class="table table-sm table-dark table-striped table-hover align-middle">
+          <table class="table table-sm table-dark table-striped table-hover align-middle leaderboard-table">
             <thead>
               <tr>
                 <th>#</th>
@@ -739,10 +844,10 @@
         <span class="leaderboard-rank-medal"></span>
       </td>
       <td class="leaderboard-student">
-        <div class="d-flex align-items-center gap-2">
+        <div class="leaderboard-student-wrap">
           <div class="leaderboard-avatar"></div>
-          <div class="overflow-hidden">
-            <div class="fw-semibold d-flex align-items-center gap-2">
+          <div class="overflow-hidden leaderboard-student-copy">
+            <div class="fw-semibold leaderboard-name-row">
               <span class="leaderboard-name"></span>
               <span class="leaderboard-you"></span>
             </div>
@@ -750,7 +855,7 @@
           </div>
         </div>
       </td>
-      <td><b class="leaderboard-total"></b></td>
+      <td class="leaderboard-total-cell"><b class="leaderboard-total"></b></td>
     </tr>
   </template>
 
