@@ -141,54 +141,72 @@ body {
 }
 
 html[data-admin-theme="dark"] .reports-page .report-title-bar {
-  background: #ffffff !important;
-  border: 1px solid #ffffff !important;
-  box-shadow: none !important;
-  color: #000000 !important;
+  background:
+    linear-gradient(135deg, rgba(255, 138, 31, 0.1), rgba(139, 53, 255, 0.14)),
+    var(--student-card, #0b0c12) !important;
+  border: 1px solid var(--student-border, #262a35) !important;
+  box-shadow: var(--student-shadow-soft, 0 14px 34px rgba(0, 0, 0, 0.34)) !important;
+  color: var(--student-text, #f4f5fb) !important;
 }
 
 html[data-admin-theme="dark"] .reports-page .report-title-bar h4 {
-  color: #000000 !important;
+  color: var(--student-heading, #f8f9ff) !important;
 }
 
 html[data-admin-theme="dark"] .reports-page .report-title-bar .btn-outline-dark {
-  background: #000000 !important;
-  border-color: #000000 !important;
-  color: #ffffff !important;
+  background: rgba(15, 17, 24, 0.88) !important;
+  border-color: var(--student-border-strong, #343846) !important;
+  color: var(--student-heading, #f8f9ff) !important;
+  box-shadow: none !important;
 }
 
 html[data-admin-theme="dark"] .reports-page .report-title-bar .btn-outline-dark:hover,
 html[data-admin-theme="dark"] .reports-page .report-title-bar .btn-outline-dark:focus {
-  background: #ffffff !important;
-  border-color: #000000 !important;
-  color: #000000 !important;
-}
-
-html[data-admin-theme="dark"] .reports-page > .row .card:not(.bg-primary),
-html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) {
-  background: #000000 !important;
-  border: 1px solid #ffffff !important;
+  background: var(--student-g1, linear-gradient(90deg, #ff8a1f 0%, #8b35ff 100%)) !important;
+  border-color: transparent !important;
   color: #ffffff !important;
-  box-shadow: none !important;
 }
 
-html[data-admin-theme="dark"] .reports-page > .row .card:not(.bg-primary) h3,
-html[data-admin-theme="dark"] .reports-page > .row .card:not(.bg-primary) .fw-bold,
+html[data-admin-theme="dark"] .reports-page > .row .card,
+html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) {
+  background: var(--student-card, #0b0c12) !important;
+  border: 1px solid var(--student-border, #262a35) !important;
+  color: var(--student-text, #f4f5fb) !important;
+  box-shadow: var(--student-shadow-soft, 0 14px 34px rgba(0, 0, 0, 0.34)) !important;
+}
+
+html[data-admin-theme="dark"] .reports-page > .row .card h3,
+html[data-admin-theme="dark"] .reports-page > .row .card .fw-bold,
 html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) h6,
 html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) .fw-bold,
 html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) .small {
-  color: #ffffff !important;
+  color: var(--student-heading, #f8f9ff) !important;
+}
+
+html[data-admin-theme="dark"] .reports-page .text-muted,
+html[data-admin-theme="dark"] .reports-page small,
+html[data-admin-theme="dark"] .reports-page .chart-container + .small,
+html[data-admin-theme="dark"] .reports-page .chart-container + .small div {
+  color: var(--student-muted, #aeb4c2) !important;
 }
 
 html[data-admin-theme="dark"] .reports-page .chart-container {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid var(--student-border, #262a35);
   border-radius: 12px;
   padding: 12px;
 }
 
-html[data-admin-theme="dark"] .reports-page .chart-container + .small,
-html[data-admin-theme="dark"] .reports-page .chart-container + .small div {
-  color: #ffffff !important;
+html[data-admin-theme="dark"] .reports-page .bg-blue {
+  background-color: var(--student-orange, #ff8a1f) !important;
+}
+
+html[data-admin-theme="dark"] .reports-page .bg-teal {
+  background-color: var(--student-purple, #8b35ff) !important;
+}
+
+html[data-admin-theme="dark"] .reports-page .bg-green {
+  background-color: var(--student-success, #33d6a6) !important;
 }
 
 @media (max-width: 768px) {

@@ -44,6 +44,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const BAR_PERCENTAGE = 0.42;
   const CATEGORY_PERCENTAGE = 0.62;
+  const isDarkTheme = () =>
+    document.documentElement.getAttribute("data-admin-theme") !== "light";
+
+  function getChartTheme() {
+    if (isDarkTheme()) {
+      return {
+        gridColor: "rgba(255, 255, 255, 0.09)",
+        tickColor: "#aeb4c2",
+        tooltipBackground: "rgba(11, 12, 18, 0.96)",
+        tooltipBorder: "rgba(255, 255, 255, 0.12)",
+        palette: ["#ff8a1f", "#8b35ff", "#33d6a6"],
+      };
+    }
+
+    return {
+      gridColor: "#e5e7eb",
+      tickColor: "#475569",
+      tooltipBackground: "rgba(17, 24, 39, 0.92)",
+      tooltipBorder: "rgba(17, 24, 39, 0.08)",
+      palette: ["#3b82f6", "#14b8a6", "#10b981"],
+    };
+  }
+
+  function applyChartTheme(chart) {
+    const theme = getChartTheme();
+
+    chart.data.datasets.forEach((dataset, index) => {
+      dataset.backgroundColor = theme.palette[index] || dataset.backgroundColor;
+    });
+
+    chart.options.plugins.tooltip.backgroundColor = theme.tooltipBackground;
+    chart.options.plugins.tooltip.borderColor = theme.tooltipBorder;
+    chart.options.scales.y.grid.color = theme.gridColor;
+    chart.options.scales.y.ticks.color = theme.tickColor;
+    chart.options.scales.x.ticks.color = theme.tickColor;
+    chart.update("none");
+  }
+
+  const chartTheme = getChartTheme();
 
   const barData = {
     labels: labels,
@@ -51,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
       {
         label: "Current Progress",
         data: current,
-        backgroundColor: "#3b82f6",
+        backgroundColor: chartTheme.palette[0],
         borderRadius: 4,
         barPercentage: BAR_PERCENTAGE,
         categoryPercentage: CATEGORY_PERCENTAGE,
@@ -59,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
       {
         label: "Latest Score",
         data: latest,
-        backgroundColor: "#14b8a6",
+        backgroundColor: chartTheme.palette[1],
         borderRadius: 4,
         barPercentage: BAR_PERCENTAGE,
         categoryPercentage: CATEGORY_PERCENTAGE,
@@ -67,7 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
       {
         label: "Remaining",
         data: remaining,
-        backgroundColor: "#10b981",
+        backgroundColor: chartTheme.palette[2],
         borderRadius: 4,
         barPercentage: BAR_PERCENTAGE,
         categoryPercentage: CATEGORY_PERCENTAGE,
@@ -84,7 +123,11 @@ document.addEventListener("DOMContentLoaded", function () {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "rgba(17, 24, 39, 0.9)",
+          backgroundColor: chartTheme.tooltipBackground,
+          borderColor: chartTheme.tooltipBorder,
+          borderWidth: 1,
+          bodyColor: "#ffffff",
+          titleColor: "#ffffff",
           padding: 10,
           cornerRadius: 8,
           usePointStyle: true,
@@ -94,12 +137,18 @@ document.addEventListener("DOMContentLoaded", function () {
         y: {
           beginAtZero: true,
           max: 100,
-          grid: { borderDash: [4, 4], color: "#f3f4f6" },
-          ticks: { font: { size: 11, family: "Inter" } },
+          grid: { borderDash: [4, 4], color: chartTheme.gridColor },
+          ticks: {
+            color: chartTheme.tickColor,
+            font: { size: 11, family: "Inter" },
+          },
         },
         x: {
           grid: { display: false },
-          ticks: { font: { size: 11, family: "Inter" } },
+          ticks: {
+            color: chartTheme.tickColor,
+            font: { size: 11, family: "Inter" },
+          },
         },
       },
       interaction: {
@@ -107,6 +156,17 @@ document.addEventListener("DOMContentLoaded", function () {
         intersect: false,
       },
     },
+  });
+
+  const observer = new MutationObserver(() => {
+    if (canvas._chartInstance) {
+      applyChartTheme(canvas._chartInstance);
+    }
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-admin-theme"],
   });
 });
 
