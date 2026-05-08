@@ -3777,6 +3777,49 @@ def _get_test_total_marks(test):
     return total_marks
 
 
+def _build_zero_section_breakdown(test):
+    breakdown = []
+
+    for section in test.sections.all().order_by("order", "id"):
+        questions = list(section.questions.all())
+        total_marks = sum(int(question.pos_marks or 0) for question in questions)
+        if total_marks <= 0:
+            total_marks = len(questions)
+
+        breakdown.append(
+            {
+                "name": section.name,
+                "shortLabel": _short_section_label(section.name),
+                "score": 0,
+                "total": total_marks,
+                "percentage": 0,
+                "meta": section.instructions or "Section score",
+            }
+        )
+
+    return breakdown
+
+
+def _get_assigned_portal_students_for_test(test):
+    student_queryset = Student.objects.select_related("user")
+    test_batch = str(getattr(test, "batch", "") or "").strip()
+    if test_batch:
+        student_queryset = student_queryset.filter(batch__iexact=test_batch)
+
+    assigned_students = [
+        portal_student
+        for portal_student in student_queryset
+        if scholarship_test_service.is_test_assigned_to_portal_student(test, portal_student)
+    ]
+    assigned_students.sort(
+        key=lambda portal_student: (
+            (getattr(portal_student, "student_name", "") or "").casefold(),
+            getattr(portal_student, "id", 0),
+        )
+    )
+    return assigned_students
+
+
 def _latest_completed_attempts_for_test(test):
     attempts = (
         ScholarshipTestAttempt.objects
@@ -3793,44 +3836,66 @@ def _latest_completed_attempts_for_test(test):
     return list(latest_by_student.values())
 
 
-def _build_attempt_leaderboard(test, current_attempt_id=None):
-    leaderboard_attempts = sorted(
-        _latest_completed_attempts_for_test(test),
-        key=lambda attempt: (
-            -int(attempt.score or 0),
-            attempt.test_completed_at or attempt.test_started_at or timezone.now(),
-            attempt.test_started_at or attempt.test_completed_at or timezone.now(),
-            attempt.id,
-        ),
-    )
-
+def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_student=None):
+    assigned_students = _get_assigned_portal_students_for_test(test)
+    latest_attempts = {
+        attempt.portal_student_id: attempt
+        for attempt in _latest_completed_attempts_for_test(test)
+        if getattr(attempt, "portal_student_id", None)
+    }
+    total_marks = _get_test_total_marks(test)
+    zero_section_breakdown = _build_zero_section_breakdown(test)
     entries = []
-    current_entry = None
 
-    for rank, attempt in enumerate(leaderboard_attempts, start=1):
-        portal_student = getattr(attempt, "portal_student", None)
-        section_scores = _build_attempt_section_breakdown(attempt)
+    for portal_student in assigned_students:
+        attempt = latest_attempts.get(portal_student.id)
+        section_scores = (
+            _build_attempt_section_breakdown(attempt)
+            if attempt
+            else [dict(item) for item in zero_section_breakdown]
+        )
         entry = {
-            "rank": rank,
-            "attemptId": attempt.id,
-            "studentId": f"portal-{portal_student.id}" if portal_student else f"scholar-{attempt.student_id}",
-            "studentName": (
-                portal_student.student_name
-                if portal_student and portal_student.student_name
-                else attempt.student.name
-            ),
-            "studentRef": (
-                portal_student.username
-                if portal_student and portal_student.username
-                else attempt.student.phone_number
-            ),
+            "attemptId": attempt.id if attempt else None,
+            "studentId": f"portal-{portal_student.id}",
+            "studentName": portal_student.student_name or portal_student.user.username,
+            "studentRef": portal_student.username or portal_student.contact,
             "profilePhotoUrl": _student_photo_url(portal_student),
-            "score": int(attempt.score or 0),
-            "totalMarks": int(attempt.total_marks or 0),
+            "score": int(attempt.score or 0) if attempt else 0,
+            "totalMarks": int(attempt.total_marks or 0) if attempt and int(attempt.total_marks or 0) > 0 else total_marks,
             "sectionScores": section_scores,
-            "isCurrentStudent": bool(current_attempt_id and attempt.id == current_attempt_id),
+            "isCurrentStudent": bool(
+                (current_attempt_id and attempt and attempt.id == current_attempt_id)
+                or (
+                    current_portal_student
+                    and portal_student.id == current_portal_student.id
+                )
+            ),
+            "_attempted": bool(attempt),
+            "_completed_at": (
+                attempt.test_completed_at or attempt.test_started_at
+                if attempt
+                else None
+            ),
+            "_sort_name": (portal_student.student_name or portal_student.user.username or "").casefold(),
         }
         entries.append(entry)
+
+    entries.sort(
+        key=lambda entry: (
+            -int(entry["score"] or 0),
+            0 if entry["_attempted"] else 1,
+            entry["_completed_at"] or timezone.now(),
+            entry["_sort_name"],
+            entry["studentId"],
+        )
+    )
+
+    current_entry = None
+    for rank, entry in enumerate(entries, start=1):
+        entry["rank"] = rank
+        entry.pop("_attempted", None)
+        entry.pop("_completed_at", None)
+        entry.pop("_sort_name", None)
         if entry["isCurrentStudent"]:
             current_entry = entry
 
@@ -4040,9 +4105,17 @@ def _build_my_tests_payload(student):
             continue
 
         attempt = latest_attempt_by_test.get(published_test["external_id"])
-        leaderboard = _build_attempt_leaderboard(test, attempt.id if attempt else None)
+        leaderboard = _build_attempt_leaderboard(
+            test,
+            attempt.id if attempt else None,
+            student,
+        )
         current_entry = leaderboard["currentEntry"] or {}
-        section_breakdown = _build_attempt_section_breakdown(attempt) if attempt else []
+        section_breakdown = (
+            _build_attempt_section_breakdown(attempt)
+            if attempt
+            else _build_zero_section_breakdown(test)
+        )
         weak_sections = (
             [
                 item for item in section_breakdown
