@@ -186,6 +186,10 @@ def _build_test_display_context(selected_test):
         if selected_test
         else TEST_DURATION_MINUTES
     )
+    start_at = test_service.get_test_scheduled_start_at(selected_test)
+    _start_window_start, _start_window_end, start_button_opens_at = (
+        test_service.get_test_start_window(selected_test)
+    )
 
     if duration_minutes >= 60:
         hours = duration_minutes // 60
@@ -209,6 +213,11 @@ def _build_test_display_context(selected_test):
         'is_rtse_selected_test': is_rtse_selected_test,
         'uses_landing_page': _uses_landing_page(selected_test),
         'selected_test_reference_prefix': _get_reference_prefix(selected_test),
+        'selected_test_scheduled_start_at': _serialize_scheduled_start_at(start_at),
+        'selected_test_start_button_opens_at': _serialize_scheduled_start_at(start_button_opens_at),
+        'selected_test_server_now': _serialize_scheduled_start_at(
+            timezone.localtime(timezone.now(), test_service.ACADEMY_TIMEZONE)
+        ),
     }
 
 
@@ -669,11 +678,18 @@ def scholarship_dashboard(request):
         return redirect('scholarship_test:scholarship_success', attempt_id=completed_attempt.id)
 
     can_attempt, message = test_service.can_attempt_test(student, selected_test)
+    start_state = test_service.get_test_start_state(selected_test)
+    can_start_test = can_attempt and start_state["can_start"]
+    start_button_message = (
+        message if not can_attempt else start_state["message"]
+    )
 
     context = {
         'student': student,
         'can_attempt': can_attempt,
+        'can_start_test': can_start_test,
         'message': message,
+        'start_button_message': start_button_message,
         'completed': completed_attempt is not None,
         'attempt': completed_attempt,
         'active_attempt': active_attempt,
@@ -726,6 +742,14 @@ def scholarship_start_test(request):
         return redirect('scholarship_test:scholarship_success', attempt_id=completed_attempt.id)
 
     active_test = selected_test or test_service.get_active_test()
+    start_state = test_service.get_test_start_state(active_test)
+    if not start_state["can_start"]:
+        messages.error(
+            request,
+            start_state["message"] or "This test cannot be started right now.",
+        )
+        return redirect('scholarship_test:scholarship_dashboard')
+
     active_runtime_questions = test_service.get_runtime_questions_for_test(active_test)
     if active_test and not active_runtime_questions:
         messages.error(request, "No questions are configured for the selected scholarship test.")

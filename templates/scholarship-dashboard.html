@@ -30,6 +30,12 @@
           text-align: center !important;
         }
       }
+
+      .cta-button-sch.is-disabled {
+        opacity: 0.65;
+        pointer-events: none;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -157,10 +163,18 @@
                 Resume {{ selected_test_name }}
               </a>
               {% elif can_attempt %}
-              <p>Please ensure you have a stable internet connection.</p>
+              <p id="startButtonMessage">
+                {% if can_start_test %}
+                Please ensure you have a stable internet connection.
+                {% else %}
+                {{ start_button_message|default:"The Start button activates 1 minute before the scheduled start time." }}
+                {% endif %}
+              </p>
               <a
-                href="{% url 'scholarship_test:scholarship_start_test' %}"
-                class="cta-button-sch"
+                {% if can_start_test %}href="{% url 'scholarship_test:scholarship_start_test' %}"{% endif %}
+                class="cta-button-sch{% if not can_start_test %} is-disabled{% endif %}"
+                id="startTestButton"
+                {% if not can_start_test %}aria-disabled="true"{% endif %}
               >
                 Start {{ selected_test_name }}
               </a>
@@ -173,12 +187,6 @@
               </a>
               {% else %}
               <p>{{ message|default:"Please ensure you have a stable internet connection." }}</p>
-              <a
-                href="{% url 'scholarship_test:scholarship_start_test' %}"
-                class="cta-button-sch"
-              >
-                Start {{ selected_test_name }}
-              </a>
               {% endif %}
             </div>
           </div>
@@ -208,5 +216,76 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% if not is_guest and not active_attempt and not completed and can_attempt %}
+    <script>
+      (() => {
+        const startButton = document.getElementById("startTestButton");
+        const message = document.getElementById("startButtonMessage");
+        const startUrl = "{% url 'scholarship_test:scholarship_start_test' %}";
+        const startOpensAtRaw = "{{ selected_test_start_button_opens_at|default:''|escapejs }}";
+        const scheduledStartAtRaw = "{{ selected_test_scheduled_start_at|default:''|escapejs }}";
+        const serverNowRaw = "{{ selected_test_server_now|default:''|escapejs }}";
+        const bootstrapClientMs = Date.now();
+
+        function parseIso(value) {
+          if (!value) return null;
+          const date = new Date(value);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        const serverNow = parseIso(serverNowRaw);
+        const scheduledStartAt = parseIso(scheduledStartAtRaw);
+        const startOpensAt = parseIso(startOpensAtRaw);
+
+        function synchronizedNow() {
+          if (!serverNow) {
+            return new Date();
+          }
+          return new Date(serverNow.getTime() + (Date.now() - bootstrapClientMs));
+        }
+
+        function formatCountdown(target, now) {
+          const diffMs = Math.max(0, target.getTime() - now.getTime());
+          const totalSeconds = Math.ceil(diffMs / 1000);
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          return `${minutes}:${String(seconds).padStart(2, "0")}`;
+        }
+
+        function activateStartButton() {
+          if (!startButton) return;
+          startButton.href = startUrl;
+          startButton.classList.remove("is-disabled");
+          startButton.removeAttribute("aria-disabled");
+          if (message) {
+            message.textContent = "Please ensure you have a stable internet connection.";
+          }
+        }
+
+        function refreshStartButton() {
+          if (!startButton || !startOpensAt) return;
+
+          const now = synchronizedNow();
+          if (now >= startOpensAt) {
+            activateStartButton();
+            return;
+          }
+
+          if (message) {
+            const countdown = formatCountdown(startOpensAt, now);
+            const startTimeLabel = scheduledStartAt
+              ? scheduledStartAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "";
+            message.textContent = startTimeLabel
+              ? `The Start button activates 1 minute before the scheduled start time at ${startTimeLabel}. Countdown: ${countdown}`
+              : `The Start button activates 1 minute before the scheduled start time. Countdown: ${countdown}`;
+          }
+        }
+
+        refreshStartButton();
+        setInterval(refreshStartButton, 1000);
+      })();
+    </script>
+    {% endif %}
   </body>
 </html>
