@@ -1052,7 +1052,10 @@ class ScholarshipCreateTestApiTests(TestCase):
         self.assertIsNotNone(created_test.scheduled_start_at)
         self.assertEqual(created_test.batch, 'Star 01')
         self.assertEqual(created_test.stream, 'NEET')
-        local_start = timezone.localtime(created_test.scheduled_start_at)
+        local_start = timezone.localtime(
+            created_test.scheduled_start_at,
+            test_service.ACADEMY_TIMEZONE,
+        )
         self.assertEqual(local_start.date().isoformat(), '2026-05-20')
         self.assertEqual(local_start.strftime('%H:%M'), '09:15')
 
@@ -1097,7 +1100,10 @@ class ScholarshipCreateTestApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         test.refresh_from_db()
         self.assertIsNotNone(test.scheduled_start_at)
-        local_start = timezone.localtime(test.scheduled_start_at)
+        local_start = timezone.localtime(
+            test.scheduled_start_at,
+            test_service.ACADEMY_TIMEZONE,
+        )
         self.assertEqual(local_start.date().isoformat(), '2026-05-25')
         self.assertEqual(local_start.strftime('%H:%M'), '08:45')
         self.assertEqual(test.date.isoformat(), '2026-05-25')

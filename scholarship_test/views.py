@@ -1254,6 +1254,11 @@ def api_update_test(request, test_id):
                 data.get('test_start_time'),
                 data.get('scheduled_start_at'),
             )
+            if test.scheduled_start_at and 'test_date' not in data:
+                test.date = timezone.localtime(
+                    test.scheduled_start_at,
+                    test_service.ACADEMY_TIMEZONE,
+                ).date()
         except ValueError:
             return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
     
@@ -1554,13 +1559,13 @@ def _format_test_duration(hours, minutes):
 def _serialize_scheduled_start_at(value):
     if not value:
         return None
-    return timezone.localtime(value).isoformat()
+    return timezone.localtime(value, test_service.ACADEMY_TIMEZONE).isoformat()
 
 
 def _serialize_test_start_time(value):
     if not value:
         return None
-    return timezone.localtime(value).strftime("%H:%M")
+    return timezone.localtime(value, test_service.ACADEMY_TIMEZONE).strftime("%H:%M")
 
 
 def _parse_test_date(raw_value):
@@ -1587,7 +1592,7 @@ def _parse_scheduled_start_at(raw_value):
             raise ValueError("Invalid scheduled start time") from exc
 
     if timezone.is_naive(parsed):
-        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+        parsed = timezone.make_aware(parsed, test_service.ACADEMY_TIMEZONE)
 
     return parsed
 
@@ -1600,7 +1605,7 @@ def _parse_test_start_datetime(test_date, raw_time, raw_datetime):
             raise ValueError("Invalid scheduled start time") from exc
 
         combined = datetime.combine(test_date, parsed_time)
-        return timezone.make_aware(combined, timezone.get_current_timezone())
+        return timezone.make_aware(combined, test_service.ACADEMY_TIMEZONE)
 
     return _parse_scheduled_start_at(raw_datetime)
 
@@ -1754,7 +1759,10 @@ def api_save_test_details(request, test_id):
         except ValueError:
             return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
         if test.scheduled_start_at:
-            test.date = timezone.localtime(test.scheduled_start_at).date()
+            test.date = timezone.localtime(
+                test.scheduled_start_at,
+                test_service.ACADEMY_TIMEZONE,
+            ).date()
 
     test.save()
     
