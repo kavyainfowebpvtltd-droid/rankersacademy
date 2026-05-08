@@ -140,6 +140,57 @@ body {
   margin-bottom: 8px;
 }
 
+html[data-admin-theme="dark"] .reports-page .report-title-bar {
+  background: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: none !important;
+  color: #000000 !important;
+}
+
+html[data-admin-theme="dark"] .reports-page .report-title-bar h4 {
+  color: #000000 !important;
+}
+
+html[data-admin-theme="dark"] .reports-page .report-title-bar .btn-outline-dark {
+  background: #000000 !important;
+  border-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html[data-admin-theme="dark"] .reports-page .report-title-bar .btn-outline-dark:hover,
+html[data-admin-theme="dark"] .reports-page .report-title-bar .btn-outline-dark:focus {
+  background: #ffffff !important;
+  border-color: #000000 !important;
+  color: #000000 !important;
+}
+
+html[data-admin-theme="dark"] .reports-page > .row .card:not(.bg-primary),
+html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) {
+  background: #000000 !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="dark"] .reports-page > .row .card:not(.bg-primary) h3,
+html[data-admin-theme="dark"] .reports-page > .row .card:not(.bg-primary) .fw-bold,
+html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) h6,
+html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) .fw-bold,
+html[data-admin-theme="dark"] .reports-page > .card:not(.personalized-recommendations) .small {
+  color: #ffffff !important;
+}
+
+html[data-admin-theme="dark"] .reports-page .chart-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+html[data-admin-theme="dark"] .reports-page .chart-container + .small,
+html[data-admin-theme="dark"] .reports-page .chart-container + .small div {
+  color: #ffffff !important;
+}
+
 @media (max-width: 768px) {
   .width-adjustment {
     width: 100vw;

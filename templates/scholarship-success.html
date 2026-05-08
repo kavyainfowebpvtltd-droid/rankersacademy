@@ -15,7 +15,9 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
       rel="stylesheet"
     />
+    <script src="{% static 'js/admin-theme.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/scholarship-success.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
     <style>
       @media (max-width: 1024px) {
         .tablet-footer-stack {
@@ -28,7 +30,7 @@
     </style>
   </head>
 
-  <body>
+  <body class="scholarship-success-page">
     <nav
       class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top"
     >
@@ -52,6 +54,16 @@
             </div>
           </div>
           <div class="avatar-circle me-3">{{ student.name|slice:":1" }}</div>
+          <button
+            type="button"
+            class="admin-theme-toggle me-2"
+            id="adminThemeToggle"
+            aria-label="Toggle theme"
+            aria-pressed="true"
+          >
+            <i class="bi bi-moon-stars"></i>
+            <span class="admin-theme-toggle-label d-none d-sm-inline">Dark</span>
+          </button>
           <a
             href="{% url 'login' %}"
             class="btn btn-light btn-sm rounded-circle"
