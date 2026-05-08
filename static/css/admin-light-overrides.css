@@ -42,15 +42,13 @@ html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-icon {
   min-width: 70px;
   height: 60px;
   padding: 0;
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-icon img {
   height: 60px !important;
   filter: none !important;
-}
-
-html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-logo-caption {
-  display: none !important;
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) .navbar h5,
