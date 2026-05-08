@@ -1383,6 +1383,83 @@ class PortalStudentScheduledTestFlowTests(TestCase):
         self.assertEqual(payload["upcomingTest"]["name"], "Star 01 JEE Upcoming")
         self.assertTrue(payload["upcomingTest"].get("launchWindowOpensAt"))
 
+    def test_my_tests_payload_includes_completed_assigned_tests_without_student_attempt(self):
+        now = timezone.now()
+        previous_test = self.create_runtime_test(
+            name="Star 01 JEE Previous",
+            batch="Star 01",
+            stream="JEE",
+            scheduled_start_at=now - timedelta(hours=5),
+        )
+        recent_test = self.create_runtime_test(
+            name="Star 01 JEE Recent",
+            batch="Star 01",
+            stream="JEE",
+            scheduled_start_at=now - timedelta(hours=3),
+        )
+
+        peer_user = User.objects.create_user(
+            username="student-star01-peer",
+            email="student-star01-peer@example.com",
+            password="StudentPass@2026",
+        )
+        peer_portal_student = Student.objects.create(
+            user=peer_user,
+            student_name="Peer Student",
+            username="student-star01-peer",
+            contact="9876500002",
+            email="student-star01-peer@example.com",
+            school="Rankers School",
+            stream="JEE",
+            board="CBSE",
+            grade="11th",
+            batch="Star 01",
+            gender="Male",
+        )
+        peer_scholarship_student = ScholarshipStudent.objects.create(
+            name=peer_portal_student.student_name,
+            phone_number=peer_portal_student.contact,
+            grade=peer_portal_student.grade,
+            board=peer_portal_student.board,
+            otp_verified=True,
+        )
+
+        ScholarshipTestAttempt.objects.create(
+            student=peer_scholarship_student,
+            portal_student=peer_portal_student,
+            test=previous_test,
+            status="completed",
+            score=1,
+            total_questions=1,
+            total_marks=2,
+            test_completed_at=now - timedelta(hours=4, minutes=20),
+        )
+        ScholarshipTestAttempt.objects.create(
+            student=peer_scholarship_student,
+            portal_student=peer_portal_student,
+            test=recent_test,
+            status="completed",
+            score=2,
+            total_questions=1,
+            total_marks=2,
+            test_completed_at=now - timedelta(hours=2, minutes=20),
+        )
+
+        payload = _build_my_tests_payload(self.portal_student)
+
+        self.assertEqual(
+            [item["external_id"] for item in payload["completedTests"]],
+            [previous_test.id, recent_test.id],
+        )
+        self.assertEqual([item["attempted"] for item in payload["completedTests"]], [False, False])
+        self.assertEqual([item["attemptId"] for item in payload["completedTests"]], [None, None])
+        self.assertEqual(payload["completedTests"][1]["totalStudents"], 1)
+        self.assertEqual(
+            payload["completedTests"][1]["leaderboard"][0]["studentId"],
+            f"portal-{peer_portal_student.id}",
+        )
+        self.assertEqual(payload["rewards"]["xp"], 0)
+
     def test_launch_view_redirects_logged_in_portal_student_to_dashboard_for_rtse_test(self):
         test = self.create_runtime_test(
             name="RTSE-2026 Scholarship Test",

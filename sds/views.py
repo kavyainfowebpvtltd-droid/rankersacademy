@@ -3769,13 +3769,39 @@ def _build_attempt_section_breakdown(attempt):
     return breakdown
 
 
-def _build_attempt_leaderboard(test, current_attempt_id=None):
-    leaderboard_attempts = (
+def _get_test_total_marks(test):
+    total_marks = 0
+    for question in scholarship_test_service.get_runtime_questions_for_test(test):
+        marks = int(getattr(question, "pos_marks", 0) or 0)
+        total_marks += marks if marks > 0 else 1
+    return total_marks
+
+
+def _latest_completed_attempts_for_test(test):
+    attempts = (
         ScholarshipTestAttempt.objects
         .filter(test=test, status__in=["completed", "expired"])
         .select_related("student", "portal_student")
         .prefetch_related("answers__question__section", "test__sections__questions")
-        .order_by("-score", "test_completed_at", "test_started_at", "id")
+        .order_by("test_completed_at", "test_started_at", "id")
+    )
+
+    latest_by_student = {}
+    for attempt in attempts:
+        latest_by_student[_analysis_attempt_student_id(attempt)] = attempt
+
+    return list(latest_by_student.values())
+
+
+def _build_attempt_leaderboard(test, current_attempt_id=None):
+    leaderboard_attempts = sorted(
+        _latest_completed_attempts_for_test(test),
+        key=lambda attempt: (
+            -int(attempt.score or 0),
+            attempt.test_completed_at or attempt.test_started_at or timezone.now(),
+            attempt.test_started_at or attempt.test_completed_at or timezone.now(),
+            attempt.id,
+        ),
     )
 
     entries = []
@@ -3944,6 +3970,7 @@ def _build_my_tests_payload(student):
     now = timezone.localtime()
     completed_published_tests = []
     upcoming_test = None
+    published_tests_by_id = {}
 
     published_tests = (
         ScholarshipTest.objects
@@ -3962,6 +3989,7 @@ def _build_my_tests_payload(student):
         if not start_at or not end_at or not launch_window_opens_at:
             continue
 
+        published_tests_by_id[test.id] = test
         item = {
             "id": f"SCH{test.id}",
             "external_id": test.id,
@@ -4007,24 +4035,37 @@ def _build_my_tests_payload(student):
     attempted_test_ids = set(latest_attempt_by_test.keys())
 
     for published_test in completed_published_tests:
-        attempt = latest_attempt_by_test.get(published_test["external_id"])
-        if not attempt:
+        test = published_tests_by_id.get(published_test["external_id"])
+        if not test:
             continue
 
-        leaderboard = _build_attempt_leaderboard(attempt.test, attempt.id)
+        attempt = latest_attempt_by_test.get(published_test["external_id"])
+        leaderboard = _build_attempt_leaderboard(test, attempt.id if attempt else None)
         current_entry = leaderboard["currentEntry"] or {}
-        section_breakdown = _build_attempt_section_breakdown(attempt)
-        weak_sections = [
-            item for item in section_breakdown if item.get("percentage", 0) < 60
-        ] or sorted(section_breakdown, key=lambda item: item.get("percentage", 0))[:3]
+        section_breakdown = _build_attempt_section_breakdown(attempt) if attempt else []
+        weak_sections = (
+            [
+                item for item in section_breakdown
+                if item.get("percentage", 0) < 60
+            ] or sorted(
+                section_breakdown,
+                key=lambda item: item.get("percentage", 0),
+            )[:3]
+        ) if attempt else []
+        total_marks = (
+            int(attempt.total_marks or 0)
+            if attempt and int(attempt.total_marks or 0) > 0
+            else _get_test_total_marks(test)
+        )
 
         student_completed_tests.append(
             {
                 **published_test,
                 "kind": "completed",
-                "attemptId": attempt.id,
-                "score": int(attempt.score or 0),
-                "totalMarks": int(attempt.total_marks or 0),
+                "attemptId": attempt.id if attempt else None,
+                "attempted": bool(attempt),
+                "score": int(attempt.score or 0) if attempt else 0,
+                "totalMarks": total_marks,
                 "rank": current_entry.get("rank"),
                 "totalStudents": len(leaderboard["entries"]),
                 "sectionBreakdown": section_breakdown,
@@ -4065,7 +4106,9 @@ def _build_my_tests_payload(student):
                 streak += 1
         test["testStreak"] = streak
 
-    rewards = _build_rewards_payload(student_completed_tests)
+    rewards = _build_rewards_payload(
+        [test for test in student_completed_tests if test.get("attempted")]
+    )
 
     return {
         "serverNow": now.isoformat(),
@@ -4152,19 +4195,7 @@ def _analysis_student_record_from_attempt(attempt):
 
 
 def _latest_analysis_attempts_for_test(test):
-    attempts = (
-        ScholarshipTestAttempt.objects
-        .filter(test=test, status__in=["completed", "expired"])
-        .select_related("student", "portal_student")
-        .prefetch_related("answers__question__section", "test__sections__questions")
-        .order_by("test_completed_at", "id")
-    )
-
-    latest_by_student = {}
-    for attempt in attempts:
-        latest_by_student[_analysis_attempt_student_id(attempt)] = attempt
-
-    return list(latest_by_student.values())
+    return _latest_completed_attempts_for_test(test)
 
 
 def _build_admin_test_analysis_payload():
