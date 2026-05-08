@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <title>Students Needing Attention</title>
     <link rel="icon" href="{% static 'img/logo.webp' %}" type="image/webp" />
+    <script src="{% static 'js/admin-theme.js' %}"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
@@ -14,6 +15,9 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}?v={% now 'U' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
     <style>
       @media (max-width: 1024px) {
         footer .container-fluid {
@@ -29,7 +33,7 @@
     </style>
   </head>
 
-  <body class="bg-light d-flex flex-column min-vh-100">
+  <body class="bg-light d-flex flex-column min-vh-100 attention-page">
     <!-- Header -->
     <!-- TOP HEADER -->
     <nav
@@ -57,7 +61,16 @@
               {{teacher_name}}
             </div>
           </div>
-          <div class="avatar-circle me-3">JS</div>
+          <button
+            type="button"
+            class="admin-theme-toggle me-2"
+            id="adminThemeToggle"
+            aria-label="Toggle admin theme"
+            aria-pressed="true"
+          >
+            <i class="bi bi-moon-stars"></i>
+            <span class="admin-theme-toggle-label d-none d-sm-inline">Dark</span>
+          </button>
           <a
             href="{% url 'logout' %}"
             class="btn btn-light btn-sm rounded-circle"
@@ -84,7 +97,7 @@
       <div class="row g-3">
         {% for c in cards %}
         <div class="col-lg-6 col-md-12">
-          <div class="bg-white border rounded-4 p-3 h-100">
+          <div class="attention-detail-card bg-white border rounded-4 p-3 h-100">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
                 <h6 class="fw-bold mb-0">{{ c.name }}</h6>
@@ -113,9 +126,9 @@
               <small class="text-muted">Weak Topics</small>
               <div class="d-flex flex-wrap gap-1 mt-1">
                 {% if c.weak_topics %} {% for wt in c.weak_topics %}
-                <span class="badge bg-light text-dark border">{{ wt }}</span>
+                <span class="attention-topic-badge badge bg-light text-dark border">{{ wt }}</span>
                 {% endfor %} {% else %}
-                <span class="badge bg-light text-dark border"
+                <span class="attention-topic-badge badge bg-light text-dark border"
                   >Low progress</span
                 >
                 {% endif %}
