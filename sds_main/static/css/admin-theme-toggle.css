@@ -18,6 +18,18 @@
   color: #ffffff;
 }
 
+.admin-header-logo-dark {
+  display: none;
+}
+
+html[data-admin-theme="dark"] .admin-header-logo-light {
+  display: none;
+}
+
+html[data-admin-theme="dark"] .admin-header-logo-dark {
+  display: block;
+}
+
 html[data-admin-theme="light"] body,
 html[data-admin-theme="light"] body.bg-light {
   --admin-active-tab-bg: #e6f4fb;
