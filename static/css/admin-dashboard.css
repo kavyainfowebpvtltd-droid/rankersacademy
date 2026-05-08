@@ -306,6 +306,73 @@ body.bg-light {
   color: #ffffff !important;
 }
 
+.attention-preview-card,
+.attention-detail-card {
+  background: #0f1118 !important;
+  border: 1px solid #2b2f3b !important;
+  color: #f4f5fb !important;
+  box-shadow: none !important;
+}
+
+.attention-preview-card .fw-semibold,
+.attention-preview-card .fw-bold,
+.attention-detail-card .fw-semibold,
+.attention-detail-card .fw-bold,
+.attention-detail-card h6 {
+  color: #ffffff !important;
+}
+
+.attention-preview-card small,
+.attention-detail-card small,
+.attention-detail-card .text-muted {
+  color: #aeb4c2 !important;
+}
+
+.attention-card-reason,
+.attention-card-link,
+.attention-detail-card .small.text-danger,
+.attention-detail-card .text-danger {
+  color: #ff6b6b !important;
+}
+
+.attention-card-link:hover {
+  color: #ff9a9a !important;
+}
+
+.attention-topic-badge {
+  background: #171a22 !important;
+  border-color: #353a48 !important;
+  color: #ffffff !important;
+}
+
+html[data-admin-theme="light"] .attention-preview-card,
+html[data-admin-theme="light"] .attention-detail-card {
+  background: #ffffff !important;
+  border-color: #e5eaf2 !important;
+  color: #111827 !important;
+  box-shadow: 0 16px 34px rgba(30, 64, 175, 0.08) !important;
+}
+
+html[data-admin-theme="light"] .attention-preview-card .fw-semibold,
+html[data-admin-theme="light"] .attention-preview-card .fw-bold,
+html[data-admin-theme="light"] .attention-detail-card .fw-semibold,
+html[data-admin-theme="light"] .attention-detail-card .fw-bold,
+html[data-admin-theme="light"] .attention-detail-card h6 {
+  color: #111827 !important;
+}
+
+html[data-admin-theme="light"] .attention-preview-card small,
+html[data-admin-theme="light"] .attention-detail-card small,
+html[data-admin-theme="light"] .attention-detail-card .text-muted {
+  color: #5f6b7a !important;
+}
+
+html[data-admin-theme="light"] .attention-topic-badge {
+  background: #f8fbff !important;
+  border-color: #dbe3ef !important;
+  color: #111827 !important;
+}
+
 .page-link {
   background-color: #0f1118 !important;
   border-color: #2b2f3b !important;

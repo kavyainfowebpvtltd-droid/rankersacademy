@@ -311,8 +311,7 @@
 
         {% for item in attention_students %}
         <div
-          class="rounded-3 p-3 mb-3"
-          style="background-color: #fff7ed; border: 1px solid #fed7aa"
+          class="attention-preview-card rounded-3 p-3 mb-3"
         >
           <div class="d-flex justify-content-between">
             <div>
@@ -323,12 +322,12 @@
               {{ item.score|floatformat:0 }}%
             </div>
           </div>
-          <div class="text-danger mt-2">
+          <div class="attention-card-reason mt-2">
             Low progress in {{ item.weak_hint }}
           </div>
           <a
             href="{% url 'student-needing-attention' %}"
-            class="text-danger small fw-semibold text-decoration-none"
+            class="attention-card-link small fw-semibold text-decoration-none"
           >
             View Details →
           </a>
