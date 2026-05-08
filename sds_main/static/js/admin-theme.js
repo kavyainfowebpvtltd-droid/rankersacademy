@@ -11,10 +11,15 @@
     if (doc.body) doc.body.setAttribute("data-admin-theme", theme);
   }
 
-  function syncDarkOverrideLinks(doc, theme) {
+  function syncThemeLinks(doc, theme) {
     if (!doc) return;
-    doc.querySelectorAll('link[href*="admin-dark-overrides.css"], link[data-theme-dark-link]').forEach((link) => {
-      link.disabled = theme === "light";
+    doc.querySelectorAll('link[href*="admin-dark-overrides.css"], link[data-theme-dark-link], link[href*="admin-light-overrides.css"], link[data-theme-light-link]').forEach((link) => {
+      const href = link.getAttribute("href") || "";
+      const isDark = link.hasAttribute("data-theme-dark-link") || href.includes("admin-dark-overrides.css");
+      const isLight = link.hasAttribute("data-theme-light-link") || href.includes("admin-light-overrides.css");
+
+      if (isDark) link.disabled = theme !== "dark";
+      if (isLight) link.disabled = theme !== "light";
     });
   }
 
@@ -39,7 +44,7 @@
 
   function applyToDocument(doc, theme) {
     setThemeAttribute(doc, theme);
-    syncDarkOverrideLinks(doc, theme);
+    syncThemeLinks(doc, theme);
     updateToggleButton(doc, theme);
   }
 
@@ -64,14 +69,15 @@
     applyTheme(theme);
   }
 
-  function watchForDarkOverrideLinks() {
+  function watchForThemeLinks() {
     const observer = new MutationObserver(() => applyTheme(getTheme()));
     observer.observe(document.head || document.documentElement, { childList: true, subtree: true });
   }
 
   const initialTheme = getTheme();
   setThemeAttribute(document, initialTheme);
-  watchForDarkOverrideLinks();
+  syncThemeLinks(document, initialTheme);
+  watchForThemeLinks();
 
   window.AdminTheme = {
     get: getTheme,

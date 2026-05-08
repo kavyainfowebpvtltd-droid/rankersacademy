@@ -3,7 +3,9 @@ import io
 from zipfile import ZipFile
 from unittest.mock import patch
 
+from django.contrib.auth.models import User
 from django.test import Client, TestCase
+from django.test.utils import override_settings
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
@@ -23,6 +25,8 @@ from scholarship_test.models import (
 )
 from scholarship_test.services import test_service
 from scholarship_test.services import word_import_service
+from sds.models import Student
+from sds.views import _build_my_tests_payload
 
 
 class ScholarshipRuntimeTestFlowTests(TestCase):
@@ -1031,6 +1035,8 @@ class ScholarshipCreateTestApiTests(TestCase):
                     'duration_minutes': 30,
                     'test_date': '2026-05-20',
                     'test_start_time': '09:15',
+                    'batch': 'Star 01',
+                    'stream': 'NEET',
                     'tags': 'mock, jee',
                 }
             ),
@@ -1044,6 +1050,234 @@ class ScholarshipCreateTestApiTests(TestCase):
         created_test = ScholarshipTest.objects.get(id=payload['test']['id'])
         self.assertEqual(created_test.date.isoformat(), '2026-05-20')
         self.assertIsNotNone(created_test.scheduled_start_at)
-        local_start = timezone.localtime(created_test.scheduled_start_at)
+        self.assertEqual(created_test.batch, 'Star 01')
+        self.assertEqual(created_test.stream, 'NEET')
+        local_start = timezone.localtime(
+            created_test.scheduled_start_at,
+            test_service.ACADEMY_TIMEZONE,
+        )
         self.assertEqual(local_start.date().isoformat(), '2026-05-20')
         self.assertEqual(local_start.strftime('%H:%M'), '09:15')
+
+    def test_get_test_details_returns_batch_and_stream(self):
+        test = ScholarshipTest.objects.create(
+            name='Scoped Test',
+            batch='Alpha',
+            stream='JEE',
+            duration_hours=1,
+            duration_minutes=0,
+        )
+        ScholarshipTestConfig.objects.create(test=test)
+
+        response = self.client.get(
+            reverse('scholarship_test:api_get_test_details', args=[test.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['test']['batch'], 'Alpha')
+        self.assertEqual(payload['test']['stream'], 'JEE')
+
+    def test_save_test_details_updates_scheduled_start_and_test_date(self):
+        test = ScholarshipTest.objects.create(
+            name='Timing Test',
+            date=timezone.datetime(2026, 5, 20).date(),
+            duration_hours=1,
+            duration_minutes=0,
+        )
+        ScholarshipTestConfig.objects.create(test=test)
+
+        response = self.client.post(
+            reverse('scholarship_test:api_save_test_details', args=[test.id]),
+            data=json.dumps(
+                {
+                    'scheduled_start_at': '2026-05-25T08:45',
+                }
+            ),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        test.refresh_from_db()
+        self.assertIsNotNone(test.scheduled_start_at)
+        local_start = timezone.localtime(
+            test.scheduled_start_at,
+            test_service.ACADEMY_TIMEZONE,
+        )
+        self.assertEqual(local_start.date().isoformat(), '2026-05-25')
+        self.assertEqual(local_start.strftime('%H:%M'), '08:45')
+        self.assertEqual(test.date.isoformat(), '2026-05-25')
+
+
+@override_settings(ROOT_URLCONF="sds_main.urls")
+class PortalStudentScheduledTestFlowTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="student-star01",
+            email="student-star01@example.com",
+            password="StudentPass@2026",
+        )
+        self.portal_student = Student.objects.create(
+            user=self.user,
+            student_name="Portal Student",
+            username="student-star01",
+            contact="9876500001",
+            email="student-star01@example.com",
+            school="Rankers School",
+            stream="JEE",
+            board="CBSE",
+            grade="11th",
+            batch="Star 01",
+            gender="Male",
+        )
+        self.scholarship_student = ScholarshipStudent.objects.create(
+            name=self.portal_student.student_name,
+            phone_number=self.portal_student.contact,
+            grade=self.portal_student.grade,
+            board=self.portal_student.board,
+            otp_verified=True,
+        )
+
+    def create_runtime_test(
+        self,
+        *,
+        name="Portal Scheduled Test",
+        batch="Star 01",
+        stream="JEE",
+        scheduled_start_at=None,
+    ):
+        if scheduled_start_at is None:
+            scheduled_start_at = timezone.now() - timedelta(minutes=5)
+
+        test = ScholarshipTest.objects.create(
+            name=name,
+            date=timezone.localtime(scheduled_start_at).date(),
+            status="published",
+            duration_hours=0,
+            duration_minutes=30,
+            batch=batch,
+            stream=stream,
+            scheduled_start_at=scheduled_start_at,
+        )
+        ScholarshipTestConfig.objects.create(test=test)
+        section = ScholarshipTestSection.objects.create(
+            test=test,
+            name="Mathematics",
+            order=0,
+        )
+        question = ScholarshipTestQuestion.objects.create(
+            section=section,
+            question_type="mcq",
+            question_text="2 + 2 = ?",
+            order=0,
+            pos_marks=2,
+            neg_marks=1,
+            neg_unattempted=0,
+        )
+        for index, option_text in enumerate(["3", "4", "5", "6"]):
+            ScholarshipTestOption.objects.create(
+                question=question,
+                option_text=option_text,
+                is_correct=index == 1,
+                order=index,
+            )
+        return test
+
+    def test_my_tests_payload_only_uses_tests_assigned_to_student_batch_and_stream(self):
+        now = timezone.now()
+        completed_match = self.create_runtime_test(
+            name="Star 01 JEE Completed",
+            batch="Star 01",
+            stream="JEE",
+            scheduled_start_at=now - timedelta(hours=2),
+        )
+        upcoming_match = self.create_runtime_test(
+            name="Star 01 JEE Upcoming",
+            batch="Star 01",
+            stream="JEE",
+            scheduled_start_at=now + timedelta(minutes=5),
+        )
+        self.create_runtime_test(
+            name="Star 02 NEET Upcoming",
+            batch="Star 02",
+            stream="NEET",
+            scheduled_start_at=now + timedelta(minutes=8),
+        )
+
+        ScholarshipTestAttempt.objects.create(
+            student=self.scholarship_student,
+            portal_student=self.portal_student,
+            test=completed_match,
+            status="completed",
+            score=2,
+            total_questions=1,
+            total_marks=2,
+            test_completed_at=now - timedelta(hours=1, minutes=20),
+        )
+
+        payload = _build_my_tests_payload(self.portal_student)
+
+        self.assertEqual(
+            [item["external_id"] for item in payload["completedTests"]],
+            [completed_match.id],
+        )
+        self.assertTrue(payload.get("serverNow"))
+        self.assertEqual(payload["upcomingTest"]["external_id"], upcoming_match.id)
+        self.assertEqual(payload["upcomingTest"]["name"], "Star 01 JEE Upcoming")
+        self.assertTrue(payload["upcomingTest"].get("launchWindowOpensAt"))
+
+    def test_launch_view_redirects_logged_in_portal_student_to_dashboard_for_rtse_test(self):
+        test = self.create_runtime_test(
+            name="RTSE-2026 Scholarship Test",
+            batch="Star 01",
+            stream="JEE",
+            scheduled_start_at=timezone.now() - timedelta(minutes=5),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("scholarship_test:scholarship_launch_test", args=[test.id])
+        )
+
+        self.assertRedirects(response, reverse("scholarship_test:scholarship_dashboard"))
+        self.assertEqual(
+            self.client.session.get("scholarship_selected_test_id"),
+            test.id,
+        )
+        self.assertTrue(self.client.session.get("scholarship_student_id"))
+
+    def test_launch_view_rejects_mismatched_portal_student_assignment(self):
+        test = self.create_runtime_test(
+            name="Weekly NEET Mock",
+            batch="Star 02",
+            stream="NEET",
+            scheduled_start_at=timezone.now() - timedelta(minutes=5),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("scholarship_test:scholarship_launch_test", args=[test.id])
+        )
+
+        self.assertRedirects(response, reverse("my_tests"))
+        messages = list(response.wsgi_request._messages)
+        self.assertTrue(
+            any("not assigned to your batch and stream" in str(message) for message in messages)
+        )
+
+    def test_start_test_blocks_manual_session_tampering_for_unassigned_test(self):
+        test = self.create_runtime_test(
+            name="Weekly NEET Mock",
+            batch="Star 02",
+            stream="NEET",
+            scheduled_start_at=timezone.now() - timedelta(minutes=5),
+        )
+        self.client.force_login(self.user)
+        session = self.client.session
+        session["scholarship_selected_test_id"] = test.id
+        session.save()
+
+        response = self.client.get(reverse("scholarship_test:scholarship_start_test"))
+
+        self.assertRedirects(response, reverse("my_tests"))

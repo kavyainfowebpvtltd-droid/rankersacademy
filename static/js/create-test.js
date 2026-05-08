@@ -1,6 +1,8 @@
 var defaultS = {
   testName: "Mathematics",
   duration: "1",
+  batch: "",
+  stream: "",
   tags: "SCHOLARSHIP TEST",
   scheduledStartAt: "",
   instructions: "",
@@ -223,6 +225,8 @@ function getTestDetailsPayload() {
     duration: duration.value,
     duration_hours: duration.hours,
     duration_minutes: duration.minutes,
+    batch: S.batch || "",
+    stream: S.stream || "",
     tags: S.tags,
     scheduled_start_at: S.scheduledStartAt || "",
     instructions: S.instructions,
@@ -259,6 +263,8 @@ function loadData() {
               data.test.duration_hours,
               data.test.duration_minutes,
             ),
+            batch: data.test.batch || "",
+            stream: data.test.stream || "",
             tags: data.test.tags,
             scheduledStartAt: data.test.scheduled_start_at || "",
             instructions: data.test.instructions,
@@ -558,6 +564,8 @@ function render() {
   document.getElementById("meta-duration").textContent = formatDurationLabel(
     S.duration,
   );
+  document.getElementById("meta-batch").textContent = S.batch || "Not set";
+  document.getElementById("meta-stream").textContent = S.stream || "Not set";
   document.getElementById("meta-tags").textContent = S.tags;
   document.getElementById("instructions-text").textContent = S.instructions
     ? "Instructions: " + S.instructions
@@ -1918,6 +1926,14 @@ window.openTestDetails = function () {
       '" min="0" max="59" step="1"></div>' +
       "</div>" +
       '<div class="form-row">' +
+      '<div class="form-group"><div class="form-label">Batch</div><input class="form-input" id="td-batch" value="' +
+      e(S.batch || "") +
+      '"></div>' +
+      '<div class="form-group"><div class="form-label">Stream</div><input class="form-input" id="td-stream" value="' +
+      e(S.stream || "") +
+      '"></div>' +
+      "</div>" +
+      '<div class="form-row">' +
       '<div class="form-group"><div class="form-label">Tags</div><input class="form-input" id="td-tags" value="' +
       e(S.tags) +
       '"></div>' +
@@ -1931,7 +1947,7 @@ window.openTestDetails = function () {
       e(S.instructions) +
       "</textarea></div>" +
       "</div>" +
-      '<div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTestDetails()">Save</button></div>',
+      '<div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="test-details-save-btn" onclick="saveTestDetails()">Save</button></div>',
   );
 };
 
@@ -1941,6 +1957,8 @@ window.saveTestDetails = function () {
 
   S.testName = document.getElementById("td-name").value.trim() || S.testName;
   S.duration = normalizeDurationValue(null, durationHours, durationMinutes);
+  S.batch = document.getElementById("td-batch").value.trim();
+  S.stream = document.getElementById("td-stream").value.trim();
   S.tags = document.getElementById("td-tags").value.trim();
   S.scheduledStartAt = document
     .getElementById("td-scheduled-start")
@@ -1951,6 +1969,72 @@ window.saveTestDetails = function () {
   render();
   showToast("✓ Test details updated");
   updateTopbarTitle();
+};
+
+function applySavedTestDetailsState(nextState, result) {
+  var returnedTest = (result && result.test) || {};
+  S.testName = returnedTest.name || nextState.testName;
+  S.duration = normalizeDurationValue(
+    returnedTest.duration,
+    returnedTest.duration_hours,
+    returnedTest.duration_minutes,
+  );
+  S.batch = returnedTest.batch != null ? returnedTest.batch : nextState.batch;
+  S.stream = returnedTest.stream != null ? returnedTest.stream : nextState.stream;
+  S.tags = returnedTest.tags != null ? returnedTest.tags : nextState.tags;
+  S.scheduledStartAt =
+    returnedTest.scheduled_start_at != null
+      ? returnedTest.scheduled_start_at
+      : nextState.scheduled_start_at;
+  S.instructions =
+    returnedTest.instructions != null
+      ? returnedTest.instructions
+      : nextState.instructions;
+  if (returnedTest.default_pos_marks != null) {
+    S.defaultPosMarks = Number(returnedTest.default_pos_marks);
+  }
+  if (returnedTest.default_neg_marks != null) {
+    S.defaultNegMarks = Number(returnedTest.default_neg_marks);
+  }
+}
+
+window.saveTestDetails = function () {
+  var durationHours = document.getElementById("td-dur-hours").value;
+  var durationMinutes = document.getElementById("td-dur-minutes").value;
+  var saveButton = document.getElementById("test-details-save-btn");
+  var nextState = {
+    testName: document.getElementById("td-name").value.trim() || S.testName,
+    duration: normalizeDurationValue(null, durationHours, durationMinutes),
+    batch: document.getElementById("td-batch").value.trim(),
+    stream: document.getElementById("td-stream").value.trim(),
+    tags: document.getElementById("td-tags").value.trim(),
+    scheduled_start_at: document
+      .getElementById("td-scheduled-start")
+      .value.trim(),
+    instructions: document.getElementById("td-instr").value.trim(),
+  };
+
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = "Saving...";
+  }
+
+  saveData(nextState)
+    .then(function (result) {
+      applySavedTestDetailsState(nextState, result);
+      closeModal();
+      render();
+      updateTopbarTitle();
+      showToast("✓ Test details updated");
+    })
+    .catch(function (err) {
+      console.error("Error saving test details:", err);
+      showToast("❌ " + err.message);
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = "Save";
+      }
+    });
 };
 
 window._legacySaveTest = function () {
@@ -1966,6 +2050,8 @@ window._legacySaveTest = function () {
       name: testName,
       duration_hours: duration.hours,
       duration_minutes: duration.minutes,
+      batch: S.batch || "",
+      stream: S.stream || "",
       tags: tags,
       scheduled_start_at: S.scheduledStartAt || "",
       status: "published",
@@ -2213,6 +2299,8 @@ window.saveTest = function () {
       name: S.testName || "Untitled Test",
       duration_hours: duration.hours,
       duration_minutes: duration.minutes,
+      batch: S.batch || "",
+      stream: S.stream || "",
       tags: S.tags || "",
       scheduled_start_at: S.scheduledStartAt || "",
       status: "published",

@@ -343,11 +343,42 @@
       min-height: 2.85rem;
       padding-inline: 1rem;
       border-radius: 999px;
+      white-space: normal;
+      text-align: left;
       transition:
         transform 0.18s ease,
         box-shadow 0.18s ease,
         background 0.18s ease,
         border-color 0.18s ease;
+    }
+
+    .my-tests-page .test-slot-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      line-height: 1.1;
+    }
+
+    .my-tests-page .test-slot-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .my-tests-page .test-slot-name {
+      font-weight: 700;
+    }
+
+    .my-tests-page .test-slot-meta {
+      font-size: 0.72rem;
+      opacity: 0.82;
+    }
+
+    .my-tests-page .test-slot-badge {
+      font-size: 0.62rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
     .my-tests-page .test-slot-btn:hover:not(:disabled),
@@ -541,7 +572,7 @@
     <div id="studentTabs" class="student-switch mb-3">
       <button type="button" class="student-switch-btn active" data-tab="home">Home</button>
       <button type="button" class="student-switch-btn" data-tab="analytics">Analytics</button>
-      <button type="button" class="student-switch-btn" data-tab="rewards">Rewards</button>
+      <button type="button" class="student-switch-btn" data-tab="rewards">Reward</button>
     </div>
 
     <div id="testSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
@@ -802,6 +833,8 @@
     const MY_TESTS_PAYLOAD = JSON.parse(
       document.getElementById("my-tests-payload").textContent,
     );
+    const CLIENT_BOOTSTRAP_MS = Date.now();
+    const SERVER_BOOTSTRAP_NOW = parseIsoDate(MY_TESTS_PAYLOAD.serverNow);
     const BASE_COMPLETED_TESTS = [];
     const CLUSTER_SCHEDULE = {};
     const BADGES = [
@@ -1079,6 +1112,51 @@
       return span;
     }
 
+    function parseIsoDate(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function getServerSynchronizedNow() {
+      if (!SERVER_BOOTSTRAP_NOW) {
+        return new Date();
+      }
+
+      return new Date(
+        SERVER_BOOTSTRAP_NOW.getTime() + (Date.now() - CLIENT_BOOTSTRAP_MS),
+      );
+    }
+
+    function getUpcomingSlotRuntimeState(slot) {
+      if (!slot || slot.kind !== "upcoming") {
+        return slot;
+      }
+
+      const startAt = parseIsoDate(slot.scheduledStartAt);
+      const endAt = parseIsoDate(slot.scheduledEndAt);
+      const launchWindowOpensAt =
+        parseIsoDate(slot.launchWindowOpensAt) ||
+        (startAt ? new Date(startAt.getTime() - 10 * 60 * 1000) : null);
+      if (!startAt || !endAt) {
+        return {
+          ...slot,
+          canLaunchNow: false,
+          isLive: false,
+          hasEnded: false,
+        };
+      }
+
+      const now = getServerSynchronizedNow();
+
+      return {
+        ...slot,
+        canLaunchNow: !!launchWindowOpensAt && now >= launchWindowOpensAt && now < endAt,
+        isLive: now >= startAt && now < endAt,
+        hasEnded: now >= endAt,
+      };
+    }
+
     function createSubjectIcon(subject) {
       const subjectThemes = Object.values(SUBJECT_THEMES);
       const theme = SUBJECT_THEMES[subject] || subjectThemes[0];
@@ -1114,6 +1192,7 @@
       button.classList.remove("btn-brand", "btn-outline-light");
       button.disabled = false;
       button.title = "";
+      button.replaceChildren();
 
       if (!slot) {
         button.textContent = "Unavailable";
@@ -1131,23 +1210,59 @@
 
       if (slot.kind === "placeholder") {
         button.textContent = `${slot.name} - ${slot.date}`;
-      } else if (slot.isLive) {
-        button.textContent = `${slot.name} - Live Now`;
-      } else if (slot.canLaunchNow) {
-        button.textContent = `${slot.name} - Starts Soon`;
-      } else {
-        button.textContent = `${slot.name} - ${slot.date}`;
-      }
-
-      const isLaunchable = slot.kind === "upcoming" && slot.canLaunchNow;
-      button.classList.add(isLaunchable ? "btn-brand" : "btn-outline-light");
-      button.disabled = !isLaunchable;
-
-      if (slot.kind === "placeholder") {
         button.title = "No upcoming test has been scheduled yet.";
-      } else if (!isLaunchable) {
-        button.title = "This test opens 10 minutes before the scheduled start time.";
+        button.classList.add("btn-outline-light");
+        button.disabled = true;
+        return;
+      } else {
+        const runtimeSlot = getUpcomingSlotRuntimeState(slot);
+        const layout = document.createElement("span");
+        layout.className = "test-slot-layout";
+
+        const titleRow = document.createElement("span");
+        titleRow.className = "test-slot-title-row";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "test-slot-name";
+        nameSpan.textContent = runtimeSlot.name;
+        titleRow.appendChild(nameSpan);
+        titleRow.appendChild(
+          createBadge(
+            runtimeSlot.isLive ? "Live" : "Upcoming",
+            runtimeSlot.isLive ? "text-bg-danger test-slot-badge" : "text-bg-warning test-slot-badge",
+          ),
+        );
+
+        const metaSpan = document.createElement("span");
+        metaSpan.className = "test-slot-meta";
+        if (runtimeSlot.hasEnded) {
+          metaSpan.textContent = "This test window has closed.";
+        } else if (runtimeSlot.isLive) {
+          metaSpan.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""} • Live now`;
+        } else if (runtimeSlot.canLaunchNow) {
+          metaSpan.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""} • Opens now`;
+        } else {
+          metaSpan.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""}`;
+        }
+
+        layout.appendChild(titleRow);
+        layout.appendChild(metaSpan);
+        button.appendChild(layout);
+
+        const isLaunchable = runtimeSlot.canLaunchNow && !!runtimeSlot.launchUrl;
+        button.classList.add(isLaunchable ? "btn-brand" : "btn-outline-light");
+        button.disabled = !isLaunchable;
+
+        if (!isLaunchable) {
+          button.title = runtimeSlot.hasEnded
+            ? "This test window has closed."
+            : "This test opens 10 minutes before the scheduled start time.";
+        }
+        return;
       }
+
+      button.classList.add("btn-outline-light");
+      button.disabled = true;
     }
 
     function renderHeader() {
@@ -1978,8 +2093,13 @@
           return;
         }
 
-        if (slot.kind === "upcoming" && slot.canLaunchNow && slot.launchUrl) {
-          window.location.href = slot.launchUrl;
+        const runtimeSlot = getUpcomingSlotRuntimeState(slot);
+        if (
+          runtimeSlot.kind === "upcoming" &&
+          runtimeSlot.canLaunchNow &&
+          runtimeSlot.launchUrl
+        ) {
+          window.location.href = runtimeSlot.launchUrl;
           return;
         }
 
@@ -2009,6 +2129,14 @@
         render();
       }
     });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        renderHeader();
+      }
+    });
+    setInterval(() => {
+      renderHeader();
+    }, 5000);
     render();
   })();
 </script>

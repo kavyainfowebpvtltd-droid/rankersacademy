@@ -1,14 +1,18 @@
 import logging
 import re
+from datetime import datetime
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
 TOTAL_QUESTIONS = 20
 TEST_DURATION_MINUTES = 20
 SUPPORTED_RUNTIME_QUESTION_TYPES = {"mcq", "tf", "fitb", "int"}
+ACADEMY_TIMEZONE = ZoneInfo("Asia/Kolkata")
+UTC_TIMEZONE = ZoneInfo("UTC")
 
 
 def calculate_score_percentage(score: int, total: int) -> int:
@@ -62,6 +66,129 @@ def requires_otp_login(test) -> bool:
     return is_rtse_test(test) or is_scholarship_test(test)
 
 
+def _academy_localtime(value=None):
+    if value is None:
+        value = timezone.now()
+    return timezone.localtime(value, ACADEMY_TIMEZONE)
+
+
+def _normalize_scope_value(value) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
+
+
+def _split_scope_values(raw_value) -> set[str]:
+    values = set()
+    for part in re.split(r"[,/&|]+", str(raw_value or "")):
+        normalized = _normalize_scope_value(part)
+        if normalized:
+            values.add(normalized)
+    return values
+
+
+def get_portal_student_stream_values(portal_student) -> set[str]:
+    if not portal_student:
+        return set()
+
+    stream_values = _split_scope_values(getattr(portal_student, "stream", ""))
+    interested_exams = getattr(portal_student, "interested_exams", []) or []
+
+    for exam in interested_exams:
+        exam_text = str(exam or "")
+        stream_values.update(_split_scope_values(exam_text))
+        exam_upper = exam_text.upper()
+        for stream_name in ("JEE", "NEET", "MHTCET"):
+            if stream_name in exam_upper:
+                stream_values.add(_normalize_scope_value(stream_name))
+
+    return stream_values
+
+
+def is_test_assigned_to_portal_student(test, portal_student) -> bool:
+    if not test or not portal_student:
+        return False
+
+    test_batch = _normalize_scope_value(getattr(test, "batch", ""))
+    student_batch = _normalize_scope_value(getattr(portal_student, "batch", ""))
+    if test_batch and test_batch != student_batch:
+        return False
+
+    test_stream_values = _split_scope_values(getattr(test, "stream", ""))
+    if not test_stream_values:
+        return True
+
+    student_stream_values = get_portal_student_stream_values(portal_student)
+    if not student_stream_values:
+        return False
+
+    return not test_stream_values.isdisjoint(student_stream_values)
+
+
+def get_test_scheduled_start_at(test):
+    if not test or not getattr(test, "scheduled_start_at", None):
+        return None
+
+    start_at = _academy_localtime(test.scheduled_start_at)
+    test_date = getattr(test, "date", None)
+    if not test_date or start_at.date() == test_date:
+        return start_at
+
+    # Compatibility for rows created before academy-local scheduling was enforced.
+    stored_utc_time = timezone.localtime(test.scheduled_start_at, UTC_TIMEZONE).time()
+    corrected = datetime.combine(test_date, stored_utc_time)
+    return timezone.make_aware(corrected, ACADEMY_TIMEZONE)
+
+
+def get_test_launch_window(test):
+    start_at = get_test_scheduled_start_at(test)
+    if not start_at:
+        return None, None, None
+
+    end_at = start_at + timedelta(minutes=get_test_duration_minutes(test))
+    launch_opens_at = start_at - timedelta(minutes=10)
+    return start_at, end_at, launch_opens_at
+
+
+def get_test_launch_state(test, now=None):
+    if now is None:
+        now = _academy_localtime()
+
+    start_at, end_at, launch_opens_at = get_test_launch_window(test)
+    if not start_at or not end_at or not launch_opens_at:
+        return {
+            "scheduled": False,
+            "can_launch": True,
+            "is_live": False,
+            "has_ended": False,
+            "message": "",
+        }
+
+    if now >= end_at:
+        return {
+            "scheduled": True,
+            "can_launch": False,
+            "is_live": False,
+            "has_ended": True,
+            "message": "This test window has closed.",
+        }
+
+    if now < launch_opens_at:
+        return {
+            "scheduled": True,
+            "can_launch": False,
+            "is_live": False,
+            "has_ended": False,
+            "message": "This test opens 10 minutes before the scheduled start time.",
+        }
+
+    return {
+        "scheduled": True,
+        "can_launch": True,
+        "is_live": start_at <= now < end_at,
+        "has_ended": False,
+        "message": "",
+    }
+
+
 def _get_test_queryset():
     from django.db.models import Prefetch
     from scholarship_test.models import (
@@ -91,8 +218,21 @@ def _get_test_queryset():
 def get_active_test():
     queryset = _get_test_queryset()
 
-    published_tests = queryset.filter(status='published').order_by('-created_at')
+    published_tests = queryset.filter(
+        status='published',
+        scheduled_start_at__isnull=False,
+    ).order_by('scheduled_start_at', 'id')
     for test in published_tests:
+        if not get_runtime_questions_for_test(test):
+            continue
+        if get_test_launch_state(test)["can_launch"]:
+            return test
+
+    unscheduled_published_tests = queryset.filter(
+        status='published',
+        scheduled_start_at__isnull=True,
+    ).order_by('-created_at')
+    for test in unscheduled_published_tests:
         if get_runtime_questions_for_test(test):
             return test
 
@@ -879,6 +1019,9 @@ def can_attempt_test(student, selected_test=None) -> tuple:
         runtime_questions = get_runtime_questions_for_test(active_test)
         if not runtime_questions:
             return False, "No scholarship test questions are configured yet"
+        launch_state = get_test_launch_state(active_test)
+        if not launch_state["can_launch"]:
+            return False, launch_state["message"] or "This test is not available right now"
         return True, "You can attempt the test"
 
     # Legacy fallback while older question-bank data still exists.

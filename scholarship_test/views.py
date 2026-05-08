@@ -240,10 +240,30 @@ def _get_portal_student(request):
     return getattr(user, 'student', None)
 
 
-def _sync_portal_student_session(request, selected_test):
-    if _requires_otp_login(selected_test):
-        return None, None
+def _portal_student_has_test_access(selected_test, portal_student) -> bool:
+    if not selected_test or not portal_student:
+        return True
 
+    return test_service.is_test_assigned_to_portal_student(
+        selected_test,
+        portal_student,
+    )
+
+
+def _redirect_if_portal_student_cannot_access_test(request, selected_test):
+    portal_student = _get_portal_student(request)
+    if _portal_student_has_test_access(selected_test, portal_student):
+        return None
+
+    _set_selected_test(request, None)
+    messages.error(
+        request,
+        "This test is not assigned to your batch and stream.",
+    )
+    return redirect("my_tests")
+
+
+def _sync_portal_student_session(request, selected_test):
     portal_student = _get_portal_student(request)
     if not portal_student:
         return None, None
@@ -348,14 +368,31 @@ def scholarship_launch_test(request, test_id):
         messages.error(request, "This scholarship test is not ready yet.")
         return redirect('login')
 
+    launch_state = test_service.get_test_launch_state(selected_test)
+    if not launch_state["can_launch"]:
+        messages.error(
+            request,
+            launch_state["message"] or "This test is not available right now.",
+        )
+        if getattr(request.user, "is_authenticated", False) and hasattr(request.user, "student"):
+            return redirect("my_tests")
+        return redirect("login")
+
     _set_selected_test(request, selected_test)
     _finalize_expired_attempts_for_test(selected_test)
-    if _requires_otp_login(selected_test):
-        return redirect('scholarship_test:scholarship_landing')
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
 
     scholarship_student, _ = _sync_portal_student_session(request, selected_test)
     if scholarship_student:
         return redirect('scholarship_test:scholarship_dashboard')
+
+    if _requires_otp_login(selected_test):
+        return redirect('scholarship_test:scholarship_landing')
 
     return redirect(_build_portal_login_url(selected_test))
 
@@ -594,6 +631,12 @@ def scholarship_dashboard(request):
     if selected_test:
         _set_selected_test(request, selected_test)
     _finalize_expired_attempts_for_test(selected_test)
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
 
     scholarship_student, _ = _sync_portal_student_session(request, selected_test)
 
@@ -645,6 +688,12 @@ def scholarship_start_test(request):
     if selected_test:
         _set_selected_test(request, selected_test)
     _finalize_expired_attempts_for_test(selected_test)
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
 
     scholarship_student, portal_student = _sync_portal_student_session(request, selected_test)
 
@@ -1050,6 +1099,8 @@ def api_get_tests(request):
             'folderId': test.folder.id if test.folder else None,
             'duration_hours': test.duration_hours,
             'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1081,6 +1132,8 @@ def api_create_test(request):
             pass
     
     tags = data.get('tags', '')
+    batch = (data.get('batch') or '').strip()
+    stream = (data.get('stream') or '').strip()
     status = data.get('status', 'draft')
     valid_statuses = {choice[0] for choice in ScholarshipTest._meta.get_field('status').choices}
     if status not in valid_statuses:
@@ -1107,6 +1160,8 @@ def api_create_test(request):
         name=name,
         date=test_date,
         folder=folder,
+        batch=batch,
+        stream=stream,
         tags=tags,
         duration_hours=duration_hours,
         duration_minutes=duration_minutes,
@@ -1129,6 +1184,8 @@ def api_create_test(request):
             'folderId': test.folder.id if test.folder else None,
             'duration_hours': test.duration_hours,
             'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1168,6 +1225,10 @@ def api_update_test(request, test_id):
     
     if 'tags' in data:
         test.tags = data.get('tags', '')
+    if 'batch' in data:
+        test.batch = (data.get('batch') or '').strip()
+    if 'stream' in data:
+        test.stream = (data.get('stream') or '').strip()
     if 'test_date' in data:
         try:
             test.date = _parse_test_date(data.get('test_date'))
@@ -1193,6 +1254,11 @@ def api_update_test(request, test_id):
                 data.get('test_start_time'),
                 data.get('scheduled_start_at'),
             )
+            if test.scheduled_start_at and 'test_date' not in data:
+                test.date = timezone.localtime(
+                    test.scheduled_start_at,
+                    test_service.ACADEMY_TIMEZONE,
+                ).date()
         except ValueError:
             return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
     
@@ -1205,6 +1271,8 @@ def api_update_test(request, test_id):
         'folderId': test.folder.id if test.folder else None,
         'duration_hours': test.duration_hours,
         'duration_minutes': test.duration_minutes,
+        'batch': test.batch,
+        'stream': test.stream,
         'tags': test.tags,
         'status': test.status,
         'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1228,7 +1296,23 @@ def api_delete_test(request, test_id):
             image.image.delete(save=False)
 
     test.delete()
-    return JsonResponse({'success': True})
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'instructions': config.instructions,
+            'default_pos_marks': config.default_pos_marks,
+            'default_neg_marks': config.default_neg_marks,
+        }
+    })
 
 
 @csrf_exempt
@@ -1395,6 +1479,8 @@ def api_copy_test(request, test_id):
     new_test = ScholarshipTest.objects.create(
         name=new_name,
         folder=original_test.folder,
+        batch=original_test.batch,
+        stream=original_test.stream,
         tags=original_test.tags,
         duration_hours=original_test.duration_hours,
         duration_minutes=original_test.duration_minutes,
@@ -1473,13 +1559,13 @@ def _format_test_duration(hours, minutes):
 def _serialize_scheduled_start_at(value):
     if not value:
         return None
-    return timezone.localtime(value).isoformat()
+    return timezone.localtime(value, test_service.ACADEMY_TIMEZONE).isoformat()
 
 
 def _serialize_test_start_time(value):
     if not value:
         return None
-    return timezone.localtime(value).strftime("%H:%M")
+    return timezone.localtime(value, test_service.ACADEMY_TIMEZONE).strftime("%H:%M")
 
 
 def _parse_test_date(raw_value):
@@ -1506,7 +1592,7 @@ def _parse_scheduled_start_at(raw_value):
             raise ValueError("Invalid scheduled start time") from exc
 
     if timezone.is_naive(parsed):
-        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+        parsed = timezone.make_aware(parsed, test_service.ACADEMY_TIMEZONE)
 
     return parsed
 
@@ -1519,7 +1605,7 @@ def _parse_test_start_datetime(test_date, raw_time, raw_datetime):
             raise ValueError("Invalid scheduled start time") from exc
 
         combined = datetime.combine(test_date, parsed_time)
-        return timezone.make_aware(combined, timezone.get_current_timezone())
+        return timezone.make_aware(combined, test_service.ACADEMY_TIMEZONE)
 
     return _parse_scheduled_start_at(raw_datetime)
 
@@ -1620,6 +1706,8 @@ def api_get_test_details(request, test_id):
             'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
             'duration_hours': test.duration_hours,
             'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
             'tags': test.tags,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
             'instructions': config.instructions if config else '',
@@ -1653,6 +1741,10 @@ def api_save_test_details(request, test_id):
         return JsonResponse({'error': 'Invalid duration'}, status=400)
     if duration_parts is not None:
         test.duration_hours, test.duration_minutes = duration_parts
+    if 'batch' in data:
+        test.batch = (data.get('batch') or '').strip()
+    if 'stream' in data:
+        test.stream = (data.get('stream') or '').strip()
     if 'tags' in data:
         test.tags = data['tags']
     if 'status' in data:
@@ -1666,7 +1758,12 @@ def api_save_test_details(request, test_id):
             test.scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
         except ValueError:
             return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
-    
+        if test.scheduled_start_at:
+            test.date = timezone.localtime(
+                test.scheduled_start_at,
+                test_service.ACADEMY_TIMEZONE,
+            ).date()
+
     test.save()
     
     config, _ = ScholarshipTestConfig.objects.get_or_create(test=test)

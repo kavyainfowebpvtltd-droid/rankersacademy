@@ -22,6 +22,7 @@
       href="{% static 'css/scholarshiptest-management.css' %}?v={% now 'U' %}"
     />
     <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
   </head>
 
   <body>
@@ -188,6 +189,24 @@
                 />
               </div>
               <div class="mb-4">
+                <label class="form-label">Batch</label>
+                <input
+                  type="text"
+                  id="test-batch-input"
+                  class="form-control"
+                  placeholder="eg. Star 01"
+                />
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Stream</label>
+                <input
+                  type="text"
+                  id="test-stream-input"
+                  class="form-control"
+                  placeholder="eg. JEE / NEET"
+                />
+              </div>
+              <div class="mb-4">
                 <label class="form-label">Tags</label>
                 <input
                   type="text"
@@ -242,14 +261,6 @@
                   style="border: 2px solid #000"
                   required
                 />
-              </div>
-              <div class="mb-4">
-                <label class="form-label">Tags</label>
-                <select class="form-select">
-                  <option>PCB</option>
-                  <option>PCM</option>
-                  <option>biology</option>
-                </select>
               </div>
               <div class="text-end mt-4 modal-action-row">
                 <button

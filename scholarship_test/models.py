@@ -228,6 +228,8 @@ class ScholarshipTest(models.Model):
     date = models.DateField(default=timezone.localdate)
     duration_hours = models.IntegerField(default=1)
     duration_minutes = models.IntegerField(default=0)
+    batch = models.CharField(max_length=50, blank=True, default="")
+    stream = models.CharField(max_length=50, blank=True, default="")
     folder = models.ForeignKey(
         ScholarshipTestFolder,
         on_delete=models.SET_NULL,

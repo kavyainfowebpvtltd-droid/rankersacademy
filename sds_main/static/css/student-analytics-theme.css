@@ -95,11 +95,33 @@ a:hover {
   box-shadow: var(--student-shadow-soft);
 }
 
-.navbar .brand-icon,
 .navbar .btn-light {
   background: #0f1118 !important;
   border-color: var(--student-border) !important;
   box-shadow: none;
+}
+
+.navbar .brand-icon {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  min-width: 74px;
+  height: 62px;
+  padding: 0;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+.navbar .brand-icon img {
+  height: 60px !important;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(122, 215, 255, 0.18));
 }
 
 .navbar .text-dark,
@@ -494,6 +516,18 @@ footer {
 
 footer a {
   color: #ffb15f !important;
+}
+
+html[data-admin-theme="dark"] body:not(.login-page-body) footer,
+html[data-admin-theme="dark"] body:not(.login-page-body) footer.bg-light {
+  background: #07070d !important;
+  border-top: 1px solid var(--student-border) !important;
+  color: var(--student-muted) !important;
+}
+
+html[data-admin-theme="dark"] body:not(.login-page-body) footer a {
+  color: #ffb15f !important;
+  font-weight: 700;
 }
 
 .overall-progress-card,
