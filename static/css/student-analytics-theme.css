@@ -102,6 +102,42 @@ a:hover {
   box-shadow: none;
 }
 
+.navbar .brand-icon {
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  min-width: 74px;
+  height: 62px;
+  padding: 5px 6px 4px;
+  overflow: hidden;
+}
+
+.navbar .brand-icon img {
+  height: 43px !important;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(122, 215, 255, 0.18));
+}
+
+.navbar .brand-logo-caption {
+  display: block;
+  width: 100%;
+  margin-top: 1px;
+  color: #ffffff;
+  font-size: 6px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(122, 215, 255, 0.28);
+  white-space: nowrap;
+}
+
 .navbar .text-dark,
 .navbar .fw-bold,
 .navbar h5 {

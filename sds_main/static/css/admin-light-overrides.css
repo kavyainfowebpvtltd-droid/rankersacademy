@@ -37,6 +37,22 @@ html[data-admin-theme="light"] body:not(.login-page-body) .navbar .btn-light {
   box-shadow: none !important;
 }
 
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-icon {
+  width: 70px;
+  min-width: 70px;
+  height: 60px;
+  padding: 0;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-icon img {
+  height: 60px !important;
+  filter: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-logo-caption {
+  display: none !important;
+}
+
 html[data-admin-theme="light"] body:not(.login-page-body) .navbar h5,
 html[data-admin-theme="light"] body:not(.login-page-body) .navbar .fw-bold,
 html[data-admin-theme="light"] body:not(.login-page-body) .navbar .text-dark {
