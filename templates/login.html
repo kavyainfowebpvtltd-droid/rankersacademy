@@ -1244,6 +1244,18 @@
         background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
         color: #ffffff;
       }
+      
+      /* Make logo visible in dark mode */
+      html[data-admin-theme="dark"] .brand-logo-shell {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.04);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 28px rgba(14,165,255,0.06) inset;
+      }
+
+      html[data-admin-theme="dark"] .brand-logo-shell img {
+        filter: brightness(1.8) saturate(1.2) drop-shadow(0 8px 20px rgba(14,165,255,0.18));
+        mix-blend-mode: screen;
+      }
     </style>
   </head>
   <body class="login-page-body {% if test_login_ui %}test-login-ui{% endif %}">
