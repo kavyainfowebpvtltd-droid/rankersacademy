@@ -1815,7 +1815,23 @@ def api_save_test_details(request, test_id):
         config.default_neg_marks = data['default_neg_marks']
     config.save()
 
-    return JsonResponse({'success': True})
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'instructions': config.instructions,
+            'default_pos_marks': config.default_pos_marks,
+            'default_neg_marks': config.default_neg_marks,
+        }
+    })
 
 
 

@@ -1694,17 +1694,19 @@
       totalValueRow.appendChild(totalOutOf);
 
       const totalMeta = document.createElement("div");
+      const attempted = !!selectedTest?.attempted;
       totalMeta.className = "home-score-meta";
-      totalMeta.textContent =
-        `${
-          previousRank === null
-            ? "First recorded test"
-            : rank < previousRank
-              ? `Improved by ${previousRank - rank} rank${previousRank - rank === 1 ? "" : "s"} from previous test`
-              : rank > previousRank
-                ? `Dropped by ${rank - previousRank} rank${rank - previousRank === 1 ? "" : "s"} from previous test`
-                : "Same rank as previous test"
-        } \u00b7 ${selectedTest?.name || ""}`;
+      totalMeta.textContent = attempted
+        ? `${
+            previousRank === null
+              ? "First recorded test"
+              : rank < previousRank
+                ? `Improved by ${previousRank - rank} rank${previousRank - rank === 1 ? "" : "s"} from previous test`
+                : rank > previousRank
+                  ? `Dropped by ${rank - previousRank} rank${rank - previousRank === 1 ? "" : "s"} from previous test`
+                  : "Same rank as previous test"
+          } \u00b7 ${selectedTest?.name || ""}`
+        : `You did not attempt this test \u00b7 ${selectedTest?.name || ""}`;
 
       totalCard.appendChild(totalLabel);
       totalCard.appendChild(totalValueRow);
@@ -1914,21 +1916,28 @@
 
     function renderHome(student) {
       const test = currentTest();
-      const rank = test?.rank || 0;
-      const delta = test?.rankDelta ?? null;
-      const previousRank = delta === null ? null : rank + delta;
-      const testStreak = test?.testStreak || 0;
+      const attempted = !!test?.attempted;
+      const rank = attempted ? (test?.rank ?? null) : null;
+      const delta = attempted ? (test?.rankDelta ?? null) : null;
+      const previousRank = rank !== null && delta !== null ? rank + delta : null;
+      const testStreak = attempted ? (test?.testStreak || 0) : 0;
 
-      refs.rankTierBadge.className = `badge rounded-pill ${
-        rank <= 10
-          ? "text-bg-info"
-          : rank <= 25
-            ? "text-bg-primary"
-            : "text-bg-secondary"
-      }`;
-      refs.rankTierBadge.textContent =
-        rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD";
-      refs.rankValue.textContent = `#${rank}`;
+      if (attempted) {
+        refs.rankTierBadge.className = `badge rounded-pill ${
+          rank <= 10
+            ? "text-bg-info"
+            : rank <= 25
+              ? "text-bg-primary"
+              : "text-bg-secondary"
+        }`;
+        refs.rankTierBadge.textContent =
+          rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD";
+        refs.rankValue.textContent = `#${rank}`;
+      } else {
+        refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
+        refs.rankTierBadge.textContent = "NOT ATTEMPTED";
+        refs.rankValue.textContent = "--";
+      }
       refs.rankSummary.textContent = `of ${test?.totalStudents || currentLeaderboard().length} students - ${test?.name || ""}`;
 
       if (testStreak > 0) {
@@ -1940,7 +1949,11 @@
       }
 
       refs.rankShiftBadge.classList.remove("up", "down", "flat", "d-none");
-      if (delta === null) {
+      if (!attempted) {
+        refs.rankShiftBadge.classList.add("flat");
+        refs.rankShiftIcon.textContent = "\u2022";
+        refs.rankShiftText.textContent = "NA";
+      } else if (delta === null) {
         refs.rankShiftBadge.classList.add("flat");
         refs.rankShiftIcon.textContent = "\u2022";
         refs.rankShiftText.textContent = "0";

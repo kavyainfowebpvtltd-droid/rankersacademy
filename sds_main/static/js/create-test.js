@@ -1982,9 +1982,13 @@ function applySavedTestDetailsState(nextState, result) {
   var returnedTest = (result && result.test) || {};
   S.testName = returnedTest.name || nextState.testName;
   S.duration = normalizeDurationValue(
-    returnedTest.duration,
-    returnedTest.duration_hours,
-    returnedTest.duration_minutes,
+    returnedTest.duration != null ? returnedTest.duration : nextState.duration,
+    returnedTest.duration_hours != null
+      ? returnedTest.duration_hours
+      : nextState.duration_hours,
+    returnedTest.duration_minutes != null
+      ? returnedTest.duration_minutes
+      : nextState.duration_minutes,
   );
   S.batch = returnedTest.batch != null ? returnedTest.batch : nextState.batch;
   S.stream = returnedTest.stream != null ? returnedTest.stream : nextState.stream;
