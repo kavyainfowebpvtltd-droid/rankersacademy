@@ -283,6 +283,13 @@ textarea:focus {
   border-color: transparent !important;
 }
 
+.scholarship-page .folder-icon {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 .text-primary,
 .hover-actions a,
 a {

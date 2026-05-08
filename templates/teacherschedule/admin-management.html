@@ -416,6 +416,31 @@
       .page-header { padding: 16px; }
       .calendar-view { grid-template-columns: repeat(1, 1fr); }
     }
+
+    html[data-admin-theme="dark"] #tableView .table-responsive,
+    html[data-admin-theme="dark"] .bulk-toolbar {
+      background: #0f1118 !important;
+      border-color: #2b2f3b !important;
+      color: #f4f5fb !important;
+    }
+
+    html[data-admin-theme="dark"] #tableView .table-responsive {
+      border: 1px solid #2b2f3b;
+      box-shadow: none;
+    }
+
+    html[data-admin-theme="dark"] .bulk-toolbar .small,
+    html[data-admin-theme="dark"] .bulk-toolbar label {
+      color: #aeb4c2 !important;
+    }
+
+    html[data-admin-theme="dark"] #tableView .table {
+      --bs-table-bg: #0b0c12;
+      --bs-table-color: #f4f5fb;
+      --bs-table-hover-bg: #141721;
+      --bs-table-hover-color: #ffffff;
+      border-color: #262a35;
+    }
   </style>
   <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}">
 </head>

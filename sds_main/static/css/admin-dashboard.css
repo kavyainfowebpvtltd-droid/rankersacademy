@@ -384,6 +384,34 @@ html[data-admin-theme="light"] .attention-topic-badge {
   border-color: transparent !important;
 }
 
+html[data-admin-theme="light"] #adminDashboardTableSection .pagination .page-link {
+  background: #ffffff !important;
+  border-color: #bfdbfe !important;
+  color: #1268ff !important;
+  box-shadow: 0 8px 18px rgba(18, 104, 255, 0.08) !important;
+}
+
+html[data-admin-theme="light"] #adminDashboardTableSection .pagination .page-link:hover,
+html[data-admin-theme="light"] #adminDashboardTableSection .pagination .page-link:focus {
+  background: #eef5ff !important;
+  border-color: #1268ff !important;
+  color: #0057e7 !important;
+}
+
+html[data-admin-theme="light"] #adminDashboardTableSection .pagination .page-item.active .page-link {
+  background: #1268ff !important;
+  border-color: #1268ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(18, 104, 255, 0.22) !important;
+}
+
+html[data-admin-theme="light"] #adminDashboardTableSection .pagination .page-item.disabled .page-link {
+  background: #f8fbff !important;
+  border-color: #dbe3ef !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+
 footer,
 footer.bg-light {
   background: #07070d !important;
