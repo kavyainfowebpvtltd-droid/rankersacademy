@@ -1947,7 +1947,7 @@ window.openTestDetails = function () {
       e(S.instructions) +
       "</textarea></div>" +
       "</div>" +
-      '<div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTestDetails()">Save</button></div>',
+      '<div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="test-details-save-btn" onclick="saveTestDetails()">Save</button></div>',
   );
 };
 
@@ -1969,6 +1969,72 @@ window.saveTestDetails = function () {
   render();
   showToast("✓ Test details updated");
   updateTopbarTitle();
+};
+
+function applySavedTestDetailsState(nextState, result) {
+  var returnedTest = (result && result.test) || {};
+  S.testName = returnedTest.name || nextState.testName;
+  S.duration = normalizeDurationValue(
+    returnedTest.duration,
+    returnedTest.duration_hours,
+    returnedTest.duration_minutes,
+  );
+  S.batch = returnedTest.batch != null ? returnedTest.batch : nextState.batch;
+  S.stream = returnedTest.stream != null ? returnedTest.stream : nextState.stream;
+  S.tags = returnedTest.tags != null ? returnedTest.tags : nextState.tags;
+  S.scheduledStartAt =
+    returnedTest.scheduled_start_at != null
+      ? returnedTest.scheduled_start_at
+      : nextState.scheduled_start_at;
+  S.instructions =
+    returnedTest.instructions != null
+      ? returnedTest.instructions
+      : nextState.instructions;
+  if (returnedTest.default_pos_marks != null) {
+    S.defaultPosMarks = Number(returnedTest.default_pos_marks);
+  }
+  if (returnedTest.default_neg_marks != null) {
+    S.defaultNegMarks = Number(returnedTest.default_neg_marks);
+  }
+}
+
+window.saveTestDetails = function () {
+  var durationHours = document.getElementById("td-dur-hours").value;
+  var durationMinutes = document.getElementById("td-dur-minutes").value;
+  var saveButton = document.getElementById("test-details-save-btn");
+  var nextState = {
+    testName: document.getElementById("td-name").value.trim() || S.testName,
+    duration: normalizeDurationValue(null, durationHours, durationMinutes),
+    batch: document.getElementById("td-batch").value.trim(),
+    stream: document.getElementById("td-stream").value.trim(),
+    tags: document.getElementById("td-tags").value.trim(),
+    scheduled_start_at: document
+      .getElementById("td-scheduled-start")
+      .value.trim(),
+    instructions: document.getElementById("td-instr").value.trim(),
+  };
+
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = "Saving...";
+  }
+
+  saveData(nextState)
+    .then(function (result) {
+      applySavedTestDetailsState(nextState, result);
+      closeModal();
+      render();
+      updateTopbarTitle();
+      showToast("✓ Test details updated");
+    })
+    .catch(function (err) {
+      console.error("Error saving test details:", err);
+      showToast("❌ " + err.message);
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = "Save";
+      }
+    });
 };
 
 window._legacySaveTest = function () {
