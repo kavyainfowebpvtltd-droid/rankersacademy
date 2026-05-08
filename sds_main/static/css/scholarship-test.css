@@ -655,3 +655,147 @@ main {
   color: #dc2626;
   font-weight: 700;
 }
+
+html[data-admin-theme="dark"] body.scholarship-test-page {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(247, 37, 133, 0.16), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(255, 138, 31, 0.12), transparent 60%),
+    #06060a;
+  color: #f8fafc;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .navbar {
+  background: #090b12 !important;
+  border-color: #242936 !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .brand-icon {
+  background: linear-gradient(135deg, #ff8a1f, #f72585) !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .navbar h5,
+html[data-admin-theme="dark"] .scholarship-test-page .navbar .fw-bold,
+html[data-admin-theme="dark"] .scholarship-test-page .text-dark,
+html[data-admin-theme="dark"] .scholarship-test-page .question-title,
+html[data-admin-theme="dark"] .scholarship-test-page .navigator-title,
+html[data-admin-theme="dark"] .scholarship-test-page .progress-value,
+html[data-admin-theme="dark"] .scholarship-test-page .option-text,
+html[data-admin-theme="dark"] .scholarship-test-page .modal-title {
+  color: #f8fafc !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .text-muted,
+html[data-admin-theme="dark"] .scholarship-test-page .question-label,
+html[data-admin-theme="dark"] .scholarship-test-page .progress-label,
+html[data-admin-theme="dark"] .scholarship-test-page .legend-item,
+html[data-admin-theme="dark"] .scholarship-test-page .section-instructions,
+html[data-admin-theme="dark"] .scholarship-test-page .modal-message {
+  color: #a8b3c7 !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .glass-panel,
+html[data-admin-theme="dark"] .scholarship-test-page .navigator-panel,
+html[data-admin-theme="dark"] .scholarship-test-page .modal-content {
+  background: #10131d;
+  border-color: #2a3040;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .question-header,
+html[data-admin-theme="dark"] .scholarship-test-page .question-footer {
+  background: #0b0d15;
+  border-color: #242936;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .timer-badge span,
+html[data-admin-theme="dark"] .scholarship-test-page .submit-btn,
+html[data-admin-theme="dark"] .scholarship-test-page .btn-next,
+html[data-admin-theme="dark"] .scholarship-test-page .modal-btn.confirm,
+html[data-admin-theme="dark"] .scholarship-test-page .modal-btn.submit-now {
+  background: linear-gradient(135deg, #ff8a1f 0%, #f72585 58%, #8b35ff 100%);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .question-section,
+html[data-admin-theme="dark"] .scholarship-test-page .question-type-chip,
+html[data-admin-theme="dark"] .scholarship-test-page .section-instructions,
+html[data-admin-theme="dark"] .scholarship-test-page .answer-input,
+html[data-admin-theme="dark"] .scholarship-test-page .option-card,
+html[data-admin-theme="dark"] .scholarship-test-page .proctoring-status {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: #303747;
+  color: #f8fafc;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .question-type-chip,
+html[data-admin-theme="dark"] .scholarship-test-page .proctoring-status .status-waiting {
+  color: #ffb15f;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .answer-input:focus,
+html[data-admin-theme="dark"] .scholarship-test-page .option-card:hover,
+html[data-admin-theme="dark"] .scholarship-test-page .option-input:checked + .option-card {
+  border-color: transparent;
+  background:
+    linear-gradient(#10131d, #10131d) padding-box,
+    linear-gradient(135deg, #ff8a1f, #f72585) border-box;
+  box-shadow: 0 0 0 4px rgba(247, 37, 133, 0.12);
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .option-bullet {
+  background: #151a25;
+  border-color: #303747;
+  color: #cbd5e1;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .option-input:checked + .option-card .option-bullet,
+html[data-admin-theme="dark"] .scholarship-test-page .q-btn.current,
+html[data-admin-theme="dark"] .scholarship-test-page .dot-current,
+html[data-admin-theme="dark"] .scholarship-test-page .progress-fill {
+  background: linear-gradient(135deg, #ff8a1f, #f72585);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .q-btn.answered,
+html[data-admin-theme="dark"] .scholarship-test-page .dot-answered {
+  background: #ff8a1f;
+  border-color: #ff8a1f;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .q-btn.not-answered,
+html[data-admin-theme="dark"] .scholarship-test-page .dot-not-answered {
+  background: #f72585;
+  border-color: #f72585;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .progress-bar {
+  background: #222735;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .btn-prev,
+html[data-admin-theme="dark"] .scholarship-test-page .modal-btn.cancel {
+  background: #151a25;
+  color: #f8fafc;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .btn-light {
+  background: #151a25;
+  border-color: #303747;
+  color: #f8fafc;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page .modal-content::before {
+  background: linear-gradient(90deg, #ff8a1f, #f72585, #8b35ff);
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page footer {
+  background: #090b12 !important;
+  border-color: #242936 !important;
+  color: #cbd5e1;
+}
+
+html[data-admin-theme="dark"] .scholarship-test-page footer a {
+  color: #ffb15f !important;
+}

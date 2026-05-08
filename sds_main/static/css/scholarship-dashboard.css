@@ -236,6 +236,105 @@ main {
   transition: transform 0.2s ease;
 }
 
+html[data-admin-theme="dark"] body.scholarship-dashboard-page {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(247, 37, 133, 0.16), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(255, 138, 31, 0.12), transparent 60%),
+    #06060a;
+  color: #f8fafc;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .navbar {
+  background: #090b12 !important;
+  border-color: #242936 !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .brand-icon {
+  background: linear-gradient(135deg, #ff8a1f, #f72585) !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .navbar h5,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .navbar .fw-bold,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .text-dark,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .page-heading h2,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .content-card-inner h3,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-card h4 {
+  color: #f8fafc !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .text-muted,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .page-heading p,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .content-card-inner p,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-card p {
+  color: #a8b3c7 !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .content-card {
+  background: #10131d;
+  border-color: #2a3040;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-card {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-icon {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-card--blue .feature-icon i,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-card--green .feature-icon i {
+  color: #ffb15f;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-card--purple .feature-icon i,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .feature-card--orange .feature-icon i {
+  color: #f72585;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .cta-card,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .cta-button-sch {
+  background: linear-gradient(135deg, #ff8a1f 0%, #f72585 58%, #8b35ff 100%);
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .cta-button-sch {
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(247, 37, 133, 0.24);
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .btn-outline-primary {
+  background: transparent;
+  border-color: #ff8a1f;
+  color: #ffb15f;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .btn-outline-primary:hover,
+html[data-admin-theme="dark"] .scholarship-dashboard-page .btn-outline-primary:focus {
+  background: #ff8a1f;
+  color: #ffffff;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page .btn-light {
+  background: #151a25;
+  border-color: #303747;
+  color: #f8fafc;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page footer {
+  background: #090b12 !important;
+  border-color: #242936 !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page footer div {
+  color: #cbd5e1 !important;
+}
+
+html[data-admin-theme="dark"] .scholarship-dashboard-page footer a {
+  color: #ffb15f !important;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
