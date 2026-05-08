@@ -353,6 +353,11 @@ function saveData(extraData) {
     });
   }
 
+  var payloadDuration = getDurationParts(payload.duration);
+  payload.duration = payloadDuration.value;
+  payload.duration_hours = payloadDuration.hours;
+  payload.duration_minutes = payloadDuration.minutes;
+
   return fetch(`/scholarship/api/tests/${currentTestId}/save-details/`, {
     method: "POST",
     headers: {
@@ -2004,9 +2009,17 @@ window.saveTestDetails = function () {
   var durationHours = document.getElementById("td-dur-hours").value;
   var durationMinutes = document.getElementById("td-dur-minutes").value;
   var saveButton = document.getElementById("test-details-save-btn");
+  var normalizedDuration = normalizeDurationValue(
+    null,
+    durationHours,
+    durationMinutes,
+  );
+  var durationParts = getDurationParts(normalizedDuration);
   var nextState = {
     testName: document.getElementById("td-name").value.trim() || S.testName,
-    duration: normalizeDurationValue(null, durationHours, durationMinutes),
+    duration: durationParts.value,
+    duration_hours: durationParts.hours,
+    duration_minutes: durationParts.minutes,
     batch: document.getElementById("td-batch").value.trim(),
     stream: document.getElementById("td-stream").value.trim(),
     tags: document.getElementById("td-tags").value.trim(),
