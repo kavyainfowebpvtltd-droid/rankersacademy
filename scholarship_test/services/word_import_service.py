@@ -50,6 +50,8 @@ TYPE_MAP = {
 
 OPTION_PATTERN = re.compile(r'\(\s*([a-d])\s*\)', re.IGNORECASE)
 QUESTION_NUMBER_PATTERN = re.compile(r'^\s*(?P<number>\d+)\s*[\.\)]\s*(?P<rest>.*)$')
+ONLINE_TEST_QUESTION_LABEL_PATTERN = re.compile(r'^Q\s*(?P<number>\d+)\s*[\.\)]?\s*$', re.IGNORECASE)
+ANSWER_LINE_PATTERN = re.compile(r'^answer\s*:\s*(?P<value>.*)$', re.IGNORECASE)
 
 
 class WordImportError(ValueError):
@@ -74,6 +76,10 @@ def import_questions_from_docx(uploaded_file):
                 'questions': questions,
                 'warnings': warnings,
             }
+
+        online_test = _parse_online_test_document(archive, root, uploaded_file)
+        if online_test:
+            return online_test
 
         imported_exam = _parse_exam_document(archive, root, uploaded_file)
         if imported_exam:
@@ -112,7 +118,11 @@ def _open_docx(uploaded_file):
 
 def _extract_docx_paragraphs(root):
     paragraphs = []
-    for para in root.findall('.//w:p', DOCX_NAMESPACE):
+    body = root.find('./w:body', DOCX_NAMESPACE)
+    if body is None:
+        return paragraphs
+
+    for para in body.findall('./w:p', DOCX_NAMESPACE):
         text_parts = []
         for text_node in para.findall('.//w:t', DOCX_NAMESPACE):
             text_parts.append(text_node.text or '')
@@ -120,6 +130,31 @@ def _extract_docx_paragraphs(root):
         if text:
             paragraphs.append(text)
     return paragraphs
+
+
+def _parse_online_test_document(archive, root, uploaded_file):
+    body_items = _extract_docx_body_items(archive, root, uploaded_file)
+    if not body_items:
+        return None
+
+    metadata = _extract_online_test_metadata(body_items, uploaded_file)
+    questions, warnings = _parse_online_test_questions(body_items)
+    if not questions:
+        return None
+
+    section_name = metadata['section_name']
+    section = _build_section(section_name)
+    section['questions'] = questions
+
+    return {
+        'section_name': section_name,
+        'sections': [section],
+        'questions': questions,
+        'warnings': warnings,
+        'test_name': metadata.get('test_name') or '',
+        'duration_hours': metadata.get('duration_hours'),
+        'duration_minutes': metadata.get('duration_minutes'),
+    }
 
 
 def _looks_like_marker_format(lines):
@@ -168,6 +203,57 @@ def _extract_docx_blocks(archive, root, uploaded_file):
             )
 
     return blocks
+
+
+def _extract_docx_body_items(archive, root, uploaded_file):
+    body = root.find('./w:body', DOCX_NAMESPACE)
+    if body is None:
+        return []
+
+    image_context = _build_image_context(archive, uploaded_file)
+    items = []
+    for child in list(body):
+        tag = _local_name(child.tag)
+        if tag == 'p':
+            parts = _extract_paragraph_parts(child, image_context)
+            html = _render_parts_html(parts).strip()
+            text = _normalize_block_text(_render_parts_text(parts))
+            items.append(
+                {
+                    'kind': 'paragraph',
+                    'parts': parts,
+                    'html': html,
+                    'text': text,
+                }
+            )
+        elif tag == 'tbl':
+            texts = _extract_table_texts(child)
+            items.append(
+                {
+                    'kind': 'table',
+                    'texts': texts,
+                    'text': _normalize_block_text(' '.join(texts)),
+                }
+            )
+
+    return items
+
+
+def _extract_table_texts(table):
+    texts = []
+    for cell in table.findall('.//w:tc', DOCX_NAMESPACE):
+        cell_parts = []
+        for para in cell.findall('./w:p', DOCX_NAMESPACE):
+            paragraph_text = ''.join(
+                text_node.text or ''
+                for text_node in para.findall('.//w:t', DOCX_NAMESPACE)
+            ).strip()
+            if paragraph_text:
+                cell_parts.append(paragraph_text)
+        cell_text = _normalize_block_text(' '.join(cell_parts))
+        if cell_text:
+            texts.append(cell_text)
+    return texts
 
 
 def _build_image_context(archive, uploaded_file):
@@ -381,6 +467,168 @@ def _extract_exam_metadata(blocks, uploaded_file):
             metadata['duration_hours'], metadata['duration_minutes'] = duration
 
     return metadata
+
+
+def _extract_online_test_metadata(body_items, uploaded_file):
+    fallback_name = Path(getattr(uploaded_file, 'name', 'Imported Questions')).stem.strip() or 'Imported Questions'
+    metadata = {
+        'section_name': fallback_name,
+        'test_name': fallback_name,
+        'duration_hours': None,
+        'duration_minutes': None,
+    }
+
+    for item in body_items:
+        if item.get('kind') != 'paragraph':
+            continue
+
+        text = item.get('text', '')
+        if not text:
+            continue
+
+        if _looks_like_test_title(text):
+            metadata['test_name'] = text
+            metadata['section_name'] = text
+
+        duration = _parse_duration(text)
+        if duration is not None:
+            metadata['duration_hours'], metadata['duration_minutes'] = duration
+
+    return metadata
+
+
+def _parse_online_test_questions(body_items):
+    questions = []
+    warnings = []
+    pending_paragraph = None
+    current_question = None
+
+    for item in body_items:
+        if item.get('kind') == 'paragraph':
+            if item.get('text'):
+                if current_question is not None and not current_question.get('_stem_assigned'):
+                    current_question['text'] = item.get('html', '').strip() or escape(item.get('text', ''))
+                    current_question['_source_text'] = item.get('text', '').strip()
+                    current_question['_stem_assigned'] = True
+                    pending_paragraph = None
+                else:
+                    pending_paragraph = item
+            continue
+
+        table_texts = item.get('texts') or []
+        if not table_texts:
+            continue
+
+        if _is_online_test_question_table(table_texts):
+            question = _build_online_test_question(pending_paragraph, table_texts)
+            questions.append(question)
+            current_question = question
+            pending_paragraph = None
+            continue
+
+        if current_question is None:
+            continue
+
+        if _table_contains_answer_line(table_texts):
+            _apply_online_test_answer(current_question, table_texts)
+            continue
+
+        if _table_contains_option_rows(table_texts):
+            current_question['options'] = _parse_online_test_options(table_texts)
+
+    if not questions:
+        return [], []
+
+    for question in questions:
+        if not question.get('options'):
+            warnings.append(
+                "Some imported questions did not include options. Review them before saving the test."
+            )
+            break
+
+    if any(_question_needs_answer_review(question) for question in questions):
+        warnings.append(
+            "Some imported questions did not include a recognized answer key. Review answers before publishing the test."
+        )
+
+    return questions, warnings
+
+
+def _is_online_test_question_table(table_texts):
+    if not table_texts:
+        return False
+    return bool(ONLINE_TEST_QUESTION_LABEL_PATTERN.match(_normalize_space(table_texts[0])))
+
+
+def _build_online_test_question(paragraph_item, table_texts):
+    fallback_text = ' '.join(table_texts[1:]).strip() or ' '.join(table_texts).strip()
+    question_html = escape(fallback_text)
+    question_text = fallback_text
+
+    return {
+        'type': 'mcq',
+        'text': question_html,
+        'difficulty': 'Medium',
+        'pos_marks': None,
+        'neg_marks': None,
+        'neg_unattempted': 0,
+        'tags': [],
+        'options': [],
+        'correct_options': [],
+        'multi_select': False,
+        '_source_text': question_text,
+        '_stem_assigned': False,
+    }
+
+
+def _table_contains_option_rows(table_texts):
+    return any(OPTION_PATTERN.search(text or '') for text in table_texts)
+
+
+def _parse_online_test_options(table_texts):
+    joined = ' '.join(str(text or '') for text in table_texts)
+    options = []
+    for match in OPTION_PATTERN.finditer(joined):
+        start = match.end()
+        next_match = OPTION_PATTERN.search(joined, start)
+        end = next_match.start() if next_match else len(joined)
+        option_text = _normalize_space(joined[start:end])
+        if option_text:
+            options.append(option_text)
+    return options
+
+
+def _table_contains_answer_line(table_texts):
+    return any(ANSWER_LINE_PATTERN.match(_normalize_space(text)) for text in table_texts)
+
+
+def _apply_online_test_answer(question, table_texts):
+    if not question:
+        return
+
+    options = question.get('options') or []
+    for text in table_texts:
+        normalized = _normalize_space(text)
+        match = ANSWER_LINE_PATTERN.match(normalized)
+        if not match:
+            continue
+
+        answer_value = match.group('value').strip()
+        option_label_match = OPTION_PATTERN.match(answer_value)
+        if option_label_match:
+            option_index = ord(option_label_match.group(1).lower()) - ord('a')
+            if 0 <= option_index < len(options):
+                question['correct_options'] = [option_index]
+                return
+
+        normalized_answer = _normalize_space(
+            OPTION_PATTERN.sub('', answer_value, count=1)
+        )
+        if normalized_answer:
+            for index, option_text in enumerate(options):
+                if _normalize_space(option_text) == normalized_answer:
+                    question['correct_options'] = [index]
+                    return
 
 
 def _looks_like_test_title(value):
