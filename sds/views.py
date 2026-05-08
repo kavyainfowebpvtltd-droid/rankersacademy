@@ -10,7 +10,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.cache import never_cache, cache_control
 from django.views.decorators.http import require_POST, require_GET
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
@@ -23,6 +23,7 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.html import strip_tags
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -41,7 +42,13 @@ from urllib.parse import urlencode, urlsplit
 from datetime import timedelta
 
 from .models import *
-from scholarship_test.models import ScholarshipTest, ScholarshipTestAttempt
+from scholarship_test.models import (
+    ScholarshipTest,
+    ScholarshipTestAttempt,
+    ScholarshipTestFacultyAttendance,
+    ScholarshipTestFacultyAttendanceSession,
+    ScholarshipTestFacultyNote,
+)
 from scholarship_test.services import test_service as scholarship_test_service
 from .password_policy import (
     DEFAULT_ONE_TIME_PASSWORD,
@@ -2437,14 +2444,41 @@ def _build_test_analysis_session(user) -> dict:
     }
 
 
+def _build_faculty_test_analysis_payload(user):
+    subject = _faculty_test_analysis_subject(user)
+    base_payload = _build_test_analysis_base_payload(focus_subject=subject)
+    completed_test_ids = [test["external_id"] for test in base_payload["completedTests"]]
+    return {
+        "faculty": {
+            **base_payload,
+            "faculty": {
+                "name": _display_name(user),
+                "subject": subject,
+            },
+            "attendanceByTest": _build_attendance_state_payload(
+                test_ids=completed_test_ids,
+                subject=subject,
+            ),
+            "notesByTest": _build_note_state_payload(
+                user,
+                test_ids=completed_test_ids,
+                subject=subject,
+            ),
+        }
+    }
+
+
 def _render_test_analysis_template(request, template_name: str):
+    if template_name == "test-analysis-admin.html":
+        payload = _build_admin_test_analysis_payload()
+    elif template_name == "test-analysis-faculty.html":
+        payload = _build_faculty_test_analysis_payload(request.user)
+    else:
+        payload = {}
+
     context = {
         "test_analysis_session": json.dumps(_build_test_analysis_session(request.user)),
-        "test_analysis_payload": json.dumps(
-            _build_admin_test_analysis_payload()
-            if template_name == "test-analysis-admin.html"
-            else {}
-        ),
+        "test_analysis_payload": json.dumps(payload),
     }
     return render(request, template_name, context)
 
@@ -2470,6 +2504,206 @@ def test_analysis_faculty_page(request):
     if not _is_teacher_user(request.user):
         return redirect("test-analysis")
     return _render_test_analysis_template(request, "test-analysis-faculty.html")
+
+
+def _can_access_test_analysis_api(user):
+    return _is_superadmin(user) or _is_admin_user(user) or _is_teacher_user(user)
+
+
+def _normalize_analysis_subject_or_none(raw_subject):
+    subject = _normalize_test_analysis_subject_name(raw_subject)
+    return subject or None
+
+
+def _coerce_analysis_test(test_id):
+    try:
+        return ScholarshipTest.objects.prefetch_related("sections__questions").get(id=int(test_id))
+    except (TypeError, ValueError, ScholarshipTest.DoesNotExist):
+        return None
+
+
+def _analysis_cluster_student_ids(test, subject):
+    scores, _, _ = _build_analysis_dataset_for_test(test)
+    return [
+        _analysis_portal_student_id(row["studentId"])
+        for row in sorted(
+            scores,
+            key=lambda item: (item.get(subject, 0), item.get("total", 0), item.get("studentId", "")),
+        )[:ANALYSIS_CLUSTER_SIZE]
+        if _analysis_portal_student_id(row["studentId"]) is not None
+    ]
+
+
+def _teacher_can_manage_analysis_subject(user, subject):
+    if _is_superadmin(user) or _is_admin_user(user):
+        return True
+    if not _is_teacher_user(user):
+        return False
+    return _faculty_test_analysis_subject(user) == subject
+
+
+def _serialize_faculty_note(note):
+    return {
+        "id": str(note.id),
+        "text": note.note_text,
+        "at": note.created_at.isoformat(),
+    }
+
+
+@csrf_exempt
+@login_required
+def test_analysis_attendance_status_api(request):
+    if request.method != "POST" or not _can_access_test_analysis_api(request.user):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    subject = _normalize_analysis_subject_or_none(data.get("subject"))
+    status = str(data.get("status") or "").strip().lower()
+    test = _coerce_analysis_test(data.get("test_id"))
+    portal_student_id = _analysis_portal_student_id(data.get("student_id"))
+
+    if not subject or status not in {"present", "late", "absent"} or not test or not portal_student_id:
+        return JsonResponse({"error": "Invalid payload"}, status=400)
+    if not _teacher_can_manage_analysis_subject(request.user, subject):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    portal_student = Student.objects.filter(id=portal_student_id).first()
+    if not portal_student or not scholarship_test_service.is_test_assigned_to_portal_student(test, portal_student):
+        return JsonResponse({"error": "Student not assigned to this test"}, status=400)
+
+    ScholarshipTestFacultyAttendance.objects.update_or_create(
+        test=test,
+        portal_student=portal_student,
+        subject=subject,
+        defaults={
+            "status": status,
+            "marked_by": request.user,
+        },
+    )
+
+    return JsonResponse({"success": True})
+
+
+@csrf_exempt
+@login_required
+def test_analysis_attendance_finalize_api(request):
+    if request.method != "POST" or not _can_access_test_analysis_api(request.user):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    subject = _normalize_analysis_subject_or_none(data.get("subject"))
+    test = _coerce_analysis_test(data.get("test_id"))
+    finalized = bool(data.get("finalized", True))
+
+    if not subject or not test:
+        return JsonResponse({"error": "Invalid payload"}, status=400)
+    if not _teacher_can_manage_analysis_subject(request.user, subject):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    session, _ = ScholarshipTestFacultyAttendanceSession.objects.update_or_create(
+        test=test,
+        subject=subject,
+        defaults={
+            "finalized": finalized,
+            "updated_by": request.user,
+        },
+    )
+
+    if finalized:
+        marked_student_ids = set(
+            ScholarshipTestFacultyAttendance.objects.filter(test=test, subject=subject).values_list("portal_student_id", flat=True)
+        )
+        for portal_student_id in _analysis_cluster_student_ids(test, subject):
+            if portal_student_id in marked_student_ids:
+                continue
+            portal_student = Student.objects.filter(id=portal_student_id).first()
+            if not portal_student:
+                continue
+            ScholarshipTestFacultyAttendance.objects.update_or_create(
+                test=test,
+                portal_student=portal_student,
+                subject=subject,
+                defaults={
+                    "status": "absent",
+                    "marked_by": request.user,
+                },
+            )
+    else:
+        ScholarshipTestFacultyAttendance.objects.filter(test=test, subject=subject).delete()
+        session.finalized = False
+        session.updated_by = request.user
+        session.save(update_fields=["finalized", "updated_by", "updated_at"])
+
+    return JsonResponse({"success": True, "finalized": session.finalized})
+
+
+@csrf_exempt
+@login_required
+def test_analysis_note_create_api(request):
+    if request.method != "POST" or not _can_access_test_analysis_api(request.user):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    subject = _normalize_analysis_subject_or_none(data.get("subject"))
+    test = _coerce_analysis_test(data.get("test_id"))
+    portal_student_id = _analysis_portal_student_id(data.get("student_id"))
+    note_text = str(data.get("text") or "").strip()
+
+    if not subject or not test or not portal_student_id or not note_text:
+        return JsonResponse({"error": "Invalid payload"}, status=400)
+    if not _teacher_can_manage_analysis_subject(request.user, subject):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    portal_student = Student.objects.filter(id=portal_student_id).first()
+    if not portal_student or not scholarship_test_service.is_test_assigned_to_portal_student(test, portal_student):
+        return JsonResponse({"error": "Student not assigned to this test"}, status=400)
+
+    note = ScholarshipTestFacultyNote.objects.create(
+        test=test,
+        portal_student=portal_student,
+        subject=subject,
+        note_text=note_text,
+        created_by=request.user,
+    )
+    return JsonResponse({"success": True, "note": _serialize_faculty_note(note)})
+
+
+@csrf_exempt
+@login_required
+def test_analysis_note_delete_api(request):
+    if request.method != "POST" or not _can_access_test_analysis_api(request.user):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    try:
+        note_id = int(data.get("note_id"))
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "Invalid note id"}, status=400)
+
+    note = ScholarshipTestFacultyNote.objects.select_related("created_by").filter(id=note_id).first()
+    if not note:
+        return JsonResponse({"error": "Note not found"}, status=404)
+    if not (_is_superadmin(request.user) or _is_admin_user(request.user) or note.created_by_id == request.user.id):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    note.delete()
+    return JsonResponse({"success": True})
 
 
 def test_analysis_login_page(request):
@@ -4200,6 +4434,7 @@ def _build_my_tests_payload(student):
 
 
 ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Maths"]
+ANALYSIS_CLUSTER_SIZE = 12
 
 
 def _normalize_analysis_subject_name(name: str) -> str:
@@ -4267,16 +4502,186 @@ def _analysis_student_record_from_attempt(attempt):
     }
 
 
+def _analysis_student_record_from_leaderboard_entry(entry):
+    return {
+        "id": entry.get("studentId", ""),
+        "name": entry.get("studentName", "") or entry.get("studentId", ""),
+        "batch": "",
+        "parentPhone": "",
+        "studentRef": entry.get("studentRef", "") or entry.get("studentId", ""),
+        "profilePhotoUrl": entry.get("profilePhotoUrl"),
+    }
+
+
+def _analysis_portal_student_id(student_id):
+    value = str(student_id or "")
+    if value.startswith("portal-"):
+        try:
+            return int(value.split("-", 1)[1])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _analysis_subject_sections_for_test(test, subject):
+    sections = list(test.sections.all().order_by("order", "id"))
+    subject_sections = [
+        section
+        for section in sections
+        if _normalize_analysis_subject_name(section.name) == subject
+    ]
+    if subject_sections:
+        return subject_sections
+
+    try:
+        return [sections[ANALYSIS_SUBJECT_ORDER.index(subject)]]
+    except (ValueError, IndexError):
+        return sections[:1]
+
+
+def _analysis_focus_label_for_question(question, fallback_index):
+    tag_parts = [
+        part.strip()
+        for part in str(getattr(question, "tags", "") or "").split(",")
+        if part.strip()
+    ]
+    if tag_parts:
+        return tag_parts[0][:80]
+
+    raw_text = re.sub(r"\s+", " ", strip_tags(getattr(question, "question_text", "") or "")).strip()
+    if raw_text:
+        return raw_text[:77] + "..." if len(raw_text) > 80 else raw_text
+
+    return f"Question {fallback_index}"
+
+
+def _build_attempt_subject_focus_items(attempt, subject, limit=4):
+    test = getattr(attempt, "test", None)
+    if not test:
+        return []
+
+    answers_by_question_id = {
+        answer.question_id: answer
+        for answer in attempt.answers.all()
+    }
+    items = []
+    fallback_index = 0
+
+    for section in _analysis_subject_sections_for_test(test, subject):
+        for question in section.questions.all().order_by("order", "id"):
+            fallback_index += 1
+            answer = answers_by_question_id.get(question.id)
+            score = 100 if answer and answer.is_correct else 0
+            items.append(
+                {
+                    "topic": _analysis_focus_label_for_question(question, fallback_index),
+                    "score": score,
+                }
+            )
+
+    if not items:
+        return []
+
+    focus_items = [item for item in items if item["score"] < 100]
+    return (focus_items or items)[:limit]
+
+
+def _build_subject_focus_placeholder(test, subject, limit=4):
+    items = []
+    fallback_index = 0
+    for section in _analysis_subject_sections_for_test(test, subject):
+        for question in section.questions.all().order_by("order", "id"):
+            fallback_index += 1
+            items.append(
+                {
+                    "topic": _analysis_focus_label_for_question(question, fallback_index),
+                    "score": 0,
+                }
+            )
+            if len(items) >= limit:
+                return items
+
+    if items:
+        return items
+
+    return [{"topic": f"{subject} focus pending", "score": 0}]
+
+
 def _latest_analysis_attempts_for_test(test):
     return _latest_completed_attempts_for_test(test)
 
 
-def _build_admin_test_analysis_payload():
+def _build_analysis_dataset_for_test(test, focus_subject=None):
+    leaderboard = _build_attempt_leaderboard(test)
+    latest_attempts_by_portal_student_id = {
+        attempt.portal_student_id: attempt
+        for attempt in _latest_analysis_attempts_for_test(test)
+        if getattr(attempt, "portal_student_id", None)
+    }
+    scores = []
+    students_by_id = {}
+    focus_by_student = {}
+
+    for entry in leaderboard["entries"]:
+        section_scores = entry.get("sectionScores") or []
+        subject_scores = _analysis_subject_scores_from_breakdown(section_scores)
+        scores.append(
+            {
+                "studentId": entry.get("studentId"),
+                "testId": f"SCH{test.id}",
+                "Physics": subject_scores["Physics"],
+                "Chemistry": subject_scores["Chemistry"],
+                "Maths": subject_scores["Maths"],
+                "total": sum(subject_scores.values()),
+            }
+        )
+        students_by_id[entry["studentId"]] = _analysis_student_record_from_leaderboard_entry(entry)
+
+        if focus_subject:
+            portal_student_id = _analysis_portal_student_id(entry.get("studentId"))
+            attempt = latest_attempts_by_portal_student_id.get(portal_student_id)
+            focus_by_student[entry["studentId"]] = (
+                _build_attempt_subject_focus_items(attempt, focus_subject)
+                if attempt
+                else _build_subject_focus_placeholder(test, focus_subject)
+            )
+
+    return scores, students_by_id, focus_by_student
+
+
+def _serialize_test_analysis_upcoming_placeholder():
+    return {
+        "id": "",
+        "external_id": None,
+        "name": "Upcoming Test",
+        "date": "Awaiting schedule",
+        "shortDate": "Soon",
+        "sortAt": "",
+        "kind": "placeholder",
+        "canLaunchNow": False,
+        "isLive": False,
+    }
+
+
+def _serialize_test_analysis_test_item(test, start_at):
+    return {
+        "id": f"SCH{test.id}",
+        "external_id": test.id,
+        "name": test.name,
+        "date": start_at.strftime("%d %b %Y"),
+        "shortDate": start_at.strftime("%b %d"),
+        "sortAt": start_at.isoformat(),
+        "kind": "completed",
+    }
+
+
+def _build_test_analysis_base_payload(*, focus_subject=None):
     now = timezone.localtime()
     completed_tests = []
     upcoming_test = None
     students_by_id = {}
     scores_by_test = {}
+    focus_by_test = {}
 
     published_tests = (
         ScholarshipTest.objects
@@ -4289,79 +4694,110 @@ def _build_admin_test_analysis_payload():
         if not scholarship_test_service.get_runtime_questions_for_test(test):
             continue
 
-        start_at = timezone.localtime(test.scheduled_start_at)
-        end_at = start_at + timedelta(
-            hours=int(test.duration_hours or 0),
-            minutes=int(test.duration_minutes or 0),
-        )
-        test_item = {
-            "id": f"SCH{test.id}",
-            "external_id": test.id,
-            "name": test.name,
-            "date": start_at.strftime("%d %b %Y"),
-            "shortDate": start_at.strftime("%b %d"),
-            "sortAt": start_at.isoformat(),
-            "kind": "completed",
-        }
+        start_at = scholarship_test_service.get_test_scheduled_start_at(test)
+        if not start_at:
+            continue
+        end_at = start_at + timedelta(minutes=scholarship_test_service.get_test_duration_minutes(test))
+        test_item = _serialize_test_analysis_test_item(test, start_at)
 
         if end_at > now:
             if upcoming_test is None:
                 upcoming_test = {
-                    "id": f"SCH{test.id}",
-                    "external_id": test.id,
-                    "name": test.name,
-                    "date": start_at.strftime("%d %b %Y"),
-                    "shortDate": start_at.strftime("%b %d"),
-                    "sortAt": start_at.isoformat(),
+                    **test_item,
                     "kind": "upcoming",
                     "canLaunchNow": False,
                     "isLive": start_at <= now < end_at,
                 }
             continue
 
-        latest_attempts = _latest_analysis_attempts_for_test(test)
-        score_rows = []
-        for attempt in latest_attempts:
-            section_breakdown = _build_attempt_section_breakdown(attempt)
-            subject_scores = _analysis_subject_scores_from_breakdown(section_breakdown)
-            score_rows.append(
-                {
-                    "studentId": _analysis_attempt_student_id(attempt),
-                    "testId": test_item["id"],
-                    "Physics": subject_scores["Physics"],
-                    "Chemistry": subject_scores["Chemistry"],
-                    "Maths": subject_scores["Maths"],
-                    "total": sum(subject_scores.values()),
-                }
-            )
-            student_record = _analysis_student_record_from_attempt(attempt)
-            students_by_id[student_record["id"]] = student_record
-
+        score_rows, students_for_test, focus_for_test = _build_analysis_dataset_for_test(
+            test,
+            focus_subject=focus_subject,
+        )
         completed_tests.append(test_item)
+        students_by_id.update(students_for_test)
         scores_by_test[test_item["id"]] = score_rows
-
-    if upcoming_test is None:
-        upcoming_test = {
-            "id": "",
-            "external_id": None,
-            "name": "Upcoming Test",
-            "date": "Awaiting schedule",
-            "shortDate": "Soon",
-            "sortAt": "",
-            "kind": "placeholder",
-            "canLaunchNow": False,
-            "isLive": False,
-        }
+        if focus_subject:
+            focus_by_test[test_item["id"]] = focus_for_test
 
     return {
+        "students": sorted(
+            students_by_id.values(),
+            key=lambda item: ((item.get("name") or "").lower(), item.get("id") or ""),
+        ),
+        "completedTests": completed_tests,
+        "upcomingTest": upcoming_test or _serialize_test_analysis_upcoming_placeholder(),
+        "scoresByTest": scores_by_test,
+        "focusByTest": focus_by_test,
+    }
+
+
+def _build_attendance_state_payload(test_ids=None, subject=None):
+    attendance_by_test = {}
+    attendance_qs = ScholarshipTestFacultyAttendance.objects.all()
+    session_qs = ScholarshipTestFacultyAttendanceSession.objects.all()
+
+    if test_ids is not None:
+        attendance_qs = attendance_qs.filter(test_id__in=test_ids)
+        session_qs = session_qs.filter(test_id__in=test_ids)
+    if subject:
+        attendance_qs = attendance_qs.filter(subject=subject)
+        session_qs = session_qs.filter(subject=subject)
+
+    for record in attendance_qs.select_related("portal_student"):
+        test_key = f"SCH{record.test_id}"
+        state = attendance_by_test.setdefault(test_key, {sub: {} for sub in ANALYSIS_SUBJECT_ORDER})
+        state.setdefault(record.subject, {})
+        state[record.subject][f"portal-{record.portal_student_id}"] = record.status
+
+    for session in session_qs:
+        test_key = f"SCH{session.test_id}"
+        state = attendance_by_test.setdefault(test_key, {sub: {} for sub in ANALYSIS_SUBJECT_ORDER})
+        finalized = state.setdefault("finalized", {})
+        finalized[session.subject] = bool(session.finalized)
+
+    return attendance_by_test
+
+
+def _build_note_state_payload(user, test_ids=None, subject=None):
+    notes_by_test = {}
+    notes_qs = ScholarshipTestFacultyNote.objects.all()
+
+    if _is_teacher_user(user):
+        notes_qs = notes_qs.filter(created_by=user)
+    if test_ids is not None:
+        notes_qs = notes_qs.filter(test_id__in=test_ids)
+    if subject:
+        notes_qs = notes_qs.filter(subject=subject)
+
+    for note in notes_qs.select_related("portal_student"):
+        test_key = f"SCH{note.test_id}"
+        test_notes = notes_by_test.setdefault(test_key, {})
+        note_key = f"portal-{note.portal_student_id}:{note.subject}"
+        test_notes.setdefault(note_key, [])
+        test_notes[note_key].append(
+            {
+                "id": str(note.id),
+                "text": note.note_text,
+                "at": note.created_at.isoformat(),
+            }
+        )
+
+    return notes_by_test
+
+
+def _build_admin_test_analysis_payload():
+    base_payload = _build_test_analysis_base_payload()
+    return {
         "admin": {
-            "students": sorted(
-                students_by_id.values(),
-                key=lambda item: ((item.get("name") or "").lower(), item.get("id") or ""),
+            **base_payload,
+            "attendanceByTest": _build_attendance_state_payload(
+                test_ids=[test["external_id"] for test in base_payload["completedTests"]],
             ),
-            "completedTests": completed_tests,
-            "upcomingTest": upcoming_test,
-            "scoresByTest": scores_by_test,
+            "notesByTest": _build_note_state_payload(
+                None,
+                test_ids=[test["external_id"] for test in base_payload["completedTests"]],
+            ),
         }
     }
 

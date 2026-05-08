@@ -74,6 +74,26 @@ urlpatterns = [
     path("test-analysis/admin.html", views.test_analysis_admin_page, name="test-analysis-admin-page"),
     path("test-analysis/teacher.html", views.test_analysis_faculty_page, name="test-analysis-faculty-page"),
     path("test-analysis/login.html", views.test_analysis_login_page, name="test-analysis-login-page"),
+    path(
+        "test-analysis/api/attendance/status/",
+        views.test_analysis_attendance_status_api,
+        name="test-analysis-attendance-status-api",
+    ),
+    path(
+        "test-analysis/api/attendance/finalize/",
+        views.test_analysis_attendance_finalize_api,
+        name="test-analysis-attendance-finalize-api",
+    ),
+    path(
+        "test-analysis/api/notes/create/",
+        views.test_analysis_note_create_api,
+        name="test-analysis-note-create-api",
+    ),
+    path(
+        "test-analysis/api/notes/delete/",
+        views.test_analysis_note_delete_api,
+        name="test-analysis-note-delete-api",
+    ),
     path("syllabus-management/", views.syllabus_management, name="syllabus-management"),
 
     path("add-subject/", views.add_subject, name="add_subject"),

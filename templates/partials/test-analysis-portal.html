@@ -151,8 +151,10 @@
         Maths: ["Algebra", "Quadratic Equations", "Trigonometry", "Coordinate Geometry", "Differential Calculus", "Integral Calculus", "Vectors & 3D", "Probability"]
       };
       const ANALYSIS_PAYLOAD = JSON.parse('{{ test_analysis_payload|default:"{}"|escapejs }}');
-      const ADMIN_ANALYSIS = ANALYSIS_PAYLOAD.admin || null;
       const IS_ADMIN_PAGE = document.body.dataset.page === "admin";
+      const ADMIN_ANALYSIS = ANALYSIS_PAYLOAD.admin || null;
+      const FACULTY_ANALYSIS = ANALYSIS_PAYLOAD.faculty || null;
+      const ACTIVE_ANALYSIS = IS_ADMIN_PAGE ? ADMIN_ANALYSIS : FACULTY_ANALYSIS;
       const STUDENT_NAMES = [
         "Aarav Sharma","Vivaan Gupta","Aditya Patel","Vihaan Iyer","Arjun Reddy","Sai Kumar","Reyansh Joshi","Krishna Mehta","Ishaan Singh","Shaurya Malhotra",
         "Ananya Verma","Diya Kapoor","Aanya Rao","Saanvi Bhat","Aaradhya Nair","Kavya Pillai","Pari Desai","Riya Khanna","Anika Bose","Navya Menon",
@@ -172,9 +174,9 @@
         { id: "T02", name: "Mock Test 02", date: "22 Apr 2026", shortDate: "Apr 22" },
         { id: "T03", name: "Mock Test 03", date: "29 Apr 2026", shortDate: "Apr 29" }
       ];
-      const USE_BACKEND_ADMIN_DATA = Boolean(IS_ADMIN_PAGE && ADMIN_ANALYSIS);
-      const STUDENTS = USE_BACKEND_ADMIN_DATA ? (ADMIN_ANALYSIS.students || []) : DEMO_STUDENTS;
-      const TESTS = USE_BACKEND_ADMIN_DATA ? (ADMIN_ANALYSIS.completedTests || []) : DEMO_TESTS;
+      const USE_BACKEND_ANALYSIS_DATA = Boolean(ACTIVE_ANALYSIS);
+      const STUDENTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.students || []) : DEMO_STUDENTS;
+      const TESTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.completedTests || []) : DEMO_TESTS;
       const ADMIN_VISIBLE_COMPLETED_TESTS = TESTS.slice(-2);
       const DEFAULT_ADMIN_UPCOMING_TEST = {
         id: "",
@@ -185,8 +187,8 @@
         canLaunchNow: false,
         isLive: false,
       };
-      const ADMIN_UPCOMING_TEST = USE_BACKEND_ADMIN_DATA
-        ? (ADMIN_ANALYSIS.upcomingTest || DEFAULT_ADMIN_UPCOMING_TEST)
+      const ADMIN_UPCOMING_TEST = USE_BACKEND_ANALYSIS_DATA
+        ? (ACTIVE_ANALYSIS.upcomingTest || DEFAULT_ADMIN_UPCOMING_TEST)
         : DEFAULT_ADMIN_UPCOMING_TEST;
       const ADMIN_TEST_SELECTOR_SLOTS = [
         ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
@@ -228,6 +230,12 @@
         faculty: "{% url 'test-analysis-faculty-page' %}",
         admin: "{% url 'test-analysis-admin-page' %}"
       };
+      const ANALYSIS_API = {
+        attendanceStatus: "{% url 'test-analysis-attendance-status-api' %}",
+        attendanceFinalize: "{% url 'test-analysis-attendance-finalize-api' %}",
+        noteCreate: "{% url 'test-analysis-note-create-api' %}",
+        noteDelete: "{% url 'test-analysis-note-delete-api' %}"
+      };
       const SERVER_SESSION = JSON.parse('{{ test_analysis_session|escapejs }}');
 
       const state = {
@@ -251,7 +259,7 @@
         commsTab: "post-test",
         online: navigator.onLine,
         attendance: blankAttendance(),
-        facultyNotes: getStore(StorageKeys.facultyNotes, {}),
+        facultyNotes: {},
         parentAlerts: getStore(StorageKeys.parentAlerts, {}),
         modal: ""
       };
@@ -261,11 +269,15 @@
         setStore(StorageKeys.session, SERVER_SESSION);
       }
 
-      const allScores = USE_BACKEND_ADMIN_DATA
+      const BACKEND_SCORES_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.scoresByTest || {}) : {};
+      const BACKEND_FOCUS_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.focusByTest || {}) : {};
+      const BACKEND_ATTENDANCE_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.attendanceByTest || {}) : {};
+      const BACKEND_NOTES_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.notesByTest || {}) : {};
+      const allScores = USE_BACKEND_ANALYSIS_DATA
         ? Object.fromEntries(
             TESTS.map((t) => [
               t.id,
-              ((ADMIN_ANALYSIS.scoresByTest && ADMIN_ANALYSIS.scoresByTest[t.id]) || []).map((row) => ({
+              (BACKEND_SCORES_BY_TEST[t.id] || []).map((row) => ({
                 studentId: row.studentId,
                 testId: row.testId || t.id,
                 Physics: Number(row.Physics) || 0,
@@ -277,6 +289,9 @@
           )
         : Object.fromEntries(TESTS.map((t) => [t.id, generateScores(t.id)]));
       const STUDENT_LOOKUP = new Map(STUDENTS.map((student) => [student.id, student]));
+      const TEST_LOOKUP = new Map(
+        [...TESTS, ...ADMIN_TEST_SELECTOR_SLOTS.filter(Boolean)].map((test) => [test.id, test])
+      );
       const ALL_STUDENT_IDS = Array.from(
         new Set([
           ...STUDENTS.map((student) => student.id),
@@ -350,6 +365,13 @@
       }
 
       function generateTopicMastery(studentId, testId, subject) {
+        const backendTopics = BACKEND_FOCUS_BY_TEST[testId]?.[studentId];
+        if (Array.isArray(backendTopics) && backendTopics.length) {
+          return backendTopics.map((item) => ({
+            topic: item.topic || `${subject} focus`,
+            score: Number(item.score) || 0,
+          }));
+        }
         return TOPICS[subject].map((topic, i) => {
           const score = (hashCode(studentId) + hashCode(testId) + hashCode(subject) + hashCode(topic) + i * 7) % 100;
           return { topic, score: Math.max(15, Math.min(98, score)) };
@@ -479,14 +501,72 @@
       function blankAttendance() { return { Physics: {}, Chemistry: {}, Maths: {}, finalized: {} }; }
       function getStore(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
       function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-      function loadAttendance() { state.attendance = getStore(StorageKeys.attendance(state.testId), blankAttendance()); }
-      function saveAttendance() { setStore(StorageKeys.attendance(state.testId), state.attendance); }
+      function cloneData(value, fallback) {
+        if (value === undefined || value === null) return fallback;
+        try {
+          return JSON.parse(JSON.stringify(value));
+        } catch {
+          return fallback;
+        }
+      }
+      function noteStateKey(studentId, subject) {
+        return `${String(studentId || "")}:${subject}`;
+      }
+      function parseNoteStateKey(key) {
+        const separatorIndex = String(key || "").lastIndexOf(":");
+        if (separatorIndex === -1) {
+          return { studentId: String(key || ""), subject: "" };
+        }
+        return {
+          studentId: key.slice(0, separatorIndex),
+          subject: key.slice(separatorIndex + 1),
+        };
+      }
+      function currentBackendTestId() {
+        const activeTest = TEST_LOOKUP.get(state.testId);
+        if (Number.isInteger(activeTest?.external_id)) return activeTest.external_id;
+        const parsedId = Number.parseInt(String(state.testId || "").replace(/^SCH/i, ""), 10);
+        return Number.isInteger(parsedId) ? parsedId : null;
+      }
+      function loadAttendance() {
+        if (USE_BACKEND_ANALYSIS_DATA) {
+          state.attendance = cloneData(BACKEND_ATTENDANCE_BY_TEST[state.testId], blankAttendance()) || blankAttendance();
+          state.facultyNotes = cloneData(BACKEND_NOTES_BY_TEST[state.testId], {}) || {};
+          return;
+        }
+        state.attendance = getStore(StorageKeys.attendance(state.testId), blankAttendance());
+        state.facultyNotes = getStore(StorageKeys.facultyNotes, {});
+      }
+      function saveAttendance() {
+        if (USE_BACKEND_ANALYSIS_DATA) {
+          BACKEND_ATTENDANCE_BY_TEST[state.testId] = cloneData(state.attendance, blankAttendance()) || blankAttendance();
+          BACKEND_NOTES_BY_TEST[state.testId] = cloneData(state.facultyNotes, {}) || {};
+          return;
+        }
+        setStore(StorageKeys.attendance(state.testId), state.attendance);
+        setStore(StorageKeys.facultyNotes, state.facultyNotes);
+      }
+      async function postAnalysisJson(url, payload) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.error) {
+          throw new Error(data.error || "Request failed");
+        }
+        return data;
+      }
       function esc(v) { return String(v ?? "").replace(/[&<>\"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); }
       function currentScores() { return allScores[state.testId] || []; }
       function currentTest() {
         return (
-          TESTS.find((t) => t.id === state.testId) ||
-          ADMIN_TEST_SELECTOR_SLOTS.find((t) => t?.id === state.testId) ||
+          TEST_LOOKUP.get(state.testId) ||
           TESTS.at(-1) ||
           ADMIN_UPCOMING_TEST ||
           { id: "", name: "Test", date: "", shortDate: "" }
@@ -497,7 +577,7 @@
       }
       function scoreStudent(score) {
         if (!score) {
-          return { studentId: "", id: "", name: "", batch: "", parentPhone: "", studentRef: "" };
+          return { studentId: "", id: "", name: "", batch: "", parentPhone: "", studentRef: "", displayId: "" };
         }
         const student = getStudentById(score.studentId) || {
           id: score.studentId,
@@ -506,7 +586,27 @@
           parentPhone: "",
           studentRef: score.studentId,
         };
-        return { ...score, ...student };
+        return {
+          ...score,
+          ...student,
+          displayId: student.studentRef || student.id || score.studentId,
+        };
+      }
+      function displayStudentId(student) {
+        return student?.displayId || student?.studentRef || student?.id || "";
+      }
+      function findClusterStudentIdByInput(subject, rawInput) {
+        const normalized = String(rawInput || "").trim().toLowerCase();
+        if (!normalized) return "";
+        const match = getBottomCluster(currentScores(), subject)
+          .map(scoreStudent)
+          .find((student) =>
+            String(student.studentId || "").toLowerCase() === normalized
+            || String(student.id || "").toLowerCase() === normalized
+            || String(student.studentRef || "").toLowerCase() === normalized
+            || String(student.displayId || "").toLowerCase() === normalized
+          );
+        return match?.studentId || "";
       }
 
       function avatar(name, size = 38) {
@@ -770,7 +870,7 @@
         return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${rows.map((r) => {
           const stu = scoreStudent(r);
           const mine = stu.id === highlightId;
-          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${stu.id}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Maths}</td><td><b>${r.total}</b></td></tr>`;
+          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(displayStudentId(stu))}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Maths}</td><td><b>${r.total}</b></td></tr>`;
         }).join("")}</tbody></table></div>${footer}`);
       }
 
@@ -813,7 +913,7 @@
 
       function attendanceRow(s, i, status, allThree, disabled, subject) {
         const btnClass = (x) => status !== x ? "btn-outline-light" : x === "present" ? "btn-success" : x === "late" ? "btn-warning" : "btn-danger";
-        return card("p-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft text-center" style="width:26px">${i + 1}</span>${avatar(s.name, 34)}<div class="flex-grow-1 overflow-hidden"><b class="text-truncate d-block">${esc(s.name)}</b><div class="small soft mono">${s.id} ${allThree ? "- all subjects" : ""}</div></div>${["present","late","absent"].map((x) => `<button class="btn btn-sm ${btnClass(x)}" ${disabled ? "disabled" : ""} onclick="setAttendanceStatus('${subject}','${s.studentId}','${x}')">${x}</button>`).join("")}`);
+        return card("p-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft text-center" style="width:26px">${i + 1}</span>${avatar(s.name, 34)}<div class="flex-grow-1 overflow-hidden"><b class="text-truncate d-block">${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))} ${allThree ? "- all subjects" : ""}</div></div>${["present","late","absent"].map((x) => `<button class="btn btn-sm ${btnClass(x)}" ${disabled ? "disabled" : ""} onclick="setAttendanceStatus('${subject}','${s.studentId}','${x}')">${x}</button>`).join("")}`);
       }
 
       function getAllThreeSet(scores) {
@@ -821,24 +921,66 @@
         return new Set(STUDENTS.filter((s) => SUBJECTS.every((sub) => clusters[sub].includes(s.id))).map((s) => s.id));
       }
 
-      function setAttendanceStatus(subject, studentId, status) {
+      async function setAttendanceStatus(subject, studentId, status) {
         if (state.attendance.finalized?.[subject]) return;
+        if (USE_BACKEND_ANALYSIS_DATA && state.user?.type === "faculty") {
+          try {
+            await postAnalysisJson(ANALYSIS_API.attendanceStatus, {
+              test_id: currentBackendTestId(),
+              subject,
+              student_id: studentId,
+              status,
+            });
+          } catch (error) {
+            window.alert(error.message || "Unable to save attendance.");
+            return;
+          }
+        }
         state.attendance[subject] = { ...(state.attendance[subject] || {}), [studentId]: status };
-        saveAttendance(); render();
+        saveAttendance();
+        render();
       }
 
-      function finalizeAttendance(subject) {
+      async function finalizeAttendance(subject) {
+        if (USE_BACKEND_ANALYSIS_DATA && state.user?.type === "faculty") {
+          try {
+            await postAnalysisJson(ANALYSIS_API.attendanceFinalize, {
+              test_id: currentBackendTestId(),
+              subject,
+              finalized: true,
+            });
+          } catch (error) {
+            window.alert(error.message || "Unable to finalize attendance.");
+            return;
+          }
+        }
         const subj = { ...(state.attendance[subject] || {}) };
-        getBottomCluster(currentScores(), subject).forEach((s) => { if (!subj[s.studentId]) subj[s.studentId] = "absent"; });
+        getBottomCluster(currentScores(), subject).forEach((s) => {
+          if (!subj[s.studentId]) subj[s.studentId] = "absent";
+        });
         state.attendance[subject] = subj;
         state.attendance.finalized = { ...(state.attendance.finalized || {}), [subject]: true };
-        saveAttendance(); render();
+        saveAttendance();
+        render();
       }
 
-      function resetAttendance(subject) {
+      async function resetAttendance(subject) {
+        if (USE_BACKEND_ANALYSIS_DATA && state.user?.type === "faculty") {
+          try {
+            await postAnalysisJson(ANALYSIS_API.attendanceFinalize, {
+              test_id: currentBackendTestId(),
+              subject,
+              finalized: false,
+            });
+          } catch (error) {
+            window.alert(error.message || "Unable to reopen attendance.");
+            return;
+          }
+        }
         state.attendance[subject] = {};
         state.attendance.finalized = { ...(state.attendance.finalized || {}), [subject]: false };
-        saveAttendance(); render();
+        saveAttendance();
+        render();
       }
 
       function openQR(subject) {
@@ -846,37 +988,68 @@
         render(); setTimeout(() => document.getElementById("qr-input")?.focus(), 0);
       }
 
-      function markQR(subject) {
-        const id = document.getElementById("qr-input").value.trim().toUpperCase();
-        if (getBottomCluster(currentScores(), subject).some((s) => s.studentId === id)) setAttendanceStatus(subject, id, "present");
-        state.modal = ""; render();
+      async function markQR(subject) {
+        const studentId = findClusterStudentIdByInput(subject, document.getElementById("qr-input").value);
+        if (studentId) {
+          await setAttendanceStatus(subject, studentId, "present");
+        }
+        state.modal = "";
+        render();
       }
 
       function closeModal() { state.modal = ""; render(); }
 
       function facultyTopics(subject) {
         const cluster = getBottomCluster(currentScores(), subject).map(scoreStudent);
-        return card("p-4 mb-4", `<h5 class="display fw-bold">${subject} Topic Focus</h5>${cluster.map((s) => mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2 mb-2">${avatar(s.name, 32)}<div><b>${esc(s.name)}</b><div class="small soft mono">${s.id} - score ${s[subject]}</div></div></div>${generateTopicMastery(s.studentId, state.testId, subject).sort((a,b) => a.score - b.score).slice(0,4).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span>${x.score}%</span></div>${progress(x.score, SUBJECT_THEMES[subject].accent)}</div>`).join("")}`)).join("")}`);
+        return card("p-4 mb-4", `<h5 class="display fw-bold">${subject} Topic Focus</h5>${cluster.map((s) => mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2 mb-2">${avatar(s.name, 32)}<div><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))} - score ${s[subject]}</div></div></div>${generateTopicMastery(s.studentId, state.testId, subject).sort((a,b) => a.score - b.score).slice(0,4).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span>${x.score}%</span></div>${progress(x.score, SUBJECT_THEMES[subject].accent)}</div>`).join("")}`)).join("")}`);
       }
 
       function facultyNotes(subject) {
         const cluster = getBottomCluster(currentScores(), subject).map(scoreStudent);
         return card("p-4 mb-4", `<h5 class="display fw-bold">Faculty Notes</h5>${cluster.map((s) => {
-          const key = `${s.studentId}:${subject}`, notes = state.facultyNotes[key] || [];
-          return mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2">${avatar(s.name, 32)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${s.id}</div></div></div><div class="input-group input-group-sm my-2"><input id="note-${key}" class="form-control" placeholder="Add a note"><button class="btn btn-brand" onclick="addNote('${key}')">Add</button></div>${notes.map((n) => `<div class="small soft border-top border-secondary border-opacity-25 py-1 d-flex justify-content-between"><span>${esc(n.text)}</span><button class="btn btn-sm btn-link text-danger p-0" onclick="deleteNote('${key}','${n.id}')">x</button></div>`).join("")}`);
+          const key = noteStateKey(s.studentId, subject), notes = state.facultyNotes[key] || [];
+          return mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2">${avatar(s.name, 32)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div></div><div class="input-group input-group-sm my-2"><input id="note-${key}" class="form-control" placeholder="Add a note"><button class="btn btn-brand" onclick="addNote('${key}')">Add</button></div>${notes.map((n) => `<div class="small soft border-top border-secondary border-opacity-25 py-1 d-flex justify-content-between"><span>${esc(n.text)}</span><button class="btn btn-sm btn-link text-danger p-0" onclick="deleteNote('${key}','${n.id}')">x</button></div>`).join("")}`);
         }).join("")}`);
       }
 
-      function addNote(key) {
+      async function addNote(key) {
         const text = document.getElementById(`note-${key}`).value.trim();
         if (!text) return;
-        state.facultyNotes[key] = [{ id: Date.now().toString(), text, at: new Date().toISOString() }, ...(state.facultyNotes[key] || [])];
-        setStore(StorageKeys.facultyNotes, state.facultyNotes); render();
+        let note = { id: Date.now().toString(), text, at: new Date().toISOString() };
+        if (USE_BACKEND_ANALYSIS_DATA && state.user?.type === "faculty") {
+          const parsed = parseNoteStateKey(key);
+          try {
+            const response = await postAnalysisJson(ANALYSIS_API.noteCreate, {
+              test_id: currentBackendTestId(),
+              subject: parsed.subject,
+              student_id: parsed.studentId,
+              text,
+            });
+            note = response.note || note;
+          } catch (error) {
+            window.alert(error.message || "Unable to save note.");
+            return;
+          }
+        }
+        state.facultyNotes[key] = [note, ...(state.facultyNotes[key] || [])];
+        saveAttendance();
+        render();
       }
 
-      function deleteNote(key, id) {
+      async function deleteNote(key, id) {
+        if (USE_BACKEND_ANALYSIS_DATA && state.user?.type === "faculty") {
+          try {
+            await postAnalysisJson(ANALYSIS_API.noteDelete, {
+              note_id: id,
+            });
+          } catch (error) {
+            window.alert(error.message || "Unable to delete note.");
+            return;
+          }
+        }
         state.facultyNotes[key] = (state.facultyNotes[key] || []).filter((n) => n.id !== id);
-        setStore(StorageKeys.facultyNotes, state.facultyNotes); render();
+        saveAttendance();
+        render();
       }
 
       function adminView() {
@@ -903,8 +1076,8 @@
       function adminPredict() {
         const alerts = getPredictiveAlerts();
         return card("p-4 mb-4", `<h5 class="display fw-bold">Predictive Alerts</h5><div class="vstack gap-2">${alerts.map((a) => {
-          const notes = SUBJECTS.flatMap((sub) => state.facultyNotes[`${a.id}:${sub}`] || []);
-          return mini("p-3", `<div class="d-flex align-items-start gap-3">${avatar(a.name, 38)}<div class="flex-grow-1"><div class="d-flex justify-content-between"><b>${esc(a.name)}</b>${badge(`S${a.severity}`, a.severity >= 4 ? "text-bg-danger" : "text-bg-warning text-dark")}</div><div class="small soft mono">${a.id} - ranks ${a.ranks.join(" -> ")}</div><ul class="small soft mb-1 mt-2">${a.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>${notes.length ? `<div class="small text-info">Faculty notes: ${notes.map((n) => esc(n.text)).join("; ")}</div>` : ""}</div></div>`);
+          const notes = SUBJECTS.flatMap((sub) => state.facultyNotes[noteStateKey(a.id, sub)] || []);
+          return mini("p-3", `<div class="d-flex align-items-start gap-3">${avatar(a.name, 38)}<div class="flex-grow-1"><div class="d-flex justify-content-between"><b>${esc(a.name)}</b>${badge(`S${a.severity}`, a.severity >= 4 ? "text-bg-danger" : "text-bg-warning text-dark")}</div><div class="small soft mono">${esc(a.studentRef || a.id)} - ranks ${a.ranks.join(" -> ")}</div><ul class="small soft mb-1 mt-2">${a.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>${notes.length ? `<div class="small text-info">Faculty notes: ${notes.map((n) => esc(n.text)).join("; ")}</div>` : ""}</div></div>`);
         }).join("") || `<div class="soft small">No active risk alerts.</div>`}</div>`);
       }
 
@@ -919,13 +1092,13 @@
         const schedule = card("p-4 mb-4", `<h5 class="display fw-bold">Cluster Schedule</h5><div class="row g-2">${SUBJECTS.map((sub) => `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft mt-2">${CLUSTER_SCHEDULE[sub].faculty}<br>${CLUSTER_SCHEDULE[sub].time}</div>`)}</div>`).join("")}</div>`);
         const allSubjectBlock = allThree.size ? card("p-4 mb-4", `<h5 class="display fw-bold">All-Subjects Cluster</h5>${[...allThree].map((id) => {
           const s = scoreStudent(sc.find((x) => x.studentId === id));
-          return mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `${avatar(s.name, 30)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${s.id}</div></div><span class="mono small">P${s.Physics} C${s.Chemistry} M${s.Maths}</span>`);
+          return mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `${avatar(s.name, 30)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><span class="mono small">P${s.Physics} C${s.Chemistry} M${s.Maths}</span>`);
         }).join("")}`) : "";
         const subjectBlocks = SUBJECTS.map((sub) => {
           const rows = getBottomCluster(sc, sub)
             .filter((s) => !allThree.has(s.studentId))
             .map(scoreStudent)
-            .map((s, i) => mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft">${i + 1}</span>${avatar(s.name, 28)}<div class="flex-grow-1 text-truncate"><b>${esc(s.name)}</b><div class="small soft mono">${s.id}</div></div><b style="color:${SUBJECT_THEMES[sub].accent}">${s[sub]}</b>`))
+            .map((s, i) => mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft">${i + 1}</span>${avatar(s.name, 28)}<div class="flex-grow-1 text-truncate"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><b style="color:${SUBJECT_THEMES[sub].accent}">${s[sub]}</b>`))
             .join("") || `<div class="small soft">All weak ${sub} students are in the all-subjects group.</div>`;
           return `<div class="col-lg-4">${card("p-3 h-100", `<h6 class="display fw-bold">${sub} Cluster</h6>${rows}`)}</div>`;
         }).join("");
@@ -937,7 +1110,7 @@
         const lines = [`The Rankers Academy - ${currentTest().name}`, `Cluster sessions for ${currentTest().date}`, ""];
         SUBJECTS.forEach((sub) => {
           lines.push(`${sub} (${CLUSTER_SCHEDULE[sub].time}) - ${CLUSTER_SCHEDULE[sub].faculty}`);
-          getBottomCluster(sc, sub).map(scoreStudent).forEach((s, i) => lines.push(`${i + 1}. ${s.name} (${s.id}) - ${s[sub]}/100`));
+          getBottomCluster(sc, sub).map(scoreStudent).forEach((s, i) => lines.push(`${i + 1}. ${s.name} (${displayStudentId(s)}) - ${s[sub]}/100`));
           lines.push("");
         });
         return lines.join("\n");
@@ -949,7 +1122,7 @@
           const present = cluster.filter((s) => ["present", "late"].includes(att[s.studentId])).length;
           const rate = cluster.length ? Math.round(present / cluster.length * 100) : 0;
           const absent = cluster.map(scoreStudent).filter((s) => att[s.studentId] === "absent");
-          return mini("p-3 mb-3", `<div class="d-flex justify-content-between align-items-center"><div>${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft">${CLUSTER_SCHEDULE[sub].time}</div></div>${badge(`${rate}%`, rate >= 80 ? "text-bg-success" : rate >= 50 ? "text-bg-warning text-dark" : "text-bg-danger")}</div><div class="mt-2">${progress(rate, SUBJECT_THEMES[sub].accent)}</div>${absent.length ? `<div class="small text-danger mt-2">Absentees: ${absent.map((s) => `${esc(s.name)} (${s.id})`).join(", ")}</div>` : ""}`);
+          return mini("p-3 mb-3", `<div class="d-flex justify-content-between align-items-center"><div>${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft">${CLUSTER_SCHEDULE[sub].time}</div></div>${badge(`${rate}%`, rate >= 80 ? "text-bg-success" : rate >= 50 ? "text-bg-warning text-dark" : "text-bg-danger")}</div><div class="mt-2">${progress(rate, SUBJECT_THEMES[sub].accent)}</div>${absent.length ? `<div class="small text-danger mt-2">Absentees: ${absent.map((s) => `${esc(s.name)} (${esc(displayStudentId(s))})`).join(", ")}</div>` : ""}`);
         }).join("")}`);
       }
 

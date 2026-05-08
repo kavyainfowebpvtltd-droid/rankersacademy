@@ -187,6 +187,97 @@ class ScholarshipTestAttempt(models.Model):
         return f"Attempt {self.id} - {self.student.name} - Score: {self.score}/{self.total_questions}"
 
 
+class ScholarshipTestFacultyAttendanceSession(models.Model):
+    test = models.ForeignKey(
+        'ScholarshipTest',
+        on_delete=models.CASCADE,
+        related_name='faculty_attendance_sessions',
+    )
+    subject = models.CharField(max_length=20)
+    finalized = models.BooleanField(default=False)
+    updated_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='scholarship_test_attendance_sessions_updated',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['test', 'subject']
+        ordering = ['test', 'subject']
+
+    def __str__(self):
+        return f"{self.test.name} - {self.subject} attendance session"
+
+
+class ScholarshipTestFacultyAttendance(models.Model):
+    STATUS_CHOICES = [
+        ('present', 'Present'),
+        ('late', 'Late'),
+        ('absent', 'Absent'),
+    ]
+
+    test = models.ForeignKey(
+        'ScholarshipTest',
+        on_delete=models.CASCADE,
+        related_name='faculty_attendance_records',
+    )
+    portal_student = models.ForeignKey(
+        'sds.Student',
+        on_delete=models.CASCADE,
+        related_name='scholarship_test_faculty_attendance_records',
+    )
+    subject = models.CharField(max_length=20)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    marked_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='scholarship_test_faculty_attendance_marked',
+    )
+    marked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['test', 'portal_student', 'subject']
+        ordering = ['test', 'subject', 'portal_student']
+
+    def __str__(self):
+        return f"{self.test.name} - {self.portal_student_id} - {self.subject} - {self.status}"
+
+
+class ScholarshipTestFacultyNote(models.Model):
+    test = models.ForeignKey(
+        'ScholarshipTest',
+        on_delete=models.CASCADE,
+        related_name='faculty_notes',
+    )
+    portal_student = models.ForeignKey(
+        'sds.Student',
+        on_delete=models.CASCADE,
+        related_name='scholarship_test_faculty_notes',
+    )
+    subject = models.CharField(max_length=20)
+    note_text = models.TextField()
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='scholarship_test_faculty_notes_created',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+    def __str__(self):
+        return f"{self.test.name} - {self.portal_student_id} - {self.subject} note"
+
+
 class ScholarshipStudentAnswer(models.Model):
     
     attempt = models.ForeignKey(
