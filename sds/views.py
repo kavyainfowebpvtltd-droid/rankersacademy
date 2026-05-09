@@ -4314,6 +4314,45 @@ def _build_my_tests_payload(student):
                 "isLive": start_at <= now < end_at,
             }
 
+    # If no scheduled upcoming test exists, consider unscheduled published tests
+    # so that tests created via admin (published but not scheduled) appear
+    # in the student portal as an upcoming placeholder.
+    if upcoming_test is None:
+        unscheduled_published_tests = (
+            ScholarshipTest.objects
+            .filter(status="published", scheduled_start_at__isnull=True)
+            .order_by("-created_at")
+            .prefetch_related("sections__questions")
+        )
+
+        for test in unscheduled_published_tests:
+            if not scholarship_test_service.get_runtime_questions_for_test(test):
+                continue
+            if not scholarship_test_service.is_test_assigned_to_portal_student(test, student):
+                continue
+
+            item = {
+                "id": f"SCH{test.id}",
+                "external_id": test.id,
+                "name": test.name,
+                "date": "Awaiting schedule",
+                "shortDate": "Soon",
+                "time": "",
+                "sortAt": "",
+                "scheduledStartAt": None,
+                "scheduledEndAt": None,
+                "launchWindowOpensAt": None,
+                "launchUrl": reverse("scholarship_test:scholarship_launch_test", args=[test.id]),
+            }
+
+            upcoming_test = {
+                **item,
+                "canLaunchNow": False,
+                "isLive": False,
+            }
+            published_tests_by_id[test.id] = test
+            break
+
     attempt_queryset = (
         ScholarshipTestAttempt.objects
         .filter(
