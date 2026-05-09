@@ -103,24 +103,52 @@ def get_portal_student_stream_values(portal_student) -> set[str]:
     return stream_values
 
 
+def _fuzzy_norm(value) -> str:
+    """Removes all whitespace and casefolds for robust comparison."""
+    return re.sub(r"\s+", "", str(value or "").strip()).casefold()
+
+
 def is_test_assigned_to_portal_student(test, portal_student) -> bool:
     if not test or not portal_student:
         return False
 
-    test_batch = _normalize_scope_value(getattr(test, "batch", ""))
-    student_batch = _normalize_scope_value(getattr(portal_student, "batch", ""))
-    if test_batch and test_batch != student_batch:
-        return False
+    # 1. Batch Check (Fuzzy and supports multiple comma-separated values)
+    test_batch_raw = getattr(test, "batch", "")
+    student_batch_raw = getattr(portal_student, "batch", "")
 
-    test_stream_values = _split_scope_values(getattr(test, "stream", ""))
-    if not test_stream_values:
+    test_batches = _split_scope_values(test_batch_raw)
+    if test_batches:
+        student_batches = _split_scope_values(student_batch_raw)
+        
+        # If student has no batch, they don't see batch-restricted tests
+        if not student_batches:
+            return False
+            
+        test_batch_fuzzy = {_fuzzy_norm(b) for b in test_batches}
+        student_batch_fuzzy = {_fuzzy_norm(b) for b in student_batches}
+        
+        if test_batch_fuzzy.isdisjoint(student_batch_fuzzy):
+            return False
+
+    # 2. Stream Check (Fuzzy)
+    test_stream_raw = getattr(test, "stream", "")
+    test_streams = _split_scope_values(test_stream_raw)
+    
+    # If test has no stream restriction, anyone in the batch can see it
+    if not test_streams:
         return True
 
-    student_stream_values = get_portal_student_stream_values(portal_student)
-    if not student_stream_values:
-        return False
+    student_streams = get_portal_student_stream_values(portal_student)
+    
+    # If student has no stream values, we allow them to see the test 
+    # to avoid "missing tests" issues when profiles are incomplete.
+    if not student_streams:
+        return True
 
-    return not test_stream_values.isdisjoint(student_stream_values)
+    test_stream_fuzzy = {_fuzzy_norm(s) for s in test_streams}
+    student_stream_fuzzy = {_fuzzy_norm(s) for s in student_streams}
+
+    return not test_stream_fuzzy.isdisjoint(student_stream_fuzzy)
 
 
 def get_test_scheduled_start_at(test):
