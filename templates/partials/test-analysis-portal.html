@@ -893,7 +893,7 @@
 
       function facultyView() {
         const faculty = state.user.faculty, subject = faculty.subject;
-        return `${shell(faculty.name, "Faculty", subjectIcon(subject))}
+        return `<div class="app-shell pb-5"><div class="container-fluid px-3 px-lg-4">
           ${nav([["attend","Attendance"],["topics","Topic Focus"],["notes","Notes"]], state.facultyTab, "state.facultyTab")}
           ${testSelector()}
           ${state.facultyTab === "attend" ? facultyAttendance(subject) : state.facultyTab === "topics" ? facultyTopics(subject) : facultyNotes(subject)}
