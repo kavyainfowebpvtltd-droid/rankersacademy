@@ -247,6 +247,25 @@
       text-transform: uppercase;
     }
 
+    .my-tests-page .test-slot-live {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+      border-color: rgba(5, 150, 105, 0.4) !important;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3) !important;
+      animation: pulse-live 2s infinite;
+    }
+
+    @keyframes pulse-live {
+      0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
     .my-tests-page .test-slot-btn:hover:not(:disabled),
     .my-tests-page .test-slot-btn:focus-visible:not(:disabled) {
       transform: translateY(-1px);
@@ -998,7 +1017,11 @@
       button.appendChild(layout);
 
       const launchable = runtimeSlot.canLaunchNow && !!runtimeSlot.launchUrl;
-      button.classList.add(launchable ? "btn-brand" : "btn-outline-light");
+      if (launchable) {
+        button.classList.add("btn-brand", "test-slot-live");
+      } else {
+        button.classList.add("btn-outline-light");
+      }
       button.disabled = !launchable;
       if (!launchable) {
         button.title = runtimeSlot.hasEnded
