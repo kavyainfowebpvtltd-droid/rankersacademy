@@ -1043,6 +1043,54 @@ class ScholarshipWordImportTests(TestCase):
         self.assertEqual(imported['sections'][0]['questions'][1]['correct_options'], [1])
         self.assertFalse(imported['warnings'])
 
+    def test_word_import_service_parses_online_test_options_answer_and_next_label_in_same_table(self):
+        upload = self.build_docx_upload_with_body_items(
+            [
+                {'type': 'paragraph', 'text': 'CURRENT ELECTRICITY - ONLINE TEST'},
+                {
+                    'type': 'paragraph',
+                    'text': '50 Single-Correct MCQs - Each question is followed by its answer',
+                },
+                {'type': 'table', 'cells': ['Q1.', '']},
+                {'type': 'paragraph', 'text': 'First current electricity question?'},
+                {
+                    'type': 'table',
+                    'cells': [
+                        '(A) One',
+                        '(B) Two',
+                        '(C) Three',
+                        '(D) Four',
+                        'Answer: (C) Three',
+                        'Q2.',
+                    ],
+                },
+                {'type': 'paragraph', 'text': 'Second current electricity question?'},
+                {
+                    'type': 'table',
+                    'cells': [
+                        '(A) Red',
+                        '(B) Blue',
+                        '(C) Green',
+                        '(D) Yellow',
+                        'Answer: (B) Blue',
+                    ],
+                },
+            ],
+            name='current-electricity-online-test.docx',
+        )
+
+        imported = word_import_service.import_questions_from_docx(upload)
+
+        questions = imported['sections'][0]['questions']
+        self.assertEqual(len(questions), 2)
+        self.assertIn('First current electricity question', questions[0]['text'])
+        self.assertEqual(questions[0]['options'], ['One', 'Two', 'Three', 'Four'])
+        self.assertEqual(questions[0]['correct_options'], [2])
+        self.assertIn('Second current electricity question', questions[1]['text'])
+        self.assertEqual(questions[1]['options'], ['Red', 'Blue', 'Green', 'Yellow'])
+        self.assertEqual(questions[1]['correct_options'], [1])
+        self.assertFalse(imported['warnings'])
+
 
 class ScholarshipSectionApiTests(TestCase):
     def setUp(self):

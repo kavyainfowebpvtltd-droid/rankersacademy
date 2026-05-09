@@ -515,26 +515,26 @@ def _parse_online_test_questions(body_items):
                     pending_paragraph = item
             continue
 
-        table_texts = item.get('texts') or []
-        if not table_texts:
-            continue
+        for group_type, table_texts in _split_online_table_groups(item.get('texts') or []):
+            if not table_texts:
+                continue
 
-        if _is_online_test_question_table(table_texts):
-            question = _build_online_test_question(pending_paragraph, table_texts)
-            questions.append(question)
-            current_question = question
-            pending_paragraph = None
-            continue
+            if group_type == 'question':
+                question = _build_online_test_question(pending_paragraph, table_texts)
+                questions.append(question)
+                current_question = question
+                pending_paragraph = None
+                continue
 
-        if current_question is None:
-            continue
+            if current_question is None:
+                continue
 
-        if _table_contains_answer_line(table_texts):
-            _apply_online_test_answer(current_question, table_texts)
-            continue
+            if _table_contains_option_rows(table_texts):
+                _apply_pending_online_stem(current_question)
+                current_question['options'] = _parse_online_test_options(table_texts)
 
-        if _table_contains_option_rows(table_texts):
-            current_question['options'] = _parse_online_test_options(table_texts)
+            if _table_contains_answer_line(table_texts):
+                _apply_online_test_answer(current_question, table_texts)
 
     if not questions:
         return [], []
@@ -560,10 +560,56 @@ def _is_online_test_question_table(table_texts):
     return bool(ONLINE_TEST_QUESTION_LABEL_PATTERN.match(_normalize_space(table_texts[0])))
 
 
+def _split_online_table_groups(table_texts):
+    groups = []
+    index = 0
+    texts = [str(text or '') for text in table_texts if str(text or '').strip()]
+
+    while index < len(texts):
+        text = texts[index]
+        normalized = _normalize_space(text)
+
+        if ONLINE_TEST_QUESTION_LABEL_PATTERN.match(normalized):
+            question_group = [text]
+            index += 1
+            while index < len(texts):
+                next_text = texts[index]
+                next_normalized = _normalize_space(next_text)
+                if (
+                    ONLINE_TEST_QUESTION_LABEL_PATTERN.match(next_normalized)
+                    or _is_online_option_text(next_text)
+                    or ANSWER_LINE_PATTERN.match(next_normalized)
+                ):
+                    break
+                question_group.append(next_text)
+                index += 1
+            groups.append(('question', question_group))
+            continue
+
+        content_group = []
+        while index < len(texts):
+            next_normalized = _normalize_space(texts[index])
+            if ONLINE_TEST_QUESTION_LABEL_PATTERN.match(next_normalized):
+                break
+            content_group.append(texts[index])
+            index += 1
+
+        if content_group:
+            groups.append(('content', content_group))
+
+    return groups
+
+
 def _build_online_test_question(paragraph_item, table_texts):
     fallback_text = ' '.join(table_texts[1:]).strip() or ' '.join(table_texts).strip()
     question_html = escape(fallback_text)
     question_text = fallback_text
+    pending_stem_html = ''
+    pending_stem_text = ''
+
+    if paragraph_item and not _is_online_metadata_text(paragraph_item.get('text', '')):
+        pending_stem_html = paragraph_item.get('html', '').strip() or escape(paragraph_item.get('text', ''))
+        pending_stem_text = paragraph_item.get('text', '').strip()
 
     return {
         'type': 'mcq',
@@ -578,15 +624,45 @@ def _build_online_test_question(paragraph_item, table_texts):
         'multi_select': False,
         '_source_text': question_text,
         '_stem_assigned': False,
+        '_pending_stem_html': pending_stem_html,
+        '_pending_stem_text': pending_stem_text,
     }
 
 
+def _is_online_metadata_text(value):
+    text = _normalize_space(value)
+    if not text:
+        return True
+
+    upper_text = text.upper()
+    return (
+        _looks_like_test_title(text)
+        or 'SINGLE-CORRECT' in upper_text
+        or 'MCQ' in upper_text
+        or 'EACH QUESTION IS FOLLOWED' in upper_text
+    )
+
+
+def _apply_pending_online_stem(question):
+    if not question or question.get('_stem_assigned'):
+        return
+
+    pending_html = question.get('_pending_stem_html', '').strip()
+    pending_text = question.get('_pending_stem_text', '').strip()
+    if not pending_html and not pending_text:
+        return
+
+    question['text'] = pending_html or escape(pending_text)
+    question['_source_text'] = pending_text
+    question['_stem_assigned'] = True
+
+
 def _table_contains_option_rows(table_texts):
-    return any(OPTION_PATTERN.search(text or '') for text in table_texts)
+    return bool(_build_online_option_source(table_texts).strip())
 
 
 def _parse_online_test_options(table_texts):
-    joined = ' '.join(str(text or '') for text in table_texts)
+    joined = _build_online_option_source(table_texts)
     options = []
     for match in OPTION_PATTERN.finditer(joined):
         start = match.end()
@@ -596,6 +672,27 @@ def _parse_online_test_options(table_texts):
         if option_text:
             options.append(option_text)
     return options
+
+
+def _build_online_option_source(table_texts):
+    segments = []
+    for text in table_texts:
+        raw_text = str(text or '')
+        normalized = _normalize_space(raw_text)
+        if not normalized:
+            continue
+        if ONLINE_TEST_QUESTION_LABEL_PATTERN.match(normalized):
+            continue
+
+        option_text = re.split(r'\banswer\s*:', raw_text, maxsplit=1, flags=re.IGNORECASE)[0]
+        if _is_online_option_text(option_text):
+            segments.append(option_text)
+
+    return ' '.join(segments)
+
+
+def _is_online_option_text(value):
+    return bool(OPTION_PATTERN.search(str(value or '')))
 
 
 def _table_contains_answer_line(table_texts):
