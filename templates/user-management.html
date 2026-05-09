@@ -218,7 +218,7 @@
             <li class="page-item active">
               <span class="page-link">{{ num }}</span>
             </li>
-           {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
+            {% elif num > students_page.number|add:'-7' and num < students_page.number|add:'7' %}
             <li class="page-item">
               <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ num }}">{{ num }}</a>
             </li>
@@ -361,7 +361,7 @@
             <li class="page-item active">
               <span class="page-link">{{ num }}</span>
             </li>
-         {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
+            {% elif num > teachers_page.number|add:'-7' and num < teachers_page.number|add:'7' %}
             <li class="page-item">
               <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ num }}">{{ num }}</a>
             </li>

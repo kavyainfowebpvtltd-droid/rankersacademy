@@ -4088,14 +4088,19 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
             if attempt
             else [dict(item) for item in zero_section_breakdown]
         )
+        
+        # Ensure we have a valid total score and total marks for ranking
+        score_val = int(attempt.score or 0) if attempt else 0
+        total_marks_val = int(attempt.total_marks or 0) if attempt and int(attempt.total_marks or 0) > 0 else total_marks
+        
         entry = {
             "attemptId": attempt.id if attempt else None,
             "studentId": f"portal-{portal_student.id}",
             "studentName": portal_student.student_name or portal_student.user.username,
             "studentRef": portal_student.username or portal_student.contact,
             "profilePhotoUrl": _student_photo_url(portal_student),
-            "score": int(attempt.score or 0) if attempt else 0,
-            "totalMarks": int(attempt.total_marks or 0) if attempt and int(attempt.total_marks or 0) > 0 else total_marks,
+            "score": score_val,
+            "totalMarks": total_marks_val,
             "sectionScores": section_scores,
             "isCurrentStudent": bool(
                 (current_attempt_id and attempt and attempt.id == current_attempt_id)
@@ -4114,28 +4119,43 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
         }
         entries.append(entry)
 
+    # Improved ranking logic: only students who actually attempted the test 
+    # should get a numeric rank. Unattempted students stay at the bottom.
     entries.sort(
         key=lambda entry: (
-            -int(entry["score"] or 0),
-            0 if entry["_attempted"] else 1,
-            entry["_completed_at"] or timezone.now(),
+            0 if entry["_attempted"] else 1, # Attempted students first
+            -int(entry["score"] or 0),       # Then by score descending
+            entry["_completed_at"] or timezone.now(), # Then by completion time (earlier is better)
             entry["_sort_name"],
             entry["studentId"],
         )
     )
 
     current_entry = None
-    for rank, entry in enumerate(entries, start=1):
-        entry["rank"] = rank
+    last_score = None
+    last_rank = 0
+    
+    for idx, entry in enumerate(entries, start=1):
+        if entry["_attempted"]:
+            # Standard ranking for attempted tests (with tie-handling)
+            if entry["score"] != last_score:
+                last_rank = idx
+            entry["rank"] = last_rank
+            last_score = entry["score"]
+        else:
+            # Unattempted tests don't get a numeric rank in the same way
+            entry["rank"] = "NA"
+            
         entry.pop("_attempted", None)
         entry.pop("_completed_at", None)
         entry.pop("_sort_name", None)
+        
         if entry["isCurrentStudent"]:
             current_entry = entry
 
     return {
         "entries": entries,
-        "topEntries": entries[:5],
+        "topEntries": [e for e in entries if e["rank"] != "NA"][:5],
         "currentEntry": current_entry,
     }
 
@@ -4491,12 +4511,26 @@ def _analysis_subject_scores_from_breakdown(section_breakdown):
     scores = {subject: 0 for subject in ANALYSIS_SUBJECT_ORDER}
 
     for index, item in enumerate(section_breakdown):
-        mapped = _normalize_analysis_subject_name(item.get("name", ""))
+        section_name = item.get("name", "")
+        mapped = _normalize_analysis_subject_name(section_name)
+        
+        # Robust fallback: if mapped name is empty, use the order index
         if not mapped and index < len(ANALYSIS_SUBJECT_ORDER):
             mapped = ANALYSIS_SUBJECT_ORDER[index]
+            
         if not mapped or mapped not in scores:
             continue
-        scores[mapped] = int(round(float(item.get("percentage") or 0)))
+            
+        # Ensure percentage is a valid number before rounding
+        try:
+            raw_percent = item.get("percentage")
+            if raw_percent is None or raw_percent == "":
+                percent = 0.0
+            else:
+                percent = float(raw_percent)
+            scores[mapped] = int(round(percent))
+        except (ValueError, TypeError):
+            scores[mapped] = 0
 
     return scores
 

@@ -97,7 +97,7 @@
       {% for num in students_page.paginator.page_range %}
         {% if students_page.number == num %}
         <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-        {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
+        {% elif num > students_page.number|add:'-7' and num < students_page.number|add:'7' %}
         <li class="page-item"><a class="page-link" href="?students_page={{ num }}{% if active_search_query %}&search={{ active_search_query|urlencode }}{% endif %}">{{ num }}</a></li>
         {% endif %}
       {% endfor %}
