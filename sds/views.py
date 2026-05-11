@@ -3975,10 +3975,13 @@ def _build_attempt_section_breakdown(attempt):
     if not test:
         return []
 
-    correct_question_ids = {
-        answer.question_id
+    saved_progress = scholarship_test_service.get_saved_progress(attempt)
+    saved_answers = saved_progress.get("answers", {}) if isinstance(saved_progress, dict) else {}
+    saved_answers = saved_answers if isinstance(saved_answers, dict) else {}
+
+    answer_map = {
+        answer.question_id: answer
         for answer in attempt.answers.all()
-        if answer.is_correct
     }
     breakdown = []
 
@@ -3988,11 +3991,30 @@ def _build_attempt_section_breakdown(attempt):
         if total_marks <= 0:
             total_marks = len(questions)
 
-        scored_marks = sum(
-            int(question.pos_marks or 0) if int(question.pos_marks or 0) > 0 else 1
-            for question in questions
-            if question.id in correct_question_ids
-        )
+        scored_marks = 0
+        for question in questions:
+            submitted_answer = saved_answers.get(str(question.id))
+            if submitted_answer is None:
+                submitted_answer = saved_answers.get(question.id)
+
+            if submitted_answer is not None:
+                if scholarship_test_service.is_runtime_answer_correct(question, submitted_answer):
+                    scored_marks += int(question.pos_marks or 0)
+                elif scholarship_test_service.is_runtime_answer_provided(question, submitted_answer):
+                    scored_marks -= int(question.neg_marks or 0)
+                else:
+                    scored_marks -= int(question.neg_unattempted or 0)
+                continue
+
+            legacy_answer = answer_map.get(question.id)
+            if not legacy_answer:
+                continue
+
+            if legacy_answer.is_correct:
+                scored_marks += int(question.pos_marks or 0) if int(question.pos_marks or 0) > 0 else 1
+            else:
+                scored_marks -= int(question.neg_marks or 0)
+
         percentage = round((scored_marks / total_marks) * 100, 1) if total_marks else 0
 
         breakdown.append(
@@ -4161,7 +4183,7 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
 
     return {
         "entries": entries,
-        "topEntries": [e for e in entries if e["rank"] != "NA"][:5],
+        "topEntries": [e for e in entries if e["rank"] != "NA"][:3],
         "currentEntry": current_entry,
     }
 
