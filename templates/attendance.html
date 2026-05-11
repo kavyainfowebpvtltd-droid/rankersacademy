@@ -11,6 +11,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link>
+  <link rel="stylesheet" href="{% static 'css/pagination-controls.css' %}">
   <style>
     body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; }
     .attendance-header {
@@ -110,16 +111,6 @@
       font-weight: 700;
       color: #0f172a;
     }
-    .pagination .page-link {
-      color: #0d6efd;
-      border-radius: 10px;
-      margin: 0 2px;
-    }
-    .pagination .page-item.active .page-link {
-      background: #0d6efd;
-      border-color: #0d6efd;
-      color: white;
-    }
     .export-btn {
       border-radius: 12px;
       padding: 10px 16px;
@@ -199,6 +190,16 @@
 
   <div class="panel-card">
     <div class="p-3 border-bottom">
+      <div class="table-toolbar mb-3">
+        <div>
+          <h5 class="toolbar-title">Student Attendance</h5>
+          <div class="text-muted small">Monthly attendance records</div>
+        </div>
+        <form method="get" class="mb-0">
+          <input type="hidden" name="month" value="{{ month }}">
+          {% include "partials/entries-dropdown.html" with select_id="attendanceEntriesSelect" entries_name="attendance_entries" current_entries=items_per_page entry_options=entry_options change_handler="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()" %}
+        </form>
+      </div>
       <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
         <input type="text" class="search-box flex-grow-1" id="studentSearch" placeholder="Search by student name or contact number">
         <select class="filter-select" id="statusFilter">
@@ -276,32 +277,7 @@
       </table>
     </div>
 
-    {% if page_obj.paginator.num_pages > 1 %}
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 p-3 border-top">
-        <div class="text-muted small">
-          Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
-        </div>
-        <nav aria-label="Attendance pagination">
-          <ul class="pagination mb-0">
-            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-              <a class="page-link" href="?month={{ month }}&page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}">Previous</a>
-            </li>
-            {% for page_num in page_obj.paginator.page_range %}
-              {% if page_num == page_obj.number %}
-                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
-              {% elif page_num >= page_obj.number|add:'-6' and page_num <= page_obj.number|add:'6' %}
-                <li class="page-item">
-                  <a class="page-link" href="?month={{ month }}&page={{ page_num }}">{{ page_num }}</a>
-                </li>
-              {% endif %}
-            {% endfor %}
-            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-              <a class="page-link" href="?month={{ month }}&page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}">Next</a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    {% endif %}
+    {% include "partials/pagination.html" with page_obj=page_obj page_range=page_range pagination_query=pagination_query page_param="page" aria_label="Attendance pagination" wrapper_class="border-top pt-3" %}
   </div>
 </div>
 

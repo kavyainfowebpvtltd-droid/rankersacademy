@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import Paginator
 from decimal import Decimal, ROUND_HALF_UP
 from django.db.models import Avg, FloatField, OuterRef, Subquery, Value, DecimalField, Count, Prefetch
 from django.db.models.functions import Coalesce, Cast
@@ -42,6 +42,7 @@ from urllib.parse import urlencode, urlsplit
 from datetime import timedelta
 
 from .models import *
+from utils.pagination import PAGE_SIZE_OPTIONS, build_pagination_query, get_entries_per_page, get_page_range
 from scholarship_test.models import (
     ScholarshipTest,
     ScholarshipTestAttempt,
@@ -1170,22 +1171,6 @@ def register_student(request):
     return render(request, "register.html")
 
 
-# User Management
-
-USER_MANAGEMENT_ENTRY_OPTIONS = (10, 25, 50, 100)
-
-
-def _get_user_management_entries(request, param_name):
-    try:
-        entries = int(request.GET.get(param_name, USER_MANAGEMENT_ENTRY_OPTIONS[0]))
-    except (TypeError, ValueError):
-        return USER_MANAGEMENT_ENTRY_OPTIONS[0]
-
-    if entries in USER_MANAGEMENT_ENTRY_OPTIONS:
-        return entries
-    return USER_MANAGEMENT_ENTRY_OPTIONS[0]
-
-
 @login_required
 def user_management(request):
     
@@ -1291,36 +1276,21 @@ def user_management(request):
     student_board_options = fixed_board_options
     student_grade_options = fixed_grade_options
 
-    student_items_per_page = _get_user_management_entries(request, "student_entries")
-    teacher_items_per_page = _get_user_management_entries(request, "teacher_entries")
+    student_items_per_page = get_entries_per_page(request, "student_entries")
+    teacher_items_per_page = get_entries_per_page(request, "teacher_entries")
 
     # Pagination for students
     student_page_num = request.GET.get('student_page', 1)
     student_paginator = Paginator(students, student_items_per_page)
-    try:
-        students_page = student_paginator.page(student_page_num)
-    except PageNotAnInteger:
-        students_page = student_paginator.page(1)
-    except EmptyPage:
-        students_page = student_paginator.page(student_paginator.num_pages)
+    students_page = student_paginator.get_page(student_page_num)
 
     # Pagination for teachers
     teacher_page_num = request.GET.get('teacher_page', 1)
     teacher_paginator = Paginator(teachers, teacher_items_per_page)
-    try:
-        teachers_page = teacher_paginator.page(teacher_page_num)
-    except PageNotAnInteger:
-        teachers_page = teacher_paginator.page(1)
-    except EmptyPage:
-        teachers_page = teacher_paginator.page(teacher_paginator.num_pages)
+    teachers_page = teacher_paginator.get_page(teacher_page_num)
 
-    student_pagination_params = request.GET.copy()
-    student_pagination_params.pop("student_page", None)
-    student_pagination_query = student_pagination_params.urlencode()
-
-    teacher_pagination_params = request.GET.copy()
-    teacher_pagination_params.pop("teacher_page", None)
-    teacher_pagination_query = teacher_pagination_params.urlencode()
+    student_pagination_query = build_pagination_query(request, "student_page")
+    teacher_pagination_query = build_pagination_query(request, "teacher_page")
 
     return render(
         request,
@@ -1345,11 +1315,11 @@ def user_management(request):
             "student_grade_options": student_grade_options,
             "student_pagination_query": student_pagination_query,
             "teacher_pagination_query": teacher_pagination_query,
-            "entry_options": USER_MANAGEMENT_ENTRY_OPTIONS,
+            "entry_options": PAGE_SIZE_OPTIONS,
             "student_items_per_page": student_items_per_page,
             "teacher_items_per_page": teacher_items_per_page,
-            "student_page_range": student_paginator.get_elided_page_range(students_page.number),
-            "teacher_page_range": teacher_paginator.get_elided_page_range(teachers_page.number),
+            "student_page_range": get_page_range(student_paginator, students_page.number),
+            "teacher_page_range": get_page_range(teacher_paginator, teachers_page.number),
         },
     )
 
@@ -2251,15 +2221,11 @@ def admin_dashboard(request):
         )
 
     # Pagination for student table
-    items_per_page = 6
-    students_page_num = request.GET.get('students_page', 1)
+    items_per_page = get_entries_per_page(request, "students_entries")
+    students_page_num = request.GET.get("students_page", 1)
     students_paginator = Paginator(table_rows, items_per_page)
-    try:
-        students_page = students_paginator.page(students_page_num)
-    except PageNotAnInteger:
-        students_page = students_paginator.page(1)
-    except EmptyPage:
-        students_page = students_paginator.page(students_paginator.num_pages)
+    students_page = students_paginator.get_page(students_page_num)
+    students_pagination_query = build_pagination_query(request, "students_page")
 
     context = {
         "teacher_name": _display_name(request.user),
@@ -2272,6 +2238,10 @@ def admin_dashboard(request):
         "attention_students": attention_students,
         "today": today,
         "students_page": students_page,
+        "students_page_range": get_page_range(students_paginator, students_page.number),
+        "students_pagination_query": students_pagination_query,
+        "students_items_per_page": items_per_page,
+        "entry_options": PAGE_SIZE_OPTIONS,
         "search_query": search_query,
         "active_search_query": search_query,
         "admin_portal_tabs": _build_admin_portal_tabs("dashboard"),

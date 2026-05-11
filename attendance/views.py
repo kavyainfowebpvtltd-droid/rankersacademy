@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from attendance.models import Attendance, StaffAttendance
+from utils.pagination import PAGE_SIZE_OPTIONS, build_pagination_query, get_entries_per_page, get_page_range
 from attendance.services import (
     format_display_time,
     get_local_now,
@@ -299,8 +300,10 @@ def attendance(request):
 
     attendance_rows, attendance_details = _build_attendance_rows(start_date, end_date, today)
     summary_present, summary_total, summary_avg = _attendance_summary(attendance_rows)
-    paginator = Paginator(attendance_rows, 15)
+    items_per_page = get_entries_per_page(request, "attendance_entries")
+    paginator = Paginator(attendance_rows, items_per_page)
     page_obj = paginator.get_page(request.GET.get("page"))
+    pagination_query = build_pagination_query(request, "page")
 
     return render(
         request,
@@ -317,6 +320,10 @@ def attendance(request):
             "today": today,
             "page_obj": page_obj,
             "paginator": paginator,
+            "page_range": get_page_range(paginator, page_obj.number),
+            "pagination_query": pagination_query,
+            "items_per_page": items_per_page,
+            "entry_options": PAGE_SIZE_OPTIONS,
         },
     )
 
@@ -614,8 +621,10 @@ def staff_attendance(request):
     summary_recorded = sum(row["total_days"] for row in attendance_rows)
     summary_avg = _attendance_percent(summary_present, summary_recorded)
 
-    paginator = Paginator(attendance_rows, 20)
+    items_per_page = get_entries_per_page(request, "staff_entries")
+    paginator = Paginator(attendance_rows, items_per_page)
     page_obj = paginator.get_page(request.GET.get("page"))
+    pagination_query = build_pagination_query(request, "page")
 
     return render(
         request,
@@ -630,6 +639,10 @@ def staff_attendance(request):
             "summary_avg": summary_avg,
             "page_obj": page_obj,
             "paginator": paginator,
+            "page_range": get_page_range(paginator, page_obj.number),
+            "pagination_query": pagination_query,
+            "items_per_page": items_per_page,
+            "entry_options": PAGE_SIZE_OPTIONS,
         },
     )
 

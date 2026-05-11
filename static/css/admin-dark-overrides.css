@@ -183,6 +183,12 @@ td {
   color: var(--admin-text) !important;
 }
 
+.table-pagination .page-link {
+  background: #0f1118 !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
 .btn-light:hover,
 .btn-outline:hover,
 .view-all-btn:hover,
@@ -195,12 +201,24 @@ td {
   color: #ffb15f !important;
 }
 
+.table-pagination .page-link:hover {
+  border-color: #ffb15f !important;
+  color: #ffb15f !important;
+}
+
 .page-item.active .page-link,
 .table-pagination .page-item.active .page-link {
   background: var(--admin-gradient) !important;
   border-color: transparent !important;
   color: #ffffff !important;
   box-shadow: 0 8px 20px rgba(139, 53, 255, 0.24) !important;
+}
+
+.table-pagination .pagination-ellipsis .page-link {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--admin-muted) !important;
+  box-shadow: none !important;
 }
 
 input,

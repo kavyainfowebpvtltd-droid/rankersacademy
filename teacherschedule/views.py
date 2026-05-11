@@ -20,6 +20,7 @@ from pypdf import PdfReader
 from sds.models import TeacherAdmin, Subject
 from bridgecourse.models import BridgeSubject
 from .models import SubjectSchedule, ScheduleEntry, UploadedSchedule
+from utils.pagination import PAGE_SIZE_OPTIONS, get_entries_per_page
 
 
 def serialize_schedule_entry(entry):
@@ -733,7 +734,9 @@ def admin_schedule_management(request):
         'filter_subject': filter_subject,
         'filter_date_from': filter_date_from,
         'filter_date_to': filter_date_to,
+        'schedule_entries': get_entries_per_page(request, 'schedule_entries'),
         'is_superuser': request.user.is_superuser,
+        'entry_options': PAGE_SIZE_OPTIONS,
     }
     
     return render(request, 'teacherschedule/admin-management.html', context)
@@ -789,6 +792,8 @@ def teacher_schedule_viewer(request):
         'date_to': date_to,
         'subject_filter': subject_filter,
         'parsed_imports_json': parsed_imports,
+        'schedule_entries': get_entries_per_page(request, 'schedule_entries'),
+        'entry_options': PAGE_SIZE_OPTIONS,
     }
     
     return render(request, 'teacherschedule/teacher-viewer.html', context)
