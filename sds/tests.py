@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import Client, TestCase
@@ -281,3 +283,70 @@ class AdminDashboardSearchTests(TestCase):
         self.assertContains(response, 'id="adminDashboardTableSection"')
         self.assertContains(response, "Rohit Kumar")
         self.assertNotContains(response, 'id="adminDashboardSearchForm"')
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
+class StudentPortalFeatureVisibilityTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="studentportal01",
+            email="studentportal01@example.com",
+            password="StudentPass@2026",
+        )
+        self.student = Student.objects.create(
+            user=self.user,
+            student_name="Portal Student",
+            username="studentportal01",
+            contact="9876543220",
+            email="studentportal01@example.com",
+            school="Rankers School",
+            board="CBSE",
+            grade="10th",
+            batch="B1",
+            gender="Male",
+        )
+        self.client.force_login(self.user)
+
+    def test_hidden_features_are_not_rendered_in_student_navigation(self):
+        response = self.client.get(reverse("student-dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Subject Analysis")
+        self.assertNotContains(response, "Gap Analysis")
+        self.assertNotContains(response, "Reports")
+        self.assertNotContains(response, "Download Imp. Questions and Solutions")
+
+    def test_hidden_feature_pages_redirect_students_to_dashboard(self):
+        urls = [
+            reverse("subject_analysis"),
+            reverse("gap_analysis"),
+            reverse("reports"),
+            reverse("study_material"),
+            reverse("ssc_state"),
+        ]
+
+        for url in urls:
+            response = self.client.get(url)
+            self.assertRedirects(response, reverse("student-dashboard"))
+
+    def test_hidden_report_endpoints_are_blocked_for_students(self):
+        pdf_response = self.client.get(reverse("pdf-report", args=[self.student.id]))
+        self.assertRedirects(pdf_response, reverse("student-dashboard"))
+
+        print_response = self.client.get(reverse("print-report", args=[self.student.id]))
+        self.assertRedirects(print_response, reverse("student-dashboard"))
+
+        email_response = self.client.post(
+            reverse("send-report-email-api"),
+            data=json.dumps({"student_id": self.student.id}),
+            content_type="application/json",
+        )
+        self.assertEqual(email_response.status_code, 403)
+        self.assertJSONEqual(
+            email_response.content.decode("utf-8"),
+            {
+                "success": False,
+                "msg": "This section is currently hidden in the student portal.",
+            },
+        )

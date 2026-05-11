@@ -55,6 +55,7 @@ from .password_policy import (
     clear_password_change_flag,
     user_needs_password_change,
 )
+from .portal_features import is_student_portal_feature_enabled
 
 
 # Login and Logout Views
@@ -70,6 +71,21 @@ def _redirect_authenticated_user_home(user):
 
 
 SCHOLARSHIP_LAUNCH_PATH_RE = re.compile(r"^/scholarship/launch/(?P<test_id>\d+)/?$")
+
+
+def _student_portal_feature_block_response(request, feature_key: str, api: bool = False):
+    user = getattr(request, "user", None)
+    if (
+        getattr(user, "is_authenticated", False)
+        and hasattr(user, "student")
+        and not is_student_portal_feature_enabled(feature_key)
+    ):
+        message = "This section is currently hidden in the student portal."
+        if api:
+            return JsonResponse({"success": False, "msg": message}, status=403)
+        messages.info(request, message)
+        return redirect("student-dashboard")
+    return None
 
 
 def _extract_scholarship_launch_test_id(next_url: str):
@@ -4915,6 +4931,10 @@ def my_tests(request):
 
 @login_required
 def subject_analysis(request):
+    blocked_response = _student_portal_feature_block_response(request, "subject_analysis")
+    if blocked_response:
+        return blocked_response
+
     if not hasattr(request.user, "student"):
         return redirect("login")
 
@@ -5022,6 +5042,10 @@ def subject_analysis(request):
 
 @login_required
 def gap_analysis(request):
+    blocked_response = _student_portal_feature_block_response(request, "gap_analysis")
+    if blocked_response:
+        return blocked_response
+
     student = get_object_or_404(Student, user=request.user)
 
 
@@ -5547,7 +5571,10 @@ def _generate_pdf_bytes_for_student(student_obj: Student, target_user: User) -> 
 
 @login_required
 def pdf_report(request, student_id: int):
-   
+    blocked_response = _student_portal_feature_block_response(request, "reports")
+    if blocked_response:
+        return blocked_response
+
     user = request.user
 
    
@@ -6162,7 +6189,10 @@ def _generate_printable_layout_pdf_bytes(student_obj: Student, target_user: User
 
 @login_required
 def print_report(request, student_id: int):
-    
+    blocked_response = _student_portal_feature_block_response(request, "reports")
+    if blocked_response:
+        return blocked_response
+
     user = request.user
 
     is_admin_or_teacher = _is_admin_or_teacher(user)
@@ -6194,7 +6224,10 @@ def print_report(request, student_id: int):
 @csrf_protect
 @login_required
 def send_report_email_api(request):
-   
+    blocked_response = _student_portal_feature_block_response(request, "reports", api=True)
+    if blocked_response:
+        return blocked_response
+
     import logging
     logger = logging.getLogger(__name__)
     
@@ -6256,6 +6289,10 @@ def send_report_email_api(request):
 
 @login_required
 def report(request):
+    blocked_response = _student_portal_feature_block_response(request, "reports")
+    if blocked_response:
+        return blocked_response
+
     user = request.user
 
     student_obj = Student.objects.filter(user=user).first()
@@ -6465,6 +6502,10 @@ def report(request):
     return render(request, "report.html", context)
 
 def ssc_state(request):
+    blocked_response = _student_portal_feature_block_response(request, "study_material")
+    if blocked_response:
+        return blocked_response
+
     subjects = Subject.objects.filter(
         grade__icontains='10',
         board__icontains='State'
@@ -6486,6 +6527,10 @@ def ssc_state(request):
     return render(request, '10th_state.html', {'study_material': study_material})
 
 def ssc_cbse(request):
+    blocked_response = _student_portal_feature_block_response(request, "study_material")
+    if blocked_response:
+        return blocked_response
+
     subjects = Subject.objects.filter(
         grade__icontains='10',
         board__icontains='CBSE'
@@ -6507,6 +6552,10 @@ def ssc_cbse(request):
     return render(request, '10th_cbse.html', {'study_material': study_material})
 
 def hsc_state(request):
+    blocked_response = _student_portal_feature_block_response(request, "study_material")
+    if blocked_response:
+        return blocked_response
+
     subjects = Subject.objects.filter(
         grade__icontains='12',
         board__icontains='State'
@@ -6528,6 +6577,10 @@ def hsc_state(request):
     return render(request, '12th_state.html', {'study_material': study_material})
 
 def hsc_cbse(request):
+    blocked_response = _student_portal_feature_block_response(request, "study_material")
+    if blocked_response:
+        return blocked_response
+
     subjects = Subject.objects.filter(
         grade__icontains='12',
         board__icontains='CBSE'
@@ -6598,7 +6651,10 @@ def _normalize_board(raw: str) -> str:
 
 @login_required
 def study_material_redirect(request):
-   
+    blocked_response = _student_portal_feature_block_response(request, "study_material")
+    if blocked_response:
+        return blocked_response
+
     user = request.user
 
     student = getattr(user, "student", None)
