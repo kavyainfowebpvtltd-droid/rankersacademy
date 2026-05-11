@@ -606,37 +606,48 @@ def record_staff_scan(raw_value: str, scanned_at: str | None = None) -> dict:
         except (json.JSONDecodeError, TypeError):
             scans = []
         
-        # Add current scan time if not already present (within same minute)
-        current_scan = scan_time.strftime("%H:%M")
-        if current_scan not in scans:
-            scans.append(current_scan)
+        # Determine the action and message based on scan count
+        scan_count = len(scans)
+        lecture_num = (scan_count // 2) + 1
+        is_checkout = (scan_count % 2 == 1)
         
+        if scan_count >= 8:
+            return {
+                "success": False, 
+                "message": "All 4 lectures (8 scans) for today have already been recorded.",
+                "staffName": staff.name
+            }
+
+        current_scan_str = scan_time.strftime("%H:%M")
+        
+        # Prevent double scans within a very short period (e.g., same minute)
+        if scans and scans[-1] == current_scan_str:
+            return {
+                "success": False,
+                "message": "This scan was already recorded just now.",
+                "staffName": staff.name
+            }
+
+        scans.append(current_scan_str)
         attendance.raw_scan_value = json.dumps(scans)
 
-        action = "checkin"
-        message = "Scan recorded."
+        # Map action for UI feedback
+        action_type = "checkout" if is_checkout else "checkin"
+        slot_name = f"L{lecture_num}"
+        message = f"{slot_name} {'Check-out' if is_checkout else 'Check-in'} recorded."
+
         update_fields = ["raw_scan_value", "updated_at"]
 
+        # Maintain legacy check_in/check_out for general summary
         if not attendance.check_in:
             attendance.check_in = scan_time
             attendance.status = "Late" if scan_time > STAFF_CHECKIN_CUTOFF else "Present"
             update_fields.extend(["check_in", "status"])
-            if attendance.status == "Late":
-                action = "late_entry"
-                message = "Late entry recorded."
-            else:
-                action = "checkin"
-                message = "Check-in recorded."
-        else:
-            # Always update check_out with the latest scan if it's after check_in
-            if scan_time > attendance.check_in:
-                attendance.check_out = scan_time
-                update_fields.append("check_out")
-                action = "checkout"
-                message = "Check-out recorded."
-            else:
-                action = "already_checked_in"
-                message = "Scan recorded (before check-in time)."
+        
+        # Always update check_out to the latest scan if it's not the first one
+        if len(scans) > 1:
+            attendance.check_out = scan_time
+            update_fields.append("check_out")
 
         attendance.save(update_fields=sorted(set(update_fields)))
 
@@ -651,14 +662,8 @@ def record_staff_scan(raw_value: str, scanned_at: str | None = None) -> dict:
         "studentClass": f"Staff | {staff.role}",
         "studentBatch": staff.contact or staff.email or "",
         "photoUrl": get_staff_photo_url(staff),
-        "action": action,
-        "actionText": {
-            "checkin": "Checked In",
-            "late_entry": "Late Entry Recorded",
-            "checkout": "Checked Out",
-            "already_checked_in": "Already Checked In",
-            "already_checked_out": "Already Checked Out",
-        }[action],
+        "action": action_type,
+        "actionText": message,
         "message": message,
         "timestamp": format_display_time(scan_time),
         "date": format_display_date(attendance_date),
