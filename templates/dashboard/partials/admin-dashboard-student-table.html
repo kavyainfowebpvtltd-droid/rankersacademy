@@ -1,4 +1,12 @@
 <div id="adminDashboardTableSection">
+  <div class="table-toolbar">
+    <div>
+      <h5 class="toolbar-title">Students</h5>
+      <div class="text-muted small">Assessment progress and quick actions</div>
+    </div>
+    {% include "partials/entries-dropdown.html" with select_id="adminDashboardEntriesSelect" entries_name="students_entries" current_entries=students_items_per_page entry_options=entry_options select_class="admin-dashboard-entries-select" %}
+  </div>
+
   <div class="table-responsive rounded-4 bg-white">
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
@@ -79,41 +87,5 @@
     </table>
   </div>
 
-  {% if students_page.has_other_pages %}
-  <nav aria-label="Student table pagination" class="mt-4">
-    <ul class="pagination justify-content-center">
-      {% if students_page.has_previous %}
-      <li class="page-item">
-        <a class="page-link" href="?students_page={{ students_page.previous_page_number }}{% if active_search_query %}&search={{ active_search_query|urlencode }}{% endif %}" aria-label="Previous">
-          <span aria-hidden="true">&laquo;</span>
-        </a>
-      </li>
-      {% else %}
-      <li class="page-item disabled">
-        <span class="page-link">&laquo;</span>
-      </li>
-      {% endif %}
-
-      {% for num in students_page.paginator.page_range %}
-        {% if students_page.number == num %}
-        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-        {% elif num > students_page.number|add:'-7' and num < students_page.number|add:'7' %}
-        <li class="page-item"><a class="page-link" href="?students_page={{ num }}{% if active_search_query %}&search={{ active_search_query|urlencode }}{% endif %}">{{ num }}</a></li>
-        {% endif %}
-      {% endfor %}
-
-      {% if students_page.has_next %}
-      <li class="page-item">
-        <a class="page-link" href="?students_page={{ students_page.next_page_number }}{% if active_search_query %}&search={{ active_search_query|urlencode }}{% endif %}" aria-label="Next">
-          <span aria-hidden="true">&raquo;</span>
-        </a>
-      </li>
-      {% else %}
-      <li class="page-item disabled">
-        <span class="page-link">&raquo;</span>
-      </li>
-      {% endif %}
-    </ul>
-  </nav>
-  {% endif %}
+  {% include "partials/pagination.html" with page_obj=students_page page_range=students_page_range pagination_query=students_pagination_query page_param="students_page" aria_label="Student table pagination" wrapper_class="border-top pt-3" %}
 </div>

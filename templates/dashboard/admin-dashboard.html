@@ -191,6 +191,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     const searchForm = document.getElementById("adminDashboardSearchForm");
     const searchInput = document.getElementById("adminDashboardSearch");
+    const entriesSelectSelector = "#adminDashboardEntriesSelect";
     if (!searchForm || !searchInput) return;
 
     let submitTimer = null;
@@ -205,6 +206,13 @@
         url.searchParams.set("search", nextValue);
       } else {
         url.searchParams.delete("search");
+      }
+
+      const entriesSelect = document.getElementById("adminDashboardEntriesSelect");
+      if (entriesSelect && entriesSelect.value) {
+        url.searchParams.set("students_entries", entriesSelect.value);
+      } else {
+        url.searchParams.delete("students_entries");
       }
 
       return url;
@@ -295,6 +303,13 @@
 
       event.preventDefault();
       refreshTable(pageLink.href);
+    });
+
+    document.addEventListener("change", function (event) {
+      const entriesSelect = event.target.closest(entriesSelectSelector);
+      if (!entriesSelect) return;
+
+      refreshTable();
     });
   });
 </script>

@@ -21,6 +21,7 @@
     />
 
     <link rel="stylesheet" href="{% static 'css/user-management.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/pagination-controls.css' %}" />
     <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" />
     <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
   </head>
@@ -45,19 +46,7 @@
       <div class="card mb-5" id="studentTableCard">
         <div class="card-header user-table-card-header">
           <h5 class="mb-0 fw-bold">Students</h5>
-          <div class="entries-control entries-control-inline">
-            <label class="form-label mb-1" for="studentEntriesSelect">No. of Entries</label>
-            <select
-              class="form-select student-filter-select entries-per-page-select"
-              id="studentEntriesSelect"
-              name="student_entries"
-              form="studentFilterForm"
-            >
-              {% for option in entry_options %}
-              <option value="{{ option }}" {% if student_items_per_page == option %}selected{% endif %}>{{ option }}</option>
-              {% endfor %}
-            </select>
-          </div>
+          {% include "partials/entries-dropdown.html" with select_id="studentEntriesSelect" entries_name="student_entries" current_entries=student_items_per_page entry_options=entry_options form_id="studentFilterForm" select_class="student-filter-select" %}
         </div>
         <div class="card-body table-responsive">
           <form method="get" class="row g-2 align-items-end mb-3 student-filter-form" id="studentFilterForm">
@@ -211,63 +200,7 @@
         </div>
 
         <!-- Students Pagination -->
-        {% if students_page.has_other_pages %}
-        <nav aria-label="Students pagination" class="table-pagination mt-3">
-          <ul class="pagination justify-content-center pagination-sm">
-            {% if students_page.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page=1">First Page</a>
-            </li>
-            <li class="page-item">
-              <a
-                class="page-link"
-                href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.previous_page_number }}"
-              >
-                Previous Page
-              </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">First Page</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">Previous Page</span>
-            </li>
-            {% endif %} 
-            {% for num in student_page_range %} 
-            {% if students_page.number == num %}
-            <li class="page-item active">
-              <span class="page-link">{{ num }}</span>
-            </li>
-           {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
-            <li class="page-item">
-              <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ num }}">{{ num }}</a>
-            </li>
-            {% endif %} 
-            {% endfor %} 
-            {% if students_page.has_next %}
-            <li class="page-item">
-              <a
-                class="page-link"
-                href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.next_page_number }}"
-              >
-                Next Page
-              </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.paginator.num_pages }}">Last Page</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">Next Page</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">Last Page</span>
-            </li>
-            {% endif %}
-          </ul>
-        </nav>
-        {% endif %}
+        {% include "partials/pagination.html" with page_obj=students_page page_range=student_page_range pagination_query=student_pagination_query page_param="student_page" aria_label="Students pagination" wrapper_class="border-top pt-3" %}
       </div>
 
       <!-- STAFF TABLE  -->
@@ -282,14 +215,7 @@
             <input type="hidden" name="student_grade" value="{{ student_grade_filter }}" />
             <input type="hidden" name="student_entries" value="{{ student_items_per_page }}" />
             <input type="hidden" name="student_page" value="{{ students_page.number }}" />
-            <div class="entries-control">
-              <label class="form-label mb-1" for="teacherEntriesSelect">No. of Entries</label>
-              <select class="form-select entries-per-page-select" id="teacherEntriesSelect" name="teacher_entries">
-                {% for option in entry_options %}
-                <option value="{{ option }}" {% if teacher_items_per_page == option %}selected{% endif %}>{{ option }}</option>
-                {% endfor %}
-              </select>
-            </div>
+            {% include "partials/entries-dropdown.html" with select_id="teacherEntriesSelect" entries_name="teacher_entries" current_entries=teacher_items_per_page entry_options=entry_options change_handler="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()" %}
           </form>
         </div>
         <div class="card-body table-responsive">
@@ -383,63 +309,7 @@
         </div>
 
         <!-- Teachers Pagination -->
-        {% if teachers_page.has_other_pages %}
-        <nav aria-label="Teachers pagination" class="table-pagination mt-3">
-          <ul class="pagination justify-content-center pagination-sm">
-            {% if teachers_page.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page=1">First Page</a>
-            </li>
-            <li class="page-item">
-              <a
-                class="page-link"
-                href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.previous_page_number }}"
-              >
-                Previous Page
-              </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">First Page</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">Previous Page</span>
-            </li>
-            {% endif %} 
-            {% for num in teacher_page_range %} 
-            {% if teachers_page.number == num %}
-            <li class="page-item active">
-              <span class="page-link">{{ num }}</span>
-            </li>
-         {% elif num > teachers_page.number|add:'-3' and num < teachers_page.number|add:'3' %}
-            <li class="page-item">
-              <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ num }}">{{ num }}</a>
-            </li>
-            {% endif %} 
-            {% endfor %} 
-            {% if teachers_page.has_next %}
-            <li class="page-item">
-              <a
-                class="page-link"
-                href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.next_page_number }}"
-              >
-                Next Page
-              </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.paginator.num_pages }}">Last Page</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">Next Page</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">Last Page</span>
-            </li>
-            {% endif %}
-          </ul>
-        </nav>
-        {% endif %}
+        {% include "partials/pagination.html" with page_obj=teachers_page page_range=teacher_page_range pagination_query=teacher_pagination_query page_param="teacher_page" aria_label="Teachers pagination" wrapper_class="border-top pt-3" %}
       </div>
     </div>
 

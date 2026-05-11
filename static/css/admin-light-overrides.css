@@ -95,6 +95,7 @@ html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a,
 html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a i {
   background: transparent !important;
   border-color: transparent !important;
+  border-radius: 0 !important;
   color: #111827 !important;
   box-shadow: none !important;
 }
@@ -109,6 +110,13 @@ html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a.active i 
 html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a.active::after {
   background: var(--student-light-blue) !important;
   box-shadow: 0 0 18px rgba(18, 104, 255, 0.22) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a:focus,
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a:focus-visible {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-admin-theme="light"] body:not(.login-page-body) h1,
