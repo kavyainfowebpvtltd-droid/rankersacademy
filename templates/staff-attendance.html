@@ -157,10 +157,7 @@
           <input type="text" id="staffSearch" class="form-control toolbar-input w-100" placeholder="Search by name, phone, email, or role">
         </div>
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-primary active filter-btn" id="btnAllStaff" onclick="filterByStaffType('All', this)">
-            All Staff
-          </button>
-          <button type="button" class="btn btn-outline-primary filter-btn" id="btnTeachingStaff" onclick="filterByStaffType('Teaching', this)">
+          <button type="button" class="btn btn-primary active filter-btn" id="btnTeachingStaff" onclick="filterByStaffType('Teaching', this)">
             Teaching Staff
           </button>
           <button type="button" class="btn btn-outline-primary filter-btn" id="btnNonTeachingStaff" onclick="filterByStaffType('Non-Teaching', this)">
@@ -269,7 +266,7 @@
 
 <script>
   const tableRows = Array.from(document.querySelectorAll("#recordsBody tr[data-search]"));
-  let currentStaffType = 'All';
+  let currentStaffType = 'Teaching';
 
   function updateSummary() {
     const visibleRows = tableRows.filter((row) => row.style.display !== "none");
@@ -321,7 +318,7 @@
   }
 
   document.getElementById("staffSearch").addEventListener("input", filterRows);
-  updateSummary();
+  filterRows();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
