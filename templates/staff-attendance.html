@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link>
   <link rel="stylesheet" href="{% static 'css/pagination-controls.css' %}">
   <style>
-    body { font-family: 'DM Sans', sans-serif; background: #f8fafc; color: #0f172a; }
+    body { font-family: 'DM Sans', sans-serif; background: #f8fafc; color: #0f172a; overflow-x: hidden; }
     .page-shell { max-width: 95%; margin: 1.5rem auto; }
     .hero-card {
       background: linear-gradient(135deg, #0f172a 0%, #0f4c81 54%, #0891b2 100%);
@@ -79,6 +79,15 @@
     .percent-medium { background: #fef3c7; color: #b45309; }
     .percent-low { background: #fee2e2; color: #b91c1c; }
     .table-empty { padding: 52px 24px; text-align: center; color: #64748b; }
+
+    /* Hide scrollbar but maintain functionality */
+    .table-responsive {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    .table-responsive::-webkit-scrollbar {
+      display: none; /* Chrome, Safari and Opera */
+    }
   </style>
   <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link>
 </head>
