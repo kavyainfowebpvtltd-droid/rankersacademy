@@ -46,7 +46,8 @@
         <div class="card-header fw-bold">Students</div>
         <div class="card-body table-responsive">
           <form method="get" class="row g-2 align-items-end mb-3 student-filter-form" id="studentFilterForm">
-            <div class="col-md-3">
+            <input type="hidden" name="teacher_entries" value="{{ teacher_items_per_page }}" />
+            <div class="col-lg-3 col-md-4">
               <label class="form-label mb-1">Search</label>
               <input
                 type="text"
@@ -57,7 +58,7 @@
                 placeholder="Name, username, contact..."
               />
             </div>
-            <div class="col-md-2">
+            <div class="col-lg-2 col-md-4">
               <label class="form-label mb-1">Batch</label>
               <select class="form-select student-filter-select" name="student_batch">
                 <option value="">All</option>
@@ -66,7 +67,7 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-lg-2 col-md-4">
               <label class="form-label mb-1">Stream</label>
               <select class="form-select student-filter-select" name="student_stream">
                 <option value="">All</option>
@@ -75,7 +76,7 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-lg-2 col-md-4">
               <label class="form-label mb-1">Board</label>
               <select class="form-select student-filter-select" name="student_board">
                 <option value="">All</option>
@@ -84,7 +85,7 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-1">
+            <div class="col-lg-1 col-md-4">
               <label class="form-label mb-1">Grade</label>
               <select class="form-select student-filter-select" name="student_grade">
                 <option value="">All</option>
@@ -93,7 +94,15 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-2 d-flex gap-2">
+            <div class="col-lg-1 col-md-4">
+              <label class="form-label mb-1" for="studentEntriesSelect">No. of Entries</label>
+              <select class="form-select student-filter-select entries-per-page-select" id="studentEntriesSelect" name="student_entries">
+                {% for option in entry_options %}
+                <option value="{{ option }}" {% if student_items_per_page == option %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-1 col-md-4 d-flex gap-2">
               <a href="{% url 'user-management' %}" class="btn btn-outline-secondary w-100">
                 Reset
               </a>
@@ -196,29 +205,34 @@
 
         <!-- Students Pagination -->
         {% if students_page.has_other_pages %}
-        <nav aria-label="Students pagination" class="mt-3">
+        <nav aria-label="Students pagination" class="table-pagination mt-3">
           <ul class="pagination justify-content-center pagination-sm">
             {% if students_page.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page=1">First Page</a>
+            </li>
             <li class="page-item">
               <a
                 class="page-link"
                 href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.previous_page_number }}"
-                aria-label="Previous"
               >
-                <span aria-hidden="true">&laquo;</span>
+                Previous Page
               </a>
             </li>
             {% else %}
             <li class="page-item disabled">
-              <span class="page-link">&laquo;</span>
+              <span class="page-link">First Page</span>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link">Previous Page</span>
             </li>
             {% endif %} 
-            {% for num in students_page.paginator.page_range %} 
+            {% for num in student_page_range %} 
             {% if students_page.number == num %}
             <li class="page-item active">
               <span class="page-link">{{ num }}</span>
             </li>
-            {% elif num > students_page.number|add:'-7' and num < students_page.number|add:'7' %}
+           {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
             <li class="page-item">
               <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ num }}">{{ num }}</a>
             </li>
@@ -229,14 +243,19 @@
               <a
                 class="page-link"
                 href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.next_page_number }}"
-                aria-label="Next"
               >
-                <span aria-hidden="true">&raquo;</span>
+                Next Page
               </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if student_pagination_query %}{{ student_pagination_query }}&{% endif %}student_page={{ students_page.paginator.num_pages }}">Last Page</a>
             </li>
             {% else %}
             <li class="page-item disabled">
-              <span class="page-link">&raquo;</span>
+              <span class="page-link">Next Page</span>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link">Last Page</span>
             </li>
             {% endif %}
           </ul>
@@ -248,6 +267,23 @@
       <div class="card">
         <div class="card-header fw-bold">Staff</div>
         <div class="card-body table-responsive">
+          <form method="get" class="table-controls-form mb-3" id="teacherEntriesForm">
+            <input type="hidden" name="student_search" value="{{ student_search }}" />
+            <input type="hidden" name="student_batch" value="{{ student_batch_filter }}" />
+            <input type="hidden" name="student_stream" value="{{ student_stream_filter }}" />
+            <input type="hidden" name="student_board" value="{{ student_board_filter }}" />
+            <input type="hidden" name="student_grade" value="{{ student_grade_filter }}" />
+            <input type="hidden" name="student_entries" value="{{ student_items_per_page }}" />
+            <input type="hidden" name="student_page" value="{{ students_page.number }}" />
+            <div class="entries-control">
+              <label class="form-label mb-1" for="teacherEntriesSelect">No. of Entries</label>
+              <select class="form-select entries-per-page-select" id="teacherEntriesSelect" name="teacher_entries">
+                {% for option in entry_options %}
+                <option value="{{ option }}" {% if teacher_items_per_page == option %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
           <table class="table table-hover align-middle">
             <thead>
                <tr>
@@ -339,29 +375,34 @@
 
         <!-- Teachers Pagination -->
         {% if teachers_page.has_other_pages %}
-        <nav aria-label="Teachers pagination" class="mt-3">
+        <nav aria-label="Teachers pagination" class="table-pagination mt-3">
           <ul class="pagination justify-content-center pagination-sm">
             {% if teachers_page.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page=1">First Page</a>
+            </li>
             <li class="page-item">
               <a
                 class="page-link"
                 href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.previous_page_number }}"
-                aria-label="Previous"
               >
-                <span aria-hidden="true">&laquo;</span>
+                Previous Page
               </a>
             </li>
             {% else %}
             <li class="page-item disabled">
-              <span class="page-link">&laquo;</span>
+              <span class="page-link">First Page</span>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link">Previous Page</span>
             </li>
             {% endif %} 
-            {% for num in teachers_page.paginator.page_range %} 
+            {% for num in teacher_page_range %} 
             {% if teachers_page.number == num %}
             <li class="page-item active">
               <span class="page-link">{{ num }}</span>
             </li>
-            {% elif num > teachers_page.number|add:'-7' and num < teachers_page.number|add:'7' %}
+         {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
             <li class="page-item">
               <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ num }}">{{ num }}</a>
             </li>
@@ -372,14 +413,19 @@
               <a
                 class="page-link"
                 href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.next_page_number }}"
-                aria-label="Next"
               >
-                <span aria-hidden="true">&raquo;</span>
+                Next Page
               </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ teachers_page.paginator.num_pages }}">Last Page</a>
             </li>
             {% else %}
             <li class="page-item disabled">
-              <span class="page-link">&raquo;</span>
+              <span class="page-link">Next Page</span>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link">Last Page</span>
             </li>
             {% endif %}
           </ul>

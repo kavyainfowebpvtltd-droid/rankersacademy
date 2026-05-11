@@ -195,6 +195,40 @@ td {
   min-width: 56rem;
 }
 
+.table-controls-form {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 0.75rem;
+  min-width: 16rem;
+}
+
+.entries-control {
+  width: 10rem;
+}
+
+.table-pagination {
+  padding: 0 1rem 1rem;
+}
+
+.table-pagination .pagination {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0;
+}
+
+.table-pagination .page-link {
+  border-radius: 0.5rem;
+  min-height: 2rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.table-pagination .page-item:first-child .page-link,
+.table-pagination .page-item:last-child .page-link {
+  border-radius: 0.5rem;
+}
+
 .student-filter-btn {
   min-width: 7rem;
 }
@@ -539,6 +573,29 @@ button:hover {
 
   .actions {
     gap: 0.75rem;
+  }
+
+  .student-filter-form,
+  .table-controls-form {
+    min-width: 100%;
+  }
+
+  .table-controls-form {
+    justify-content: flex-start;
+  }
+
+  .entries-control {
+    width: 100%;
+    max-width: 12rem;
+  }
+
+  .table-pagination .pagination {
+    justify-content: flex-start !important;
+  }
+
+  .table-pagination .page-link {
+    font-size: 0.78rem;
+    padding: 0.45rem 0.6rem;
   }
 
   .profile-img {

@@ -1156,6 +1156,20 @@ def register_student(request):
 
 # User Management
 
+USER_MANAGEMENT_ENTRY_OPTIONS = (10, 25, 50, 100)
+
+
+def _get_user_management_entries(request, param_name):
+    try:
+        entries = int(request.GET.get(param_name, USER_MANAGEMENT_ENTRY_OPTIONS[0]))
+    except (TypeError, ValueError):
+        return USER_MANAGEMENT_ENTRY_OPTIONS[0]
+
+    if entries in USER_MANAGEMENT_ENTRY_OPTIONS:
+        return entries
+    return USER_MANAGEMENT_ENTRY_OPTIONS[0]
+
+
 @login_required
 def user_management(request):
     
@@ -1261,8 +1275,10 @@ def user_management(request):
     student_board_options = fixed_board_options
     student_grade_options = fixed_grade_options
 
+    student_items_per_page = _get_user_management_entries(request, "student_entries")
+    teacher_items_per_page = _get_user_management_entries(request, "teacher_entries")
+
     # Pagination for students
-    student_items_per_page = 6
     student_page_num = request.GET.get('student_page', 1)
     student_paginator = Paginator(students, student_items_per_page)
     try:
@@ -1273,7 +1289,6 @@ def user_management(request):
         students_page = student_paginator.page(student_paginator.num_pages)
 
     # Pagination for teachers
-    teacher_items_per_page = 6
     teacher_page_num = request.GET.get('teacher_page', 1)
     teacher_paginator = Paginator(teachers, teacher_items_per_page)
     try:
@@ -1314,6 +1329,11 @@ def user_management(request):
             "student_grade_options": student_grade_options,
             "student_pagination_query": student_pagination_query,
             "teacher_pagination_query": teacher_pagination_query,
+            "entry_options": USER_MANAGEMENT_ENTRY_OPTIONS,
+            "student_items_per_page": student_items_per_page,
+            "teacher_items_per_page": teacher_items_per_page,
+            "student_page_range": student_paginator.get_elided_page_range(students_page.number),
+            "teacher_page_range": teacher_paginator.get_elided_page_range(teachers_page.number),
         },
     )
 
