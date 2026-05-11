@@ -43,6 +43,43 @@
   min-width: 6.5rem;
 }
 
+.entries-control-header {
+  min-width: 0;
+  width: 10rem;
+}
+
+.entries-control-header .form-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.entries-control-header .entries-per-page-select {
+  width: 100%;
+  min-width: 0;
+  height: 2.875rem;
+  padding: 0.55rem 2rem 0.55rem 0.85rem;
+  border-radius: 0.6rem;
+  border: 1px solid #dbe2ea;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.entries-control-header .entries-per-page-select:hover {
+  border-color: #b6c2d2;
+}
+
+.entries-control-header .entries-per-page-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.14);
+}
+
 .entries-control-compact {
   min-width: 0;
   width: auto;
@@ -126,19 +163,8 @@
     gap: 0.5rem;
   }
 
-  .toolbar-title-row {
-    gap: 0.6rem;
-  }
-
-  .entries-control-compact {
-    flex-wrap: nowrap;
-  }
-
-  .entries-control-compact .entries-per-page-select {
-    width: 6.875rem;
-    min-width: 6.875rem;
-    height: 2.75rem;
-    font-size: 0.9rem;
+  .entries-control-header {
+    width: 9rem;
   }
 
   .table-pagination {

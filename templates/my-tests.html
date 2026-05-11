@@ -403,6 +403,75 @@
       text-transform: uppercase;
     }
 
+    .my-tests-page .test-slot-btn.test-slot-selected {
+      color: var(--page-text);
+      background: linear-gradient(135deg, rgba(255, 138, 0, 0.1), rgba(229, 46, 113, 0.08) 52%, rgba(124, 58, 237, 0.1));
+      border-color: rgba(229, 46, 113, 0.22);
+      box-shadow: 0 10px 24px rgba(8, 10, 18, 0.12);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-meta,
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-section-chip {
+      color: var(--page-text);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-section-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(229, 46, 113, 0.18);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-badge {
+      background: rgba(229, 46, 113, 0.14) !important;
+      color: #ffd3e7 !important;
+      border: 1px solid rgba(229, 46, 113, 0.2);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(56, 189, 248, 0.06));
+      border-color: rgba(56, 189, 248, 0.24);
+      box-shadow: 0 10px 24px rgba(8, 10, 18, 0.1);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-name {
+      color: var(--page-text);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-badge {
+      background: rgba(14, 165, 233, 0.14) !important;
+      color: #c8f1ff !important;
+      border: 1px solid rgba(125, 211, 252, 0.22);
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected {
+      color: var(--page-text);
+      background: linear-gradient(135deg, rgba(255, 237, 213, 0.98), rgba(253, 242, 248, 0.98) 52%, rgba(243, 232, 255, 0.98));
+      border-color: #f9a8d4;
+      box-shadow: 0 14px 28px rgba(236, 72, 153, 0.1);
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected .test-slot-section-chip {
+      background: rgba(255, 255, 255, 0.72);
+      border-color: rgba(236, 72, 153, 0.18);
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected .test-slot-badge {
+      background: rgba(236, 72, 153, 0.12) !important;
+      color: #be185d !important;
+      border-color: rgba(236, 72, 153, 0.18);
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming {
+      background: linear-gradient(135deg, rgba(219, 234, 254, 0.96), rgba(240, 249, 255, 0.98));
+      border-color: #93c5fd;
+      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.08);
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-badge {
+      background: rgba(59, 130, 246, 0.12) !important;
+      color: #1d4ed8 !important;
+      border-color: rgba(59, 130, 246, 0.18);
+    }
+
     .my-tests-page #testSelector {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr);
@@ -1196,7 +1265,7 @@
     }
 
     function applyTestSlotButtonState(button, slot, slotIndex) {
-      button.classList.remove("btn-brand", "btn-outline-light");
+      button.classList.remove("btn-brand", "btn-outline-light", "test-slot-selected", "test-slot-upcoming");
       button.disabled = false;
       button.title = "";
       button.replaceChildren();
@@ -1227,7 +1296,10 @@
         layout.appendChild(meta);
         renderTestSlotSections(layout, slot);
         button.appendChild(layout);
-        button.classList.add(slot.id === state.testId ? "btn-brand" : "btn-outline-light");
+        button.classList.add("btn-outline-light");
+        if (slot.id === state.testId) {
+          button.classList.add("test-slot-selected");
+        }
         return;
       }
 
@@ -1248,7 +1320,7 @@
         button.appendChild(layout);
         button.disabled = true;
         button.title = "No upcoming test has been scheduled yet.";
-        button.classList.add("btn-outline-light");
+        button.classList.add("btn-outline-light", "test-slot-upcoming");
         return;
       }
 
@@ -1282,12 +1354,11 @@
       layout.appendChild(titleRow);
       layout.appendChild(meta);
       button.appendChild(layout);
+      button.classList.add("btn-outline-light", "test-slot-upcoming");
 
       const launchable = runtimeSlot.canLaunchNow && !!runtimeSlot.launchUrl;
       if (launchable) {
-        button.classList.add("btn-brand", "test-slot-live");
-      } else {
-        button.classList.add("btn-outline-light");
+        button.classList.add("test-slot-live", "test-slot-selected");
       }
       button.disabled = !launchable;
       if (!launchable) {
