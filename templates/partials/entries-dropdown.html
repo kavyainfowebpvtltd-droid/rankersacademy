@@ -1,5 +1,7 @@
 <div class="entries-control {{ wrapper_class|default:'' }}">
-  <label class="form-label mb-1" for="{{ select_id }}">{{ label|default:'No. of Entries' }}</label>
+  {% if not hide_label %}
+    <label class="form-label mb-1" for="{{ select_id }}">{{ label|default:'No. of Entries' }}</label>
+  {% endif %}
   <select
     class="form-select entries-per-page-select {{ select_class|default:'' }}"
     id="{{ select_id }}"
