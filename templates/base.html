@@ -144,6 +144,7 @@
           <span>My Tests</span>
         </a>
 
+        {% if student_portal_features.subject_analysis %}
         <a
           href="{% url 'subject_analysis' %}"
           class="{% if '/subject-analysis/' in request.path %}active{% endif %}"
@@ -151,7 +152,9 @@
           <i class="bi bi-bar-chart"></i>
           <span>Subject Analysis</span>
         </a>
+        {% endif %}
 
+        {% if student_portal_features.gap_analysis %}
         <a
           href="{% url 'gap_analysis' %}"
           class="{% if '/gap-analysis/' in request.path %}active{% endif %}"
@@ -159,7 +162,9 @@
           <i class="bi bi-file-text"></i>
           <span>Gap Analysis</span>
         </a>
+        {% endif %}
 
+        {% if student_portal_features.reports %}
         <a
           href="{% url 'reports' %}"
           class="{% if '/reports/' in request.path %}active{% endif %}"
@@ -167,6 +172,7 @@
           <i class="bi bi-mortarboard"></i>
           <span>Reports</span>
         </a>
+        {% endif %}
 
 
 
@@ -185,6 +191,7 @@
       </div>
 
       <!-- Right corner download button -->
+      {% if student_portal_features.study_material %}
       <div class="tabs-right ms-auto">
         <a
           href="{% url 'study_material' %}"
@@ -200,6 +207,7 @@
           <span class="btn-text">Download Imp. Questions and Solutions</span>
         </a>
       </div>
+      {% endif %}
     </div>
 
     <style>
