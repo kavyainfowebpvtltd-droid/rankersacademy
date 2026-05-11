@@ -220,7 +220,7 @@ small,
   gap: 8px;
   padding: 12px 14px;
   border: 1px solid transparent;
-  border-radius: var(--game-pill-radius);
+  border-radius: 0;
   color: var(--game-soft);
   font-size: 14px;
   font-weight: 700;
@@ -239,9 +239,16 @@ small,
 .tabs-left a.active {
   color: var(--game-text);
   background: transparent;
-  border-color: var(--game-border-strong);
+  border-color: transparent;
   box-shadow: none;
   transform: translateY(-1px);
+}
+
+.tabs-left a:focus,
+.tabs-left a:focus-visible {
+  outline: none;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .tabs-left a:hover i,

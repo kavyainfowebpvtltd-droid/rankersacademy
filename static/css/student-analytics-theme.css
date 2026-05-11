@@ -143,6 +143,7 @@ a:hover {
 .tabs-left a {
   color: var(--student-muted) !important;
   border-color: transparent;
+  border-radius: 0 !important;
 }
 
 .tabs-left a i {
@@ -152,9 +153,16 @@ a:hover {
 .tabs-left a:hover,
 .tabs-left a.active {
   color: var(--student-heading) !important;
-  background: #0f1118 !important;
-  border-color: var(--student-border-strong);
+  background: transparent !important;
+  border-color: transparent !important;
   box-shadow: none;
+}
+
+.tabs-left a:focus,
+.tabs-left a:focus-visible {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 .tabs-left a:hover i,
