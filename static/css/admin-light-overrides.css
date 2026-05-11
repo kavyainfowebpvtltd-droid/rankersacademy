@@ -598,7 +598,7 @@ html[data-admin-theme="light"] body:not(.login-page-body) .text-primary {
 
 @media (max-width: 1024px) {
   html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a.active {
-    background: #eef5ff !important;
+    background: transparent !important;
     color: var(--student-light-blue) !important;
   }
 }

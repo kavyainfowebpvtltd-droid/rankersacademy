@@ -211,6 +211,32 @@
     </div>
 
     <style>
+      body .tabs-left > a,
+      body .tabs-left > a:hover,
+      body .tabs-left > a.active,
+      body .tabs-left > a:focus,
+      body .tabs-left > a:focus-visible {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+
+      body .tabs-left > a {
+        position: relative;
+      }
+
+      body .tabs-left > a.active::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 3px;
+        border-radius: 999px;
+      }
+
       @media (max-width: 1024px) {
         .tabs {
           flex-direction: column;
@@ -233,16 +259,16 @@
         .tabs-left a {
           font-size: 12px;
           padding: 8px 10px;
-          border-radius: 8px;
+          border-radius: 0 !important;
           white-space: nowrap;
         }
 
         .tabs-left a.active {
-          background: #e6f4fb;
+          background: transparent !important;
         }
 
         .tabs-left a.active::after {
-          display: none;
+          display: block;
         }
 
         .tabs-right {
