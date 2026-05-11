@@ -360,6 +360,26 @@
       opacity: 0.82;
     }
 
+    .my-tests-page .test-slot-sections {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.45rem;
+    }
+
+    .my-tests-page .test-slot-section-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--page-nav-link);
+      background: var(--page-card-soft-bg);
+      border: 1px solid var(--page-card-soft-border);
+    }
+
     .my-tests-page .test-slot-badge {
       font-size: 0.62rem;
       letter-spacing: 0.04em;
@@ -511,6 +531,12 @@
       font-weight: 700;
     }
 
+    .my-tests-page .leaderboard-section-head,
+    .my-tests-page .leaderboard-section-score {
+      text-align: center;
+      white-space: nowrap;
+    }
+
     .my-tests-page .leaderboard-total-cell {
       text-align: right;
       white-space: nowrap;
@@ -600,13 +626,10 @@
         <div class="table-responsive">
           <table class="table table-sm table-striped table-hover align-middle leaderboard-table">
             <thead>
-              <tr>
+              <tr id="leaderboardHeadRow">
                 <th>#</th>
                 <th>Student</th>
-                <th id="leaderboardHead0">PHY</th>
-                <th id="leaderboardHead1">CHM</th>
-                <th id="leaderboardHead2">MTH</th>
-                <th class="text-end">Total</th>
+                <th class="text-end leaderboard-total-head">Total</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
@@ -719,9 +742,6 @@
           </div>
         </div>
       </td>
-      <td class="leaderboard-section-score mono"></td>
-      <td class="leaderboard-section-score mono"></td>
-      <td class="leaderboard-section-score mono"></td>
       <td class="leaderboard-total-cell"><b class="leaderboard-total mono"></b></td>
     </tr>
   </template>
@@ -875,13 +895,9 @@
       topPerformers: document.getElementById("topPerformers"),
       leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
       leaderboardBody: document.getElementById("leaderboardBody"),
+      leaderboardHeadRow: document.getElementById("leaderboardHeadRow"),
       leaderboardFooterText: document.getElementById("leaderboardFooterText"),
       leaderboardToggleBtn: document.getElementById("leaderboardToggleBtn"),
-      leaderboardHeads: [
-        document.getElementById("leaderboardHead0"),
-        document.getElementById("leaderboardHead1"),
-        document.getElementById("leaderboardHead2"),
-      ],
       rankJourneyRow: document.getElementById("rankJourneyRow"),
       analyticsBreakdownTitle: document.getElementById("analyticsBreakdownTitle"),
       topicAnalyticsContainer: document.getElementById("topicAnalyticsContainer"),
@@ -1053,7 +1069,68 @@
     }
 
     function sectionHeaderItems(test) {
-      return (test?.sectionBreakdown || []).slice(0, 3);
+      return test?.sectionBreakdown || [];
+    }
+
+    function sectionDisplayLabel(section, index = 0) {
+      if (section?.shortLabel) {
+        return section.shortLabel;
+      }
+
+      const rawName = String(section?.name || `SEC ${index + 1}`).trim();
+      if (!rawName) {
+        return `SEC ${index + 1}`;
+      }
+
+      const compactName = rawName.replace(/\s+/g, " ");
+      if (compactName.length <= 8) {
+        return compactName.toUpperCase();
+      }
+
+      const parts = compactName.split(" ").filter(Boolean);
+      if (parts.length === 1) {
+        return compactName.slice(0, 8).toUpperCase();
+      }
+
+      return parts
+        .slice(0, 3)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase();
+    }
+
+    function renderTestSlotSections(layout, slot) {
+      const sections = sectionHeaderItems(slot);
+      if (!sections.length) {
+        return;
+      }
+
+      const sectionRow = document.createElement("span");
+      sectionRow.className = "test-slot-sections";
+
+      sections.forEach((section, index) => {
+        const chip = document.createElement("span");
+        chip.className = "test-slot-section-chip";
+        chip.textContent = sectionDisplayLabel(section, index);
+        chip.title = section.name || `Section ${index + 1}`;
+        sectionRow.appendChild(chip);
+      });
+
+      layout.appendChild(sectionRow);
+    }
+
+    function renderLeaderboardHeaders(test) {
+      const headRow = refs.leaderboardHeadRow;
+      const totalHead = headRow.querySelector(".leaderboard-total-head");
+      [...headRow.querySelectorAll(".leaderboard-section-head")].forEach((node) => node.remove());
+
+      sectionHeaderItems(test).forEach((section, index) => {
+        const th = document.createElement("th");
+        th.className = "leaderboard-section-head";
+        th.textContent = sectionDisplayLabel(section, index);
+        th.title = section.name || `Section ${index + 1}`;
+        headRow.insertBefore(th, totalHead);
+      });
     }
 
     function leaderboardRows(rows, highlightId, collapsed) {
@@ -1106,6 +1183,7 @@
         meta.textContent = `${slot.date} • ${slot.attempted ? "Completed" : "Not Attempted"}`;
         layout.appendChild(titleRow);
         layout.appendChild(meta);
+        renderTestSlotSections(layout, slot);
         button.appendChild(layout);
         button.classList.add(slot.id === state.testId ? "btn-brand" : "btn-outline-light");
         return;
@@ -1383,12 +1461,8 @@
       const ranked = currentLeaderboard();
       refs.leaderboardCountBadge.textContent = `${ranked.length} students`;
       clearNode(refs.leaderboardBody);
-
       const headers = sectionHeaderItems(test);
-      refs.leaderboardHeads.forEach((head, index) => {
-        const item = headers[index];
-        head.textContent = item ? (item.shortLabel || item.name.slice(0, 3).toUpperCase()) : `SEC ${index + 1}`;
-      });
+      renderLeaderboardHeaders(test);
 
       const rows = leaderboardRows(ranked, currentStudentId, !state.studentLeaderboardOpen);
       rows.forEach((row) => {
@@ -1419,10 +1493,14 @@
           node.querySelector(".leaderboard-you").appendChild(createBadge("You", "text-bg-info"));
         }
 
-        const sectionCells = node.querySelectorAll(".leaderboard-section-score");
-        sectionCells.forEach((cell, index) => {
+        const totalCell = node.querySelector(".leaderboard-total-cell");
+        headers.forEach((section, index) => {
+          const cell = document.createElement("td");
+          cell.className = "leaderboard-section-score mono";
           const sectionScore = row.sectionScores?.[index];
           cell.textContent = sectionScore ? sectionScore.score : "--";
+          cell.title = section.name || `Section ${index + 1}`;
+          node.insertBefore(cell, totalCell);
         });
         node.querySelector(".leaderboard-total").textContent = `${row.score ?? 0}/${row.totalMarks || test.totalMarks || 0}`;
         refs.leaderboardBody.appendChild(node);
