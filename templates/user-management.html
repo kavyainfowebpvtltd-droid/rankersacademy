@@ -43,7 +43,22 @@
 
       <!-- STUDENTS TABLE -->
       <div class="card mb-5" id="studentTableCard">
-        <div class="card-header fw-bold">Students</div>
+        <div class="card-header user-table-card-header">
+          <h5 class="mb-0 fw-bold">Students</h5>
+          <div class="entries-control entries-control-inline">
+            <label class="form-label mb-1" for="studentEntriesSelect">No. of Entries</label>
+            <select
+              class="form-select student-filter-select entries-per-page-select"
+              id="studentEntriesSelect"
+              name="student_entries"
+              form="studentFilterForm"
+            >
+              {% for option in entry_options %}
+              <option value="{{ option }}" {% if student_items_per_page == option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
         <div class="card-body table-responsive">
           <form method="get" class="row g-2 align-items-end mb-3 student-filter-form" id="studentFilterForm">
             <input type="hidden" name="teacher_entries" value="{{ teacher_items_per_page }}" />
@@ -91,14 +106,6 @@
                 <option value="">All</option>
                 {% for grade in student_grade_options %}
                 <option value="{{ grade }}" {% if student_grade_filter == grade %}selected{% endif %}>{{ grade }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-lg-1 col-md-4">
-              <label class="form-label mb-1" for="studentEntriesSelect">No. of Entries</label>
-              <select class="form-select student-filter-select entries-per-page-select" id="studentEntriesSelect" name="student_entries">
-                {% for option in entry_options %}
-                <option value="{{ option }}" {% if student_items_per_page == option %}selected{% endif %}>{{ option }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -265,9 +272,9 @@
 
       <!-- STAFF TABLE  -->
       <div class="card">
-        <div class="card-header fw-bold">Staff</div>
-        <div class="card-body table-responsive">
-          <form method="get" class="table-controls-form mb-3" id="teacherEntriesForm">
+        <div class="card-header user-table-card-header">
+          <h5 class="mb-0 fw-bold">Staff/Teacher</h5>
+          <form method="get" class="table-controls-form" id="teacherEntriesForm">
             <input type="hidden" name="student_search" value="{{ student_search }}" />
             <input type="hidden" name="student_batch" value="{{ student_batch_filter }}" />
             <input type="hidden" name="student_stream" value="{{ student_stream_filter }}" />
@@ -284,6 +291,8 @@
               </select>
             </div>
           </form>
+        </div>
+        <div class="card-body table-responsive">
           <table class="table table-hover align-middle">
             <thead>
                <tr>
@@ -402,7 +411,7 @@
             <li class="page-item active">
               <span class="page-link">{{ num }}</span>
             </li>
-         {% elif num > students_page.number|add:'-3' and num < students_page.number|add:'3' %}
+         {% elif num > teachers_page.number|add:'-3' and num < teachers_page.number|add:'3' %}
             <li class="page-item">
               <a class="page-link" href="?{% if teacher_pagination_query %}{{ teacher_pagination_query }}&{% endif %}teacher_page={{ num }}">{{ num }}</a>
             </li>

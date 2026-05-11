@@ -195,6 +195,14 @@ td {
   min-width: 56rem;
 }
 
+.user-table-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .table-controls-form {
   display: flex;
   justify-content: flex-end;
@@ -205,6 +213,10 @@ td {
 
 .entries-control {
   width: 10rem;
+}
+
+.entries-control-inline {
+  flex: 0 0 10rem;
 }
 
 .table-pagination {
@@ -227,6 +239,13 @@ td {
 .table-pagination .page-item:first-child .page-link,
 .table-pagination .page-item:last-child .page-link {
   border-radius: 0.5rem;
+}
+
+.table-pagination .page-item.active .page-link {
+  background-color: var(--blue-600);
+  border-color: var(--blue-600);
+  color: #fff;
+  box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.18);
 }
 
 .student-filter-btn {
@@ -584,9 +603,15 @@ button:hover {
     justify-content: flex-start;
   }
 
-  .entries-control {
+  .user-table-card-header {
+    align-items: flex-start;
+  }
+
+  .entries-control,
+  .entries-control-inline {
     width: 100%;
     max-width: 12rem;
+    flex-basis: 12rem;
   }
 
   .table-pagination .pagination {
