@@ -2523,7 +2523,7 @@ def _normalize_analysis_subject_or_none(raw_subject):
 
 def _coerce_analysis_test(test_id):
     try:
-        return ScholarshipTest.objects.defer("original_word_file").prefetch_related("sections__questions").get(id=int(test_id))
+        return ScholarshipTest.objects.prefetch_related("sections__questions").get(id=int(test_id))
     except (TypeError, ValueError, ScholarshipTest.DoesNotExist):
         return None
 
@@ -3975,13 +3975,10 @@ def _build_attempt_section_breakdown(attempt):
     if not test:
         return []
 
-    saved_progress = scholarship_test_service.get_saved_progress(attempt)
-    saved_answers = saved_progress.get("answers", {}) if isinstance(saved_progress, dict) else {}
-    saved_answers = saved_answers if isinstance(saved_answers, dict) else {}
-
-    answer_map = {
-        answer.question_id: answer
+    correct_question_ids = {
+        answer.question_id
         for answer in attempt.answers.all()
+        if answer.is_correct
     }
     breakdown = []
 
@@ -3991,30 +3988,11 @@ def _build_attempt_section_breakdown(attempt):
         if total_marks <= 0:
             total_marks = len(questions)
 
-        scored_marks = 0
-        for question in questions:
-            submitted_answer = saved_answers.get(str(question.id))
-            if submitted_answer is None:
-                submitted_answer = saved_answers.get(question.id)
-
-            if submitted_answer is not None:
-                if scholarship_test_service.is_runtime_answer_correct(question, submitted_answer):
-                    scored_marks += int(question.pos_marks or 0)
-                elif scholarship_test_service.is_runtime_answer_provided(question, submitted_answer):
-                    scored_marks -= int(question.neg_marks or 0)
-                else:
-                    scored_marks -= int(question.neg_unattempted or 0)
-                continue
-
-            legacy_answer = answer_map.get(question.id)
-            if not legacy_answer:
-                continue
-
-            if legacy_answer.is_correct:
-                scored_marks += int(question.pos_marks or 0) if int(question.pos_marks or 0) > 0 else 1
-            else:
-                scored_marks -= int(question.neg_marks or 0)
-
+        scored_marks = sum(
+            int(question.pos_marks or 0) if int(question.pos_marks or 0) > 0 else 1
+            for question in questions
+            if question.id in correct_question_ids
+        )
         percentage = round((scored_marks / total_marks) * 100, 1) if total_marks else 0
 
         breakdown.append(
@@ -4183,7 +4161,7 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
 
     return {
         "entries": entries,
-        "topEntries": [e for e in entries if e["rank"] != "NA"][:3],
+        "topEntries": [e for e in entries if e["rank"] != "NA"][:5],
         "currentEntry": current_entry,
     }
 
@@ -4321,7 +4299,6 @@ def _build_my_tests_payload(student):
 
     published_tests = (
         ScholarshipTest.objects
-        .defer("original_word_file")
         .filter(status="published", scheduled_start_at__isnull=False)
         .order_by("scheduled_start_at", "id")
         .prefetch_related("sections__questions")
@@ -4369,7 +4346,6 @@ def _build_my_tests_payload(student):
     if upcoming_test is None:
         unscheduled_published_tests = (
             ScholarshipTest.objects
-            .defer("original_word_file")
             .filter(status="published", scheduled_start_at__isnull=True)
             .order_by("-created_at")
             .prefetch_related("sections__questions")
@@ -4411,7 +4387,6 @@ def _build_my_tests_payload(student):
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
-        .defer("test__original_word_file")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
@@ -4791,7 +4766,6 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
 
     published_tests = (
         ScholarshipTest.objects
-        .defer("original_word_file")
         .filter(status="published", scheduled_start_at__isnull=False)
         .order_by("scheduled_start_at", "id")
         .prefetch_related("sections__questions")
