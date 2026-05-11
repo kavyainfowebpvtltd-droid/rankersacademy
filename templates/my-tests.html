@@ -36,6 +36,9 @@
       --page-table-border: rgba(255, 255, 255, 0.1);
       --page-table-striped: rgba(255, 255, 255, 0.02);
       --page-table-hover: rgba(255, 255, 255, 0.04);
+      --page-table-body-bg: rgba(11, 12, 18, 0.94);
+      --page-table-body-bg-alt: rgba(15, 17, 24, 0.98);
+      --page-table-body-bg-hover: rgba(22, 25, 35, 0.98);
       --page-medal-bg: rgba(255, 255, 255, 0.08);
       --page-medal-border: rgba(255, 255, 255, 0.16);
       --page-highlight-bg: rgba(13, 202, 240, 0.22);
@@ -44,6 +47,10 @@
       --page-upcoming-text: #a1a1aa;
       --page-upcoming-bg: rgba(255, 255, 255, 0.02);
       --page-upcoming-border: rgba(255, 255, 255, 0.16);
+      --page-header-bg: rgba(255, 255, 255, 0.04);
+      --page-count-badge-bg: rgba(125, 211, 252, 0.16);
+      --page-count-badge-text: #bae6fd;
+      --page-count-badge-border: rgba(125, 211, 252, 0.24);
       min-height: 100vh;
       padding: 1.5rem 0 2rem;
       color: var(--page-text);
@@ -80,6 +87,9 @@
       --page-table-border: #dbe4f0;
       --page-table-striped: #f8fbff;
       --page-table-hover: #eef5ff;
+      --page-table-body-bg: rgba(255, 255, 255, 0.98);
+      --page-table-body-bg-alt: #f8fbff;
+      --page-table-body-bg-hover: #eef5ff;
       --page-medal-bg: #eef5ff;
       --page-medal-border: #c7d2fe;
       --page-highlight-bg: rgba(59, 130, 246, 0.14);
@@ -88,6 +98,10 @@
       --page-upcoming-text: #64748b;
       --page-upcoming-bg: #f8fbff;
       --page-upcoming-border: #dbe4f0;
+      --page-header-bg: #f8fbff;
+      --page-count-badge-bg: #eef5ff;
+      --page-count-badge-text: #334155;
+      --page-count-badge-border: #dbe4f0;
     }
 
     .my-tests-page .display {
@@ -189,6 +203,7 @@
     .my-tests-page .app-card-soft {
       background: var(--page-card-soft-bg);
       border: 1px solid var(--page-card-soft-border);
+      box-shadow: var(--page-card-shadow);
       border-radius: 1.1rem;
     }
 
@@ -402,6 +417,7 @@
     }
 
     .my-tests-page .leaderboard-table thead th {
+      background: var(--page-header-bg);
       color: var(--muted);
       border-bottom-color: var(--page-table-border);
       font-size: 0.78rem;
@@ -415,6 +431,33 @@
       padding-top: 1rem;
       padding-bottom: 1rem;
       vertical-align: middle;
+      background: transparent;
+    }
+
+    .my-tests-page .leaderboard-table tbody tr {
+      background: var(--page-table-body-bg);
+    }
+
+    .my-tests-page .leaderboard-table tbody tr:nth-child(even) {
+      background: var(--page-table-body-bg-alt);
+    }
+
+    .my-tests-page .leaderboard-table tbody tr:hover {
+      background: var(--page-table-body-bg-hover);
+    }
+
+    .my-tests-page .leaderboard-table tbody tr.table-active.student-highlight {
+      background: var(--page-highlight-bg) !important;
+    }
+
+    .my-tests-page .leaderboard-table tbody tr.table-active.student-highlight td {
+      background: transparent !important;
+    }
+
+    .my-tests-page #leaderboardCountBadge {
+      background: var(--page-count-badge-bg) !important;
+      color: var(--page-count-badge-text) !important;
+      border: 1px solid var(--page-count-badge-border);
     }
 
     .my-tests-page .leaderboard-rank {
@@ -555,7 +598,7 @@
           <span id="leaderboardCountBadge" class="badge rounded-pill text-bg-info"></span>
         </div>
         <div class="table-responsive">
-          <table class="table table-sm table-dark table-striped table-hover align-middle leaderboard-table">
+          <table class="table table-sm table-striped table-hover align-middle leaderboard-table">
             <thead>
               <tr>
                 <th>#</th>
