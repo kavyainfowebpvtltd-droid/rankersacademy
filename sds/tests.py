@@ -51,6 +51,40 @@ class AddUserStudentFieldSelectionTests(TestCase):
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
+class AddUserStaffWorkingHoursTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="adminpass123",
+        )
+        self.client.force_login(self.admin)
+
+    def test_add_staff_saves_optional_working_hours(self):
+        response = self.client.post(
+            reverse("add_user"),
+            {
+                "user_type": "teacher",
+                "name": "Meera Joshi",
+                "username": "meera.joshi",
+                "email": "meera@example.com",
+                "contact": "9876543201",
+                "gender": "Female",
+                "role": "Admin",
+                "working_hours": "8 AM - 9 PM",
+            },
+        )
+
+        self.assertRedirects(response, reverse("user-management"))
+
+        teacher = TeacherAdmin.objects.get(email="meera@example.com")
+        self.assertEqual(teacher.working_hours, "8 AM - 9 PM")
+        self.assertTrue(teacher.must_change_password)
+        self.assertTrue(teacher.user.check_password(DEFAULT_ONE_TIME_PASSWORD))
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
 class ForcedPasswordChangeTests(TestCase):
     def setUp(self):
         self.client = Client()

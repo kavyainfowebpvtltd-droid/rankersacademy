@@ -1507,6 +1507,7 @@ def add_user(request):
         teacher_role = _normalize_staff_designation(request.POST.get("role"))
         teacher_subjects = (request.POST.get("subjects") or "").strip()
         teacher_batch = _pick_post_value("batch", prefer_last=True)
+        working_hours = (request.POST.get("working_hours") or "").strip()
 
         if not teacher_role:
             messages.error(request, "Designation is required for staff.")
@@ -1524,6 +1525,7 @@ def add_user(request):
             board="",
             batch=teacher_batch if _is_teacher_designation(teacher_role) else "",
             blood_group=blood_group,
+            working_hours=working_hours,
             subjects=teacher_subjects if _is_teacher_designation(teacher_role) else "",
             must_change_password=True,
         )
@@ -1705,6 +1707,7 @@ def edit_teacher(request, id):
     teacher.board = request.POST.get("board")
     teacher.batch = request.POST.get("batch") if _is_teacher_designation(teacher.role) else ""
     teacher.blood_group = (request.POST.get("blood_group") or "").strip()
+    teacher.working_hours = (request.POST.get("working_hours") or "").strip()
     teacher.subjects = (request.POST.get("subjects") or "").strip() if _is_teacher_designation(teacher.role) else ""
     
     # Handle profile picture upload
