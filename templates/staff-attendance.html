@@ -167,7 +167,7 @@
       </div>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-responsive" id="standardStaffTableContainer" style="display: none;">
       <table class="table table-hover attendance-table align-middle mb-0" id="staffAttendanceTable">
         <thead>
           <tr>
@@ -186,7 +186,7 @@
             <th>Check-out</th>
           </tr>
         </thead>
-        <tbody id="recordsBody">
+        <tbody id="recordsBodyStandard">
           {% for row in attendance_rows %}
             <tr
               data-search="{{ row.staff_name|lower }} {{ row.contact|lower }} {{ row.email|lower }} {{ row.role|lower }}"
@@ -237,6 +237,69 @@
       </table>
     </div>
 
+    <div class="table-responsive" id="teachingStaffTableContainer">
+      <table class="table table-hover attendance-table align-middle mb-0" id="teachingStaffTable">
+        <thead>
+          <tr>
+            <th rowspan="2">Sr. No.</th>
+            <th rowspan="2">Name</th>
+            <th rowspan="2">Subject</th>
+            <th colspan="2" class="text-center">L1</th>
+            <th colspan="2" class="text-center">L2</th>
+            <th colspan="2" class="text-center">L3</th>
+            <th colspan="2" class="text-center">L4</th>
+            <th rowspan="2">Lectures Total Duration</th>
+          </tr>
+          <tr>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBodyTeaching">
+          {% for row in attendance_rows %}
+            {% if row.role|lower == 'teacher' %}
+            <tr
+              data-search="{{ row.staff_name|lower }} {{ row.contact|lower }} {{ row.email|lower }} {{ row.role|lower }}"
+              data-role="{{ row.role|lower }}"
+              data-present="{{ row.present_days|add:row.late_days }}"
+              data-total="{{ row.total_days }}"
+            >
+              <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+              <td class="staff-name">
+                <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
+                  {{ row.staff_name }}
+                </a>
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ row.subjects|default:"-" }}</span></td>
+              
+              {% for lecture in row.lectures %}
+                <td class="text-center"><span class="time-pill {% if lecture.in == '-' %}time-pill-muted{% endif %}">{{ lecture.in }}</span></td>
+                <td class="text-center"><span class="time-pill {% if lecture.out == '-' %}time-pill-muted{% endif %}">{{ lecture.out }}</span></td>
+              {% endfor %}
+              
+              <td class="text-center fw-bold">{{ row.total_duration }}</td>
+            </tr>
+            {% endif %}
+          {% empty %}
+            <tr>
+              <td colspan="12">
+                <div class="table-empty">
+                  <i class="bi bi-person-x fs-1 d-block mb-3"></i>
+                  No teaching staff found.
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
     {% if page_obj.paginator.num_pages > 1 %}
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 p-3 border-top">
         <div class="text-muted small">
@@ -265,11 +328,12 @@
 </div>
 
 <script>
-  const tableRows = Array.from(document.querySelectorAll("#recordsBody tr[data-search]"));
+  const standardRows = Array.from(document.querySelectorAll("#recordsBodyStandard tr[data-search]"));
+  const teachingRows = Array.from(document.querySelectorAll("#recordsBodyTeaching tr[data-search]"));
   let currentStaffType = 'Teaching';
 
   function updateSummary() {
-    const visibleRows = tableRows.filter((row) => row.style.display !== "none");
+    const visibleRows = (currentStaffType === 'Teaching' ? teachingRows : standardRows).filter((row) => row.style.display !== "none");
     const totalStaff = visibleRows.length;
     const totalPresent = visibleRows.reduce((sum, row) => sum + parseInt(row.dataset.present || "0", 10), 0);
     const totalRecorded = visibleRows.reduce((sum, row) => sum + parseInt(row.dataset.total || "0", 10), 0);
@@ -293,14 +357,31 @@
     btn.classList.add('active');
     btn.classList.remove('btn-outline-primary');
     btn.classList.add('btn-primary');
+
+    // Toggle table containers
+    const teachingContainer = document.getElementById('teachingStaffTableContainer');
+    const standardContainer = document.getElementById('standardStaffTableContainer');
+    
+    if (type === 'Teaching') {
+      teachingContainer.style.display = 'block';
+      standardContainer.style.display = 'none';
+    } else {
+      teachingContainer.style.display = 'none';
+      standardContainer.style.display = 'block';
+    }
     
     filterRows();
   }
 
   function filterRows() {
     const search = (document.getElementById("staffSearch").value || "").trim().toLowerCase();
+    const rowsToFilter = (currentStaffType === 'Teaching' ? teachingRows : standardRows);
+    const otherRows = (currentStaffType === 'Teaching' ? standardRows : teachingRows);
 
-    tableRows.forEach((row) => {
+    // Hide rows in the other table
+    otherRows.forEach(row => row.style.display = 'none');
+
+    rowsToFilter.forEach((row) => {
       const matchesSearch = (row.dataset.search || "").includes(search);
       const role = (row.dataset.role || "").toLowerCase();
       

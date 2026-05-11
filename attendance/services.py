@@ -594,35 +594,49 @@ def record_staff_scan(raw_value: str, scanned_at: str | None = None) -> dict:
             date=attendance_date,
             defaults={
                 "status": "Present",
-                "raw_scan_value": parsed["raw"],
+                "raw_scan_value": "[]",
             },
         )
 
-        action = "already_checked_out"
-        message = "Attendance already completed for today."
+        # Handle raw_scan_value as a list of scan times
+        try:
+            scans = json.loads(attendance.raw_scan_value)
+            if not isinstance(scans, list):
+                scans = []
+        except (json.JSONDecodeError, TypeError):
+            scans = []
+        
+        # Add current scan time if not already present (within same minute)
+        current_scan = scan_time.strftime("%H:%M")
+        if current_scan not in scans:
+            scans.append(current_scan)
+        
+        attendance.raw_scan_value = json.dumps(scans)
+
+        action = "checkin"
+        message = "Scan recorded."
         update_fields = ["raw_scan_value", "updated_at"]
-        attendance.raw_scan_value = parsed["raw"]
 
         if not attendance.check_in:
             attendance.check_in = scan_time
-            attendance.check_out = None
             attendance.status = "Late" if scan_time > STAFF_CHECKIN_CUTOFF else "Present"
-            update_fields.extend(["check_in", "check_out", "status"])
+            update_fields.extend(["check_in", "status"])
             if attendance.status == "Late":
                 action = "late_entry"
                 message = "Late entry recorded."
             else:
                 action = "checkin"
                 message = "Check-in recorded."
-        elif not attendance.check_out:
-            if scan_time >= CHECKOUT_CUTOFF:
+        else:
+            # Always update check_out with the latest scan if it's after check_in
+            if scan_time > attendance.check_in:
                 attendance.check_out = scan_time
                 update_fields.append("check_out")
                 action = "checkout"
                 message = "Check-out recorded."
             else:
                 action = "already_checked_in"
-                message = "Staff member is already checked in."
+                message = "Scan recorded (before check-in time)."
 
         attendance.save(update_fields=sorted(set(update_fields)))
 

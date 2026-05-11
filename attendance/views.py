@@ -532,6 +532,51 @@ def _build_staff_attendance_rows(start_date, end_date, today):
         total_days = len(records)
         today_record = today_records.get(staff.id)
 
+        # Parse multi-scans for L1-L4 if it's a teacher
+        lectures = []
+        total_duration_minutes = 0
+        if today_record and staff.role.lower() == "teacher":
+            try:
+                scans = json.loads(today_record.raw_scan_value)
+                if isinstance(scans, list):
+                    # Sort scans just in case
+                    scans.sort()
+                    # Group into pairs (In, Out)
+                    for i in range(0, len(scans), 2):
+                        in_time_str = scans[i]
+                        out_time_str = scans[i+1] if i+1 < len(scans) else "-"
+                        
+                        lectures.append({
+                            "in": in_time_str,
+                            "out": out_time_str
+                        })
+                        
+                        if out_time_str != "-":
+                            try:
+                                h1, m1 = map(int, in_time_str.split(":"))
+                                h2, m2 = map(int, out_time_str.split(":"))
+                                total_duration_minutes += (h2 * 60 + m2) - (h1 * 60 + m1)
+                            except:
+                                pass
+            except:
+                pass
+        
+        # Ensure we have 4 lecture slots
+        while len(lectures) < 4:
+            lectures.append({"in": "-", "out": "-"})
+        
+        # Limit to 4 for the UI
+        lectures = lectures[:4]
+        
+        total_duration_display = "-"
+        if total_duration_minutes > 0:
+            h = total_duration_minutes // 60
+            m = total_duration_minutes % 60
+            if h > 0:
+                total_duration_display = f"{h}h {m}m"
+            else:
+                total_duration_display = f"{m}m"
+
         rows.append(
             {
                 "staff": staff,
@@ -539,6 +584,7 @@ def _build_staff_attendance_rows(start_date, end_date, today):
                 "role": staff.role,
                 "contact": staff.contact,
                 "email": staff.email,
+                "subjects": staff.subjects,
                 "present_days": present_count,
                 "late_days": late_count,
                 "absent_days": absent_count,
@@ -547,6 +593,8 @@ def _build_staff_attendance_rows(start_date, end_date, today):
                 "today_status": today_record.status if today_record else "Not Marked",
                 "today_check_in": format_display_time(today_record.check_in) if today_record else "-",
                 "today_check_out": format_display_time(today_record.check_out) if today_record else "-",
+                "lectures": lectures,
+                "total_duration": total_duration_display,
             }
         )
 
