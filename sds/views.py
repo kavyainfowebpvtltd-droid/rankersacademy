@@ -4178,7 +4178,7 @@ def _build_rewards_payload(completed_tests):
     running_improve = 0
 
     for index, test in enumerate(completed_tests):
-        rank = test.get("rank") or 999
+        rank = _parse_int(test.get("rank")) or 999
         score = test.get("score") or 0
         total_marks = max(test.get("totalMarks") or 0, 1)
         score_percent = (score / total_marks) * 100
@@ -4191,7 +4191,7 @@ def _build_rewards_payload(completed_tests):
         )
 
         if index:
-            previous_rank = completed_tests[index - 1].get("rank") or rank
+            previous_rank = _parse_int(completed_tests[index - 1].get("rank")) or rank
             if previous_rank - rank >= 5:
                 climbed_five = True
             if previous_rank > rank:
@@ -4432,7 +4432,7 @@ def _build_my_tests_payload(student):
                 "attempted": bool(attempt),
                 "score": int(attempt.score or 0) if attempt else 0,
                 "totalMarks": total_marks,
-                "rank": current_entry.get("rank"),
+                "rank": _parse_int(current_entry.get("rank")),
                 "totalStudents": len(leaderboard["entries"]),
                 "sectionBreakdown": section_breakdown,
                 "leaderboard": leaderboard["entries"],
@@ -4456,10 +4456,12 @@ def _build_my_tests_payload(student):
 
     for index, test in enumerate(student_completed_tests):
         previous_test = student_completed_tests[index - 1] if index else None
-        previous_rank = previous_test.get("rank") if previous_test else None
+        current_rank = _parse_int(test.get("rank"))
+        previous_rank = _parse_int(previous_test.get("rank")) if previous_test else None
+        test["rank"] = current_rank
         test["rankDelta"] = (
-            previous_rank - test["rank"]
-            if previous_rank is not None and test.get("rank") is not None
+            previous_rank - current_rank
+            if previous_rank is not None and current_rank is not None
             else None
         )
 
