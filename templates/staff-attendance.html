@@ -143,18 +143,10 @@
 
   <div class="panel-card">
     <div class="p-3 border-bottom">
-      <div class="table-toolbar mb-3">
-        <div>
-          <h5 class="toolbar-title">Staff Attendance</h5>
-          <div class="text-muted small">Monthly attendance records for staff members</div>
+      <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div class="flex-grow-1">
+          <input type="text" id="staffSearch" class="form-control toolbar-input w-100" placeholder="Search by name, phone, email, or role">
         </div>
-        <form method="get" class="mb-0">
-          <input type="hidden" name="month" value="{{ month }}">
-          {% include "partials/entries-dropdown.html" with select_id="staffEntriesSelect" entries_name="staff_entries" current_entries=items_per_page entry_options=entry_options change_handler="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()" %}
-        </form>
-      </div>
-      <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-        <input type="text" id="staffSearch" class="form-control toolbar-input flex-grow-1" placeholder="Search by name, phone, email, or role">
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-primary active filter-btn" id="btnTeachingStaff" onclick="filterByStaffType('Teaching', this)">
             Teaching Staff
@@ -187,6 +179,7 @@
         </thead>
         <tbody id="recordsBodyStandard">
           {% for row in attendance_rows %}
+            {% if row.role|lower != 'teacher' %}
             <tr
               data-search="{{ row.staff_name|lower }} {{ row.contact|lower }} {{ row.email|lower }} {{ row.role|lower }}"
               data-status="{{ row.today_status }}"
@@ -194,7 +187,7 @@
               data-present="{{ row.present_days|add:row.late_days }}"
               data-total="{{ row.total_days }}"
             >
-              <td class="serial-col">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+              <td class="serial-col">1</td>
               <td class="staff-name">
                 <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
                   {{ row.staff_name }}
@@ -222,6 +215,7 @@
               <td><span class="time-pill {% if row.today_check_in == '-' %}time-pill-muted{% endif %}">{{ row.today_check_in }}</span></td>
               <td><span class="time-pill {% if row.today_check_out == '-' %}time-pill-muted{% endif %}">{{ row.today_check_out }}</span></td>
             </tr>
+            {% endif %}
           {% empty %}
             <tr>
               <td colspan="13">
@@ -270,7 +264,7 @@
               data-present="{{ row.present_days|add:row.late_days }}"
               data-total="{{ row.total_days }}"
             >
-              <td class="serial-col">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+              <td class="serial-col">1</td>
               <td class="staff-name">
                 <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
                   {{ row.staff_name }}
