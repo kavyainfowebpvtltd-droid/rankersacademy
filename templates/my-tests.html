@@ -136,6 +136,40 @@
       font-weight: 700;
     }
 
+    .my-tests-page .nav-pills .nav-link.tab-upcoming {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      color: #a1a1aa;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+      cursor: not-allowed;
+      opacity: 0.82;
+    }
+
+    .my-tests-page .nav-pills .nav-link.tab-upcoming:hover,
+    .my-tests-page .nav-pills .nav-link.tab-upcoming:focus,
+    .my-tests-page .nav-pills .nav-link.tab-upcoming.active {
+      color: #a1a1aa;
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .my-tests-page .coming-soon-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.18rem 0.5rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(250, 204, 21, 0.16);
+      color: #facc15;
+      border: 1px solid rgba(250, 204, 21, 0.28);
+    }
+
     .my-tests-page .nav-pills .nav-link.active,
     .my-tests-page .nav-pills .nav-link:hover,
     .my-tests-page .nav-pills .nav-link:focus {
@@ -409,8 +443,14 @@
   <div class="container-fluid px-3 px-lg-4 app-shell">
     <div id="studentTabs" class="nav nav-pills nav-fill mb-3">
       <button type="button" class="nav-link active" data-tab="home">Home</button>
-      <button type="button" class="nav-link" data-tab="analytics">Analytics</button>
-      <button type="button" class="nav-link" data-tab="rewards">Rewards</button>
+      <button type="button" class="nav-link tab-upcoming" data-tab="analytics" disabled aria-disabled="true" title="Analytics is coming soon.">
+        <span>Analytics</span>
+        <span class="coming-soon-badge">Coming Soon</span>
+      </button>
+      <button type="button" class="nav-link tab-upcoming" data-tab="rewards" disabled aria-disabled="true" title="Rewards is coming soon.">
+        <span>Rewards</span>
+        <span class="coming-soon-badge">Coming Soon</span>
+      </button>
     </div>
 
     <div id="testSelector" class="d-flex gap-2 overflow-auto pb-1 mb-4">
@@ -707,6 +747,7 @@
     });
 
     const rewardsPayload = normalizeRewards(payload.rewards || {});
+    const lockedTabs = new Set(["analytics", "rewards"]);
 
     const state = {
       studentTab: "home",
@@ -718,6 +759,10 @@
         null,
       online: navigator.onLine,
     };
+
+    function isLockedTab(tab) {
+      return lockedTabs.has(tab);
+    }
 
     const refs = {
       tabButtons: [...document.querySelectorAll("#studentTabs [data-tab]")],
@@ -1031,6 +1076,10 @@
     }
 
     function renderHeader() {
+      if (isLockedTab(state.studentTab)) {
+        state.studentTab = "home";
+      }
+
       refs.tabButtons.forEach((button) => {
         button.classList.toggle("active", button.dataset.tab === state.studentTab);
       });
@@ -1391,6 +1440,11 @@
 
     refs.tabButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        if (isLockedTab(button.dataset.tab)) {
+          state.studentTab = "home";
+          renderHeader();
+          return;
+        }
         state.studentTab = button.dataset.tab;
         renderHeader();
       });
@@ -1433,7 +1487,8 @@
     document.addEventListener("keydown", (event) => {
       if (["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)) return;
       if (["1", "2", "3"].includes(event.key)) {
-        state.studentTab = ["home", "analytics", "rewards"][Number(event.key) - 1];
+        const nextTab = ["home", "analytics", "rewards"][Number(event.key) - 1];
+        state.studentTab = isLockedTab(nextTab) ? "home" : nextTab;
         renderHeader();
       }
     });
