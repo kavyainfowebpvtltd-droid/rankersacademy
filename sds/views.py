@@ -2523,7 +2523,7 @@ def _normalize_analysis_subject_or_none(raw_subject):
 
 def _coerce_analysis_test(test_id):
     try:
-        return ScholarshipTest.objects.prefetch_related("sections__questions").get(id=int(test_id))
+        return ScholarshipTest.objects.defer("original_word_file").prefetch_related("sections__questions").get(id=int(test_id))
     except (TypeError, ValueError, ScholarshipTest.DoesNotExist):
         return None
 
@@ -4321,6 +4321,7 @@ def _build_my_tests_payload(student):
 
     published_tests = (
         ScholarshipTest.objects
+        .defer("original_word_file")
         .filter(status="published", scheduled_start_at__isnull=False)
         .order_by("scheduled_start_at", "id")
         .prefetch_related("sections__questions")
@@ -4368,6 +4369,7 @@ def _build_my_tests_payload(student):
     if upcoming_test is None:
         unscheduled_published_tests = (
             ScholarshipTest.objects
+            .defer("original_word_file")
             .filter(status="published", scheduled_start_at__isnull=True)
             .order_by("-created_at")
             .prefetch_related("sections__questions")
@@ -4409,6 +4411,7 @@ def _build_my_tests_payload(student):
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
+        .defer("test__original_word_file")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
@@ -4788,6 +4791,7 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
 
     published_tests = (
         ScholarshipTest.objects
+        .defer("original_word_file")
         .filter(status="published", scheduled_start_at__isnull=False)
         .order_by("scheduled_start_at", "id")
         .prefetch_related("sections__questions")
