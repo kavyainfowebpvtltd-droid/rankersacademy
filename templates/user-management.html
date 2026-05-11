@@ -276,6 +276,7 @@
                      data-board="{{ teacher.board }}"
                      data-batch="{{ teacher.batch }}"
                      data-blood-group="{{ teacher.blood_group }}"
+                     data-working-hours="{{ teacher.working_hours }}"
                      data-profile-picture="{% if teacher.profile_picture %}{{ teacher.profile_picture.url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
@@ -648,7 +649,18 @@
                 </div>
               </div>
               <div class="row g-3 mt-2" id="teacherBloodGroupRow">
-                <div class="col-12">
+                <div class="col-md-6">
+                  <label class="form-label add-user-label" for="teacherWorkingHoursInput">Working Hours</label>
+                  <input
+                    class="form-control"
+                    name="working_hours"
+                    id="teacherWorkingHoursInput"
+                    placeholder="Working Hours (e.g. 8 AM - 9 PM)"
+                    maxlength="100"
+                  />
+                  <small class="text-muted">Optional</small>
+                </div>
+                <div class="col-md-6">
                   <label class="form-label add-user-label" for="teacherBloodGroupInput">Blood Group</label>
                   <input
                     class="form-control"
@@ -1037,6 +1049,16 @@
                   <option value="11th">11th</option>
                   <option value="12th">12th</option>
                 </select>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label add-user-label" for="editTeacherWorkingHours">Working Hours</label>
+                <input
+                  class="form-control"
+                  name="working_hours"
+                  id="editTeacherWorkingHours"
+                  placeholder="Working Hours (e.g. 8 AM - 9 PM)"
+                  maxlength="100"
+                />
               </div>
               <div class="col-md-12">
                 <label class="form-label add-user-label" for="editTeacherBloodGroup">Blood Group</label>

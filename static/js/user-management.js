@@ -822,6 +822,9 @@ if (editTeacherModal) {
     document.getElementById("editTeacherBloodGroup").value =
       button.dataset.bloodGroup || "";
 
+    document.getElementById("editTeacherWorkingHours").value =
+      button.dataset.workingHours || "";
+
     document.getElementById("editTeacherSubjects").value =
       button.dataset.subjects || "";
 
