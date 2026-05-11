@@ -43,6 +43,8 @@ class StaffAttendance(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     check_in = models.TimeField(null=True, blank=True)
     check_out = models.TimeField(null=True, blank=True)
+    daily_tasks = models.TextField(blank=True, default="")
+    task_status = models.TextField(blank=True, default="")
     raw_scan_value = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
