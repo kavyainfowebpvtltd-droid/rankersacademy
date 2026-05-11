@@ -48,7 +48,7 @@
       vertical-align: middle;
     }
     .staff-name { font-weight: 700; color: #0f172a; }
-    .status-badge, .time-pill {
+    .status-badge, .time-pill, .metric-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -60,8 +60,23 @@
     .status-present { background: #dcfce7; color: #166534; }
     .status-late { background: #fef3c7; color: #b45309; }
     .status-absent { background: #fee2e2; color: #b91c1c; }
+    .status-empty { background: #e2e8f0; color: #475569; }
+    .metric-present { background: #dcfce7; color: #166534; }
+    .metric-late { background: #fef3c7; color: #b45309; }
+    .metric-absent { background: #fee2e2; color: #b91c1c; }
     .time-pill { min-width: 90px; background: #eff6ff; color: #1d4ed8; }
     .time-pill-muted { background: #f1f5f9; color: #64748b; }
+    .percent-pill {
+      min-width: 72px;
+      text-align: center;
+      border-radius: 999px;
+      font-weight: 700;
+      padding: 8px 12px;
+      display: inline-block;
+    }
+    .percent-high { background: #dcfce7; color: #166534; }
+    .percent-medium { background: #fef3c7; color: #b45309; }
+    .percent-low { background: #fee2e2; color: #b91c1c; }
     .table-empty { padding: 52px 24px; text-align: center; color: #64748b; }
     .pagination .page-link {
       color: #0d6efd;
@@ -112,25 +127,25 @@
     <div class="col-md-3">
       <div class="summary-card">
         <div class="summary-number" id="summaryTotal">{{ summary_total }}</div>
-        <div class="summary-label">Total Records</div>
+        <div class="summary-label">Total Staff</div>
       </div>
     </div>
     <div class="col-md-3">
       <div class="summary-card">
         <div class="summary-number text-success" id="summaryPresent">{{ summary_present }}</div>
-        <div class="summary-label">Present Entries</div>
+        <div class="summary-label">Present + Late Days</div>
       </div>
     </div>
     <div class="col-md-3">
       <div class="summary-card">
-        <div class="summary-number text-warning" id="summaryLate">{{ summary_late }}</div>
-        <div class="summary-label">Late Entries</div>
+        <div class="summary-number text-warning" id="summaryRecorded">{{ summary_recorded }}</div>
+        <div class="summary-label">Total Recorded Days</div>
       </div>
     </div>
     <div class="col-md-3">
       <div class="summary-card">
-        <div class="summary-number text-primary" id="summaryCheckout">{{ summary_checkout }}</div>
-        <div class="summary-label">Checked Out</div>
+        <div class="summary-number text-primary" id="summaryAverage">{{ summary_avg }}%</div>
+        <div class="summary-label">Average Attendance</div>
       </div>
     </div>
   </div>
@@ -140,10 +155,11 @@
       <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
         <input type="text" id="staffSearch" class="form-control toolbar-input flex-grow-1" placeholder="Search by name, phone, email, or role">
         <select id="statusFilter" class="toolbar-select">
-          <option value="All">All Status</option>
+          <option value="All">All Today Status</option>
           <option value="Present">Present</option>
           <option value="Late">Late</option>
           <option value="Absent">Absent</option>
+          <option value="Not Marked">Not Marked</option>
         </select>
       </div>
     </div>
@@ -157,8 +173,12 @@
             <th>Role</th>
             <th>Contact</th>
             <th>Email</th>
-            <th>Date</th>
-            <th>Status</th>
+            <th>Present</th>
+            <th>Late</th>
+            <th>Absent</th>
+            <th>Total</th>
+            <th>Attendance %</th>
+            <th>Today Status</th>
             <th>Check-in</th>
             <th>Check-out</th>
           </tr>
@@ -166,10 +186,10 @@
         <tbody id="recordsBody">
           {% for row in attendance_rows %}
             <tr
-              data-record-id="{{ row.id }}"
               data-search="{{ row.staff_name|lower }} {{ row.contact|lower }} {{ row.email|lower }} {{ row.role|lower }}"
-              data-status="{{ row.status }}"
-              data-checkout="{% if row.check_out != '-' %}1{% else %}0{% endif %}"
+              data-status="{{ row.today_status }}"
+              data-present="{{ row.present_days|add:row.late_days }}"
+              data-total="{{ row.total_days }}"
             >
               <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
               <td class="staff-name">
@@ -180,21 +200,31 @@
               <td>{{ row.role }}</td>
               <td>{{ row.contact }}</td>
               <td>{{ row.email }}</td>
-              <td>{{ row.date|date:"d M Y" }}</td>
               <td>
-                <span class="status-badge {% if row.status == 'Present' %}status-present{% elif row.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
-                  {{ row.status }}
+                <span class="metric-badge metric-present">{{ row.present_days }}</span>
+              </td>
+              <td><span class="metric-badge metric-late">{{ row.late_days }}</span></td>
+              <td><span class="metric-badge metric-absent">{{ row.absent_days }}</span></td>
+              <td>{{ row.total_days }}</td>
+              <td>
+                <span class="percent-pill {% if row.attendance_percent >= 75 %}percent-high{% elif row.attendance_percent >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                  {{ row.attendance_percent }}%
                 </span>
               </td>
-              <td><span class="time-pill {% if row.check_in == '-' %}time-pill-muted{% endif %}">{{ row.check_in }}</span></td>
-              <td><span class="time-pill {% if row.check_out == '-' %}time-pill-muted{% endif %}">{{ row.check_out }}</span></td>
+              <td>
+                <span class="status-badge {% if row.today_status == 'Present' %}status-present{% elif row.today_status == 'Late' %}status-late{% elif row.today_status == 'Absent' %}status-absent{% else %}status-empty{% endif %}">
+                  {{ row.today_status }}
+                </span>
+              </td>
+              <td><span class="time-pill {% if row.today_check_in == '-' %}time-pill-muted{% endif %}">{{ row.today_check_in }}</span></td>
+              <td><span class="time-pill {% if row.today_check_out == '-' %}time-pill-muted{% endif %}">{{ row.today_check_out }}</span></td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="9">
+              <td colspan="13">
                 <div class="table-empty">
                   <i class="bi bi-person-x fs-1 d-block mb-3"></i>
-                  No staff attendance records found for this month.
+                  No staff members found.
                 </div>
               </td>
             </tr>
@@ -231,14 +261,19 @@
 </div>
 
 <script>
-  const tableRows = Array.from(document.querySelectorAll("#recordsBody tr[data-record-id]"));
+  const tableRows = Array.from(document.querySelectorAll("#recordsBody tr[data-search]"));
 
   function updateSummary() {
     const visibleRows = tableRows.filter((row) => row.style.display !== "none");
-    document.getElementById("summaryTotal").textContent = visibleRows.length;
-    document.getElementById("summaryPresent").textContent = visibleRows.filter((row) => row.dataset.status === "Present").length;
-    document.getElementById("summaryLate").textContent = visibleRows.filter((row) => row.dataset.status === "Late").length;
-    document.getElementById("summaryCheckout").textContent = visibleRows.filter((row) => row.dataset.checkout === "1").length;
+    const totalStaff = visibleRows.length;
+    const totalPresent = visibleRows.reduce((sum, row) => sum + parseInt(row.dataset.present || "0", 10), 0);
+    const totalRecorded = visibleRows.reduce((sum, row) => sum + parseInt(row.dataset.total || "0", 10), 0);
+    const avgAttendance = totalRecorded > 0 ? Math.round((totalPresent / totalRecorded) * 100) : 0;
+
+    document.getElementById("summaryTotal").textContent = totalStaff;
+    document.getElementById("summaryPresent").textContent = totalPresent;
+    document.getElementById("summaryRecorded").textContent = totalRecorded;
+    document.getElementById("summaryAverage").textContent = `${avgAttendance}%`;
   }
 
   function filterRows() {
