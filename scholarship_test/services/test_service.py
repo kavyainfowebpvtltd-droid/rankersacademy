@@ -288,7 +288,7 @@ def _get_test_queryset():
         Prefetch('questions', queryset=question_queryset)
     ).order_by('order', 'id')
 
-    return ScholarshipTest.objects.prefetch_related(
+    return ScholarshipTest.objects.defer('original_word_file').prefetch_related(
         Prefetch('sections', queryset=section_queryset),
         'config',
     )
