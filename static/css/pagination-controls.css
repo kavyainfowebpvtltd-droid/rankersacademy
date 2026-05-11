@@ -92,15 +92,15 @@
 }
 
 .entries-control-compact .entries-per-page-select {
-  width: 7.5rem;
-  min-width: 7.5rem;
-  height: 2.875rem;
-  padding: 0.55rem 2rem 0.55rem 0.9rem;
+  width: 7.25rem;
+  min-width: 7.25rem;
+  height: 2.625rem;
+  padding: 0.45rem 2rem 0.45rem 0.85rem;
   border-radius: 0.6rem;
   border: 1px solid #dbe2ea;
   background-color: #ffffff;
   color: #0f172a;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   line-height: 1.2;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
@@ -163,8 +163,19 @@
     gap: 0.5rem;
   }
 
+  .toolbar-title-row {
+    gap: 0.6rem;
+  }
+
   .entries-control-header {
     width: 9rem;
+  }
+
+  .entries-control-compact .entries-per-page-select {
+    width: 6.875rem;
+    min-width: 6.875rem;
+    height: 2.5rem;
+    font-size: 0.88rem;
   }
 
   .table-pagination {
