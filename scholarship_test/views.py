@@ -1040,6 +1040,20 @@ def scholarship_success(request, attempt_id):
     )
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
 
+    # Get answer key
+    runtime_questions = test_service.get_runtime_questions_for_test(attempt.test)
+    answer_key = []
+    if runtime_questions:
+        student_answers = {str(ans.question_id): ans.selected_option for ans in attempt.answers.all()}
+        for i, q in enumerate(runtime_questions, 1):
+            correct_opt = q.options.filter(is_correct=True).first()
+            answer_key.append({
+                'number': i,
+                'question_text': q.question_text,
+                'correct_answer': correct_opt.option_text if correct_opt else "N/A",
+                'student_answer': student_answers.get(str(q.id), "Not Answered")
+            })
+
     if is_scholarship_result and not attempt.sms_sent and attempt.status in ['completed', 'expired']:
         try:
             if student.phone_number:
@@ -1074,6 +1088,7 @@ def scholarship_success(request, attempt_id):
         'academic_field_value': academic_field_value,
         'leaderboard_top_entries': leaderboard['top_entries'],
         'leaderboard_current_entry': leaderboard['current_entry'],
+        'answer_key': answer_key,
     }
     context.update(_build_test_display_context(attempt.test))
     return render(request, 'scholarship-success.html', context)
@@ -2082,6 +2097,7 @@ def api_import_word_questions(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
 
+    test_id = request.POST.get('test_id')
     uploaded_file = request.FILES.get('word_file')
     if not uploaded_file:
         return JsonResponse({'error': 'No Word file was uploaded'}, status=400)
@@ -2089,6 +2105,15 @@ def api_import_word_questions(request):
     file_name = uploaded_file.name or ''
     if not file_name.lower().endswith('.docx'):
         return JsonResponse({'error': 'Only .docx Word files are supported'}, status=400)
+
+    # If test_id is provided, save the original file to the test
+    if test_id:
+        try:
+            test = ScholarshipTest.objects.get(id=test_id)
+            test.original_word_file = uploaded_file
+            test.save(update_fields=['original_word_file'])
+        except ScholarshipTest.DoesNotExist:
+            pass
 
     try:
         imported_data = word_import_service.import_questions_from_docx(uploaded_file)

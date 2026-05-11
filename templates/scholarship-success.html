@@ -18,6 +18,7 @@
     <script src="{% static 'js/admin-theme.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/scholarship-success.css' %}" />
     <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
       @media (max-width: 1024px) {
         .tablet-footer-stack {
@@ -27,6 +28,56 @@
           text-align: center !important;
         }
       }
+      
+      .rank-1-row {
+        background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), transparent) !important;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .rank-1-row::after {
+        content: '👑';
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        animation: crownBounce 2s infinite;
+      }
+
+      @keyframes crownBounce {
+        0%, 100% { transform: translateY(-50%) scale(1); }
+        50% { transform: translateY(-70%) scale(1.2); }
+      }
+
+      .answer-key-section {
+        background: var(--card-bg, #fff);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 25px;
+        border: 1px solid var(--border-color, #eee);
+      }
+
+      .answer-key-table th {
+        background: #f8fafc;
+        font-weight: 600;
+        color: #475569;
+      }
+      
+      .student-answer-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      
+      .correct-pill { background: #dcfce7; color: #166534; }
+      .wrong-pill { background: #fee2e2; color: #991b1b; }
+      .not-answered-pill { background: #f1f5f9; color: #475569; }
+
+      [data-theme="dark"] .answer-key-section { background: #1e1e1e; border-color: #333; }
+      [data-theme="dark"] .answer-key-table th { background: #2d2d2d; color: #ccc; }
+      [data-theme="dark"] .rank-1-row { background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), transparent) !important; }
     </style>
   </head>
 
@@ -261,8 +312,10 @@
                     </thead>
                     <tbody>
                       {% for entry in leaderboard_top_entries %}
-                      <tr{% if entry.is_current_student %} class="table-primary"{% endif %}>
-                        <td class="fw-bold">#{{ entry.rank }}</td>
+                      <tr{% if entry.rank == 1 %} class="rank-1-row animate__animated animate__pulse animate__infinite"{% elif entry.is_current_student %} class="table-primary"{% endif %}>
+                        <td class="fw-bold">
+                          {% if entry.rank == 1 %}🥇{% elif entry.rank == 2 %}🥈{% elif entry.rank == 3 %}🥉{% else %}#{{ entry.rank }}{% endif %}
+                        </td>
                         <td>
                           {{ entry.student_name }}
                           {% if entry.is_current_student %}
@@ -283,6 +336,53 @@
                   Your Score: <strong>{{ leaderboard_current_entry.score }} / {{ leaderboard_current_entry.total_marks }}</strong>
                 </div>
                 {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if answer_key %}
+            <div class="answer-key-section shadow-sm animate__animated animate__fadeInUp">
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-journal-check text-success me-2 fs-4"></i>
+                  <h6 class="mb-0 fw-bold">Answer Key & Your Responses</h6>
+                </div>
+                {% if attempt.test.original_word_file %}
+                <a href="{{ attempt.test.original_word_file.url }}" class="btn btn-outline-primary btn-sm rounded-pill" target="_blank">
+                  <i class="bi bi-file-earmark-word me-1"></i> View Original File
+                </a>
+                {% endif %}
+              </div>
+
+              <div class="table-responsive">
+                <table class="table answer-key-table align-middle">
+                  <thead>
+                    <tr>
+                      <th width="80">Q.No</th>
+                      <th>Question</th>
+                      <th>Correct Answer</th>
+                      <th>Your Answer</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in answer_key %}
+                    <tr>
+                      <td class="fw-bold">#{{ item.number }}</td>
+                      <td class="small">{{ item.question_text|truncatechars:100 }}</td>
+                      <td><span class="badge bg-success-subtle text-success border border-success-subtle px-3">{{ item.correct_answer }}</span></td>
+                      <td>
+                        {% if item.student_answer == "Not Answered" %}
+                        <span class="student-answer-pill not-answered-pill">Not Answered</span>
+                        {% elif item.student_answer == item.correct_answer %}
+                        <span class="student-answer-pill correct-pill"><i class="bi bi-check-circle-fill me-1"></i> {{ item.student_answer }}</span>
+                        {% else %}
+                        <span class="student-answer-pill wrong-pill"><i class="bi bi-x-circle-fill me-1"></i> {{ item.student_answer }}</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
               </div>
             </div>
             {% endif %}
