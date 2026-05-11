@@ -501,7 +501,6 @@
           <h5 class="toolbar-title">My Schedule</h5>
           <div class="text-muted small">Lecture timetable and completion status</div>
         </div>
-        {% include "partials/entries-dropdown.html" with select_id="teacherScheduleEntriesSelect" entries_name="schedule_entries" current_entries=schedule_entries entry_options=entry_options select_class="schedule-entries-select" change_handler="syncScheduleEntriesField(this.value); updateScheduleEntriesPerPage(this.value)" %}
       </div>
 
       <!-- List View -->
@@ -551,10 +550,6 @@ let teacherImportsData = JSON.parse(document.getElementById('teacher-imports-dat
 
 document.addEventListener('DOMContentLoaded', function() {
   loadEntries();
-  const scheduleEntriesSelect = document.getElementById('teacherScheduleEntriesSelect');
-  if (scheduleEntriesSelect) {
-    scheduleEntriesPerPage = parseInt(scheduleEntriesSelect.value, 10) || 10;
-  }
   renderScheduleTable();
   renderProgress();
   renderTeacherImports();

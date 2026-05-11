@@ -456,36 +456,6 @@ a {
   color: var(--admin-text) !important;
 }
 
-.entries-control-compact .entries-per-page-select {
-  background-color: #0f1118 !important;
-  border-color: #2b2f3b !important;
-  color: var(--admin-text) !important;
-}
-
-.entries-control-header .entries-per-page-select {
-  background-color: #0f1118 !important;
-  border-color: #2b2f3b !important;
-  color: var(--admin-text) !important;
-}
-
-.entries-control-compact .entries-per-page-select:hover {
-  border-color: #ffb15f !important;
-}
-
-.entries-control-header .entries-per-page-select:hover {
-  border-color: #ffb15f !important;
-}
-
-.entries-control-compact .entries-per-page-select:focus {
-  border-color: var(--admin-orange) !important;
-  box-shadow: 0 0 0 0.2rem rgba(255, 138, 31, 0.16) !important;
-}
-
-.entries-control-header .entries-per-page-select:focus {
-  border-color: var(--admin-orange) !important;
-  box-shadow: 0 0 0 0.2rem rgba(255, 138, 31, 0.16) !important;
-}
-
 .form-input::placeholder {
   color: #9aa1b1 !important;
 }
