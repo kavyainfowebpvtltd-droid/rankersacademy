@@ -152,15 +152,21 @@
 
   <div class="panel-card">
     <div class="p-3 border-bottom">
-      <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-        <input type="text" id="staffSearch" class="form-control toolbar-input flex-grow-1" placeholder="Search by name, phone, email, or role">
-        <select id="statusFilter" class="toolbar-select">
-          <option value="All">All Today Status</option>
-          <option value="Present">Present</option>
-          <option value="Late">Late</option>
-          <option value="Absent">Absent</option>
-          <option value="Not Marked">Not Marked</option>
-        </select>
+      <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div class="flex-grow-1">
+          <input type="text" id="staffSearch" class="form-control toolbar-input w-100" placeholder="Search by name, phone, email, or role">
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-primary active filter-btn" id="btnAllStaff" onclick="filterByStaffType('All', this)">
+            All Staff
+          </button>
+          <button type="button" class="btn btn-outline-primary filter-btn" id="btnTeachingStaff" onclick="filterByStaffType('Teaching', this)">
+            Teaching Staff
+          </button>
+          <button type="button" class="btn btn-outline-primary filter-btn" id="btnNonTeachingStaff" onclick="filterByStaffType('Non-Teaching', this)">
+            Non-teaching Staff
+          </button>
+        </div>
       </div>
     </div>
 
@@ -188,6 +194,7 @@
             <tr
               data-search="{{ row.staff_name|lower }} {{ row.contact|lower }} {{ row.email|lower }} {{ row.role|lower }}"
               data-status="{{ row.today_status }}"
+              data-role="{{ row.role|lower }}"
               data-present="{{ row.present_days|add:row.late_days }}"
               data-total="{{ row.total_days }}"
             >
@@ -262,6 +269,7 @@
 
 <script>
   const tableRows = Array.from(document.querySelectorAll("#recordsBody tr[data-search]"));
+  let currentStaffType = 'All';
 
   function updateSummary() {
     const visibleRows = tableRows.filter((row) => row.style.display !== "none");
@@ -276,21 +284,43 @@
     document.getElementById("summaryAverage").textContent = `${avgAttendance}%`;
   }
 
+  function filterByStaffType(type, btn) {
+    currentStaffType = type;
+    
+    // Update active button state
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('active');
+      b.classList.add('btn-outline-primary');
+      b.classList.remove('btn-primary');
+    });
+    btn.classList.add('active');
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add('btn-primary');
+    
+    filterRows();
+  }
+
   function filterRows() {
     const search = (document.getElementById("staffSearch").value || "").trim().toLowerCase();
-    const status = document.getElementById("statusFilter").value;
 
     tableRows.forEach((row) => {
       const matchesSearch = (row.dataset.search || "").includes(search);
-      const matchesStatus = status === "All" || row.dataset.status === status;
-      row.style.display = matchesSearch && matchesStatus ? "" : "none";
+      const role = (row.dataset.role || "").toLowerCase();
+      
+      let matchesType = true;
+      if (currentStaffType === 'Teaching') {
+        matchesType = (role === 'teacher');
+      } else if (currentStaffType === 'Non-Teaching') {
+        matchesType = (role !== 'teacher');
+      }
+
+      row.style.display = matchesSearch && matchesType ? "" : "none";
     });
 
     updateSummary();
   }
 
   document.getElementById("staffSearch").addEventListener("input", filterRows);
-  document.getElementById("statusFilter").addEventListener("change", filterRows);
   updateSummary();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
