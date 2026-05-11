@@ -540,7 +540,6 @@
               <h5 class="toolbar-title">Schedule Entries</h5>
               <div class="text-muted small">Lecture timetable and completion status</div>
             </div>
-            {% include "partials/entries-dropdown.html" with select_id="scheduleEntriesSelect" entries_name="schedule_entries" current_entries=schedule_entries entry_options=entry_options select_class="schedule-entries-select" change_handler="syncScheduleEntriesField(this.value); updateScheduleEntriesPerPage(this.value)" %}
           </div>
 
           <!-- Table View -->
@@ -830,10 +829,6 @@ let scheduleEntriesPerPage = 10;
 let currentSchedulePage = 1;
 
 document.addEventListener('DOMContentLoaded', function() {
-  const scheduleEntriesSelect = document.getElementById('scheduleEntriesSelect');
-  if (scheduleEntriesSelect) {
-    scheduleEntriesPerPage = parseInt(scheduleEntriesSelect.value, 10) || 10;
-  }
   renderTable();
   renderParsedImports();
   renderCalendar();
