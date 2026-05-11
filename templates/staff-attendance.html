@@ -195,7 +195,7 @@
               data-present="{{ row.present_days|add:row.late_days }}"
               data-total="{{ row.total_days }}"
             >
-              <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+              <td class="serial-col">{{ page_obj.start_index|add:forloop.counter0 }}</td>
               <td class="staff-name">
                 <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
                   {{ row.staff_name }}
@@ -270,7 +270,7 @@
               data-present="{{ row.present_days|add:row.late_days }}"
               data-total="{{ row.total_days }}"
             >
-              <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+              <td class="serial-col">{{ page_obj.start_index|add:forloop.counter0 }}</td>
               <td class="staff-name">
                 <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
                   {{ row.staff_name }}
@@ -381,6 +381,7 @@
     // Hide rows in the other table
     otherRows.forEach(row => row.style.display = 'none');
 
+    let visibleIndex = 1;
     rowsToFilter.forEach((row) => {
       const matchesSearch = (row.dataset.search || "").includes(search);
       const role = (row.dataset.role || "").toLowerCase();
@@ -392,7 +393,15 @@
         matchesType = (role !== 'teacher');
       }
 
-      row.style.display = matchesSearch && matchesType ? "" : "none";
+      const isVisible = matchesSearch && matchesType;
+      row.style.display = isVisible ? "" : "none";
+      
+      if (isVisible) {
+        const serialCell = row.querySelector('.serial-col');
+        if (serialCell) {
+          serialCell.textContent = visibleIndex++;
+        }
+      }
     });
 
     updateSummary();
