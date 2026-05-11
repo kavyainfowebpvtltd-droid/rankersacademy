@@ -89,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   toggleFields();
   setupStudentFilters();
+  setupEntriesPerPageControls();
 
   document.querySelectorAll(".password-toggle").forEach((toggleBtn) => {
     toggleBtn.addEventListener("click", () => {
@@ -114,6 +115,20 @@ document.addEventListener("DOMContentLoaded", () => {
     batchInput.addEventListener("blur", () => generateUsernameFromBatch());
   }
 });
+
+function setupEntriesPerPageControls() {
+  document.querySelectorAll(".entries-per-page-select").forEach((select) => {
+    select.addEventListener("change", () => {
+      const form = select.closest("form");
+      if (form && form.id === "studentFilterForm") {
+        return;
+      }
+      if (form) {
+        form.submit();
+      }
+    });
+  });
+}
 
 function setupStudentFilters() {
   const filterForm = document.getElementById("studentFilterForm");

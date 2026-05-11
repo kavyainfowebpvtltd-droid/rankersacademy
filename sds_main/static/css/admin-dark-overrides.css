@@ -195,6 +195,14 @@ td {
   color: #ffb15f !important;
 }
 
+.page-item.active .page-link,
+.table-pagination .page-item.active .page-link {
+  background: var(--admin-gradient) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(139, 53, 255, 0.24) !important;
+}
+
 input,
 select,
 textarea,

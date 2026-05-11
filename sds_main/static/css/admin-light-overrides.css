@@ -343,6 +343,25 @@ html[data-admin-theme="light"] body:not(.login-page-body) textarea:focus {
   box-shadow: 0 0 0 0.2rem rgba(18, 104, 255, 0.14) !important;
 }
 
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-link {
+  background: #ffffff !important;
+  border-color: var(--student-light-border) !important;
+  color: var(--student-light-text) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-link:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-link:focus {
+  border-color: var(--student-light-blue) !important;
+  color: var(--student-light-blue) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-item.active .page-link {
+  background: var(--student-light-blue) !important;
+  border-color: var(--student-light-blue) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 20px rgba(18, 104, 255, 0.18) !important;
+}
+
 html[data-admin-theme="light"] body:not(.login-page-body) .status-present,
 html[data-admin-theme="light"] body:not(.login-page-body) .pill-green,
 html[data-admin-theme="light"] body:not(.login-page-body) .status-excellent,

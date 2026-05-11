@@ -186,6 +186,68 @@ td {
   vertical-align: middle;
 }
 
+.student-table-nowrap th,
+.student-table-nowrap td {
+  white-space: nowrap;
+}
+
+.student-filter-form {
+  min-width: 56rem;
+}
+
+.user-table-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.table-controls-form {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 0.75rem;
+  min-width: 16rem;
+}
+
+.entries-control {
+  width: 10rem;
+}
+
+.entries-control-inline {
+  flex: 0 0 10rem;
+}
+
+.table-pagination {
+  padding: 0 1rem 1rem;
+}
+
+.table-pagination .pagination {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0;
+}
+
+.table-pagination .page-link {
+  border-radius: 0.5rem;
+  min-height: 2rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.table-pagination .page-item:first-child .page-link,
+.table-pagination .page-item:last-child .page-link {
+  border-radius: 0.5rem;
+}
+
+.table-pagination .page-item.active .page-link {
+  background-color: var(--blue-600);
+  border-color: var(--blue-600);
+  color: #fff;
+  box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.18);
+}
+
 tbody tr:last-child td {
   border-bottom: none;
 }
@@ -526,6 +588,35 @@ button:hover {
 
   .actions {
     gap: 0.75rem;
+  }
+
+  .student-filter-form,
+  .table-controls-form {
+    min-width: 100%;
+  }
+
+  .user-table-card-header {
+    align-items: flex-start;
+  }
+
+  .table-controls-form {
+    justify-content: flex-start;
+  }
+
+  .entries-control,
+  .entries-control-inline {
+    width: 100%;
+    max-width: 12rem;
+    flex-basis: 12rem;
+  }
+
+  .table-pagination .pagination {
+    justify-content: flex-start !important;
+  }
+
+  .table-pagination .page-link {
+    font-size: 0.78rem;
+    padding: 0.45rem 0.6rem;
   }
 
   .profile-img {
