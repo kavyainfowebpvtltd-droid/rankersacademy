@@ -575,7 +575,7 @@ html[data-admin-theme="dark"] body:not(.login-page-body) footer a {
 
 @media (max-width: 1024px) {
   .tabs-left a.active {
-    background: var(--student-g1) !important;
-    color: #ffffff !important;
+    background: transparent !important;
+    color: var(--student-heading) !important;
   }
 }
