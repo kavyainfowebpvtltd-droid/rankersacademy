@@ -9,15 +9,85 @@
       --brand-b: #e52e71;
       --brand-c: #7c3aed;
       --muted: #a1a1aa;
-      min-height: 100vh;
-      padding: 1.5rem 0 2rem;
-      color: #fafafa;
-      background:
+      --page-text: #fafafa;
+      --page-bg:
         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.2), transparent 60%),
         radial-gradient(ellipse 60% 50% at 100% 100%, rgba(229, 46, 113, 0.13), transparent 60%),
         radial-gradient(ellipse 60% 50% at 0% 100%, rgba(255, 138, 0, 0.1), transparent 60%),
         #06060a;
+      --page-card-bg: rgba(7, 7, 12, 0.78);
+      --page-card-soft-bg: rgba(255, 255, 255, 0.04);
+      --page-card-border: rgba(255, 255, 255, 0.09);
+      --page-card-soft-border: rgba(255, 255, 255, 0.1);
+      --page-card-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+      --page-card-hover-border: rgba(255, 255, 255, 0.28);
+      --page-card-hover-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.32);
+      --page-nav-bg: rgba(255, 255, 255, 0.04);
+      --page-nav-border: rgba(255, 255, 255, 0.08);
+      --page-nav-link: #d4d4d8;
+      --page-outline-text: #f5f5f5;
+      --page-outline-bg: rgba(255, 255, 255, 0.02);
+      --page-outline-bg-hover: rgba(255, 255, 255, 0.08);
+      --page-outline-border: rgba(255, 255, 255, 0.18);
+      --page-outline-border-hover: rgba(255, 255, 255, 0.28);
+      --page-button-hover-shadow: 0 10px 22px rgba(124, 58, 237, 0.18);
+      --page-table-color: #f4f4f5;
+      --page-table-row-color: #f5f5f5;
+      --page-table-border: rgba(255, 255, 255, 0.1);
+      --page-table-striped: rgba(255, 255, 255, 0.02);
+      --page-table-hover: rgba(255, 255, 255, 0.04);
+      --page-medal-bg: rgba(255, 255, 255, 0.08);
+      --page-medal-border: rgba(255, 255, 255, 0.16);
+      --page-highlight-bg: rgba(13, 202, 240, 0.22);
+      --page-highlight-striped: rgba(13, 202, 240, 0.28);
+      --page-highlight-outline: rgba(13, 202, 240, 0.7);
+      --page-upcoming-text: #a1a1aa;
+      --page-upcoming-bg: rgba(255, 255, 255, 0.02);
+      --page-upcoming-border: rgba(255, 255, 255, 0.16);
+      min-height: 100vh;
+      padding: 1.5rem 0 2rem;
+      color: var(--page-text);
+      background: var(--page-bg);
       font-family: "DM Sans", system-ui, sans-serif;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page {
+      --muted: #64748b;
+      --page-text: #0f172a;
+      --page-bg:
+        radial-gradient(ellipse 85% 55% at 50% -10%, rgba(59, 130, 246, 0.14), transparent 60%),
+        radial-gradient(ellipse 65% 55% at 100% 100%, rgba(236, 72, 153, 0.08), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(14, 165, 233, 0.08), transparent 60%),
+        linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+      --page-card-bg: rgba(255, 255, 255, 0.94);
+      --page-card-soft-bg: #f8fbff;
+      --page-card-border: #dbe4f0;
+      --page-card-soft-border: #e5eaf2;
+      --page-card-shadow: 0 16px 34px rgba(18, 104, 255, 0.08);
+      --page-card-hover-border: #c7d2fe;
+      --page-card-hover-shadow: 0 18px 38px rgba(18, 104, 255, 0.12);
+      --page-nav-bg: rgba(255, 255, 255, 0.78);
+      --page-nav-border: #dbe4f0;
+      --page-nav-link: #475569;
+      --page-outline-text: #0f172a;
+      --page-outline-bg: rgba(255, 255, 255, 0.9);
+      --page-outline-bg-hover: #eef5ff;
+      --page-outline-border: #cbd5e1;
+      --page-outline-border-hover: #93c5fd;
+      --page-button-hover-shadow: 0 14px 28px rgba(18, 104, 255, 0.14);
+      --page-table-color: #0f172a;
+      --page-table-row-color: #1e293b;
+      --page-table-border: #dbe4f0;
+      --page-table-striped: #f8fbff;
+      --page-table-hover: #eef5ff;
+      --page-medal-bg: #eef5ff;
+      --page-medal-border: #c7d2fe;
+      --page-highlight-bg: rgba(59, 130, 246, 0.14);
+      --page-highlight-striped: rgba(59, 130, 246, 0.18);
+      --page-highlight-outline: rgba(37, 99, 235, 0.45);
+      --page-upcoming-text: #64748b;
+      --page-upcoming-bg: #f8fbff;
+      --page-upcoming-border: #dbe4f0;
     }
 
     .my-tests-page .display {
@@ -45,7 +115,7 @@
     }
 
     .my-tests-page .glass {
-      background: rgba(7, 7, 12, 0.78);
+      background: var(--page-card-bg);
       backdrop-filter: blur(18px) saturate(160%);
     }
 
@@ -71,16 +141,16 @@
     }
 
     .my-tests-page .btn-outline-light {
-      border-color: rgba(255, 255, 255, 0.18);
-      color: #f5f5f5;
-      background: rgba(255, 255, 255, 0.02);
+      border-color: var(--page-outline-border);
+      color: var(--page-outline-text);
+      background: var(--page-outline-bg);
     }
 
     .my-tests-page .btn-outline-light:hover,
     .my-tests-page .btn-outline-light:focus {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.28);
+      color: var(--page-outline-text);
+      background: var(--page-outline-bg-hover);
+      border-color: var(--page-outline-border-hover);
     }
 
     .my-tests-page .hover-card {
@@ -89,8 +159,8 @@
 
     .my-tests-page .hover-card:hover {
       transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.28) !important;
-      box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.32) !important;
+      border-color: var(--page-card-hover-border) !important;
+      box-shadow: var(--page-card-hover-shadow) !important;
     }
 
     .my-tests-page .rise {
@@ -110,30 +180,64 @@
     }
 
     .my-tests-page .app-card {
-      background: rgba(7, 7, 12, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+      background: var(--page-card-bg);
+      border: 1px solid var(--page-card-border);
+      box-shadow: var(--page-card-shadow);
       border-radius: 1.35rem;
     }
 
     .my-tests-page .app-card-soft {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--page-card-soft-bg);
+      border: 1px solid var(--page-card-soft-border);
       border-radius: 1.1rem;
     }
 
     .my-tests-page .nav-pills {
       gap: 0.35rem;
-      background: rgba(255, 255, 255, 0.04);
+      background: var(--page-nav-bg);
       border-radius: 999px;
       padding: 0.35rem;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--page-nav-border);
     }
 
     .my-tests-page .nav-pills .nav-link {
-      color: #d4d4d8;
+      color: var(--page-nav-link);
       border-radius: 999px;
       font-weight: 700;
+    }
+
+    .my-tests-page .nav-pills .nav-link.tab-upcoming {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      color: var(--page-upcoming-text);
+      background: var(--page-upcoming-bg);
+      border: 1px dashed var(--page-upcoming-border);
+      cursor: not-allowed;
+      opacity: 0.82;
+    }
+
+    .my-tests-page .nav-pills .nav-link.tab-upcoming:hover,
+    .my-tests-page .nav-pills .nav-link.tab-upcoming:focus,
+    .my-tests-page .nav-pills .nav-link.tab-upcoming.active {
+      color: var(--page-upcoming-text);
+      background: var(--page-upcoming-bg);
+      border-color: var(--page-upcoming-border);
+    }
+
+    .my-tests-page .coming-soon-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.18rem 0.5rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(250, 204, 21, 0.16);
+      color: #facc15;
+      border: 1px solid rgba(250, 204, 21, 0.28);
     }
 
     .my-tests-page .nav-pills .nav-link.active,
@@ -150,7 +254,7 @@
     }
 
     .my-tests-page .summary-card-title {
-      color: #a1a1aa;
+      color: var(--muted);
       font-size: 0.78rem;
       text-transform: uppercase;
       font-weight: 700;
@@ -165,7 +269,7 @@
 
     .my-tests-page .summary-card-extra {
       font-size: 0.84rem;
-      color: #a1a1aa;
+      color: var(--muted);
     }
 
     .my-tests-page .subject-card:hover .progress-bar {
@@ -173,9 +277,9 @@
     }
 
     .my-tests-page .student-highlight {
-      --bs-table-bg: rgba(13, 202, 240, 0.22);
-      --bs-table-striped-bg: rgba(13, 202, 240, 0.28);
-      outline: 2px solid rgba(13, 202, 240, 0.7);
+      --bs-table-bg: var(--page-highlight-bg);
+      --bs-table-striped-bg: var(--page-highlight-striped);
+      outline: 2px solid var(--page-highlight-outline);
       outline-offset: -2px;
     }
 
@@ -187,8 +291,8 @@
       height: 1.4rem;
       margin-left: 0.2rem;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+      background: var(--page-medal-bg);
+      box-shadow: inset 0 0 0 1px var(--page-medal-border);
       font-size: 0.95rem;
       line-height: 1;
     }
@@ -269,7 +373,7 @@
     .my-tests-page .test-slot-btn:hover:not(:disabled),
     .my-tests-page .test-slot-btn:focus-visible:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(124, 58, 237, 0.18);
+      box-shadow: var(--page-button-hover-shadow);
     }
 
     .my-tests-page .test-slot-btn:disabled {
@@ -289,25 +393,25 @@
     .my-tests-page .leaderboard-table {
       margin-bottom: 0;
       --bs-table-bg: transparent;
-      --bs-table-color: #f4f4f5;
-      --bs-table-border-color: rgba(255, 255, 255, 0.1);
-      --bs-table-striped-color: #f4f4f5;
-      --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
-      --bs-table-hover-color: #fff;
-      --bs-table-hover-bg: rgba(255, 255, 255, 0.04);
+      --bs-table-color: var(--page-table-color);
+      --bs-table-border-color: var(--page-table-border);
+      --bs-table-striped-color: var(--page-table-color);
+      --bs-table-striped-bg: var(--page-table-striped);
+      --bs-table-hover-color: var(--page-table-color);
+      --bs-table-hover-bg: var(--page-table-hover);
     }
 
     .my-tests-page .leaderboard-table thead th {
-      color: #a1a1aa;
-      border-bottom-color: rgba(255, 255, 255, 0.12);
+      color: var(--muted);
+      border-bottom-color: var(--page-table-border);
       font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
 
     .my-tests-page .leaderboard-table tbody td {
-      color: #f5f5f5;
-      border-bottom-color: rgba(255, 255, 255, 0.08);
+      color: var(--page-table-row-color);
+      border-bottom-color: var(--page-table-border);
       padding-top: 1rem;
       padding-bottom: 1rem;
       vertical-align: middle;
@@ -355,7 +459,7 @@
     }
 
     .my-tests-page .leaderboard-id {
-      color: #a1a1aa;
+      color: var(--muted);
     }
 
     .my-tests-page .leaderboard-total,
@@ -409,8 +513,14 @@
   <div class="container-fluid px-3 px-lg-4 app-shell">
     <div id="studentTabs" class="nav nav-pills nav-fill mb-3">
       <button type="button" class="nav-link active" data-tab="home">Home</button>
-      <button type="button" class="nav-link" data-tab="analytics">Analytics</button>
-      <button type="button" class="nav-link" data-tab="rewards">Rewards</button>
+      <button type="button" class="nav-link tab-upcoming" data-tab="analytics" disabled aria-disabled="true" title="Analytics is coming soon.">
+        <span>Analytics</span>
+        <span class="coming-soon-badge">Coming Soon</span>
+      </button>
+      <button type="button" class="nav-link tab-upcoming" data-tab="rewards" disabled aria-disabled="true" title="Rewards is coming soon.">
+        <span>Rewards</span>
+        <span class="coming-soon-badge">Coming Soon</span>
+      </button>
     </div>
 
     <div id="testSelector" class="d-flex gap-2 overflow-auto pb-1 mb-4">
@@ -435,23 +545,6 @@
           <div id="homeKpiRow" class="hero-kpi-grid mt-4"></div>
         </div>
       </div>
-
-      <div id="coachingSection" class="card app-card p-3 mb-4 d-none">
-        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-          <div>
-            <h5 id="coachingTitle" class="display fw-bold mb-1"></h5>
-            <div id="coachingSchedule" class="small soft"></div>
-          </div>
-          <span id="coachingDurationBadge" class="badge rounded-pill text-bg-primary"></span>
-        </div>
-        <div id="coachingItems" class="row g-2 mt-2"></div>
-      </div>
-
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-        <h5 class="display fw-bold mb-0">Subject Performance</h5>
-        <div id="subjectHint" class="small soft"></div>
-      </div>
-      <div id="subjectCards" class="row g-3 mb-4"></div>
 
       <h5 class="display fw-bold">Top Performers</h5>
       <div id="topPerformers" class="d-flex gap-2 overflow-auto pb-1 mb-4"></div>
@@ -707,6 +800,7 @@
     });
 
     const rewardsPayload = normalizeRewards(payload.rewards || {});
+    const lockedTabs = new Set(["analytics", "rewards"]);
 
     const state = {
       studentTab: "home",
@@ -718,6 +812,10 @@
         null,
       online: navigator.onLine,
     };
+
+    function isLockedTab(tab) {
+      return lockedTabs.has(tab);
+    }
 
     const refs = {
       tabButtons: [...document.querySelectorAll("#studentTabs [data-tab]")],
@@ -731,13 +829,6 @@
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
       homeKpiRow: document.getElementById("homeKpiRow"),
-      coachingSection: document.getElementById("coachingSection"),
-      coachingTitle: document.getElementById("coachingTitle"),
-      coachingSchedule: document.getElementById("coachingSchedule"),
-      coachingDurationBadge: document.getElementById("coachingDurationBadge"),
-      coachingItems: document.getElementById("coachingItems"),
-      subjectHint: document.getElementById("subjectHint"),
-      subjectCards: document.getElementById("subjectCards"),
       topPerformers: document.getElementById("topPerformers"),
       leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
       leaderboardBody: document.getElementById("leaderboardBody"),
@@ -1031,6 +1122,10 @@
     }
 
     function renderHeader() {
+      if (isLockedTab(state.studentTab)) {
+        state.studentTab = "home";
+      }
+
       refs.tabButtons.forEach((button) => {
         button.classList.toggle("active", button.dataset.tab === state.studentTab);
       });
@@ -1058,11 +1153,8 @@
           { label: "Status", value: "Awaiting", extra: "First completed test" },
           { label: "Window", value: "Soon", extra: "Use the upcoming tab to launch" },
         ]);
-        clearNode(refs.subjectCards);
         clearNode(refs.topPerformers);
         clearNode(refs.leaderboardBody);
-        refs.coachingSection.classList.add("d-none");
-        refs.subjectHint.textContent = "";
         refs.leaderboardCountBadge.textContent = "0 students";
         refs.leaderboardFooterText.textContent = "";
         return;
@@ -1147,8 +1239,6 @@
         },
       ]);
 
-      renderCoaching(test);
-      renderSubjectCards(test);
       renderTopPerformers(test);
       renderLeaderboard(test);
     }
@@ -1391,6 +1481,11 @@
 
     refs.tabButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        if (isLockedTab(button.dataset.tab)) {
+          state.studentTab = "home";
+          renderHeader();
+          return;
+        }
         state.studentTab = button.dataset.tab;
         renderHeader();
       });
@@ -1433,7 +1528,8 @@
     document.addEventListener("keydown", (event) => {
       if (["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)) return;
       if (["1", "2", "3"].includes(event.key)) {
-        state.studentTab = ["home", "analytics", "rewards"][Number(event.key) - 1];
+        const nextTab = ["home", "analytics", "rewards"][Number(event.key) - 1];
+        state.studentTab = isLockedTab(nextTab) ? "home" : nextTab;
         renderHeader();
       }
     });
