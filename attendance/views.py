@@ -232,8 +232,12 @@ def _staff_attendance_export_bytes(attendance_rows, month_value):
             "Role",
             "Contact",
             "Email",
-            "Date",
-            "Status",
+            "Present",
+            "Late",
+            "Absent",
+            "Total",
+            "Attendance %",
+            "Today Status",
             "Check-in",
             "Check-out",
         ]
@@ -247,10 +251,14 @@ def _staff_attendance_export_bytes(attendance_rows, month_value):
                 row["role"],
                 row["contact"],
                 row["email"],
-                row["date"].strftime("%d-%m-%Y"),
-                row["status"],
-                row["check_in"],
-                row["check_out"],
+                str(row["present_days"]),
+                str(row["late_days"]),
+                str(row["absent_days"]),
+                str(row["total_days"]),
+                f'{row["attendance_percent"]}%',
+                row["today_status"],
+                row["today_check_in"],
+                row["today_check_out"],
             ]
         )
 
@@ -265,7 +273,7 @@ def _staff_attendance_export_bytes(attendance_rows, month_value):
 </head>
 <body>
   <table border="1">
-    <tr><td colspan="9"><strong>Staff Attendance Export - {escape(month_value)}</strong></td></tr>
+    <tr><td colspan="13"><strong>Staff Attendance Export - {escape(month_value)}</strong></td></tr>
     {''.join(table_html)}
   </table>
 </body>
@@ -491,34 +499,57 @@ def qr_kiosk(request):
     return render(request, "qr-kiosk.html")
 
 
-def _build_staff_attendance_rows(start_date, end_date):
-    records = list(
+def _build_staff_attendance_rows(start_date, end_date, today):
+    staff_members = list(
+        TeacherAdmin.objects.select_related("user").order_by("role", "name")
+    )
+
+    monthly_attendances = list(
         StaffAttendance.objects.filter(
+            staff__in=staff_members,
             date__gte=start_date,
             date__lt=end_date,
         )
         .select_related("staff", "staff__user")
-        .order_by("-date", "-check_in", "staff__name")
+        .order_by("date")
     )
 
+    attendance_map = {}
+    for record in monthly_attendances:
+        attendance_map.setdefault(record.staff_id, []).append(record)
+
+    today_records = {
+        record.staff_id: record
+        for record in StaffAttendance.objects.filter(staff__in=staff_members, date=today).select_related("staff")
+    }
+
     rows = []
-    for record in records:
+    for staff in staff_members:
+        records = attendance_map.get(staff.id, [])
+        present_count = sum(1 for record in records if record.status == "Present")
+        late_count = sum(1 for record in records if record.status == "Late")
+        absent_count = sum(1 for record in records if record.status == "Absent")
+        total_days = len(records)
+        today_record = today_records.get(staff.id)
+
         rows.append(
             {
-                "id": record.id,
-                "staff_id": record.staff_id,
-                "staff": record.staff,
-                "staff_name": record.staff.name,
-                "role": record.staff.role,
-                "contact": record.staff.contact,
-                "email": record.staff.email,
-                "date": record.date,
-                "status": record.status,
-                "check_in": format_display_time(record.check_in),
-                "check_out": format_display_time(record.check_out),
-                "updated_at": record.updated_at,
+                "staff": staff,
+                "staff_name": staff.name,
+                "role": staff.role,
+                "contact": staff.contact,
+                "email": staff.email,
+                "present_days": present_count,
+                "late_days": late_count,
+                "absent_days": absent_count,
+                "total_days": total_days,
+                "attendance_percent": _attendance_percent(present_count + late_count, total_days),
+                "today_status": today_record.status if today_record else "Not Marked",
+                "today_check_in": format_display_time(today_record.check_in) if today_record else "-",
+                "today_check_out": format_display_time(today_record.check_out) if today_record else "-",
             }
         )
+
     return rows
 
 
@@ -528,12 +559,12 @@ def staff_attendance(request):
         return HttpResponseForbidden("Only admins can access staff attendance.")
 
     start_date, end_date, month_value, today = _month_bounds(request.GET.get("month"))
-    attendance_rows = _build_staff_attendance_rows(start_date, end_date)
+    attendance_rows = _build_staff_attendance_rows(start_date, end_date, today)
 
     summary_total = len(attendance_rows)
-    summary_present = sum(1 for row in attendance_rows if row["status"] == "Present")
-    summary_late = sum(1 for row in attendance_rows if row["status"] == "Late")
-    summary_checkout = sum(1 for row in attendance_rows if row["check_out"] != "-")
+    summary_present = sum(row["present_days"] + row["late_days"] for row in attendance_rows)
+    summary_recorded = sum(row["total_days"] for row in attendance_rows)
+    summary_avg = _attendance_percent(summary_present, summary_recorded)
 
     paginator = Paginator(attendance_rows, 20)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -547,8 +578,8 @@ def staff_attendance(request):
             "today": today,
             "summary_total": summary_total,
             "summary_present": summary_present,
-            "summary_late": summary_late,
-            "summary_checkout": summary_checkout,
+            "summary_recorded": summary_recorded,
+            "summary_avg": summary_avg,
             "page_obj": page_obj,
             "paginator": paginator,
         },
@@ -568,7 +599,7 @@ def export_staff_attendance_email(request):
         messages.error(request, "No registered email found for your account.")
         return redirect(_staff_attendance_redirect_url(month_value))
 
-    attendance_rows = _build_staff_attendance_rows(start_date, end_date)
+    attendance_rows = _build_staff_attendance_rows(start_date, end_date, _today)
     export_bytes = _staff_attendance_export_bytes(attendance_rows, month_value)
     filename = f"staff-attendance-export-{month_value}.xls"
 
@@ -577,7 +608,7 @@ def export_staff_attendance_email(request):
         body=(
             "Please find the staff attendance export attached.\n\n"
             f"Month: {month_value}\n"
-            f"Total Records: {len(attendance_rows)}\n\n"
+            f"Total Staff: {len(attendance_rows)}\n\n"
             "Regards,\nRanker's Academy"
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,

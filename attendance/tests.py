@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from attendance.models import Attendance, StaffAttendance
@@ -161,3 +162,69 @@ class StaffAttendanceServiceTests(TestCase):
         attendance = StaffAttendance.objects.get(staff=self.staff, date="2026-04-24")
         self.assertEqual(result["action"], "checkout")
         self.assertIsNotNone(attendance.check_out)
+
+
+class StaffAttendancePageTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin.user", password="testpass123")
+        self.admin_staff = TeacherAdmin.objects.create(
+            user=self.admin_user,
+            name="Admin User",
+            username="admin.user",
+            email="admin.user@example.com",
+            contact="9000000001",
+            gender="Female",
+            role="Admin",
+        )
+        self.teacher_user = User.objects.create_user(username="teacher.one", password="testpass123")
+        self.teacher_staff = TeacherAdmin.objects.create(
+            user=self.teacher_user,
+            name="Teacher One",
+            username="teacher.one",
+            email="teacher.one@example.com",
+            contact="9000000002",
+            gender="Male",
+            role="Teacher",
+        )
+        self.counselor_user = User.objects.create_user(username="counselor.one", password="testpass123")
+        self.counselor_staff = TeacherAdmin.objects.create(
+            user=self.counselor_user,
+            name="Counselor One",
+            username="counselor.one",
+            email="counselor.one@example.com",
+            contact="9000000003",
+            gender="Female",
+            role="Counselor",
+        )
+
+    def test_staff_attendance_page_lists_each_staff_member_once(self):
+        StaffAttendance.objects.create(
+            staff=self.teacher_staff,
+            date="2026-05-01",
+            status="Present",
+        )
+        StaffAttendance.objects.create(
+            staff=self.teacher_staff,
+            date="2026-05-02",
+            status="Late",
+        )
+        StaffAttendance.objects.create(
+            staff=self.admin_staff,
+            date="2026-05-01",
+            status="Absent",
+        )
+
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("staff_attendance"), {"month": "2026-05"})
+
+        self.assertEqual(response.status_code, 200)
+
+        rows = response.context["attendance_rows"]
+        row_by_staff_id = {row["staff"].id: row for row in rows}
+
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(set(row_by_staff_id.keys()), {self.admin_staff.id, self.teacher_staff.id, self.counselor_staff.id})
+        self.assertEqual(row_by_staff_id[self.teacher_staff.id]["present_days"], 1)
+        self.assertEqual(row_by_staff_id[self.teacher_staff.id]["late_days"], 1)
+        self.assertEqual(row_by_staff_id[self.teacher_staff.id]["total_days"], 2)
+        self.assertEqual(row_by_staff_id[self.counselor_staff.id]["total_days"], 0)
