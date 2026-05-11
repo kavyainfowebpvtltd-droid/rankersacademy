@@ -47,29 +47,36 @@
   min-width: 0;
   width: auto;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
 }
 
 .entries-control-compact .form-label {
-  color: #64748b;
-  font-size: 0.78rem;
-  line-height: 1;
-  white-space: nowrap;
+  display: none;
 }
 
 .entries-control-compact .entries-per-page-select {
-  width: auto;
-  min-width: 4.75rem;
-  height: 2.15rem;
-  padding: 0.35rem 2rem 0.35rem 0.7rem;
-  border-radius: 0.65rem;
+  width: 7.5rem;
+  min-width: 7.5rem;
+  height: 2.875rem;
+  padding: 0.55rem 2rem 0.55rem 0.9rem;
+  border-radius: 0.6rem;
   border: 1px solid #dbe2ea;
-  font-size: 0.86rem;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
   font-weight: 700;
   line-height: 1.2;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.entries-control-compact .entries-per-page-select:hover {
+  border-color: #b6c2d2;
+}
+
+.entries-control-compact .entries-per-page-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.14);
 }
 
 .table-pagination {
@@ -127,14 +134,11 @@
     flex-wrap: nowrap;
   }
 
-  .entries-control-compact .form-label {
-    font-size: 0.75rem;
-  }
-
   .entries-control-compact .entries-per-page-select {
-    min-width: 4.5rem;
-    height: 2.05rem;
-    font-size: 0.82rem;
+    width: 6.875rem;
+    min-width: 6.875rem;
+    height: 2.75rem;
+    font-size: 0.9rem;
   }
 
   .table-pagination {
