@@ -621,16 +621,21 @@ def staff_attendance(request):
     summary_recorded = sum(row["total_days"] for row in attendance_rows)
     summary_avg = _attendance_percent(summary_present, summary_recorded)
 
-    items_per_page = get_entries_per_page(request, "staff_entries")
-    paginator = Paginator(attendance_rows, items_per_page)
-    page_obj = paginator.get_page(request.GET.get("page"))
-    pagination_query = build_pagination_query(request, "page")
+    # Show all staff on one page (no pagination)
+    page_obj = {
+        "object_list": attendance_rows,
+        "paginator": {"num_pages": 1, "count": len(attendance_rows)},
+        "start_index": 1,
+        "end_index": len(attendance_rows),
+        "has_previous": False,
+        "has_next": False,
+    }
 
     return render(
         request,
         "staff-attendance.html",
         {
-            "attendance_rows": page_obj.object_list,
+            "attendance_rows": attendance_rows,
             "month": month_value,
             "today": today,
             "summary_total": summary_total,
@@ -638,11 +643,7 @@ def staff_attendance(request):
             "summary_recorded": summary_recorded,
             "summary_avg": summary_avg,
             "page_obj": page_obj,
-            "paginator": paginator,
-            "page_range": get_page_range(paginator, page_obj.number),
-            "pagination_query": pagination_query,
-            "items_per_page": items_per_page,
-            "entry_options": PAGE_SIZE_OPTIONS,
+            "paginator": page_obj["paginator"],
         },
     )
 
