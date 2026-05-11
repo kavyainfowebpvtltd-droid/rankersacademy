@@ -140,37 +140,12 @@
         </div>
 
         <div class="card main-card">
-          <div class="gradient-header">
-            <h3>Well Done!</h3>
-            {% if is_scholarship_result %}
-            <div class="scholarship-box">
-              <p class="mb-1">You have secured</p>
-              <h1>{{ attempt.scholarship_percentage }}%</h1>
-              <p>SCHOLARSHIP</p>
-            </div>
-            {% else %}
-            <div class="result-summary-box">
-              <div class="result-summary-item">
-                <span class="result-summary-label">Test Name</span>
-                <strong>{{ selected_test_name }}</strong>
-              </div>
-              <div class="result-summary-item">
-                <span class="result-summary-label">Result Reference</span>
-                <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
-              </div>
-              {% if completed_at_display %}
-              <div class="result-summary-item">
-                <span class="result-summary-label">Completed On</span>
-                <strong>{{ completed_at_display }}</strong>
-              </div>
-              {% endif %}
-            </div>
-            {% endif %}
+          <div class="gradient-header py-4">
+            <h2 class="mb-0 fw-bold">Well Done!</h2>
           </div>
 
-          <div class="details-section">
-            <h6 class="mb-3">Student Details</h6>
 
+          <div class="details-section">
             <div class="row mb-4">
               <div class="col-md-6 mb-3">
                 <div class="d-flex align-items-center">
@@ -184,114 +159,23 @@
                   </div>
                 </div>
               </div>
-
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-telephone-fill text-success me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Phone Number</small>
-                    <p class="fw-semibold mb-0">
-                      +91 {{ student.phone_number }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-book-fill text-warning me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Grade</small>
-                    <p class="fw-semibold mb-0">{{ student.grade }}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-building text-info me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">{{ academic_field_label }}</small>
-                    <p class="fw-semibold mb-0">{{ academic_field_value }}</p>
-                  </div>
-                </div>
-              </div>
-
-              {% if not is_scholarship_result and attempt.student_batch %}
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-people-fill text-secondary me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Batch</small>
-                    <p class="fw-semibold mb-0">{{ attempt.student_batch }}</p>
-                  </div>
-                </div>
-              </div>
-              {% endif %}
-
-              {% if not is_scholarship_result %}
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-hash text-dark me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Result Reference</small>
-                    <p class="fw-semibold mb-0">
-                      {{ selected_test_reference_prefix }}-{{ attempt.id }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {% endif %}
             </div>
 
             <div class="row g-4">
-              <div class="{% if is_scholarship_result %}col-md-6{% else %}col-12{% endif %}">
-                <div class="info-box score-box">
+              <div class="col-12">
+                <div class="info-box score-box py-4">
                   <i
                     class="bi bi-trophy-fill text-primary d-block mb-2"
-                    style="font-size: 2rem"
+                    style="font-size: 2.5rem"
                   ></i>
-                  <h6>Your Score</h6>
-                  <h4 class="text-primary">
+                  <h5>Your Score</h5>
+                  <h2 class="text-primary fw-bold mb-0">
                     {{ attempt.score }} / {{ attempt.total_marks }}
-                  </h4>
+                  </h2>
                 </div>
               </div>
-
-              {% if is_scholarship_result %}
-              <div class="col-md-6">
-                <div class="info-box percent-box">
-                  <i
-                    class="bi bi-percent text-success d-block mb-2"
-                    style="font-size: 2rem"
-                  ></i>
-                  <h6>{% if is_scholarship_result %}Scholarship{% else %}Percentage{% endif %}</h6>
-                  <h4 class="text-success">
-                    {% if is_scholarship_result %}
-                    {{ attempt.scholarship_percentage }}%
-                    {% else %}
-                    {{ result_percentage }}%
-                    {% endif %}
-                  </h4>
-                </div>
-              </div>
-              {% endif %}
             </div>
+
 
             {% if leaderboard_top_entries %}
             <div class="card border-0 shadow-sm mt-4">
@@ -341,98 +225,34 @@
             {% endif %}
 
             {% if answer_key %}
-            <div class="answer-key-section shadow-sm animate__animated animate__fadeInUp">
-              <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="d-flex align-items-center">
-                  <i class="bi bi-journal-check text-success me-2 fs-4"></i>
-                  <h6 class="mb-0 fw-bold">Answer Key & Your Responses</h6>
+            <div class="answer-key-section shadow-sm animate__animated animate__fadeInUp mt-4">
+              <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-journal-check text-success me-2 fs-5"></i>
+                <h6 class="mb-0 fw-bold">Answer Key</h6>
+              </div>
+
+              <div class="row g-2">
+                {% for item in answer_key %}
+                <div class="col-6 col-sm-4 col-md-3">
+                  <div class="d-flex justify-content-between align-items-center p-2 border rounded-3 bg-light-subtle">
+                    <span class="fw-bold small text-muted">#{{ item.number }}</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ item.correct_answer }}</span>
+                    <span class="small">
+                      {% if item.student_answer == "Not Answered" %}
+                      <i class="bi bi-dash-circle text-muted"></i>
+                      {% elif item.student_answer == item.correct_answer %}
+                      <i class="bi bi-check-circle-fill text-success"></i>
+                      {% else %}
+                      <i class="bi bi-x-circle-fill text-danger"></i>
+                      {% endif %}
+                    </span>
+                  </div>
                 </div>
-                {% if attempt.test.original_word_file %}
-                <a href="{{ attempt.test.original_word_file.url }}" class="btn btn-outline-primary btn-sm rounded-pill" target="_blank">
-                  <i class="bi bi-file-earmark-word me-1"></i> View Original File
-                </a>
-                {% endif %}
-              </div>
-
-              <div class="table-responsive">
-                <table class="table answer-key-table align-middle">
-                  <thead>
-                    <tr>
-                      <th width="80">Q.No</th>
-                      <th>Question</th>
-                      <th>Correct Answer</th>
-                      <th>Your Answer</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in answer_key %}
-                    <tr>
-                      <td class="fw-bold">#{{ item.number }}</td>
-                      <td class="small">{{ item.question_text|truncatechars:100 }}</td>
-                      <td><span class="badge bg-success-subtle text-success border border-success-subtle px-3">{{ item.correct_answer }}</span></td>
-                      <td>
-                        {% if item.student_answer == "Not Answered" %}
-                        <span class="student-answer-pill not-answered-pill">Not Answered</span>
-                        {% elif item.student_answer == item.correct_answer %}
-                        <span class="student-answer-pill correct-pill"><i class="bi bi-check-circle-fill me-1"></i> {{ item.student_answer }}</span>
-                        {% else %}
-                        <span class="student-answer-pill wrong-pill"><i class="bi bi-x-circle-fill me-1"></i> {{ item.student_answer }}</span>
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                {% endfor %}
               </div>
             </div>
             {% endif %}
 
-            {% if is_scholarship_result %}
-            <div class="claim-box mt-4">
-              <h6>
-                <i class="bi bi-phone-vibrate me-2"></i>Claim Your Scholarship
-              </h6>
-
-              <p class="mb-2">
-                To claim your scholarship and complete the admission process,
-                please contact us at:
-              </p>
-
-              <a
-                href="tel:+919087676545"
-                class="btn w-100 py-2 fw-bold"
-                style="
-                  background-color: #f0d687;
-                  color: #000;
-                  border-radius: 8px;
-                "
-              >
-                <i class="bi bi-telephone me-2"></i> +91 8329100890
-              </a>
-            </div>
-
-            <div class="sms-box mt-4">
-              <h6><i class="bi bi-chat-dots me-2"></i>SMS Notification</h6>
-
-              {% if sms_sent %}
-              <p class="mb-0 text-success">
-                <i class="bi bi-check-circle-fill me-1"></i>
-                A confirmation SMS with your test results has been sent to your
-                registered mobile number
-                <strong>+91 {{ student.phone_number }}</strong>.
-              </p>
-              {% else %}
-              <p class="mb-0 text-warning">
-                <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                SMS could not be sent to your mobile number. 
-                {% if sms_error %}Error: {{ sms_error }}
-                {% endif %} 
-                Please note down your result reference:
-                <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
-              </p>
-              {% endif %}
-            </div>
-            {% endif %}
 
             <a
               href="{% url 'login' %}"
@@ -445,6 +265,7 @@
         </div>
       </div>
     </main>
+
 
     <footer class="bg-light border-top py-3 mt-auto">
       <div class="container">

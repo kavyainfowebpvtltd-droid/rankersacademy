@@ -756,6 +756,11 @@ def scholarship_start_test(request):
         return redirect('scholarship_test:scholarship_dashboard')
 
     total_questions = len(active_runtime_questions) if active_runtime_questions else TOTAL_QUESTIONS
+    
+    # Shuffle questions for this student
+    import random
+    question_ids = [q.id for q in active_runtime_questions]
+    random.shuffle(question_ids)
 
     with transaction.atomic():
         attempt = ScholarshipTestAttempt.objects.create(
@@ -772,8 +777,10 @@ def scholarship_start_test(request):
                 'current_question_index': 0,
                 'tab_switch_count': 0,
                 'saved_at': timezone.now().isoformat(),
+                'shuffled_question_ids': question_ids,
             },
         )
+
 
     return redirect('scholarship_test:scholarship_test', attempt_id=attempt.id)
 
@@ -824,10 +831,17 @@ def scholarship_test(request, attempt_id):
         attempt.save(update_fields=['status'])
 
     if runtime_test and runtime_questions:
+        shuffled_ids = attempt.progress_state.get('shuffled_question_ids', [])
+        if shuffled_ids:
+            # Reorder questions based on shuffled_ids
+            question_map = {q.id: q for q in runtime_questions}
+            runtime_questions = [question_map[qid] for qid in shuffled_ids if qid in question_map]
+            
         questions_data = [
             test_service.serialize_runtime_question(question, index + 1)
             for index, question in enumerate(runtime_questions)
         ]
+
     else:
         questions = test_service.get_test_questions(
             grade=student.grade,
@@ -1042,7 +1056,15 @@ def scholarship_success(request, attempt_id):
 
     # Get answer key
     runtime_questions = test_service.get_runtime_questions_for_test(attempt.test)
+    
+    # Use shuffled order if available
+    shuffled_ids = attempt.progress_state.get('shuffled_question_ids', [])
+    if shuffled_ids and runtime_questions:
+        question_map = {q.id: q for q in runtime_questions}
+        runtime_questions = [question_map[qid] for qid in shuffled_ids if qid in question_map]
+
     answer_key = []
+
     if runtime_questions:
         student_answers = {str(ans.question_id): ans.selected_option for ans in attempt.answers.all()}
         for i, q in enumerate(runtime_questions, 1):
