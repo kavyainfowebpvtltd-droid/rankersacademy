@@ -476,23 +476,6 @@
         </div>
       </div>
 
-      <div id="coachingSection" class="card app-card p-3 mb-4 d-none">
-        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-          <div>
-            <h5 id="coachingTitle" class="display fw-bold mb-1"></h5>
-            <div id="coachingSchedule" class="small soft"></div>
-          </div>
-          <span id="coachingDurationBadge" class="badge rounded-pill text-bg-primary"></span>
-        </div>
-        <div id="coachingItems" class="row g-2 mt-2"></div>
-      </div>
-
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-        <h5 class="display fw-bold mb-0">Subject Performance</h5>
-        <div id="subjectHint" class="small soft"></div>
-      </div>
-      <div id="subjectCards" class="row g-3 mb-4"></div>
-
       <h5 class="display fw-bold">Top Performers</h5>
       <div id="topPerformers" class="d-flex gap-2 overflow-auto pb-1 mb-4"></div>
 
@@ -776,13 +759,6 @@
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
       homeKpiRow: document.getElementById("homeKpiRow"),
-      coachingSection: document.getElementById("coachingSection"),
-      coachingTitle: document.getElementById("coachingTitle"),
-      coachingSchedule: document.getElementById("coachingSchedule"),
-      coachingDurationBadge: document.getElementById("coachingDurationBadge"),
-      coachingItems: document.getElementById("coachingItems"),
-      subjectHint: document.getElementById("subjectHint"),
-      subjectCards: document.getElementById("subjectCards"),
       topPerformers: document.getElementById("topPerformers"),
       leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
       leaderboardBody: document.getElementById("leaderboardBody"),
@@ -1107,11 +1083,8 @@
           { label: "Status", value: "Awaiting", extra: "First completed test" },
           { label: "Window", value: "Soon", extra: "Use the upcoming tab to launch" },
         ]);
-        clearNode(refs.subjectCards);
         clearNode(refs.topPerformers);
         clearNode(refs.leaderboardBody);
-        refs.coachingSection.classList.add("d-none");
-        refs.subjectHint.textContent = "";
         refs.leaderboardCountBadge.textContent = "0 students";
         refs.leaderboardFooterText.textContent = "";
         return;
@@ -1196,8 +1169,6 @@
         },
       ]);
 
-      renderCoaching(test);
-      renderSubjectCards(test);
       renderTopPerformers(test);
       renderLeaderboard(test);
     }
