@@ -833,15 +833,9 @@ def scholarship_test(request, attempt_id):
     if runtime_test and runtime_questions:
         shuffled_ids = attempt.progress_state.get('shuffled_question_ids', [])
         if shuffled_ids:
-            # Reorder questions based on unique shuffled_ids
+            # Reorder questions based on shuffled_ids
             question_map = {q.id: q for q in runtime_questions}
-            seen_ids = set()
-            unique_shuffled_ids = []
-            for qid in shuffled_ids:
-                if qid in question_map and qid not in seen_ids:
-                    unique_shuffled_ids.append(qid)
-                    seen_ids.add(qid)
-            runtime_questions = [question_map[qid] for qid in unique_shuffled_ids]
+            runtime_questions = [question_map[qid] for qid in shuffled_ids if qid in question_map]
             
         questions_data = [
             test_service.serialize_runtime_question(question, index + 1)
@@ -1016,7 +1010,7 @@ def scholarship_success(request, attempt_id):
     student_id = request.session.get('scholarship_student_id')
     
     try:
-        attempt = ScholarshipTestAttempt.objects.select_related('student', 'portal_student', 'test').get(id=attempt_id)
+        attempt = ScholarshipTestAttempt.objects.select_related('student', 'portal_student').get(id=attempt_id)
         
         student = attempt.student
         
@@ -1060,86 +1054,26 @@ def scholarship_success(request, attempt_id):
     )
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
 
-    # Get answer key and attempted paper
-    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
-    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test) if runtime_test else []
-
+    # Get answer key
+    runtime_questions = test_service.get_runtime_questions_for_test(attempt.test)
+    
     # Use shuffled order if available
     shuffled_ids = attempt.progress_state.get('shuffled_question_ids', [])
     if shuffled_ids and runtime_questions:
-        # Create map and ensure we only use unique IDs from shuffled_ids
         question_map = {q.id: q for q in runtime_questions}
-        seen_ids = set()
-        unique_shuffled_ids = []
-        for qid in shuffled_ids:
-            if qid in question_map and qid not in seen_ids:
-                unique_shuffled_ids.append(qid)
-                seen_ids.add(qid)
-        runtime_questions = [question_map[qid] for qid in unique_shuffled_ids]
+        runtime_questions = [question_map[qid] for qid in shuffled_ids if qid in question_map]
 
     answer_key = []
-    attempted_paper = []
-
-    # Get student's saved answers from progress_state
-    saved_answers = attempt.progress_state.get('answers', {})
-    option_labels = ['A', 'B', 'C', 'D']
 
     if runtime_questions:
+        student_answers = {str(ans.question_id): ans.selected_option for ans in attempt.answers.all()}
         for i, q in enumerate(runtime_questions, 1):
-            # Build a map of options by their index for correct answer checking
-            options_list = list(q.options.all())
-            correct_opt_idx = None
-            for idx, opt in enumerate(options_list):
-                if opt.is_correct:
-                    correct_opt_idx = idx
-                    break
-
-            student_selected_raw = saved_answers.get(str(q.id))
-            student_selected = "Not Answered"
-            is_correct = False
-
-            if student_selected_raw is not None and student_selected_raw != '':
-                # Convert index-based answer (0,1,2,3) to letter (A,B,C,D)
-                try:
-                    selected_idx = int(student_selected_raw)
-                    if 0 <= selected_idx < len(option_labels):
-                        student_selected = option_labels[selected_idx]
-                except (ValueError, TypeError):
-                    student_selected = str(student_selected_raw)
-
-                # Check if correct by comparing indexes
-                if correct_opt_idx is not None:
-                    try:
-                        is_correct = int(student_selected_raw) == correct_opt_idx
-                    except (ValueError, TypeError):
-                        is_correct = False
-
-            # Get option text for display
-            options_data = []
-            for idx, opt in enumerate(options_list):
-                opt_label = option_labels[idx] if idx < len(option_labels) else str(idx + 1)
-                options_data.append({
-                    'option_text': opt.option_text,
-                    'option_label': opt_label,
-                    'is_selected': opt_label == student_selected,
-                    'is_correct': opt.is_correct
-                })
-
-            attempted_paper.append({
-                'number': i,
-                'question_text': q.question_text,
-                'options': options_data,
-                'student_answer': student_selected,
-                'is_correct': is_correct,
-            })
-
-            # Build answer key entry
-            answer_text = option_labels[correct_opt_idx] if correct_opt_idx is not None and correct_opt_idx < len(option_labels) else "N/A"
+            correct_opt = q.options.filter(is_correct=True).first()
             answer_key.append({
                 'number': i,
-                'correct_answer': answer_text,
-                'student_answer': student_selected,
-                'is_correct': is_correct
+                'question_text': q.question_text,
+                'correct_answer': correct_opt.option_text if correct_opt else "N/A",
+                'student_answer': student_answers.get(str(q.id), "Not Answered")
             })
 
     if is_scholarship_result and not attempt.sms_sent and attempt.status in ['completed', 'expired']:
@@ -1177,7 +1111,6 @@ def scholarship_success(request, attempt_id):
         'leaderboard_top_entries': leaderboard['top_entries'],
         'leaderboard_current_entry': leaderboard['current_entry'],
         'answer_key': answer_key,
-        'attempted_paper': attempted_paper,
     }
     context.update(_build_test_display_context(attempt.test))
     return render(request, 'scholarship-success.html', context)
@@ -2189,14 +2122,11 @@ def api_import_word_questions(request):
     test_id = request.POST.get('test_id')
     uploaded_file = request.FILES.get('word_file')
     if not uploaded_file:
-        return JsonResponse({'error': 'No file was uploaded'}, status=400)
+        return JsonResponse({'error': 'No Word file was uploaded'}, status=400)
 
     file_name = uploaded_file.name or ''
-    is_docx = file_name.lower().endswith('.docx')
-    is_pdf = file_name.lower().endswith('.pdf')
-
-    if not (is_docx or is_pdf):
-        return JsonResponse({'error': 'Only .docx Word files and .pdf files are supported'}, status=400)
+    if not file_name.lower().endswith('.docx'):
+        return JsonResponse({'error': 'Only .docx Word files are supported'}, status=400)
 
     # If test_id is provided, save the original file to the test
     if test_id:
@@ -2207,19 +2137,15 @@ def api_import_word_questions(request):
         except ScholarshipTest.DoesNotExist:
             pass
 
-    # Only try to parse questions if it's a DOCX
-    if is_docx:
-        try:
-            imported_data = word_import_service.import_questions_from_docx(uploaded_file)
-            return JsonResponse({'success': True, 'imported': imported_data})
-        except word_import_service.WordImportError as exc:
-            return JsonResponse({'error': str(exc)}, status=400)
-        except Exception as exc:
-            logger.error("Word import failed: %s", str(exc), exc_info=True)
-            return JsonResponse({'error': 'Failed to import the Word file'}, status=500)
-    else:
-        # For PDF, we just saved it to the test, so return success
-        return JsonResponse({'success': True, 'message': 'PDF uploaded successfully'})
+    try:
+        imported_data = word_import_service.import_questions_from_docx(uploaded_file)
+    except word_import_service.WordImportError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+    except Exception as exc:
+        logger.error("Word import failed: %s", str(exc), exc_info=True)
+        return JsonResponse({'error': 'Failed to import the Word file'}, status=500)
+
+    return JsonResponse({'success': True, 'imported': imported_data})
 
 
 @csrf_exempt
