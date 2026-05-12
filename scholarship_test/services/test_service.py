@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 TOTAL_QUESTIONS = 20
 TEST_DURATION_MINUTES = 20
+TEST_START_GRACE_MINUTES = 5
 SUPPORTED_RUNTIME_QUESTION_TYPES = {"mcq", "tf", "fitb", "int"}
 ACADEMY_TIMEZONE = ZoneInfo("Asia/Kolkata")
 UTC_TIMEZONE = ZoneInfo("UTC")
@@ -171,7 +172,7 @@ def get_test_launch_window(test):
     if not start_at:
         return None, None, None
 
-    end_at = start_at + timedelta(minutes=get_test_duration_minutes(test))
+    end_at = start_at + timedelta(minutes=TEST_START_GRACE_MINUTES)
     launch_opens_at = start_at - timedelta(minutes=10)
     return start_at, end_at, launch_opens_at
 
@@ -181,7 +182,7 @@ def get_test_start_window(test):
     if not start_at:
         return None, None, None
 
-    end_at = start_at + timedelta(minutes=get_test_duration_minutes(test))
+    end_at = start_at + timedelta(minutes=TEST_START_GRACE_MINUTES)
     start_button_opens_at = start_at - timedelta(minutes=1)
     return start_at, end_at, start_button_opens_at
 
@@ -206,7 +207,7 @@ def get_test_launch_state(test, now=None):
             "can_launch": False,
             "is_live": False,
             "has_ended": True,
-            "message": "This test window has closed.",
+            "message": "The entry window for this test has closed.",
         }
 
     if now < launch_opens_at:
@@ -247,7 +248,7 @@ def get_test_start_state(test, now=None):
             "can_start": False,
             "is_live": False,
             "has_ended": True,
-            "message": "This test window has closed.",
+            "message": "The entry window for this test has closed.",
         }
 
     if now < start_button_opens_at:

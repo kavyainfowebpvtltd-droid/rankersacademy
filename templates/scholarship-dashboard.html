@@ -235,6 +235,7 @@
         const message = document.getElementById("startButtonMessage");
         const startUrl = "{% url 'scholarship_test:scholarship_start_test' %}";
         const startOpensAtRaw = "{{ selected_test_start_button_opens_at|default:''|escapejs }}";
+        const startClosesAtRaw = "{{ selected_test_start_window_closes_at|default:''|escapejs }}";
         const scheduledStartAtRaw = "{{ selected_test_scheduled_start_at|default:''|escapejs }}";
         const serverNowRaw = "{{ selected_test_server_now|default:''|escapejs }}";
         const bootstrapClientMs = Date.now();
@@ -248,6 +249,7 @@
         const serverNow = parseIso(serverNowRaw);
         const scheduledStartAt = parseIso(scheduledStartAtRaw);
         const startOpensAt = parseIso(startOpensAtRaw);
+        const startClosesAt = parseIso(startClosesAtRaw);
 
         function synchronizedNow() {
           if (!serverNow) {
@@ -274,10 +276,25 @@
           }
         }
 
+        function disableStartButton(text) {
+          if (!startButton) return;
+          startButton.removeAttribute("href");
+          startButton.classList.add("is-disabled");
+          startButton.setAttribute("aria-disabled", "true");
+          if (message) {
+            message.textContent = text;
+          }
+        }
+
         function refreshStartButton() {
           if (!startButton || !startOpensAt) return;
 
           const now = synchronizedNow();
+          if (startClosesAt && now >= startClosesAt) {
+            disableStartButton("The entry window for this test has closed.");
+            return;
+          }
+
           if (now >= startOpensAt) {
             activateStartButton();
             return;

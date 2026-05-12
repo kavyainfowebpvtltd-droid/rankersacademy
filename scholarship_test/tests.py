@@ -351,6 +351,53 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
             0,
         )
 
+    def test_start_test_allows_new_attempt_within_five_minute_start_grace(self):
+        runtime_test, section = self.create_runtime_test(name='Late But Allowed Test')
+        self.add_mcq_question(section)
+        ScholarshipTest.objects.filter(id=runtime_test.id).update(
+            scheduled_start_at=timezone.now() - timedelta(minutes=4),
+            date=timezone.localdate(),
+        )
+        runtime_test.refresh_from_db()
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session['scholarship_selected_test_id'] = runtime_test.id
+        session.save()
+
+        response = client.get(reverse('scholarship_test:scholarship_start_test'))
+
+        latest_attempt = ScholarshipTestAttempt.objects.latest('id')
+        self.assertRedirects(
+            response,
+            reverse('scholarship_test:scholarship_test', args=[latest_attempt.id]),
+        )
+        self.assertEqual(latest_attempt.test_id, runtime_test.id)
+
+    def test_start_test_blocks_new_attempt_after_five_minute_start_grace(self):
+        runtime_test, section = self.create_runtime_test(name='Too Late Test')
+        self.add_mcq_question(section)
+        ScholarshipTest.objects.filter(id=runtime_test.id).update(
+            scheduled_start_at=timezone.now() - timedelta(minutes=6),
+            date=timezone.localdate(),
+        )
+        runtime_test.refresh_from_db()
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session['scholarship_selected_test_id'] = runtime_test.id
+        session.save()
+
+        response = client.get(reverse('scholarship_test:scholarship_start_test'))
+
+        self.assertRedirects(response, reverse('scholarship_test:scholarship_dashboard'))
+        self.assertEqual(
+            ScholarshipTestAttempt.objects.filter(student=self.student, test=runtime_test).count(),
+            0,
+        )
+
     def test_save_progress_persists_answers_and_current_question(self):
         runtime_test, section = self.create_runtime_test()
         question = self.add_mcq_question(section)
@@ -509,6 +556,7 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(response.context['leaderboard_current_entry']['score'], 15)
         self.assertContains(response, 'Leaderboard')
         self.assertContains(response, 'Your Rank: <strong>#7</strong>', html=True)
+        self.assertContains(response, f'href="{reverse("my_tests")}"')
 
     def test_dashboard_renders_guest_view_for_non_rtse_selected_test(self):
         runtime_test, section = self.create_runtime_test(name='Scholarship Mock 2')
@@ -1352,7 +1400,7 @@ class PortalStudentScheduledTestFlowTests(TestCase):
         scheduled_start_at=None,
     ):
         if scheduled_start_at is None:
-            scheduled_start_at = timezone.now() - timedelta(minutes=5)
+            scheduled_start_at = timezone.now() - timedelta(minutes=4)
 
         test = ScholarshipTest.objects.create(
             name=name,
@@ -1562,7 +1610,7 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             name="RTSE-2026 Scholarship Test",
             batch="Star 01",
             stream="JEE",
-            scheduled_start_at=timezone.now() - timedelta(minutes=5),
+            scheduled_start_at=timezone.now() - timedelta(minutes=4),
         )
         self.client.force_login(self.user)
 
@@ -1582,7 +1630,7 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             name="Weekly NEET Mock",
             batch="Star 02",
             stream="NEET",
-            scheduled_start_at=timezone.now() - timedelta(minutes=5),
+            scheduled_start_at=timezone.now() - timedelta(minutes=4),
         )
         self.client.force_login(self.user)
 

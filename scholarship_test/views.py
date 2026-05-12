@@ -187,7 +187,7 @@ def _build_test_display_context(selected_test):
         else TEST_DURATION_MINUTES
     )
     start_at = test_service.get_test_scheduled_start_at(selected_test)
-    _start_window_start, _start_window_end, start_button_opens_at = (
+    _start_window_start, start_window_closes_at, start_button_opens_at = (
         test_service.get_test_start_window(selected_test)
     )
 
@@ -215,6 +215,7 @@ def _build_test_display_context(selected_test):
         'selected_test_reference_prefix': _get_reference_prefix(selected_test),
         'selected_test_scheduled_start_at': _serialize_scheduled_start_at(start_at),
         'selected_test_start_button_opens_at': _serialize_scheduled_start_at(start_button_opens_at),
+        'selected_test_start_window_closes_at': _serialize_scheduled_start_at(start_window_closes_at),
         'selected_test_server_now': _serialize_scheduled_start_at(
             timezone.localtime(timezone.now(), test_service.ACADEMY_TIMEZONE)
         ),
