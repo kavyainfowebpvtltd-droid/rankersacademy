@@ -1785,8 +1785,8 @@
     function renderTopPerformers(test) {
       clearNode(refs.topPerformers);
       const entries = (test?.topPerformers && test.topPerformers.length)
-        ? test.topPerformers
-        : currentLeaderboard().slice(0, 5);
+        ? test.topPerformers.slice(0, 3)
+        : currentLeaderboard().slice(0, 3);
 
       if (!entries.length) {
         return;
@@ -1830,16 +1830,6 @@
 
       if (podium.childElementCount) {
         refs.topPerformers.appendChild(podium);
-      }
-
-      const secondaryEntries = entries.filter((entry) => ![1, 2, 3].includes(Number(entry.rank)));
-      if (secondaryEntries.length) {
-        const secondary = document.createElement("div");
-        secondary.className = "top-performer-secondary";
-        secondaryEntries.forEach((entry) => {
-          secondary.appendChild(decorateNode(entry, "top-performer-secondary-card", 42));
-        });
-        refs.topPerformers.appendChild(secondary);
       }
     }
 
