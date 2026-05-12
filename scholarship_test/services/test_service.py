@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 TOTAL_QUESTIONS = 20
 TEST_DURATION_MINUTES = 20
-TEST_START_GRACE_MINUTES = 5
+TEST_START_GRACE_MINUTES = 15
 SUPPORTED_RUNTIME_QUESTION_TYPES = {"mcq", "tf", "fitb", "int"}
 ACADEMY_TIMEZONE = ZoneInfo("Asia/Kolkata")
 UTC_TIMEZONE = ZoneInfo("UTC")

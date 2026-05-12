@@ -558,6 +558,80 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertContains(response, 'Your Rank: <strong>#7</strong>', html=True)
         self.assertContains(response, f'href="{reverse("my_tests")}"')
 
+    def test_success_page_locks_attempted_paper_until_test_duration_ends(self):
+        runtime_test, section = self.create_runtime_test(name='Early Submit Test')
+        self.add_mcq_question(section)
+        ScholarshipTest.objects.filter(id=runtime_test.id).update(
+            scheduled_start_at=timezone.now() - timedelta(minutes=10),
+            date=timezone.localdate(),
+            duration_hours=0,
+            duration_minutes=25,
+        )
+        runtime_test.refresh_from_db()
+
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='completed',
+            score=2,
+            total_questions=1,
+            total_marks=2,
+            test_completed_at=timezone.now(),
+        )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.get(
+            reverse('scholarship_test:scholarship_success', args=[attempt.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['has_attempted_paper'])
+        self.assertFalse(response.context['attempted_paper_available'])
+        self.assertEqual(response.context['attempted_paper'], [])
+        self.assertContains(
+            response,
+            'The Attempted Test Paper will be available after Test duration ends',
+        )
+
+    def test_success_page_unlocks_attempted_paper_after_test_duration_ends(self):
+        runtime_test, section = self.create_runtime_test(name='Completed Duration Test')
+        self.add_mcq_question(section)
+        ScholarshipTest.objects.filter(id=runtime_test.id).update(
+            scheduled_start_at=timezone.now() - timedelta(minutes=30),
+            date=timezone.localdate(),
+            duration_hours=0,
+            duration_minutes=25,
+        )
+        runtime_test.refresh_from_db()
+
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='completed',
+            score=2,
+            total_questions=1,
+            total_marks=2,
+            test_completed_at=timezone.now(),
+        )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.get(
+            reverse('scholarship_test:scholarship_success', args=[attempt.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['attempted_paper_available'])
+        self.assertEqual(len(response.context['attempted_paper']), 1)
+        self.assertContains(response, 'View Attempted Test Paper')
+
     def test_dashboard_renders_guest_view_for_non_rtse_selected_test(self):
         runtime_test, section = self.create_runtime_test(name='Scholarship Mock 2')
         self.add_mcq_question(section)

@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -220,6 +220,25 @@ def _build_test_display_context(selected_test):
             timezone.localtime(timezone.now(), test_service.ACADEMY_TIMEZONE)
         ),
     }
+
+
+def _get_attempted_paper_available_at(attempt, runtime_test):
+    if not attempt:
+        return None
+
+    duration_minutes = test_service.get_test_duration_minutes(runtime_test)
+    scheduled_start_at = test_service.get_test_scheduled_start_at(runtime_test)
+    if scheduled_start_at:
+        return scheduled_start_at + timedelta(minutes=duration_minutes)
+
+    if attempt.test_started_at:
+        started_at = timezone.localtime(
+            attempt.test_started_at,
+            test_service.ACADEMY_TIMEZONE,
+        )
+        return started_at + timedelta(minutes=duration_minutes)
+
+    return None
 
 
 def _requires_otp_login(selected_test):
@@ -1064,6 +1083,16 @@ def scholarship_success(request, attempt_id):
     # Get answer key and attempted paper
     runtime_test = test_service.get_runtime_test_for_attempt(attempt)
     runtime_questions = test_service.get_runtime_questions_for_test(runtime_test) if runtime_test else []
+    attempted_paper_available_at = _get_attempted_paper_available_at(attempt, runtime_test)
+    attempted_paper_available = (
+        not attempted_paper_available_at
+        or timezone.localtime(timezone.now(), test_service.ACADEMY_TIMEZONE) >= attempted_paper_available_at
+    )
+    attempted_paper_available_at_display = (
+        attempted_paper_available_at.strftime('%d %b %Y, %I:%M %p')
+        if attempted_paper_available_at
+        else None
+    )
 
     # Use shuffled order if available
     shuffled_ids = attempt.progress_state.get('shuffled_question_ids', [])
@@ -1178,7 +1207,11 @@ def scholarship_success(request, attempt_id):
         'leaderboard_top_entries': leaderboard['top_entries'],
         'leaderboard_current_entry': leaderboard['current_entry'],
         'answer_key': answer_key,
-        'attempted_paper': attempted_paper,
+        'attempted_paper': attempted_paper if attempted_paper_available else [],
+        'has_attempted_paper': bool(attempted_paper),
+        'attempted_paper_available': attempted_paper_available,
+        'attempted_paper_available_at': _serialize_scheduled_start_at(attempted_paper_available_at),
+        'attempted_paper_available_at_display': attempted_paper_available_at_display,
     }
     context.update(_build_test_display_context(attempt.test))
     return render(request, 'scholarship-success.html', context)
