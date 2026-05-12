@@ -349,11 +349,14 @@ def get_runtime_questions_for_test(test):
     if not test:
         return []
 
+    # Use a set to track unique question IDs to avoid duplicates
+    seen_question_ids = set()
     runtime_questions = []
-    for section in test.sections.all():
+    for section in test.sections.all().prefetch_related('questions'):
         for question in section.questions.all():
-            if question.question_type in SUPPORTED_RUNTIME_QUESTION_TYPES:
+            if question.id not in seen_question_ids and question.question_type in SUPPORTED_RUNTIME_QUESTION_TYPES:
                 runtime_questions.append(question)
+                seen_question_ids.add(question.id)
     return runtime_questions
 
 

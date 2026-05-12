@@ -75,9 +75,97 @@
       .wrong-pill { background: #fee2e2; color: #991b1b; }
       .not-answered-pill { background: #f1f5f9; color: #475569; }
 
-      [data-theme="dark"] .answer-key-section { background: #1e1e1e; border-color: #333; }
-      [data-theme="dark"] .answer-key-table th { background: #2d2d2d; color: #ccc; }
-      [data-theme="dark"] .rank-1-row { background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), transparent) !important; }
+      .attempted-paper-section .question-item {
+        background: var(--card-bg, #fff);
+      }
+      
+      .attempted-paper-section .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+      }
+      
+      .attempted-paper-section .option-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        gap: 8px;
+      }
+      
+      .attempted-paper-section .option-item.selected {
+        border-color: #3b82f6;
+        background: #eff6ff;
+      }
+      
+      .attempted-paper-section .option-item.correct-answer {
+        border-color: #22c55e !important;
+        background-color: #f0fdf4 !important;
+        color: #166534 !important;
+      }
+
+      .attempted-paper-section .option-item.wrong-selection {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+        color: #991b1b !important;
+      }
+      
+      .attempted-paper-section .option-label {
+        font-weight: bold;
+        color: #64748b;
+        min-width: 24px;
+      }
+      
+      .attempted-paper-section .option-text {
+        flex: 1;
+        font-size: 0.9rem;
+      }
+
+      html[data-admin-theme="dark"] .answer-key-section { background: #1e1e1e; border-color: #333; }
+      html[data-admin-theme="dark"] .answer-key-table th { background: #2d2d2d; color: #ccc; }
+      html[data-admin-theme="dark"] .rank-1-row { background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), transparent) !important; }
+      html[data-admin-theme="dark"] .attempted-paper-section .option-item { background: #2d2d2d; border-color: #404040; }
+      html[data-admin-theme="dark"] .attempted-paper-section .option-item.selected { background: #1e3a5f; border-color: #3b82f6; }
+      html[data-admin-theme="dark"] .attempted-paper-section .option-item.correct-answer { 
+        background-color: #14532d !important; 
+        border-color: #22c55e !important; 
+        color: #4ade80 !important; 
+      }
+      html[data-admin-theme="dark"] .attempted-paper-section .option-item.wrong-selection { 
+        background-color: #450a0a !important; 
+        border-color: #ef4444 !important; 
+        color: #f87171 !important; 
+      }
+
+      .view-toggle-buttons .btn {
+        border-radius: 10px;
+        padding: 12px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      
+      .view-toggle-buttons .btn.active {
+        background-color: var(--bs-primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+      }
+
+      .result-view-section {
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+
+      .result-view-section.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
     </style>
   </head>
 
@@ -214,7 +302,7 @@
                 </div>
 
                 {% if leaderboard_current_entry %}
-                <div class="alert alert-info mt-3 mb-0">
+                <div class="alert alert-info mt-3 mb-3">
                   Your Rank: <strong>#{{ leaderboard_current_entry.rank }}</strong>
                   |
                   Your Score: <strong>{{ leaderboard_current_entry.score }} / {{ leaderboard_current_entry.total_marks }}</strong>
@@ -224,35 +312,72 @@
             </div>
             {% endif %}
 
-            {% if answer_key %}
-            <div class="answer-key-section shadow-sm animate__animated animate__fadeInUp mt-4">
-              <div class="d-flex align-items-center mb-3">
-                <i class="bi bi-journal-check text-success me-2 fs-5"></i>
-                <h6 class="mb-0 fw-bold">Answer Key</h6>
-              </div>
+            <div class="view-toggle-buttons d-flex flex-wrap gap-3 mt-4">
+              {% if attempted_paper %}
+              <button class="btn btn-outline-primary flex-grow-1" onclick="toggleResultView('attempted-paper')">
+                <i class="bi bi-file-earmark-text me-2"></i>View Attempted Test Paper
+              </button>
+              {% endif %}
 
-              <div class="row g-2">
-                {% for item in answer_key %}
-                <div class="col-6 col-sm-4 col-md-3">
-                  <div class="d-flex justify-content-between align-items-center p-2 border rounded-3 bg-light-subtle">
-                    <span class="fw-bold small text-muted">#{{ item.number }}</span>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ item.correct_answer }}</span>
-                    <span class="small">
-                      {% if item.student_answer == "Not Answered" %}
-                      <i class="bi bi-dash-circle text-muted"></i>
-                      {% elif item.student_answer == item.correct_answer %}
-                      <i class="bi bi-check-circle-fill text-success"></i>
-                      {% else %}
-                      <i class="bi bi-x-circle-fill text-danger"></i>
-                      {% endif %}
-                    </span>
+              {% if attempt.test.original_word_file %}
+              <a href="{{ attempt.test.original_word_file.url }}" class="btn btn-outline-danger flex-grow-1" target="_blank">
+                <i class="bi bi-file-earmark-pdf me-2"></i>Download Original PDF
+              </a>
+              {% endif %}
+            </div>
+
+            {% if attempted_paper %}
+            <div id="attempted-paper" class="result-view-section mt-4">
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-file-earmark-text text-primary me-2 fs-5"></i>
+                    <h6 class="mb-0 fw-bold">Your Attempted Paper</h6>
                   </div>
+                  <button class="btn-close" onclick="closeResultView('attempted-paper')"></button>
                 </div>
-                {% endfor %}
+                <div class="card-body p-0">
+                  {% for item in attempted_paper %}
+                  <div class="question-item border-bottom p-3{% if forloop.last %}border-bottom-0{% endif %}">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-primary rounded-circle me-3" style="width:28px;height:28px;line-height:20px;font-size:12px;">{{ item.number }}</span>
+                      <div class="flex-grow-1">
+                        <div class="mb-2 fw-medium">{{ item.question_text|safe }}</div>
+                        <div class="options-grid">
+                          {% for opt in item.options %}
+                          <div class="option-item {% if opt.is_correct %}correct-answer{% elif opt.is_selected %}wrong-selection{% endif %}">
+                            <span class="option-label">{{ opt.option_label }}</span>
+                            <span class="option-text">{{ opt.option_text|safe }}</span>
+                            {% if opt.is_selected and opt.is_correct %}
+                            <i class="bi bi-check-circle-fill text-success ms-auto"></i>
+                            {% elif opt.is_selected and not opt.is_correct %}
+                            <i class="bi bi-x-circle-fill text-danger ms-auto"></i>
+                            {% elif opt.is_correct %}
+                            <i class="bi bi-check-circle text-success ms-auto"></i>
+                            {% endif %}
+                          </div>
+                          {% endfor %}
+                        </div>
+                        <div class="mt-2 small">
+                          {% if item.student_answer == "Not Answered" %}
+                          <span class="text-muted"><i class="bi bi-dash-circle me-1"></i>Not Answered</span>
+                          {% elif item.is_correct %}
+                          <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Correct</span>
+                          {% else %}
+                          <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Incorrect</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
               </div>
             </div>
             {% endif %}
 
+            {% if answer_key %}
+            {% endif %}
 
             <a
               href="{% url 'login' %}"
@@ -290,5 +415,36 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function toggleResultView(viewId) {
+        // Hide all sections first
+        document.querySelectorAll('.result-view-section').forEach(section => {
+          if (section.id !== viewId) {
+            section.classList.remove('active');
+          }
+        });
+
+        // Toggle the clicked section
+        const section = document.getElementById(viewId);
+        if (section) {
+          section.classList.toggle('active');
+          
+          // Scroll to section if it's now active
+          if (section.classList.contains('active')) {
+            setTimeout(() => {
+              section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+          }
+        }
+      }
+
+      function closeResultView(viewId) {
+        const section = document.getElementById(viewId);
+        if (section) {
+          section.classList.remove('active');
+        }
+      }
+    </script>
   </body>
 </html>
+
