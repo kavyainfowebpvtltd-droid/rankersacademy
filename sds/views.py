@@ -65,7 +65,7 @@ def _redirect_authenticated_user_home(user):
     if user_needs_password_change(user):
         return redirect("force_password_change")
     if hasattr(user, "student"):
-        return redirect("student-dashboard")
+        return redirect("my_tests")
     if _is_admin_or_teacher(user):
         return redirect("admin-dashboard")
     return redirect("login")
@@ -191,7 +191,7 @@ def login_view(request):
 
         if role == "Student":
             if hasattr(user, "student"):
-                return redirect("student-dashboard")
+                return redirect("my_tests")
             messages.error(request, "You are not registered as a student")
             return redirect("login")
 
@@ -593,7 +593,7 @@ def verify_login_otp(request):
         return JsonResponse({"ok": True, "redirect": reverse("force_password_change")})
 
     if role == "Student":
-        return JsonResponse({"ok": True, "redirect": "/dashboard/student-dashboard/"})
+        return JsonResponse({"ok": True, "redirect": reverse("my_tests")})
     return JsonResponse({"ok": True, "redirect": "/dashboard/admin-dashboard/"})
 
 
@@ -4164,7 +4164,11 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
 
     return {
         "entries": entries,
-        "topEntries": [e for e in entries if e["rank"] != "NA"][:5],
+        "topEntries": [
+            e
+            for e in entries
+            if isinstance(e.get("rank"), int) and e["rank"] <= 3
+        ],
         "currentEntry": current_entry,
     }
 

@@ -1679,6 +1679,64 @@ class PortalStudentScheduledTestFlowTests(TestCase):
         )
         self.assertEqual(payload["rewards"]["xp"], 0)
 
+    def test_my_tests_top_performers_include_all_students_tied_in_top_three_ranks(self):
+        now = timezone.now()
+        test = self.create_runtime_test(
+            name="Star 01 JEE Tied Performers",
+            batch="Star 01",
+            stream="JEE",
+            scheduled_start_at=now - timedelta(hours=2),
+        )
+
+        participants = [
+            (self.portal_student, self.scholarship_student, 100),
+        ]
+        for index, score in enumerate([90, 80, 80, 70], start=2):
+            user = User.objects.create_user(
+                username=f"student-star01-tie-{index}",
+                email=f"student-star01-tie-{index}@example.com",
+                password="StudentPass@2026",
+            )
+            portal_student = Student.objects.create(
+                user=user,
+                student_name=f"Tie Student {index}",
+                username=f"student-star01-tie-{index}",
+                contact=f"98765001{index:02d}",
+                email=f"student-star01-tie-{index}@example.com",
+                school="Rankers School",
+                stream="JEE",
+                board="CBSE",
+                grade="11th",
+                batch="Star 01",
+                gender="Male",
+            )
+            scholarship_student = ScholarshipStudent.objects.create(
+                name=portal_student.student_name,
+                phone_number=portal_student.contact,
+                grade=portal_student.grade,
+                board=portal_student.board,
+                otp_verified=True,
+            )
+            participants.append((portal_student, scholarship_student, score))
+
+        for index, (portal_student, scholarship_student, score) in enumerate(participants):
+            ScholarshipTestAttempt.objects.create(
+                student=scholarship_student,
+                portal_student=portal_student,
+                test=test,
+                status="completed",
+                score=score,
+                total_questions=1,
+                total_marks=100,
+                test_completed_at=now - timedelta(hours=1) + timedelta(seconds=index),
+            )
+
+        payload = _build_my_tests_payload(self.portal_student)
+
+        top_performers = payload["completedTests"][0]["topPerformers"]
+        self.assertEqual([entry["rank"] for entry in top_performers], [1, 2, 3, 3])
+        self.assertEqual([entry["score"] for entry in top_performers], [100, 90, 80, 80])
+
     def test_launch_view_redirects_logged_in_portal_student_to_dashboard_for_rtse_test(self):
         test = self.create_runtime_test(
             name="RTSE-2026 Scholarship Test",

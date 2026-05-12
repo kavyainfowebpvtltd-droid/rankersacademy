@@ -205,7 +205,7 @@ class LoginThrottleTests(TestCase):
             REMOTE_ADDR=shared_ip,
         )
 
-        self.assertRedirects(response, reverse("student-dashboard"))
+        self.assertRedirects(response, reverse("my_tests"))
 
     def test_account_lock_still_applies_after_repeated_failures(self):
         for _ in range(5):
