@@ -85,6 +85,47 @@ var defaultS = {
 var S = {};
 var currentTestId = null;
 
+function getCsrfToken() {
+  var metaToken = document
+    .querySelector('meta[name="csrf-token"]')
+    ?.getAttribute("content");
+  if (metaToken) {
+    return metaToken;
+  }
+
+  var cookie = document.cookie
+    .split(";")
+    .map(function (part) {
+      return part.trim();
+    })
+    .find(function (part) {
+      return part.indexOf("csrftoken=") === 0;
+    });
+
+  return cookie ? decodeURIComponent(cookie.split("=")[1]) : "";
+}
+
+function apiFetch(url, options) {
+  options = options || {};
+  var method = (options.method || "GET").toUpperCase();
+  var headers = new Headers(options.headers || {});
+
+  if (["GET", "HEAD", "OPTIONS", "TRACE"].indexOf(method) === -1) {
+    var csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers.set("X-CSRFToken", csrfToken);
+    }
+  }
+
+  headers.set("X-Requested-With", "XMLHttpRequest");
+
+  return fetch(url, {
+    ...options,
+    method: method,
+    headers: headers,
+  });
+}
+
 function getTestIdFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get("test_id");
@@ -252,7 +293,7 @@ function loadData() {
 
   if (currentTestId) {
     // Load existing test data
-    fetch(`/scholarship/api/tests/${currentTestId}/`)
+    apiFetch(`/scholarship/api/tests/${currentTestId}/`)
       .then((response) => response.json())
       .then((data) => {
         if (data.test) {
@@ -358,7 +399,7 @@ function saveData(extraData) {
   payload.duration_hours = payloadDuration.hours;
   payload.duration_minutes = payloadDuration.minutes;
 
-  return fetch(`/scholarship/api/tests/${currentTestId}/save-details/`, {
+  return apiFetch(`/scholarship/api/tests/${currentTestId}/save-details/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1067,7 +1108,7 @@ window.uploadWordQuestionFile = function (file) {
   var formData = new FormData();
   formData.append("word_file", file);
 
-  fetch("/scholarship/api/tests/import-word/", {
+  apiFetch("/scholarship/api/tests/import-word/", {
     method: "POST",
     body: formData,
   })
@@ -1149,7 +1190,7 @@ window.saveSec = function () {
       instructions: instr,
     };
 
-    fetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
+    apiFetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1249,7 +1290,7 @@ window.confirmDelSec = function (id) {
 
 window.delSec = function (id) {
   if (currentTestId) {
-    fetch(`/scholarship/api/tests/${currentTestId}/sections/${id}/delete/`, {
+      apiFetch(`/scholarship/api/tests/${currentTestId}/sections/${id}/delete/`, {
       method: "DELETE",
     })
       .then((response) => response.json())
@@ -1694,7 +1735,7 @@ window.saveQ = function (editId) {
   if (currentTestId) {
     const data = buildQuestionPayload(q, secId);
 
-    fetch(`/scholarship/api/tests/${currentTestId}/save-question/`, {
+    apiFetch(`/scholarship/api/tests/${currentTestId}/save-question/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1872,7 +1913,7 @@ function confirmDelQ(qId, secId) {
 
 window.delQ = function (qId, secId) {
   if (currentTestId) {
-    fetch(`/scholarship/api/tests/${currentTestId}/questions/${qId}/delete/`, {
+      apiFetch(`/scholarship/api/tests/${currentTestId}/questions/${qId}/delete/`, {
       method: "DELETE",
     })
       .then((response) => response.json())
@@ -2074,7 +2115,7 @@ window._legacySaveTest = function () {
       status: "published",
     };
 
-    fetch("/scholarship/api/tests/create/", {
+    apiFetch("/scholarship/api/tests/create/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2124,7 +2165,7 @@ function saveAllSections() {
       instructions: sec.instructions || sec.sectionInstructions || "",
     };
 
-    return fetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
+    return apiFetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2164,7 +2205,7 @@ function legacySaveAllSectionsFixed() {
       data.id = sec.id;
     }
 
-    return fetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
+    return apiFetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2216,7 +2257,7 @@ function persistAllQuestionsFixed() {
   }
 
   var requests = allQuestions.map(function (item) {
-    return fetch(`/scholarship/api/tests/${currentTestId}/save-question/`, {
+    return apiFetch(`/scholarship/api/tests/${currentTestId}/save-question/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2264,7 +2305,7 @@ function saveAllSectionsFixed() {
       data.id = sec.id;
     }
 
-    return fetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
+    return apiFetch(`/scholarship/api/tests/${currentTestId}/save-section/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2323,7 +2364,7 @@ window.saveTest = function () {
       status: "published",
     };
 
-    return fetch("/scholarship/api/tests/create/", {
+    return apiFetch("/scholarship/api/tests/create/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2738,7 +2779,7 @@ window.uploadImgFile = function (file) {
     return;
   }
 
-  fetch(`/scholarship/api/tests/${testId}/upload-image/`, {
+  apiFetch(`/scholarship/api/tests/${testId}/upload-image/`, {
     method: "POST",
     body: formData,
   })
