@@ -1631,7 +1631,9 @@ def edit_student(request, id):
         student.profile_photo = request.FILES["profile_photo"]
 
     if password:
-        student.must_change_password = True
+        # Admin-set passwords should be immediately usable without forcing
+        # the student through the one-time-password reset flow again.
+        student.must_change_password = False
 
     student.save()
 

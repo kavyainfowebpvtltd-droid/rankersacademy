@@ -106,6 +106,7 @@ class EditStudentTests(TestCase):
             username="AB20262801",
             contact="9876543202",
             email="abhinav@example.com",
+            school="Rankers School",
             father_name="Ramesh Patil",
             emergency_contact_name="Sonal Patil",
             emergency_contact="9876543203",
@@ -118,6 +119,9 @@ class EditStudentTests(TestCase):
         )
 
     def test_edit_student_updates_all_profile_fields_and_password(self):
+        self.student.must_change_password = True
+        self.student.save(update_fields=["must_change_password"])
+
         response = self.client.post(
             reverse("edit_student", args=[self.student.id]),
             {
@@ -156,11 +160,22 @@ class EditStudentTests(TestCase):
         self.assertEqual(self.student.batch, "Axis 9")
         self.assertEqual(self.student.blood_group, "A+")
         self.assertEqual(self.student.gender, "Male")
-        self.assertTrue(self.student.must_change_password)
+        self.assertFalse(self.student.must_change_password)
 
         self.assertEqual(self.student_user.username, "AX20262809")
         self.assertEqual(self.student_user.email, "abhinav.patil@example.com")
         self.assertTrue(self.student_user.check_password("UpdatedPass@2026"))
+
+        self.client.logout()
+        login_response = self.client.post(
+            reverse("login"),
+            {
+                "username": "AX20262809",
+                "password": "UpdatedPass@2026",
+                "role": "Student",
+            },
+        )
+        self.assertRedirects(login_response, reverse("my_tests"))
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
