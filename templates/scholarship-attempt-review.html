@@ -1,0 +1,77 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ selected_test_name }} - Attempted Paper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet" />
+    <script src="{% static 'js/admin-theme.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" />
+    <style>
+      .review-shell { max-width: 1100px; margin: 0 auto; }
+      .question-card { border-radius: 14px; }
+      .question-body img { max-width: 100%; height: auto; }
+      .answer-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        font-weight: 700;
+        font-size: 0.86rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container py-4 review-shell">
+      <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+        <div>
+          <h2 class="fw-bold mb-1">{{ selected_test_name }}</h2>
+          <div class="text-muted">Attempted Test Paper and Answer Key</div>
+        </div>
+        <a href="{% url 'scholarship_test:scholarship_success' attempt.id %}" class="btn btn-outline-light">
+          <i class="bi bi-arrow-left me-2"></i>Back to Result
+        </a>
+      </div>
+
+      <div class="vstack gap-3">
+        {% for row in review_rows %}
+        <div class="card question-card shadow-sm border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+              <h6 class="fw-bold mb-0">Q{{ row.sequence }}{% if row.section_name %} · {{ row.section_name }}{% endif %}</h6>
+              {% if row.is_correct %}
+              <span class="answer-pill bg-success-subtle text-success">Correct</span>
+              {% elif row.is_attempted %}
+              <span class="answer-pill bg-danger-subtle text-danger">Incorrect</span>
+              {% else %}
+              <span class="answer-pill bg-secondary-subtle text-secondary">Not Attempted</span>
+              {% endif %}
+            </div>
+            <div class="question-body mb-3">{{ row.question_html|safe }}</div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="p-3 rounded border h-100">
+                  <div class="text-muted small fw-bold text-uppercase mb-1">Your Answer</div>
+                  <div>{{ row.selected_answer }}</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 rounded border h-100">
+                  <div class="text-muted small fw-bold text-uppercase mb-1">Correct Answer</div>
+                  <div>{{ row.correct_answer }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-5 text-muted">No attempted paper details are available.</div>
+        </div>
+        {% endfor %}
+      </div>
+    </main>
+  </body>
+</html>

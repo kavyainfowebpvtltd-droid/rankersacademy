@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import datetime
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
@@ -418,6 +419,45 @@ def get_attempt_end_time(attempt):
     runtime_test = get_runtime_test_for_attempt(attempt)
     time_limit = timedelta(minutes=get_test_duration_minutes(runtime_test))
     return attempt.test_started_at + time_limit
+
+
+def get_answer_key_visibility_delay():
+    hours = getattr(settings, 'ANSWER_KEY_VISIBILITY_DELAY_HOURS', 2)
+    try:
+        hours = float(hours)
+    except (TypeError, ValueError):
+        hours = 2
+    return timedelta(hours=max(0, hours))
+
+
+def get_answer_key_base_end_time(attempt):
+    runtime_test = get_runtime_test_for_attempt(attempt)
+    if runtime_test and getattr(runtime_test, 'scheduled_start_at', None):
+        return runtime_test.scheduled_start_at + timedelta(
+            minutes=get_test_duration_minutes(runtime_test)
+        )
+    return get_attempt_end_time(attempt)
+
+
+def get_answer_key_available_at(attempt):
+    return get_answer_key_base_end_time(attempt) + get_answer_key_visibility_delay()
+
+
+def is_answer_key_available(attempt, now=None):
+    if now is None:
+        now = timezone.now()
+    return now >= get_answer_key_available_at(attempt)
+
+
+def get_answer_key_delay_hours_display():
+    delay = get_answer_key_visibility_delay()
+    total_seconds = int(delay.total_seconds())
+    if total_seconds % 3600 == 0:
+        hours = total_seconds // 3600
+        return f"{hours} hour" if hours == 1 else f"{hours} hours"
+
+    minutes = total_seconds // 60
+    return f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
 
 
 def get_attempt_time_remaining_seconds(attempt) -> int:

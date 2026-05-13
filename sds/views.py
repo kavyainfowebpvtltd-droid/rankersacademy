@@ -4429,6 +4429,11 @@ def _build_my_tests_payload(student):
             if attempt and int(attempt.total_marks or 0) > 0
             else _get_test_total_marks(test)
         )
+        answer_key_available_at = (
+            scholarship_test_service.get_answer_key_available_at(attempt)
+            if attempt
+            else None
+        )
 
         student_completed_tests.append(
             {
@@ -4436,6 +4441,21 @@ def _build_my_tests_payload(student):
                 "kind": "completed",
                 "attemptId": attempt.id if attempt else None,
                 "attempted": bool(attempt),
+                "answerKeyAvailable": (
+                    scholarship_test_service.is_answer_key_available(attempt)
+                    if attempt
+                    else False
+                ),
+                "answerKeyAvailableAt": (
+                    answer_key_available_at.isoformat()
+                    if answer_key_available_at
+                    else None
+                ),
+                "attemptReviewUrl": (
+                    reverse("scholarship_test:scholarship_attempt_review", args=[attempt.id])
+                    if attempt
+                    else None
+                ),
                 "score": int(attempt.score or 0) if attempt else 0,
                 "totalMarks": total_marks,
                 "rank": _parse_int(current_entry.get("rank")),

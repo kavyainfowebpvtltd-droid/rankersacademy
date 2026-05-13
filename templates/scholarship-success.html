@@ -242,6 +242,39 @@
               {% endif %}
             </div>
 
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-body">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      <i class="bi bi-file-earmark-check me-2 text-primary"></i>
+                      Attempted Test Paper
+                    </h6>
+                    <p class="text-muted mb-0 small" id="answerKeyAvailabilityText">
+                      {% if answer_key_is_available %}
+                      Answer key and correct answers are now available.
+                      {% else %}
+                      Answer key will be available after {{ answer_key_delay_display }} from test completion.
+                      Available at {{ answer_key_available_at_display }}.
+                      {% endif %}
+                    </p>
+                  </div>
+
+                  <a
+                    href="{{ attempt_review_url }}"
+                    class="btn {% if answer_key_is_available %}btn-primary{% else %}btn-secondary disabled{% endif %} px-4"
+                    id="attemptReviewBtn"
+                    data-review-url="{{ attempt_review_url }}"
+                    data-available-at="{{ answer_key_available_at }}"
+                    data-server-now="{{ answer_key_server_now }}"
+                    {% if not answer_key_is_available %}aria-disabled="true" tabindex="-1"{% endif %}
+                  >
+                    <i class="bi bi-eye me-2"></i>View Attempted Test Paper
+                  </a>
+                </div>
+              </div>
+            </div>
+
             {% if leaderboard_top_entries %}
             <div class="card border-0 shadow-sm mt-4">
               <div class="card-body">
@@ -369,5 +402,36 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      (() => {
+        const button = document.getElementById("attemptReviewBtn");
+        const message = document.getElementById("answerKeyAvailabilityText");
+        if (!button || !message || !button.classList.contains("disabled")) return;
+
+        const availableAt = Date.parse(button.dataset.availableAt || "");
+        const serverNow = Date.parse(button.dataset.serverNow || "");
+        if (Number.isNaN(availableAt) || Number.isNaN(serverNow)) return;
+
+        const clientLoadedAt = Date.now();
+        const enableReview = () => {
+          button.classList.remove("btn-secondary", "disabled");
+          button.classList.add("btn-primary");
+          button.removeAttribute("aria-disabled");
+          button.removeAttribute("tabindex");
+          message.textContent = "Answer key and correct answers are now available.";
+        };
+
+        const tick = () => {
+          const estimatedServerNow = serverNow + (Date.now() - clientLoadedAt);
+          if (estimatedServerNow >= availableAt) {
+            enableReview();
+            return;
+          }
+          window.setTimeout(tick, Math.min(60000, availableAt - estimatedServerNow));
+        };
+
+        tick();
+      })();
+    </script>
   </body>
 </html>

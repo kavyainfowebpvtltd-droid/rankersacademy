@@ -5,7 +5,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
@@ -1039,6 +1039,12 @@ def scholarship_success(request, attempt_id):
         student.board if is_scholarship_result else _get_non_scholarship_stream(attempt)
     )
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
+    answer_key_available_at = test_service.get_answer_key_available_at(attempt)
+    answer_key_is_available = test_service.is_answer_key_available(attempt)
+    answer_key_available_at_display = timezone.localtime(
+        answer_key_available_at,
+        test_service.ACADEMY_TIMEZONE,
+    ).strftime('%d %b %Y, %I:%M %p')
 
     if is_scholarship_result and not attempt.sms_sent and attempt.status in ['completed', 'expired']:
         try:
@@ -1074,9 +1080,155 @@ def scholarship_success(request, attempt_id):
         'academic_field_value': academic_field_value,
         'leaderboard_top_entries': leaderboard['top_entries'],
         'leaderboard_current_entry': leaderboard['current_entry'],
+        'answer_key_is_available': answer_key_is_available,
+        'answer_key_available_at': answer_key_available_at.isoformat(),
+        'answer_key_available_at_display': answer_key_available_at_display,
+        'answer_key_delay_display': test_service.get_answer_key_delay_hours_display(),
+        'answer_key_server_now': timezone.now().isoformat(),
+        'attempt_review_url': reverse('scholarship_test:scholarship_attempt_review', args=[attempt.id]),
     }
     context.update(_build_test_display_context(attempt.test))
     return render(request, 'scholarship-success.html', context)
+
+
+def _student_can_view_attempt(request, attempt):
+    session_student_id = request.session.get('scholarship_student_id')
+    try:
+        if session_student_id and int(session_student_id) == attempt.student_id:
+            return True
+    except (TypeError, ValueError):
+        pass
+
+    portal_student = getattr(attempt, 'portal_student', None)
+    return bool(
+        request.user.is_authenticated
+        and portal_student
+        and getattr(portal_student, 'user_id', None) == request.user.id
+    )
+
+
+def _runtime_answer_display(question, value):
+    if question.question_type == 'mcq':
+        selected_values = value if isinstance(value, list) else [value]
+        labels = []
+        for selected in selected_values:
+            try:
+                option = list(question.options.all())[int(selected)]
+                labels.append(option.option_text)
+            except (TypeError, ValueError, IndexError):
+                continue
+        return ', '.join(labels) if labels else '-'
+
+    return str(value or '-')
+
+
+def _runtime_correct_answer_display(question):
+    if question.question_type == 'mcq':
+        correct_options = [
+            option.option_text
+            for option in question.options.all()
+            if option.is_correct
+        ]
+        return ', '.join(correct_options) if correct_options else '-'
+
+    answer = question.answers.first()
+    return answer.correct_answer if answer else '-'
+
+
+def _build_attempt_review_rows(attempt):
+    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+    rows = []
+
+    if runtime_test and runtime_questions:
+        saved_progress = test_service.get_saved_progress(attempt)
+        submitted_answers = saved_progress.get('answers', {})
+
+        for index, question in enumerate(runtime_questions, start=1):
+            selected_answer = submitted_answers.get(str(question.id))
+            rows.append({
+                'sequence': index,
+                'section_name': question.section.name,
+                'question_html': question.question_text,
+                'selected_answer': _runtime_answer_display(question, selected_answer),
+                'correct_answer': _runtime_correct_answer_display(question),
+                'is_correct': test_service.is_runtime_answer_correct(question, selected_answer),
+                'is_attempted': test_service.is_runtime_answer_provided(question, selected_answer),
+            })
+        return rows
+
+    answers_by_question_id = {
+        answer.question_id: answer
+        for answer in attempt.answers.select_related('question')
+    }
+    questions = test_service.get_test_questions(
+        grade=attempt.student.grade,
+        board=attempt.student.board,
+        count=attempt.total_questions or TOTAL_QUESTIONS,
+    )
+
+    for index, question in enumerate(questions, start=1):
+        answer = answers_by_question_id.get(question.id)
+        selected_answer = answer.selected_option if answer else ''
+        rows.append({
+            'sequence': index,
+            'section_name': '',
+            'question_html': question.question_text,
+            'selected_answer': selected_answer or '-',
+            'correct_answer': question.correct_answer,
+            'is_correct': bool(answer and answer.is_correct),
+            'is_attempted': bool(selected_answer),
+        })
+    return rows
+
+
+def scholarship_attempt_review(request, attempt_id):
+    try:
+        attempt = (
+            ScholarshipTestAttempt.objects
+            .select_related('student', 'portal_student', 'portal_student__user', 'test')
+            .prefetch_related(
+                'answers__question',
+                'test__sections__questions__options',
+                'test__sections__questions__answers',
+            )
+            .get(id=attempt_id, status__in=['completed', 'expired'])
+        )
+    except ScholarshipTestAttempt.DoesNotExist:
+        messages.error(request, "Attempted test paper not found.")
+        return redirect('my_tests')
+
+    if not _student_can_view_attempt(request, attempt):
+        return HttpResponseForbidden("You are not allowed to view this attempted paper.")
+
+    if not test_service.is_answer_key_available(attempt):
+        available_at = timezone.localtime(
+            test_service.get_answer_key_available_at(attempt),
+            test_service.ACADEMY_TIMEZONE,
+        ).strftime('%d %b %Y, %I:%M %p')
+        messages.info(
+            request,
+            f"Answer key will be available after {test_service.get_answer_key_delay_hours_display()} from test completion.",
+        )
+        return render(
+            request,
+            'scholarship-attempt-review-locked.html',
+            {
+                'attempt': attempt,
+                'student': attempt.student,
+                'available_at_display': available_at,
+                'answer_key_delay_display': test_service.get_answer_key_delay_hours_display(),
+            },
+            status=403,
+        )
+
+    context = {
+        'attempt': attempt,
+        'student': attempt.student,
+        'review_rows': _build_attempt_review_rows(attempt),
+    }
+    context.update(_build_test_display_context(attempt.test))
+    return render(request, 'scholarship-attempt-review.html', context)
 
 
 def scholarship_logout(request):

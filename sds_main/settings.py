@@ -17,6 +17,7 @@ ALLOWED_HOSTS = [
 "147.93.29.224",
 "rankersonlinetest.com",
 "www.rankersonlinetest.com"
+
 ]
 CSRF_TRUSTED_ORIGINS = [
 "https://rankersonlinetest.com",
@@ -153,6 +154,10 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 MAX_LOGIN_ATTEMPTS = 30
 LOGIN_LOCKOUT_SECONDS = 900
+
+# Delay after a test ends before students can view attempted paper,
+# answer key, correct answers, and solutions.
+ANSWER_KEY_VISIBILITY_DELAY_HOURS = 2
 
 
 

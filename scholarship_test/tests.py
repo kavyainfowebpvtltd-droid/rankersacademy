@@ -98,6 +98,94 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(active_test.id, published_test.id)
         self.assertNotEqual(active_test.id, draft_test.id)
 
+    @override_settings(ANSWER_KEY_VISIBILITY_DELAY_HOURS=2)
+    def test_answer_key_available_two_hours_after_scheduled_test_end(self):
+        scheduled_start = timezone.now() - timedelta(hours=2, minutes=29)
+        test, section = self.create_runtime_test(name='Scheduled Delay Test')
+        test.scheduled_start_at = scheduled_start
+        test.save(update_fields=['scheduled_start_at'])
+        self.add_mcq_question(section)
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=test,
+            status='completed',
+            test_started_at=scheduled_start,
+            test_completed_at=scheduled_start + timedelta(minutes=20),
+        )
+
+        available_at = test_service.get_answer_key_available_at(attempt)
+
+        self.assertEqual(
+            available_at,
+            scheduled_start + timedelta(minutes=30, hours=2),
+        )
+        self.assertFalse(
+            test_service.is_answer_key_available(
+                attempt,
+                now=available_at - timedelta(seconds=1),
+            )
+        )
+        self.assertTrue(test_service.is_answer_key_available(attempt, now=available_at))
+
+    @override_settings(ANSWER_KEY_VISIBILITY_DELAY_HOURS=2)
+    def test_attempt_review_backend_blocks_until_delay_expires(self):
+        scheduled_start = timezone.now() - timedelta(hours=1)
+        test, section = self.create_runtime_test(name='Locked Review Test')
+        test.scheduled_start_at = scheduled_start
+        test.save(update_fields=['scheduled_start_at'])
+        question = self.add_mcq_question(section)
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=test,
+            status='completed',
+            test_started_at=scheduled_start,
+            test_completed_at=scheduled_start + timedelta(minutes=20),
+            progress_state={'answers': {str(question.id): '1'}},
+        )
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.get(
+            reverse('scholarship_test:scholarship_attempt_review', args=[attempt.id])
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(
+            response,
+            'Answer key will be available after 2 hours from test completion.',
+            status_code=403,
+        )
+
+    @override_settings(ANSWER_KEY_VISIBILITY_DELAY_HOURS=2)
+    def test_attempt_review_backend_allows_after_delay_expires(self):
+        scheduled_start = timezone.now() - timedelta(hours=3)
+        test, section = self.create_runtime_test(name='Unlocked Review Test')
+        test.scheduled_start_at = scheduled_start
+        test.save(update_fields=['scheduled_start_at'])
+        question = self.add_mcq_question(section)
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=test,
+            status='completed',
+            test_started_at=scheduled_start,
+            test_completed_at=scheduled_start + timedelta(minutes=20),
+            progress_state={'answers': {str(question.id): '1'}},
+        )
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.get(
+            reverse('scholarship_test:scholarship_attempt_review', args=[attempt.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Attempted Test Paper and Answer Key')
+        self.assertContains(response, '4')
+
     def test_submit_runtime_test_scores_builder_questions(self):
         runtime_test, section = self.create_runtime_test()
         mcq = self.add_mcq_question(section)
