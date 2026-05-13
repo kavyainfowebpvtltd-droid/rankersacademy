@@ -571,6 +571,11 @@ if (editStudentModal) {
     usernameInput.value = button.dataset.username || "";
     document.getElementById("editStudentPassword").value = "";
 
+    const profilePhotoInput = document.getElementById("editStudentProfilePhoto");
+    if (profilePhotoInput) {
+      profilePhotoInput.value = "";
+    }
+
     const currentStudentPicDiv = document.getElementById("currentStudentProfilePhoto");
     const studentProfilePhotoUrl = button.dataset.profilePhoto;
     if (currentStudentPicDiv) {

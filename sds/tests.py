@@ -85,6 +85,85 @@ class AddUserStaffWorkingHoursTests(TestCase):
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
+class EditStudentTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="adminpass123",
+        )
+        self.client.force_login(self.admin)
+
+        self.student_user = User.objects.create_user(
+            username="AB20262801",
+            email="abhinav@example.com",
+            password="StudentPass@2026",
+        )
+        self.student = Student.objects.create(
+            user=self.student_user,
+            student_name="Abhinav Patil",
+            username="AB20262801",
+            contact="9876543202",
+            email="abhinav@example.com",
+            father_name="Ramesh Patil",
+            emergency_contact_name="Sonal Patil",
+            emergency_contact="9876543203",
+            stream="JEE",
+            board="CBSE",
+            grade="10th",
+            batch="Alpha 1",
+            blood_group="O+",
+            gender="Male",
+        )
+
+    def test_edit_student_updates_all_profile_fields_and_password(self):
+        response = self.client.post(
+            reverse("edit_student", args=[self.student.id]),
+            {
+                "name": "Abhinav P Patil",
+                "username": "AX20262809",
+                "email": "abhinav.patil@example.com",
+                "contact": "9876543299",
+                "father_name": "Prakash Patil",
+                "emergency_contact_name": "Sunita Patil",
+                "emergency_contact": "9876543288",
+                "password": "UpdatedPass@2026",
+                "stream": "NEET",
+                "board": "State",
+                "grade": "11th",
+                "batch": "Axis 9",
+                "blood_group": "A+",
+                "gender": "Male",
+            },
+        )
+
+        self.assertRedirects(response, reverse("user-management"))
+
+        self.student.refresh_from_db()
+        self.student_user.refresh_from_db()
+
+        self.assertEqual(self.student.student_name, "Abhinav P Patil")
+        self.assertEqual(self.student.username, "AX20262809")
+        self.assertEqual(self.student.email, "abhinav.patil@example.com")
+        self.assertEqual(self.student.contact, "9876543299")
+        self.assertEqual(self.student.father_name, "Prakash Patil")
+        self.assertEqual(self.student.emergency_contact_name, "Sunita Patil")
+        self.assertEqual(self.student.emergency_contact, "9876543288")
+        self.assertEqual(self.student.stream, "NEET")
+        self.assertEqual(self.student.board, "State")
+        self.assertEqual(self.student.grade, "11th")
+        self.assertEqual(self.student.batch, "Axis 9")
+        self.assertEqual(self.student.blood_group, "A+")
+        self.assertEqual(self.student.gender, "Male")
+        self.assertTrue(self.student.must_change_password)
+
+        self.assertEqual(self.student_user.username, "AX20262809")
+        self.assertEqual(self.student_user.email, "abhinav.patil@example.com")
+        self.assertTrue(self.student_user.check_password("UpdatedPass@2026"))
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
 class ForcedPasswordChangeTests(TestCase):
     def setUp(self):
         self.client = Client()
