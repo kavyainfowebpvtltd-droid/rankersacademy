@@ -142,83 +142,26 @@ class StaffAttendanceServiceTests(TestCase):
             contact="9123456780",
             gender="Female",
             role="Admin",
-            working_hours="8 AM - 5 PM",
         )
 
     def test_staff_qr_scan_marks_present(self):
         result = record_staff_scan(
             "Name: Asha Kulkarni, Username: admin.staff, Contact Number: 9123456780",
             scanned_at="2026-04-24T03:10:00Z",
-            username="admin.staff",
-            password="testpass123",
-            daily_tasks="Support front desk and parent calls",
         )
 
         attendance = StaffAttendance.objects.get(staff=self.staff, date="2026-04-24")
         self.assertEqual(attendance.status, "Present")
         self.assertEqual(result["action"], "checkin")
         self.assertEqual(result["staff_id"], self.staff.id)
-        self.assertEqual(attendance.daily_tasks, "Support front desk and parent calls")
 
     def test_second_staff_scan_after_checkout_cutoff_marks_checkout(self):
-        record_staff_scan(
-            str(self.staff.id),
-            scanned_at="2026-04-24T03:10:00Z",
-            username="admin.staff",
-            password="testpass123",
-            daily_tasks="Support front desk and parent calls",
-        )
-        result = record_staff_scan(str(self.staff.id), scanned_at="2026-04-24T06:45:00Z")
+        record_staff_scan(str(self.staff.id), scanned_at="2026-04-24T03:10:00Z")
+        result = record_staff_scan(str(self.staff.id), scanned_at="2026-04-24T11:45:00Z")
 
         attendance = StaffAttendance.objects.get(staff=self.staff, date="2026-04-24")
         self.assertEqual(result["action"], "checkout")
         self.assertIsNotNone(attendance.check_out)
-
-    def test_first_non_teaching_scan_requires_credentials_and_tasks(self):
-        result = record_staff_scan(str(self.staff.id), scanned_at="2026-04-24T03:10:00Z")
-
-        self.assertFalse(result["success"])
-        self.assertTrue(result["requiresPrompt"])
-        self.assertEqual(result["promptStage"], "slot1_checkin")
-        self.assertTrue(result["showTaskInput"])
-
-    def test_final_non_teaching_checkout_requires_status_and_saves_it(self):
-        scan_times = [
-            "2026-04-24T03:10:00Z",
-            "2026-04-24T06:40:00Z",
-            "2026-04-24T07:15:00Z",
-            "2026-04-24T09:00:00Z",
-            "2026-04-24T09:05:00Z",
-        ]
-
-        record_staff_scan(
-            str(self.staff.id),
-            scanned_at=scan_times[0],
-            username="admin.staff",
-            password="testpass123",
-            daily_tasks="Support front desk and parent calls",
-        )
-        for scan_time in scan_times[1:]:
-            record_staff_scan(str(self.staff.id), scanned_at=scan_time)
-
-        prompt_result = record_staff_scan(str(self.staff.id), scanned_at="2026-04-24T11:30:00Z")
-        self.assertFalse(prompt_result["success"])
-        self.assertTrue(prompt_result["requiresPrompt"])
-        self.assertEqual(prompt_result["promptStage"], "slot3_checkout")
-        self.assertTrue(prompt_result["showTaskStatusInput"])
-
-        final_result = record_staff_scan(
-            str(self.staff.id),
-            scanned_at="2026-04-24T11:30:00Z",
-            username="admin.staff",
-            password="testpass123",
-            task_status="All planned tasks completed for the day.",
-        )
-
-        attendance = StaffAttendance.objects.get(staff=self.staff, date="2026-04-24")
-        self.assertTrue(final_result["success"])
-        self.assertEqual(final_result["action"], "checkout")
-        self.assertEqual(attendance.task_status, "All planned tasks completed for the day.")
 
 
 class StaffAttendancePageTests(TestCase):
@@ -232,7 +175,6 @@ class StaffAttendancePageTests(TestCase):
             contact="9000000001",
             gender="Female",
             role="Admin",
-            working_hours="8 AM - 5 PM",
         )
         self.teacher_user = User.objects.create_user(username="teacher.one", password="testpass123")
         self.teacher_staff = TeacherAdmin.objects.create(
@@ -253,7 +195,6 @@ class StaffAttendancePageTests(TestCase):
             contact="9000000003",
             gender="Female",
             role="Counselor",
-            working_hours="9 AM - 6 PM",
         )
 
     def test_staff_attendance_page_lists_each_staff_member_once(self):
@@ -287,5 +228,3 @@ class StaffAttendancePageTests(TestCase):
         self.assertEqual(row_by_staff_id[self.teacher_staff.id]["late_days"], 1)
         self.assertEqual(row_by_staff_id[self.teacher_staff.id]["total_days"], 2)
         self.assertEqual(row_by_staff_id[self.counselor_staff.id]["total_days"], 0)
-        self.assertEqual(row_by_staff_id[self.admin_staff.id]["working_hours_display"], "8:00 AM - 5:00 PM")
-        self.assertEqual(len(row_by_staff_id[self.admin_staff.id]["non_teaching_slots"]), 3)

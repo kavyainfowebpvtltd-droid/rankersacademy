@@ -14,7 +14,6 @@
   let offlineQueue = [];
   let isOnline = true;
   let timeoutRef = null;
-  let pendingPrompt = null;
 
   const inputRef = document.getElementById("barcode-input");
   const successAudioRef = document.getElementById("success-audio");
@@ -40,20 +39,6 @@
   const actionIcon = document.getElementById("action-icon");
   const scanTimestamp = document.getElementById("scan-timestamp");
   const errorMessage = document.getElementById("error-message");
-  const promptRef = document.getElementById("kiosk-prompt");
-  const promptTitleRef = document.getElementById("kiosk-prompt-title");
-  const promptSubtitleRef = document.getElementById("kiosk-prompt-subtitle");
-  const promptStaffRef = document.getElementById("kiosk-prompt-staff");
-  const promptHoursRef = document.getElementById("kiosk-prompt-hours");
-  const promptUsernameRef = document.getElementById("kiosk-prompt-username");
-  const promptPasswordRef = document.getElementById("kiosk-prompt-password");
-  const promptTasksGroupRef = document.getElementById("kiosk-task-group");
-  const promptTasksRef = document.getElementById("kiosk-prompt-tasks");
-  const promptStatusGroupRef = document.getElementById("kiosk-status-group");
-  const promptStatusRef = document.getElementById("kiosk-prompt-status");
-  const promptErrorRef = document.getElementById("kiosk-prompt-error");
-  const promptSubmitRef = document.getElementById("kiosk-prompt-submit");
-  const promptCancelRef = document.getElementById("kiosk-prompt-cancel");
 
   const scanUrl =
     (window.qrKioskConfig && window.qrKioskConfig.scanUrl) || "/attendance/kiosk/scan/";
@@ -71,19 +56,10 @@
     inputRef.addEventListener("keydown", handleKeyDown);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    if (promptSubmitRef) {
-      promptSubmitRef.addEventListener("click", submitPrompt);
-    }
-    if (promptCancelRef) {
-      promptCancelRef.addEventListener("click", closePrompt);
-    }
   }
 
   function startAutoFocus() {
     setInterval(function () {
-      if (promptRef && !promptRef.classList.contains("d-none")) {
-        return;
-      }
       if (document.activeElement !== inputRef) {
         inputRef.focus();
       }
@@ -163,7 +139,7 @@
       const scan = scansToSync[i];
 
       try {
-        await processScanAPI(scan.barcode, scan.timestamp);
+        await processScanAPI(scan.barcode, scan.timestamp, true);
         offlineQueue = offlineQueue.filter(function (item) {
           return item.timestamp !== scan.timestamp;
         });
@@ -190,7 +166,7 @@
     return kioskId;
   }
 
-  async function processScanAPI(barcode, timestamp, extraPayload) {
+  async function processScanAPI(barcode, timestamp) {
     try {
       const response = await fetch(scanUrl, {
         method: "POST",
@@ -201,7 +177,6 @@
           barcode: barcode,
           scanned_at: timestamp,
           kiosk_id: getKioskId(),
-          ...((extraPayload && typeof extraPayload === "object") ? extraPayload : {}),
         }),
       });
 
@@ -209,7 +184,7 @@
         return {};
       });
 
-      if (!response.ok || (payload.success === false && !payload.requiresPrompt)) {
+      if (!response.ok || payload.success === false) {
         const error = new Error(payload.message || "Scan failed");
         error.isNetworkError = false;
         throw error;
@@ -236,11 +211,7 @@
 
     try {
       const result = await processScanAPI(barcode.trim(), timestamp);
-      if (result.requiresPrompt) {
-        openPrompt(result, barcode.trim(), timestamp);
-      } else {
-        showSuccess(result);
-      }
+      showSuccess(result);
     } catch (error) {
       if (error && error.isNetworkError) {
         offlineQueue.push({ barcode: barcode.trim(), timestamp: timestamp });
@@ -253,7 +224,6 @@
   }
 
   function showSuccess(result) {
-    closePrompt(true);
     setState(ScanState.SUCCESS);
 
     studentName.textContent = result.studentName || "Student";
@@ -311,110 +281,6 @@
     isProcessing = false;
     inputRef.value = "";
     inputRef.focus();
-  }
-
-  function openPrompt(result, barcode, timestamp) {
-    pendingPrompt = {
-      barcode: barcode,
-      timestamp: timestamp,
-      promptStage: result.promptStage,
-    };
-    isProcessing = false;
-    promptRef.classList.remove("d-none");
-    promptTitleRef.textContent =
-      result.promptStage === "slot3_checkout" ? "Complete Final Check-out" : "Start Slot 1";
-    promptSubtitleRef.textContent = result.message || "Confirm your credentials to continue.";
-    promptStaffRef.textContent = `${result.staffName || "-"}${result.staffRole ? ` (${result.staffRole})` : ""}`;
-    promptHoursRef.textContent = result.workingHours || "-";
-    promptTasksGroupRef.classList.toggle("d-none", !result.showTaskInput);
-    promptStatusGroupRef.classList.toggle("d-none", !result.showTaskStatusInput);
-    promptTasksRef.value = result.dailyTasks || "";
-    promptStatusRef.value = result.taskStatus || "";
-    promptPasswordRef.value = "";
-    setPromptError("");
-    setState(ScanState.IDLE);
-    setTimeout(function () {
-      promptUsernameRef.focus();
-    }, 0);
-  }
-
-  function closePrompt(skipReset) {
-    pendingPrompt = null;
-    if (promptRef) {
-      promptRef.classList.add("d-none");
-    }
-    if (!skipReset) {
-      inputRef.focus();
-    }
-  }
-
-  function setPromptError(message) {
-    if (!promptErrorRef) {
-      return;
-    }
-    promptErrorRef.textContent = message || "";
-    promptErrorRef.classList.toggle("d-none", !message);
-  }
-
-  async function submitPrompt() {
-    if (!pendingPrompt) {
-      return;
-    }
-
-    const username = (promptUsernameRef.value || "").trim();
-    const password = promptPasswordRef.value || "";
-    const dailyTasks = promptTasksGroupRef.classList.contains("d-none") ? "" : (promptTasksRef.value || "").trim();
-    const taskStatus = promptStatusGroupRef.classList.contains("d-none") ? "" : (promptStatusRef.value || "").trim();
-
-    if (!username || !password) {
-      setPromptError("Enter username and password to continue.");
-      return;
-    }
-    if (!promptTasksGroupRef.classList.contains("d-none") && !dailyTasks) {
-      setPromptError("Enter your tasks for the day.");
-      return;
-    }
-    if (!promptStatusGroupRef.classList.contains("d-none") && !taskStatus) {
-      setPromptError("Enter your task status before final check-out.");
-      return;
-    }
-
-    setPromptError("");
-    isProcessing = true;
-    setState(ScanState.LOADING);
-
-    try {
-      const result = await processScanAPI(pendingPrompt.barcode, pendingPrompt.timestamp, {
-        username: username,
-        password: password,
-        daily_tasks: dailyTasks,
-        task_status: taskStatus,
-      });
-
-      if (result.requiresPrompt) {
-        openPrompt(result, pendingPrompt.barcode, pendingPrompt.timestamp);
-      } else {
-        showSuccess(result);
-      }
-    } catch (error) {
-      openPrompt(
-        {
-          promptStage: pendingPrompt.promptStage,
-          staffName: promptStaffRef.textContent,
-          workingHours: promptHoursRef.textContent,
-          showTaskInput: !promptTasksGroupRef.classList.contains("d-none"),
-          showTaskStatusInput: !promptStatusGroupRef.classList.contains("d-none"),
-          dailyTasks: dailyTasks,
-          taskStatus: taskStatus,
-          message: error.message || "Unable to continue.",
-        },
-        pendingPrompt.barcode,
-        pendingPrompt.timestamp,
-      );
-      setPromptError(error.message || "Unable to continue.");
-    } finally {
-      isProcessing = false;
-    }
   }
 
   function setState(newState) {

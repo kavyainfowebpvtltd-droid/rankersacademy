@@ -55,7 +55,6 @@ class TeacherAdmin(models.Model):
     board = models.CharField(max_length=50, blank=True, null=True)
     batch = models.CharField(max_length=50, blank=True, null=True)
     blood_group = models.CharField(max_length=10, blank=True, default="")
-    working_hours = models.CharField(max_length=100, blank=True, default="")
 
     subjects = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to="teacher_profiles/", blank=True, null=True)

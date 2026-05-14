@@ -17,10 +17,8 @@ from django.views.decorators.http import require_POST
 from attendance.models import Attendance, StaffAttendance
 from utils.pagination import PAGE_SIZE_OPTIONS, build_pagination_query, get_entries_per_page, get_page_range
 from attendance.services import (
-    build_non_teaching_attendance_snapshot,
     format_display_time,
     get_local_now,
-    is_teaching_staff,
     previous_working_day,
     process_absent_attendance,
     record_kiosk_scan,
@@ -544,7 +542,7 @@ def _build_staff_attendance_rows(start_date, end_date, today):
         # Parse multi-scans for L1-L4 if it's a teacher
         lectures = []
         total_duration_minutes = 0
-        if today_record and is_teaching_staff(staff):
+        if today_record and staff.role.lower() == "teacher":
             try:
                 scans = json.loads(today_record.raw_scan_value)
                 if isinstance(scans, list):
@@ -573,7 +571,7 @@ def _build_staff_attendance_rows(start_date, end_date, today):
         # Ensure we have 4 lecture slots
         while len(lectures) < 4:
             lectures.append({"in": "-", "out": "-"})
-
+        
         # Limit to 4 for the UI
         lectures = lectures[:4]
         
@@ -585,12 +583,6 @@ def _build_staff_attendance_rows(start_date, end_date, today):
                 total_duration_display = f"{h}h {m}m"
             else:
                 total_duration_display = f"{m}m"
-
-        non_teaching_snapshot = (
-            build_non_teaching_attendance_snapshot(staff, today_record, today)
-            if not is_teaching_staff(staff)
-            else None
-        )
 
         rows.append(
             {
@@ -609,11 +601,7 @@ def _build_staff_attendance_rows(start_date, end_date, today):
                 "today_check_in": format_display_time(today_record.check_in) if today_record else "-",
                 "today_check_out": format_display_time(today_record.check_out) if today_record else "-",
                 "lectures": lectures,
-                "total_duration": non_teaching_snapshot["total_duration_display"] if non_teaching_snapshot else total_duration_display,
-                "working_hours_display": non_teaching_snapshot["working_hours_display"] if non_teaching_snapshot else "",
-                "non_teaching_slots": non_teaching_snapshot["slots"] if non_teaching_snapshot else [],
-                "daily_tasks": non_teaching_snapshot["daily_tasks"] if non_teaching_snapshot else "",
-                "task_status": non_teaching_snapshot["task_status"] if non_teaching_snapshot else "",
+                "total_duration": total_duration_display,
             }
         )
 
@@ -720,15 +708,6 @@ def view_staff_attendance(request, staff_id):
     absent_count = sum(1 for record in attendances if record.status == "Absent")
     total_days = len(attendances)
     attendance_percent = _attendance_percent(present_count + late_count, total_days)
-    attendance_entries = []
-    for record in attendances:
-        entry = {"record": record}
-        if is_teaching_staff(staff):
-            entry["is_teaching"] = True
-        else:
-            entry["is_teaching"] = False
-            entry.update(build_non_teaching_attendance_snapshot(staff, record, record.date))
-        attendance_entries.append(entry)
 
     return render(
         request,
@@ -736,7 +715,6 @@ def view_staff_attendance(request, staff_id):
         {
             "staff": staff,
             "attendances": attendances,
-            "attendance_entries": attendance_entries,
             "present_count": present_count,
             "late_count": late_count,
             "absent_count": absent_count,
@@ -763,10 +741,6 @@ def kiosk_scan_api(request):
         or payload.get("code")
     )
     scanned_at = payload.get("scanned_at") or payload.get("timestamp")
-    username = payload.get("username")
-    password = payload.get("password")
-    daily_tasks = payload.get("daily_tasks") or payload.get("taskNotes") or payload.get("tasks")
-    task_status = payload.get("task_status") or payload.get("taskStatus")
 
     if not barcode:
         return JsonResponse({"success": False, "message": "No QR code data received."}, status=400)
@@ -774,17 +748,7 @@ def kiosk_scan_api(request):
     resolver_error = None
     for resolver in (record_kiosk_scan, record_staff_scan):
         try:
-            if resolver is record_staff_scan:
-                result = resolver(
-                    barcode,
-                    scanned_at=scanned_at,
-                    username=username,
-                    password=password,
-                    daily_tasks=daily_tasks,
-                    task_status=task_status,
-                )
-            else:
-                result = resolver(barcode, scanned_at=scanned_at)
+            result = resolver(barcode, scanned_at=scanned_at)
             return JsonResponse(result)
         except ValueError as exc:
             resolver_error = exc

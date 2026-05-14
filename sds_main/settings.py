@@ -13,11 +13,14 @@ SECRET_KEY = 'django-insecure-)-#wj42wfm88kx+@@_pc2++83-7f9yls%kw2l+n8kfq6fas6u*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
- "147.93.29.224",
- "rankersonlinetest.com",
- "www.rankersonlinetest.com"
- 
+ALLOWED_HOSTS = ["*"
+# "147.93.29.224",
+# "rankersonlinetest.com",
+# "www.rankersonlinetest.com"
+# "10.85.187.86"
+
+
+
 ]
 CSRF_TRUSTED_ORIGINS = [
 "https://rankersonlinetest.com",
@@ -87,10 +90,10 @@ WSGI_APPLICATION = 'sds_main.wsgi.application'
 DATABASES = {
    'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'rankers_db',
+        'NAME': 'rankers',
         'USER': 'root',
-        'PASSWORD': 'Vishal@2026',
-        'HOST': 'db',
+        'PASSWORD': 'root',
+        'HOST': 'localhost',
         'PORT': '3306',
     }
 }

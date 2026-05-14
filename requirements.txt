@@ -1,6 +1,5 @@
 Django==4.2
 gunicorn
-whitenoise
 mysqlclient
 requests
 reportlab

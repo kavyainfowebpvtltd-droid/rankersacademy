@@ -139,101 +139,6 @@
         color: var(--brand-gold);
       }
 
-      .kiosk-prompt-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(1, 10, 18, 0.74);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1.5rem;
-        z-index: 1200;
-      }
-
-      .kiosk-prompt-card {
-        width: min(100%, 34rem);
-        border-radius: 1.5rem;
-        border: 1px solid rgba(143, 211, 251, 0.18);
-        background: rgba(7, 25, 39, 0.95);
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
-        color: #fff;
-        overflow: hidden;
-      }
-
-      .kiosk-prompt-head {
-        padding: 1.25rem 1.5rem 0.75rem;
-        border-bottom: 1px solid rgba(143, 211, 251, 0.12);
-      }
-
-      .kiosk-prompt-body {
-        padding: 1.25rem 1.5rem 1.5rem;
-      }
-
-      .kiosk-prompt-label {
-        display: block;
-        margin-bottom: 0.45rem;
-        font-size: 0.84rem;
-        font-weight: 700;
-        color: rgba(143, 211, 251, 0.92);
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-
-      .kiosk-prompt-input,
-      .kiosk-prompt-textarea {
-        width: 100%;
-        border-radius: 1rem;
-        border: 1px solid rgba(143, 211, 251, 0.16);
-        background: rgba(255, 255, 255, 0.08);
-        color: #fff;
-        padding: 0.9rem 1rem;
-      }
-
-      .kiosk-prompt-textarea {
-        min-height: 120px;
-        resize: vertical;
-      }
-
-      .kiosk-prompt-input::placeholder,
-      .kiosk-prompt-textarea::placeholder {
-        color: rgba(255, 255, 255, 0.48);
-      }
-
-      .kiosk-prompt-meta {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-      }
-
-      .kiosk-prompt-meta-card {
-        border-radius: 1rem;
-        background: rgba(143, 211, 251, 0.08);
-        border: 1px solid rgba(143, 211, 251, 0.1);
-        padding: 0.9rem 1rem;
-      }
-
-      .kiosk-prompt-meta-card small {
-        display: block;
-        color: rgba(255, 255, 255, 0.62);
-        margin-bottom: 0.3rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .kiosk-prompt-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.75rem;
-        margin-top: 1rem;
-      }
-
-      .kiosk-prompt-error {
-        margin-top: 0.85rem;
-        color: #fecaca;
-        font-size: 0.94rem;
-      }
-
       @media (max-width: 768px) {
         .app-container {
           padding-top: 5.5rem;
@@ -258,10 +163,6 @@
 
         .state-subtitle {
           font-size: 1.2rem;
-        }
-
-        .kiosk-prompt-meta {
-          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -379,50 +280,6 @@
           <h1 class="state-title">Offline Mode</h1>
           <p class="state-subtitle">Scan saved locally</p>
           <p class="state-subtitle-light">Will sync when online</p>
-        </div>
-      </div>
-
-      <div id="kiosk-prompt" class="kiosk-prompt-backdrop d-none">
-        <div class="kiosk-prompt-card">
-          <div class="kiosk-prompt-head">
-            <h3 id="kiosk-prompt-title" class="h4 fw-bold mb-1">Complete Attendance Step</h3>
-            <p id="kiosk-prompt-subtitle" class="mb-0 text-white-50">Confirm your credentials to continue.</p>
-          </div>
-          <div class="kiosk-prompt-body">
-            <div class="kiosk-prompt-meta">
-              <div class="kiosk-prompt-meta-card">
-                <small>Staff Member</small>
-                <div id="kiosk-prompt-staff">-</div>
-              </div>
-              <div class="kiosk-prompt-meta-card">
-                <small>Working Hours</small>
-                <div id="kiosk-prompt-hours">-</div>
-              </div>
-            </div>
-
-            <label class="kiosk-prompt-label" for="kiosk-prompt-username">Username</label>
-            <input id="kiosk-prompt-username" type="text" class="kiosk-prompt-input" placeholder="Enter username" autocomplete="off" />
-
-            <label class="kiosk-prompt-label mt-3" for="kiosk-prompt-password">Password</label>
-            <input id="kiosk-prompt-password" type="password" class="kiosk-prompt-input" placeholder="Enter password" autocomplete="off" />
-
-            <div id="kiosk-task-group" class="d-none">
-              <label class="kiosk-prompt-label mt-3" for="kiosk-prompt-tasks">Tasks for the Day</label>
-              <textarea id="kiosk-prompt-tasks" class="kiosk-prompt-textarea" placeholder="List today's tasks"></textarea>
-            </div>
-
-            <div id="kiosk-status-group" class="d-none">
-              <label class="kiosk-prompt-label mt-3" for="kiosk-prompt-status">Task Status</label>
-              <textarea id="kiosk-prompt-status" class="kiosk-prompt-textarea" placeholder="Update the status of today's tasks"></textarea>
-            </div>
-
-            <div id="kiosk-prompt-error" class="kiosk-prompt-error d-none"></div>
-
-            <div class="kiosk-prompt-actions">
-              <button id="kiosk-prompt-cancel" type="button" class="btn btn-outline-light">Cancel</button>
-              <button id="kiosk-prompt-submit" type="button" class="btn btn-warning fw-bold text-dark">Submit</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

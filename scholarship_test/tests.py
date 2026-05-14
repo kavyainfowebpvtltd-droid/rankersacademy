@@ -439,53 +439,6 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
             0,
         )
 
-    def test_start_test_allows_new_attempt_within_five_minute_start_grace(self):
-        runtime_test, section = self.create_runtime_test(name='Late But Allowed Test')
-        self.add_mcq_question(section)
-        ScholarshipTest.objects.filter(id=runtime_test.id).update(
-            scheduled_start_at=timezone.now() - timedelta(minutes=4),
-            date=timezone.localdate(),
-        )
-        runtime_test.refresh_from_db()
-
-        client = Client()
-        session = client.session
-        session['scholarship_student_id'] = self.student.id
-        session['scholarship_selected_test_id'] = runtime_test.id
-        session.save()
-
-        response = client.get(reverse('scholarship_test:scholarship_start_test'))
-
-        latest_attempt = ScholarshipTestAttempt.objects.latest('id')
-        self.assertRedirects(
-            response,
-            reverse('scholarship_test:scholarship_test', args=[latest_attempt.id]),
-        )
-        self.assertEqual(latest_attempt.test_id, runtime_test.id)
-
-    def test_start_test_blocks_new_attempt_after_five_minute_start_grace(self):
-        runtime_test, section = self.create_runtime_test(name='Too Late Test')
-        self.add_mcq_question(section)
-        ScholarshipTest.objects.filter(id=runtime_test.id).update(
-            scheduled_start_at=timezone.now() - timedelta(minutes=6),
-            date=timezone.localdate(),
-        )
-        runtime_test.refresh_from_db()
-
-        client = Client()
-        session = client.session
-        session['scholarship_student_id'] = self.student.id
-        session['scholarship_selected_test_id'] = runtime_test.id
-        session.save()
-
-        response = client.get(reverse('scholarship_test:scholarship_start_test'))
-
-        self.assertRedirects(response, reverse('scholarship_test:scholarship_dashboard'))
-        self.assertEqual(
-            ScholarshipTestAttempt.objects.filter(student=self.student, test=runtime_test).count(),
-            0,
-        )
-
     def test_save_progress_persists_answers_and_current_question(self):
         runtime_test, section = self.create_runtime_test()
         question = self.add_mcq_question(section)
@@ -644,81 +597,6 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(response.context['leaderboard_current_entry']['score'], 15)
         self.assertContains(response, 'Leaderboard')
         self.assertContains(response, 'Your Rank: <strong>#7</strong>', html=True)
-        self.assertContains(response, f'href="{reverse("my_tests")}"')
-
-    def test_success_page_locks_attempted_paper_until_test_duration_ends(self):
-        runtime_test, section = self.create_runtime_test(name='Early Submit Test')
-        self.add_mcq_question(section)
-        ScholarshipTest.objects.filter(id=runtime_test.id).update(
-            scheduled_start_at=timezone.now() - timedelta(minutes=10),
-            date=timezone.localdate(),
-            duration_hours=0,
-            duration_minutes=25,
-        )
-        runtime_test.refresh_from_db()
-
-        attempt = ScholarshipTestAttempt.objects.create(
-            student=self.student,
-            test=runtime_test,
-            status='completed',
-            score=2,
-            total_questions=1,
-            total_marks=2,
-            test_completed_at=timezone.now(),
-        )
-
-        client = Client()
-        session = client.session
-        session['scholarship_student_id'] = self.student.id
-        session.save()
-
-        response = client.get(
-            reverse('scholarship_test:scholarship_success', args=[attempt.id])
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context['has_attempted_paper'])
-        self.assertFalse(response.context['attempted_paper_available'])
-        self.assertEqual(response.context['attempted_paper'], [])
-        self.assertContains(
-            response,
-            'The Attempted Test Paper will be available after Test duration ends',
-        )
-
-    def test_success_page_unlocks_attempted_paper_after_test_duration_ends(self):
-        runtime_test, section = self.create_runtime_test(name='Completed Duration Test')
-        self.add_mcq_question(section)
-        ScholarshipTest.objects.filter(id=runtime_test.id).update(
-            scheduled_start_at=timezone.now() - timedelta(minutes=30),
-            date=timezone.localdate(),
-            duration_hours=0,
-            duration_minutes=25,
-        )
-        runtime_test.refresh_from_db()
-
-        attempt = ScholarshipTestAttempt.objects.create(
-            student=self.student,
-            test=runtime_test,
-            status='completed',
-            score=2,
-            total_questions=1,
-            total_marks=2,
-            test_completed_at=timezone.now(),
-        )
-
-        client = Client()
-        session = client.session
-        session['scholarship_student_id'] = self.student.id
-        session.save()
-
-        response = client.get(
-            reverse('scholarship_test:scholarship_success', args=[attempt.id])
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context['attempted_paper_available'])
-        self.assertEqual(len(response.context['attempted_paper']), 1)
-        self.assertContains(response, 'View Attempted Test Paper')
 
     def test_dashboard_renders_guest_view_for_non_rtse_selected_test(self):
         runtime_test, section = self.create_runtime_test(name='Scholarship Mock 2')
@@ -1562,7 +1440,7 @@ class PortalStudentScheduledTestFlowTests(TestCase):
         scheduled_start_at=None,
     ):
         if scheduled_start_at is None:
-            scheduled_start_at = timezone.now() - timedelta(minutes=4)
+            scheduled_start_at = timezone.now() - timedelta(minutes=5)
 
         test = ScholarshipTest.objects.create(
             name=name,
@@ -1767,70 +1645,12 @@ class PortalStudentScheduledTestFlowTests(TestCase):
         )
         self.assertEqual(payload["rewards"]["xp"], 0)
 
-    def test_my_tests_top_performers_include_all_students_tied_in_top_three_ranks(self):
-        now = timezone.now()
-        test = self.create_runtime_test(
-            name="Star 01 JEE Tied Performers",
-            batch="Star 01",
-            stream="JEE",
-            scheduled_start_at=now - timedelta(hours=2),
-        )
-
-        participants = [
-            (self.portal_student, self.scholarship_student, 100),
-        ]
-        for index, score in enumerate([90, 80, 80, 70], start=2):
-            user = User.objects.create_user(
-                username=f"student-star01-tie-{index}",
-                email=f"student-star01-tie-{index}@example.com",
-                password="StudentPass@2026",
-            )
-            portal_student = Student.objects.create(
-                user=user,
-                student_name=f"Tie Student {index}",
-                username=f"student-star01-tie-{index}",
-                contact=f"98765001{index:02d}",
-                email=f"student-star01-tie-{index}@example.com",
-                school="Rankers School",
-                stream="JEE",
-                board="CBSE",
-                grade="11th",
-                batch="Star 01",
-                gender="Male",
-            )
-            scholarship_student = ScholarshipStudent.objects.create(
-                name=portal_student.student_name,
-                phone_number=portal_student.contact,
-                grade=portal_student.grade,
-                board=portal_student.board,
-                otp_verified=True,
-            )
-            participants.append((portal_student, scholarship_student, score))
-
-        for index, (portal_student, scholarship_student, score) in enumerate(participants):
-            ScholarshipTestAttempt.objects.create(
-                student=scholarship_student,
-                portal_student=portal_student,
-                test=test,
-                status="completed",
-                score=score,
-                total_questions=1,
-                total_marks=100,
-                test_completed_at=now - timedelta(hours=1) + timedelta(seconds=index),
-            )
-
-        payload = _build_my_tests_payload(self.portal_student)
-
-        top_performers = payload["completedTests"][0]["topPerformers"]
-        self.assertEqual([entry["rank"] for entry in top_performers], [1, 2, 3, 3])
-        self.assertEqual([entry["score"] for entry in top_performers], [100, 90, 80, 80])
-
     def test_launch_view_redirects_logged_in_portal_student_to_dashboard_for_rtse_test(self):
         test = self.create_runtime_test(
             name="RTSE-2026 Scholarship Test",
             batch="Star 01",
             stream="JEE",
-            scheduled_start_at=timezone.now() - timedelta(minutes=4),
+            scheduled_start_at=timezone.now() - timedelta(minutes=5),
         )
         self.client.force_login(self.user)
 
@@ -1850,7 +1670,7 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             name="Weekly NEET Mock",
             batch="Star 02",
             stream="NEET",
-            scheduled_start_at=timezone.now() - timedelta(minutes=4),
+            scheduled_start_at=timezone.now() - timedelta(minutes=5),
         )
         self.client.force_login(self.user)
 
