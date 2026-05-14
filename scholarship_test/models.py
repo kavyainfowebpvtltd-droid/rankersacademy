@@ -346,6 +346,7 @@ class ScholarshipTest(models.Model):
         default='draft'
     )
     scheduled_start_at = models.DateTimeField(null=True, blank=True)
+    original_word_file = models.FileField(upload_to='scholarship_test_files/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

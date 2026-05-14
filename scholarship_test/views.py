@@ -1,7 +1,8 @@
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
+from functools import wraps
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -52,6 +53,7 @@ RANK_PREDICTOR_PHONE_SESSION_KEY = 'rank_predictor_phone'
 
 
 def _can_manage_scholarship_tests(user) -> bool:
+<<<<<<< HEAD
     return bool(
         getattr(user, 'is_authenticated', False)
         and (
@@ -62,6 +64,48 @@ def _can_manage_scholarship_tests(user) -> bool:
             )
         )
     )
+=======
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+
+    teacher_admin = getattr(user, "teacheradmin", None)
+    if not teacher_admin:
+        return False
+
+    return (teacher_admin.role or "").strip().lower() == "admin"
+
+
+def _scholarship_management_denied_response(request, authenticated: bool):
+    if "/api/" in request.path:
+        message = "Authentication required" if not authenticated else "Admin access required"
+        return JsonResponse(
+            {"error": message},
+            status=401 if not authenticated else 403,
+        )
+
+    if not authenticated:
+        login_url = reverse("login")
+        next_url = urlencode({"next": request.get_full_path()})
+        return redirect(f"{login_url}?{next_url}")
+
+    return HttpResponseForbidden("Admin access required")
+
+
+def scholarship_management_required(view_func):
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        user = getattr(request, "user", None)
+        authenticated = bool(user and user.is_authenticated)
+        if not authenticated:
+            return _scholarship_management_denied_response(request, authenticated=False)
+        if not _can_manage_scholarship_tests(user):
+            return _scholarship_management_denied_response(request, authenticated=True)
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped
+>>>>>>> 4d090425929b5a443b6b31bc8c6e6f28454cfe5b
 
 
 def _is_valid_person_name(name: str) -> bool:
@@ -201,7 +245,7 @@ def _build_test_display_context(selected_test):
         else TEST_DURATION_MINUTES
     )
     start_at = test_service.get_test_scheduled_start_at(selected_test)
-    _start_window_start, _start_window_end, start_button_opens_at = (
+    _start_window_start, start_window_closes_at, start_button_opens_at = (
         test_service.get_test_start_window(selected_test)
     )
 
@@ -229,10 +273,30 @@ def _build_test_display_context(selected_test):
         'selected_test_reference_prefix': _get_reference_prefix(selected_test),
         'selected_test_scheduled_start_at': _serialize_scheduled_start_at(start_at),
         'selected_test_start_button_opens_at': _serialize_scheduled_start_at(start_button_opens_at),
+        'selected_test_start_window_closes_at': _serialize_scheduled_start_at(start_window_closes_at),
         'selected_test_server_now': _serialize_scheduled_start_at(
             timezone.localtime(timezone.now(), test_service.ACADEMY_TIMEZONE)
         ),
     }
+
+
+def _get_attempted_paper_available_at(attempt, runtime_test):
+    if not attempt:
+        return None
+
+    duration_minutes = test_service.get_test_duration_minutes(runtime_test)
+    scheduled_start_at = test_service.get_test_scheduled_start_at(runtime_test)
+    if scheduled_start_at:
+        return scheduled_start_at + timedelta(minutes=duration_minutes)
+
+    if attempt.test_started_at:
+        started_at = timezone.localtime(
+            attempt.test_started_at,
+            test_service.ACADEMY_TIMEZONE,
+        )
+        return started_at + timedelta(minutes=duration_minutes)
+
+    return None
 
 
 def _requires_otp_login(selected_test):
@@ -770,6 +834,11 @@ def scholarship_start_test(request):
         return redirect('scholarship_test:scholarship_dashboard')
 
     total_questions = len(active_runtime_questions) if active_runtime_questions else TOTAL_QUESTIONS
+    
+    # Shuffle questions for this student
+    import random
+    question_ids = [q.id for q in active_runtime_questions]
+    random.shuffle(question_ids)
 
     with transaction.atomic():
         attempt = ScholarshipTestAttempt.objects.create(
@@ -786,8 +855,10 @@ def scholarship_start_test(request):
                 'current_question_index': 0,
                 'tab_switch_count': 0,
                 'saved_at': timezone.now().isoformat(),
+                'shuffled_question_ids': question_ids,
             },
         )
+
 
     return redirect('scholarship_test:scholarship_test', attempt_id=attempt.id)
 
@@ -838,10 +909,23 @@ def scholarship_test(request, attempt_id):
         attempt.save(update_fields=['status'])
 
     if runtime_test and runtime_questions:
+        shuffled_ids = attempt.progress_state.get('shuffled_question_ids', [])
+        if shuffled_ids:
+            # Reorder questions based on unique shuffled_ids
+            question_map = {q.id: q for q in runtime_questions}
+            seen_ids = set()
+            unique_shuffled_ids = []
+            for qid in shuffled_ids:
+                if qid in question_map and qid not in seen_ids:
+                    unique_shuffled_ids.append(qid)
+                    seen_ids.add(qid)
+            runtime_questions = [question_map[qid] for qid in unique_shuffled_ids]
+            
         questions_data = [
             test_service.serialize_runtime_question(question, index + 1)
             for index, question in enumerate(runtime_questions)
         ]
+
     else:
         questions = test_service.get_test_questions(
             grade=student.grade,
@@ -1010,7 +1094,7 @@ def scholarship_success(request, attempt_id):
     student_id = request.session.get('scholarship_student_id')
     
     try:
-        attempt = ScholarshipTestAttempt.objects.select_related('student', 'portal_student').get(id=attempt_id)
+        attempt = ScholarshipTestAttempt.objects.select_related('student', 'portal_student', 'test').get(id=attempt_id)
         
         student = attempt.student
         
@@ -1060,6 +1144,98 @@ def scholarship_success(request, attempt_id):
         test_service.ACADEMY_TIMEZONE,
     ).strftime('%d %b %Y, %I:%M %p')
 
+    # Get answer key and attempted paper
+    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test) if runtime_test else []
+    attempted_paper_available_at = _get_attempted_paper_available_at(attempt, runtime_test)
+    attempted_paper_available = (
+        not attempted_paper_available_at
+        or timezone.localtime(timezone.now(), test_service.ACADEMY_TIMEZONE) >= attempted_paper_available_at
+    )
+    attempted_paper_available_at_display = (
+        attempted_paper_available_at.strftime('%d %b %Y, %I:%M %p')
+        if attempted_paper_available_at
+        else None
+    )
+
+    # Use shuffled order if available
+    shuffled_ids = attempt.progress_state.get('shuffled_question_ids', [])
+    if shuffled_ids and runtime_questions:
+        # Create map and ensure we only use unique IDs from shuffled_ids
+        question_map = {q.id: q for q in runtime_questions}
+        seen_ids = set()
+        unique_shuffled_ids = []
+        for qid in shuffled_ids:
+            if qid in question_map and qid not in seen_ids:
+                unique_shuffled_ids.append(qid)
+                seen_ids.add(qid)
+        runtime_questions = [question_map[qid] for qid in unique_shuffled_ids]
+
+    answer_key = []
+    attempted_paper = []
+
+    # Get student's saved answers from progress_state
+    saved_answers = attempt.progress_state.get('answers', {})
+    option_labels = ['A', 'B', 'C', 'D']
+
+    if runtime_questions:
+        for i, q in enumerate(runtime_questions, 1):
+            # Build a map of options by their index for correct answer checking
+            options_list = list(q.options.all())
+            correct_opt_idx = None
+            for idx, opt in enumerate(options_list):
+                if opt.is_correct:
+                    correct_opt_idx = idx
+                    break
+
+            student_selected_raw = saved_answers.get(str(q.id))
+            student_selected = "Not Answered"
+            is_correct = False
+
+            if student_selected_raw is not None and student_selected_raw != '':
+                # Convert index-based answer (0,1,2,3) to letter (A,B,C,D)
+                try:
+                    selected_idx = int(student_selected_raw)
+                    if 0 <= selected_idx < len(option_labels):
+                        student_selected = option_labels[selected_idx]
+                except (ValueError, TypeError):
+                    student_selected = str(student_selected_raw)
+
+                # Check if correct by comparing indexes
+                if correct_opt_idx is not None:
+                    try:
+                        is_correct = int(student_selected_raw) == correct_opt_idx
+                    except (ValueError, TypeError):
+                        is_correct = False
+
+            # Get option text for display
+            options_data = []
+            for idx, opt in enumerate(options_list):
+                opt_label = option_labels[idx] if idx < len(option_labels) else str(idx + 1)
+                options_data.append({
+                    'option_text': opt.option_text,
+                    'option_label': opt_label,
+                    'is_selected': opt_label == student_selected,
+                    'is_correct': opt.is_correct
+                })
+
+            attempted_paper.append({
+                'number': i,
+                'question_text': q.question_text,
+                'options': options_data,
+                'student_answer': student_selected,
+                'is_correct': is_correct,
+            })
+
+            # Build answer key entry
+            answer_text = option_labels[correct_opt_idx] if correct_opt_idx is not None and correct_opt_idx < len(option_labels) else "N/A"
+            answer_key.append({
+                'number': i,
+                'correct_answer': answer_text,
+                'student_answer': student_selected,
+                'is_correct': is_correct
+            })
+
     if is_scholarship_result and not attempt.sms_sent and attempt.status in ['completed', 'expired']:
         try:
             if student.phone_number:
@@ -1094,12 +1270,21 @@ def scholarship_success(request, attempt_id):
         'academic_field_value': academic_field_value,
         'leaderboard_top_entries': leaderboard['top_entries'],
         'leaderboard_current_entry': leaderboard['current_entry'],
+<<<<<<< HEAD
         'answer_key_is_available': answer_key_is_available,
         'answer_key_available_at': answer_key_available_at.isoformat(),
         'answer_key_available_at_display': answer_key_available_at_display,
         'answer_key_delay_display': test_service.get_answer_key_delay_hours_display(),
         'answer_key_server_now': timezone.now().isoformat(),
         'attempt_review_url': reverse('scholarship_test:scholarship_attempt_review', args=[attempt.id]),
+=======
+        'answer_key': answer_key,
+        'attempted_paper': attempted_paper if attempted_paper_available else [],
+        'has_attempted_paper': bool(attempted_paper),
+        'attempted_paper_available': attempted_paper_available,
+        'attempted_paper_available_at': _serialize_scheduled_start_at(attempted_paper_available_at),
+        'attempted_paper_available_at_display': attempted_paper_available_at_display,
+>>>>>>> 4d090425929b5a443b6b31bc8c6e6f28454cfe5b
     }
     context.update(_build_test_display_context(attempt.test))
     return render(request, 'scholarship-success.html', context)
@@ -1266,6 +1451,7 @@ def scholarship_logout(request):
     
     return redirect('login.html')
 
+@scholarship_management_required
 def scholarshiptest_management(request):
     manual_mark_tests = ScholarshipTest.objects.all().order_by('-created_at', '-id')
     manual_mark_students = Student.objects.select_related('user').order_by('username', 'id')
@@ -1279,6 +1465,7 @@ def scholarshiptest_management(request):
         },
     )
 
+@scholarship_management_required
 def scholarship_create_test(request):
     response = render(request, "create_test.html")
     response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -1287,7 +1474,7 @@ def scholarship_create_test(request):
     return response
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_get_tests(request):
     tests = ScholarshipTest.objects.all().order_by('-created_at')
     data = []
@@ -1310,7 +1497,7 @@ def api_get_tests(request):
     return JsonResponse({'tests': data})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_create_test(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -1398,6 +1585,7 @@ def api_create_test(request):
     })
 
 
+<<<<<<< HEAD
 def _manual_mark_int(value, field_name):
     try:
         score = int(value)
@@ -1508,6 +1696,9 @@ def api_save_manual_marks(request):
 
 
 @csrf_exempt
+=======
+@scholarship_management_required
+>>>>>>> 4d090425929b5a443b6b31bc8c6e6f28454cfe5b
 def api_update_test(request, test_id):
     if request.method not in ['POST', 'PUT']:
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -1596,7 +1787,7 @@ def api_update_test(request, test_id):
     }})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_delete_test(request, test_id):
     if request.method != 'DELETE':
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -1606,7 +1797,7 @@ def api_delete_test(request, test_id):
     except ScholarshipTest.DoesNotExist:
         return JsonResponse({'error': 'Test not found'}, status=404)
 
-   
+    config = getattr(test, "config", None)
     for image in test.images.all():
         if image.image:
             image.image.delete(save=False)
@@ -1624,14 +1815,14 @@ def api_delete_test(request, test_id):
             'stream': test.stream,
             'tags': test.tags,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
-            'instructions': config.instructions,
-            'default_pos_marks': config.default_pos_marks,
-            'default_neg_marks': config.default_neg_marks,
+            'instructions': config.instructions if config else '',
+            'default_pos_marks': config.default_pos_marks if config else 2,
+            'default_neg_marks': config.default_neg_marks if config else 1,
         }
     })
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_get_folders(request):
     folders = ScholarshipTestFolder.objects.all().order_by('name')
     data = []
@@ -1645,7 +1836,7 @@ def api_get_folders(request):
     return JsonResponse({'folders': data})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_create_folder(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -1698,8 +1889,7 @@ def api_create_folder(request):
     })
 
 
-@csrf_exempt
-@csrf_exempt
+@scholarship_management_required
 def api_update_folder(request, folder_id):
   
     if request.method not in ['POST', 'PUT']:
@@ -1750,7 +1940,7 @@ def api_update_folder(request, folder_id):
     })
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_delete_folder(request, folder_id):
     if request.method != 'DELETE':
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -1777,7 +1967,7 @@ def api_delete_folder(request, folder_id):
     return JsonResponse({'success': True, 'deleted_tests_count': deleted_tests_count})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_move_test(request, test_id):
     if request.method not in ['POST', 'PUT']:
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -1802,6 +1992,8 @@ def api_move_test(request, test_id):
         else:
             test.folder = None
         test.save()
+
+    config = getattr(test, "config", None)
     
     return JsonResponse({
         'success': True,
@@ -1815,14 +2007,14 @@ def api_move_test(request, test_id):
             'stream': test.stream,
             'tags': test.tags,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
-            'instructions': config.instructions,
-            'default_pos_marks': config.default_pos_marks,
-            'default_neg_marks': config.default_neg_marks,
+            'instructions': config.instructions if config else '',
+            'default_pos_marks': config.default_pos_marks if config else 2,
+            'default_neg_marks': config.default_neg_marks if config else 1,
         }
     })
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_copy_test(request, test_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -1997,7 +2189,7 @@ def _parse_test_duration(data):
     return hours, minutes
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_get_test_details(request, test_id):
     try:
         test = ScholarshipTest.objects.get(id=test_id)
@@ -2085,7 +2277,7 @@ def api_get_test_details(request, test_id):
     })
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_save_test_details(request, test_id):
     if request.method not in ['POST', 'PUT']:
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -2165,7 +2357,7 @@ def api_save_test_details(request, test_id):
 
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_save_section(request, test_id):
     if request.method not in ['POST', 'PUT']:
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -2251,7 +2443,7 @@ def api_save_section(request, test_id):
     })
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_delete_section(request, test_id, section_id):
     if request.method != 'DELETE':
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -2265,7 +2457,7 @@ def api_delete_section(request, test_id, section_id):
     return JsonResponse({'success': True})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_save_question(request, test_id):
     logger.info(f"api_save_question called - test_id: {test_id}, body: {request.body[:500]}")
     try:
@@ -2407,31 +2599,48 @@ def api_save_question(request, test_id):
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_import_word_questions(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
 
+    test_id = request.POST.get('test_id')
     uploaded_file = request.FILES.get('word_file')
     if not uploaded_file:
-        return JsonResponse({'error': 'No Word file was uploaded'}, status=400)
+        return JsonResponse({'error': 'No file was uploaded'}, status=400)
 
     file_name = uploaded_file.name or ''
-    if not file_name.lower().endswith('.docx'):
-        return JsonResponse({'error': 'Only .docx Word files are supported'}, status=400)
+    is_docx = file_name.lower().endswith('.docx')
+    is_pdf = file_name.lower().endswith('.pdf')
 
-    try:
-        imported_data = word_import_service.import_questions_from_docx(uploaded_file)
-    except word_import_service.WordImportError as exc:
-        return JsonResponse({'error': str(exc)}, status=400)
-    except Exception as exc:
-        logger.error("Word import failed: %s", str(exc), exc_info=True)
-        return JsonResponse({'error': 'Failed to import the Word file'}, status=500)
+    if not (is_docx or is_pdf):
+        return JsonResponse({'error': 'Only .docx Word files and .pdf files are supported'}, status=400)
 
-    return JsonResponse({'success': True, 'imported': imported_data})
+    # If test_id is provided, save the original file to the test
+    if test_id:
+        try:
+            test = ScholarshipTest.objects.get(id=test_id)
+            test.original_word_file = uploaded_file
+            test.save(update_fields=['original_word_file'])
+        except ScholarshipTest.DoesNotExist:
+            pass
+
+    # Only try to parse questions if it's a DOCX
+    if is_docx:
+        try:
+            imported_data = word_import_service.import_questions_from_docx(uploaded_file)
+            return JsonResponse({'success': True, 'imported': imported_data})
+        except word_import_service.WordImportError as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        except Exception as exc:
+            logger.error("Word import failed: %s", str(exc), exc_info=True)
+            return JsonResponse({'error': 'Failed to import the Word file'}, status=500)
+    else:
+        # For PDF, we just saved it to the test, so return success
+        return JsonResponse({'success': True, 'message': 'PDF uploaded successfully'})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_delete_question(request, test_id, question_id):
     if request.method != 'DELETE':
         return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -2445,7 +2654,7 @@ def api_delete_question(request, test_id, question_id):
     return JsonResponse({'success': True})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_upload_image(request, test_id):
     """Upload image for a test"""
     if request.method != 'POST':
@@ -2488,7 +2697,7 @@ def api_upload_image(request, test_id):
     })
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_get_test_images(request, test_id):
    
     try:
@@ -2509,7 +2718,7 @@ def api_get_test_images(request, test_id):
     return JsonResponse({'images': data})
 
 
-@csrf_exempt
+@scholarship_management_required
 def api_delete_image(request, test_id, image_id):
    
     if request.method != 'DELETE':

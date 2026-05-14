@@ -116,16 +116,32 @@
     <div class="table-responsive">
       <table class="table table-hover attendance-table mb-0">
         <thead>
-          <tr>
-            <th>Date</th>
-            <th>Day</th>
-            <th>Status</th>
-            <th>Check-in</th>
-            <th>Check-out</th>
-          </tr>
+          {% if staff.role|lower == "teacher" %}
+            <tr>
+              <th>Date</th>
+              <th>Day</th>
+              <th>Status</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+            </tr>
+          {% else %}
+            <tr>
+              <th>Date</th>
+              <th>Day</th>
+              <th>Status</th>
+              <th>Working Hrs.</th>
+              <th>Slot 1</th>
+              <th>Slot 2</th>
+              <th>Slot 3</th>
+              <th>Total Hrs.</th>
+              <th>Tasks for the Day</th>
+              <th>Task Status</th>
+            </tr>
+          {% endif %}
         </thead>
         <tbody>
-          {% for attendance in attendances %}
+          {% for entry in attendance_entries %}
+            {% with attendance=entry.record %}
             <tr class="{% if attendance.date == today %}table-primary{% endif %}">
               <td>{{ attendance.date|date:"d M Y" }}</td>
               <td>{{ attendance.date|date:"l" }}</td>
@@ -134,12 +150,27 @@
                   {{ attendance.status }}
                 </span>
               </td>
-              <td>{% if attendance.check_in %}{{ attendance.check_in|time:"h:i A" }}{% else %}-{% endif %}</td>
-              <td>{% if attendance.check_out %}{{ attendance.check_out|time:"h:i A" }}{% else %}-{% endif %}</td>
+              {% if entry.is_teaching %}
+                <td>{% if attendance.check_in %}{{ attendance.check_in|time:"h:i A" }}{% else %}-{% endif %}</td>
+                <td>{% if attendance.check_out %}{{ attendance.check_out|time:"h:i A" }}{% else %}-{% endif %}</td>
+              {% else %}
+                <td>{{ entry.working_hours_display }}</td>
+                {% for slot in entry.slots %}
+                  <td>
+                    <div class="small fw-semibold">{{ slot.scheduled_display }}</div>
+                    <div class="small text-muted">{{ slot.check_in_display }} - {{ slot.check_out_display }}</div>
+                    <div class="small">{{ slot.state_label }} · {{ slot.duration_display }}</div>
+                  </td>
+                {% endfor %}
+                <td>{{ entry.total_duration_display }}</td>
+                <td>{{ entry.daily_tasks|default:"-" }}</td>
+                <td>{{ entry.task_status|default:"-" }}</td>
+              {% endif %}
             </tr>
+            {% endwith %}
           {% empty %}
             <tr>
-              <td colspan="5" class="text-center text-muted py-5">
+              <td colspan="{% if staff.role|lower == 'teacher' %}5{% else %}10{% endif %}" class="text-center text-muted py-5">
                 No attendance records found for this month.
               </td>
             </tr>

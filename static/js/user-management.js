@@ -283,6 +283,35 @@ function generateUsernameFromBatch(sourceInput = null) {
   }
 }
 
+function generateEditStudentUsernameFromBatch(sourceInput = null) {
+  const batchInput = sourceInput || document.getElementById("editStudentBatch");
+  const usernameInput = document.getElementById("editStudentUsername");
+  const hint = document.getElementById("editStudentUsernameHint");
+
+  if (!batchInput || !usernameInput) {
+    return;
+  }
+
+  const batch = (batchInput.value || "").trim();
+  const originalBatch = (batchInput.dataset.originalBatch || "").trim().toLowerCase();
+  const originalUsername = batchInput.dataset.originalUsername || "";
+
+  if (!batch) {
+    usernameInput.value = "";
+    if (hint) hint.style.display = "none";
+    return;
+  }
+
+  if (originalBatch && batch.toLowerCase() === originalBatch) {
+    usernameInput.value = originalUsername;
+    if (hint) hint.style.display = "none";
+    return;
+  }
+
+  usernameInput.value = buildUsernameFromBatch(batch);
+  if (hint) hint.style.display = "block";
+}
+
 function openAddUserModal() {
   if (addUserModal) {
     addUserModal.show();
@@ -783,6 +812,14 @@ if (editStudentModal) {
 
     document.getElementById("editStudentName").value =
       button.dataset.name || "";
+    document.getElementById("editStudentFatherName").value =
+      button.dataset.fatherName || "";
+    document.getElementById("editStudentEmergencyContactName").value =
+      button.dataset.emergencyContactName || "";
+    document.getElementById("editStudentEmergencyContact").value =
+      button.dataset.emergencyContact || "";
+    document.getElementById("editStudentStream").value =
+      button.dataset.stream || "";
     document.getElementById("editStudentEmail").value =
       button.dataset.email || "";
 
@@ -795,11 +832,37 @@ if (editStudentModal) {
     document.getElementById("editStudentGrade").value =
       button.dataset.grade || "";
 
+    document.getElementById("editStudentBloodGroup").value =
+      button.dataset.bloodGroup || "";
+
     document.getElementById("editStudentGender").value =
       button.dataset.gender || "";
 
-    document.getElementById("editStudentBatch").value =
-      button.dataset.batch || "";
+    const batchInput = document.getElementById("editStudentBatch");
+    const usernameInput = document.getElementById("editStudentUsername");
+    batchInput.value = button.dataset.batch || "";
+    batchInput.dataset.originalBatch = button.dataset.batch || "";
+    batchInput.dataset.originalUsername = button.dataset.username || "";
+    usernameInput.value = button.dataset.username || "";
+    document.getElementById("editStudentPassword").value = "";
+
+    const profilePhotoInput = document.getElementById("editStudentProfilePhoto");
+    if (profilePhotoInput) {
+      profilePhotoInput.value = "";
+    }
+
+    const currentStudentPicDiv = document.getElementById("currentStudentProfilePhoto");
+    const studentProfilePhotoUrl = button.dataset.profilePhoto;
+    if (currentStudentPicDiv) {
+      if (studentProfilePhotoUrl) {
+        currentStudentPicDiv.innerHTML = `<img src="${studentProfilePhotoUrl}" alt="Current Profile" width="60" height="60" style="border-radius: 50%; object-fit: cover; border: 2px solid #ddd;" />`;
+      } else {
+        currentStudentPicDiv.innerHTML = `<span class="text-muted"><i class="bi bi-person-circle" style="font-size: 2rem;"></i></span>`;
+      }
+    }
+
+    const usernameHint = document.getElementById("editStudentUsernameHint");
+    if (usernameHint) usernameHint.style.display = "none";
   });
 }
 
@@ -864,6 +927,9 @@ if (editTeacherModal) {
 
     document.getElementById("editTeacherBloodGroup").value =
       button.dataset.bloodGroup || "";
+
+    document.getElementById("editTeacherWorkingHours").value =
+      button.dataset.workingHours || "";
 
     document.getElementById("editTeacherSubjects").value =
       button.dataset.subjects || "";

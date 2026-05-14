@@ -900,7 +900,7 @@ window.togSec = function (id) {
 window.openWordUpload = function () {
   var input = document.createElement("input");
   input.type = "file";
-  input.accept = ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  input.accept = ".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf";
   input.onchange = function () {
     var file = input.files && input.files[0];
     if (file) {
@@ -1064,13 +1064,17 @@ function attachImportedQuestions(imported) {
 }
 
 window.uploadWordQuestionFile = function (file) {
-  if (!file.name || !/\.docx$/i.test(file.name)) {
-    showToast("Please choose a .docx Word file");
+  if (!file.name || !/\.(docx|pdf)$/i.test(file.name)) {
+    showToast("Please choose a .docx Word file or .pdf file");
     return;
   }
 
   var formData = new FormData();
   formData.append("word_file", file);
+  
+  if (currentTestId) {
+    formData.append("test_id", currentTestId);
+  }
 
   fetch("/scholarship/api/tests/import-word/", {
     method: "POST",
@@ -1079,19 +1083,24 @@ window.uploadWordQuestionFile = function (file) {
     .then(function (response) {
       if (!response.ok) {
         return response.json().then(function (data) {
-          throw new Error(data.error || "Failed to import Word file");
+          throw new Error(data.error || "Failed to upload file");
         });
       }
       return response.json();
     })
     .then(function (result) {
-      if (!result.success || !result.imported) {
-        throw new Error(result.error || "Failed to import Word file");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to upload file");
       }
-      attachImportedQuestions(result.imported);
+      
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        showToast("✓ PDF uploaded successfully for reference");
+      } else if (result.imported) {
+        attachImportedQuestions(result.imported);
+      }
     })
     .catch(function (error) {
-      console.error("Word import failed:", error);
+      console.error("Upload failed:", error);
       showToast("❌ " + error.message);
     });
 };

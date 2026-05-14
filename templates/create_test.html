@@ -4,6 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token }}" />
     <title>Test Builder</title>
     <script>
       localStorage.setItem("rankersAdminTheme", "light");
@@ -224,19 +225,10 @@
             <div class="sb-body" id="import-body">
               <div class="import-body">
                 <button class="import-btn" onclick="openWordUpload()">
-                  Upload Word File
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  Upload Question Paper (Word/PDF)
+                  <i class="bi bi-file-earmark-arrow-up ms-2"></i>
                 </button>
-                <div class="sample-link">Download Sample Word File Format</div>
+                <div class="sample-link">Download Sample Format</div>
               </div>
             </div>
           </div>

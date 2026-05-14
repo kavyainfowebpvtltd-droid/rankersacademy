@@ -5,6 +5,39 @@ let isInsideFolderView = false;
 let pendingDeleteFolders = [];
 let currentFolderId = null;
 
+function getCsrfToken() {
+  const metaToken = document
+    .querySelector('meta[name="csrf-token"]')
+    ?.getAttribute("content");
+  if (metaToken) return metaToken;
+
+  const cookie = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("csrftoken="));
+  return cookie ? decodeURIComponent(cookie.split("=")[1]) : "";
+}
+
+function apiFetch(url, options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const headers = new Headers(options.headers || {});
+
+  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers.set("X-CSRFToken", csrfToken);
+    }
+  }
+
+  headers.set("X-Requested-With", "XMLHttpRequest");
+
+  return fetch(url, {
+    ...options,
+    method,
+    headers,
+  });
+}
+
 function updatePrimaryActionButton() {
   const label = document.getElementById("primary-action-label");
   if (!label) return;
@@ -108,9 +141,9 @@ function deleteSelectedFolders() {
 function confirmDeleteSelectedFolders() {
   if (!pendingDeleteFolders.length) return;
 
-  Promise.all(
-    pendingDeleteFolders.map((folder) =>
-      fetch(`/scholarship/api/folders/${folder.id}/delete/`, {
+    Promise.all(
+      pendingDeleteFolders.map((folder) =>
+      apiFetch(`/scholarship/api/folders/${folder.id}/delete/`, {
         method: "DELETE",
       }),
     ),
@@ -276,8 +309,8 @@ function saveManualMarks() {
 async function loadData() {
   try {
     const [testsRes, foldersRes] = await Promise.all([
-      fetch("/scholarship/api/tests/"),
-      fetch("/scholarship/api/folders/"),
+      apiFetch("/scholarship/api/tests/"),
+      apiFetch("/scholarship/api/folders/"),
     ]);
 
     if (!testsRes.ok || !foldersRes.ok) {
@@ -328,7 +361,7 @@ function handleCreateTest() {
     tags: tagsInput.value.trim() || "",
   };
 
-  fetch("/scholarship/api/tests/create/", {
+  apiFetch("/scholarship/api/tests/create/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -381,7 +414,7 @@ function handleCreateFolder() {
     parentId: isInsideFolderView ? currentFolderId : null,
   };
 
-  fetch("/scholarship/api/folders/create/", {
+  apiFetch("/scholarship/api/folders/create/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -448,7 +481,7 @@ window.handleEditFolder = function () {
     tags: tagsSelect ? tagsSelect.value : "",
   };
 
-  fetch(`/scholarship/api/folders/${folderId}/update/`, {
+  apiFetch(`/scholarship/api/folders/${folderId}/update/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -511,7 +544,7 @@ window.confirmDeleteFolder = function (folderId, folderName) {
 };
 
 window.handleDeleteFolder = function (folderId) {
-  fetch(`/scholarship/api/folders/${folderId}/delete/`, {
+  apiFetch(`/scholarship/api/folders/${folderId}/delete/`, {
     method: "DELETE",
   })
     .then((res) => {
@@ -667,8 +700,8 @@ function confirmMoveTests() {
   });
 
   Promise.all(
-    testIds.map((testId) =>
-      fetch(`/scholarship/api/tests/${testId}/move/`, {
+      testIds.map((testId) =>
+      apiFetch(`/scholarship/api/tests/${testId}/move/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -702,9 +735,9 @@ function deleteSelectedTests() {
 function confirmDeleteTests() {
   if (!pendingDeleteTests.length) return;
 
-  Promise.all(
-    pendingDeleteTests.map((testId) =>
-      fetch(`/scholarship/api/tests/${testId}/delete/`, {
+    Promise.all(
+      pendingDeleteTests.map((testId) =>
+      apiFetch(`/scholarship/api/tests/${testId}/delete/`, {
         method: "DELETE",
       }),
     ),
@@ -906,7 +939,7 @@ function submitCopyTest() {
 
   const testId = input.dataset.testId;
 
-  fetch(`/scholarship/api/tests/${testId}/copy/`, {
+  apiFetch(`/scholarship/api/tests/${testId}/copy/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

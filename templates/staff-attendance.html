@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link>
   <link rel="stylesheet" href="{% static 'css/pagination-controls.css' %}">
   <style>
-    body { font-family: 'DM Sans', sans-serif; background: #f8fafc; color: #0f172a; }
+    body { font-family: 'DM Sans', sans-serif; background: #f8fafc; color: #0f172a; overflow-x: hidden; }
     .page-shell { max-width: 95%; margin: 1.5rem auto; }
     .hero-card {
       background: linear-gradient(135deg, #0f172a 0%, #0f4c81 54%, #0891b2 100%);
@@ -79,6 +79,79 @@
     .percent-medium { background: #fef3c7; color: #b45309; }
     .percent-low { background: #fee2e2; color: #b91c1c; }
     .table-empty { padding: 52px 24px; text-align: center; color: #64748b; }
+    .slot-summary {
+      min-width: 195px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    .slot-summary-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .slot-summary-schedule {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .slot-summary-actual {
+      font-size: 13px;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    .slot-summary-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .slot-state-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .slot-state-complete { background: #dcfce7; color: #166534; }
+    .slot-state-progress { background: #dbeafe; color: #1d4ed8; }
+    .slot-state-pending { background: #e2e8f0; color: #475569; }
+    .slot-duration {
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .working-hours-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* Hide scrollbar but maintain functionality */
+    .table-responsive {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    .table-responsive::-webkit-scrollbar {
+      display: none; /* Chrome, Safari and Opera */
+    }
   </style>
   <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link>
 </head>
@@ -162,19 +235,13 @@
       <table class="table table-hover attendance-table align-middle mb-0" id="staffAttendanceTable">
         <thead>
           <tr>
-            <th>Sr. No.</th>
-            <th>Staff Member</th>
+            <th>Name</th>
             <th>Role</th>
-            <th>Contact</th>
-            <th>Email</th>
-            <th>Present</th>
-            <th>Late</th>
-            <th>Absent</th>
-            <th>Total</th>
-            <th>Attendance %</th>
-            <th>Today Status</th>
-            <th>Check-in</th>
-            <th>Check-out</th>
+            <th>Working Hrs.</th>
+            <th>Slot 1</th>
+            <th>Slot 2</th>
+            <th>Slot 3</th>
+            <th>Total Hrs.</th>
           </tr>
         </thead>
         <tbody id="recordsBodyStandard">
@@ -187,38 +254,36 @@
               data-present="{{ row.present_days|add:row.late_days }}"
               data-total="{{ row.total_days }}"
             >
-              <td class="serial-col">{{ forloop.counter }}</td>
               <td class="staff-name">
                 <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
                   {{ row.staff_name }}
                 </a>
               </td>
               <td>{{ row.role }}</td>
-              <td>{{ row.contact }}</td>
-              <td>{{ row.email }}</td>
               <td>
-                <span class="metric-badge metric-present">{{ row.present_days }}</span>
-              </td>
-              <td><span class="metric-badge metric-late">{{ row.late_days }}</span></td>
-              <td><span class="metric-badge metric-absent">{{ row.absent_days }}</span></td>
-              <td>{{ row.total_days }}</td>
-              <td>
-                <span class="percent-pill {% if row.attendance_percent >= 75 %}percent-high{% elif row.attendance_percent >= 50 %}percent-medium{% else %}percent-low{% endif %}">
-                  {{ row.attendance_percent }}%
+                <span class="working-hours-pill">
+                  <i class="bi bi-clock-history"></i>{{ row.working_hours_display|default:"Not Set" }}
                 </span>
               </td>
-              <td>
-                <span class="status-badge {% if row.today_status == 'Present' %}status-present{% elif row.today_status == 'Late' %}status-late{% elif row.today_status == 'Absent' %}status-absent{% else %}status-empty{% endif %}">
-                  {{ row.today_status }}
-                </span>
-              </td>
-              <td><span class="time-pill {% if row.today_check_in == '-' %}time-pill-muted{% endif %}">{{ row.today_check_in }}</span></td>
-              <td><span class="time-pill {% if row.today_check_out == '-' %}time-pill-muted{% endif %}">{{ row.today_check_out }}</span></td>
+              {% for slot in row.non_teaching_slots %}
+                <td>
+                  <div class="slot-summary">
+                    <div class="slot-summary-title">{{ slot.label }}</div>
+                    <div class="slot-summary-schedule">{{ slot.scheduled_display }}</div>
+                    <div class="slot-summary-actual">{{ slot.check_in_display }} - {{ slot.check_out_display }}</div>
+                    <div class="slot-summary-meta">
+                      <span class="slot-state-pill slot-state-{{ slot.state_key }}">{{ slot.state_label }}</span>
+                      <span class="slot-duration">{{ slot.duration_display }}</span>
+                    </div>
+                  </div>
+                </td>
+              {% endfor %}
+              <td class="fw-bold">{{ row.total_duration }}</td>
             </tr>
             {% endif %}
           {% empty %}
             <tr>
-              <td colspan="13">
+              <td colspan="7">
                 <div class="table-empty">
                   <i class="bi bi-person-x fs-1 d-block mb-3"></i>
                   No staff members found.

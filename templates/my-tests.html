@@ -268,6 +268,16 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
+    .my-tests-page .hero-test-title {
+      font-size: clamp(1.15rem, 2vw, 1.85rem);
+      line-height: 1.15;
+    }
+
+    .my-tests-page .hero-test-meta {
+      font-size: 0.84rem;
+      letter-spacing: 0.02em;
+    }
+
     .my-tests-page .summary-card-title {
       color: var(--muted);
       font-size: 0.78rem;
@@ -285,6 +295,54 @@
     .my-tests-page .summary-card-extra {
       font-size: 0.84rem;
       color: var(--muted);
+    }
+
+    .my-tests-page .rank-tier-badge {
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.45rem 0.8rem;
+    }
+
+    .my-tests-page .rank-summary {
+      font-size: 1.08rem;
+    }
+
+    .my-tests-page .rank-badge-rank-1 {
+      color: #fff7ed;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      box-shadow: 0 10px 22px rgba(249, 115, 22, 0.2);
+    }
+
+    .my-tests-page .rank-badge-top-3 {
+      color: #eff6ff;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      box-shadow: 0 10px 22px rgba(99, 102, 241, 0.2);
+    }
+
+    .my-tests-page .rank-badge-top-10 {
+      color: #ecfeff;
+      background: linear-gradient(135deg, #0891b2, #0ea5e9);
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.18);
+    }
+
+    .my-tests-page .rank-badge-top-25 {
+      color: #fdf4ff;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      box-shadow: 0 10px 22px rgba(236, 72, 153, 0.16);
+    }
+
+    .my-tests-page .rank-badge-complete {
+      color: #ecfdf5;
+      background: linear-gradient(135deg, #059669, #22c55e);
+      box-shadow: 0 10px 22px rgba(34, 197, 94, 0.16);
+    }
+
+    .my-tests-page .rank-badge-missed {
+      color: #e2e8f0;
+      background: rgba(148, 163, 184, 0.16);
+      border: 1px solid rgba(148, 163, 184, 0.24);
     }
 
     .my-tests-page .subject-card:hover .progress-bar {
@@ -546,7 +604,64 @@
     }
 
     .my-tests-page .top-performer-card {
-      width: 140px;
+      width: 100%;
+      min-height: 100%;
+    }
+
+    .my-tests-page .top-performer-podium {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .my-tests-page .top-performer-secondary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    .my-tests-page .top-performer-first {
+      transform: translateY(-0.65rem);
+    }
+
+    .my-tests-page .top-performer-first .top-performer-card-shell {
+      padding-top: 1.4rem;
+      padding-bottom: 1.35rem;
+    }
+
+    .my-tests-page .top-performer-second .top-performer-card-shell,
+    .my-tests-page .top-performer-third .top-performer-card-shell {
+      padding-top: 1.1rem;
+      padding-bottom: 1rem;
+    }
+
+    .my-tests-page .top-performer-card-shell {
+      height: 100%;
+      padding: 1rem;
+    }
+
+    .my-tests-page .top-performer-rank {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .my-tests-page .top-performer-avatar {
+      margin-top: 0.4rem;
+    }
+
+    .my-tests-page .top-performer-first .top-performer-rank {
+      font-size: 1.45rem;
+    }
+
+    .my-tests-page .top-performer-first .top-performer-name {
+      font-size: 1.08rem;
+    }
+
+    .my-tests-page .top-performer-second .top-performer-name,
+    .my-tests-page .top-performer-third .top-performer-name {
+      font-size: 0.98rem;
     }
 
     .my-tests-page .leaderboard-table {
@@ -690,6 +805,15 @@
       .my-tests-page .hero-kpi-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .my-tests-page .top-performer-podium {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .my-tests-page .top-performer-first {
+        transform: none;
+      }
     }
 
     @media (max-width: 767.98px) {
@@ -716,6 +840,10 @@
 
       .my-tests-page .test-slot-title-row {
         flex-wrap: wrap;
+      }
+
+      .my-tests-page .top-performer-secondary {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -744,20 +872,26 @@
         <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:180px;height:180px;filter:blur(45px)"></div>
         <div class="position-relative">
           <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-            <span id="rankTierBadge" class="badge rounded-pill"></span>
+            <div>
+              <h3 id="heroTestTitle" class="display fw-bold mb-1 hero-test-title"></h3>
+              <div id="heroTestMeta" class="soft mono hero-test-meta"></div>
+            </div>
             <div class="d-flex gap-2 flex-wrap justify-content-end">
               <span id="testStreakBadge" class="badge rounded-pill text-bg-warning text-dark d-none"></span>
               <span id="rankShiftBadge" class="badge rounded-pill d-none"></span>
             </div>
           </div>
+          <div class="mt-3">
+            <span id="rankTierBadge" class="badge rounded-pill rank-tier-badge"></span>
+          </div>
           <h2 id="rankValue" class="display fw-bold mt-2 mb-0 rank-hero-number"></h2>
-          <div id="rankSummary" class="soft"></div>
+          <div id="rankSummary" class="soft rank-summary"></div>
           <div id="homeKpiRow" class="hero-kpi-grid mt-4"></div>
         </div>
       </div>
 
       <h5 class="display fw-bold">Top Performers</h5>
-      <div id="topPerformers" class="d-flex gap-2 overflow-auto pb-1 mb-4"></div>
+      <div id="topPerformers" class="mb-4"></div>
 
       <div class="card app-card p-3 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -857,11 +991,13 @@
   </template>
 
   <template id="topPerformerTemplate">
-    <div class="card app-card-soft hover-card p-3 text-center flex-shrink-0 position-relative top-performer-card">
-      <div class="top-performer-rank mb-1"></div>
-      <div class="top-performer-avatar d-flex justify-content-center"></div>
-      <div class="fw-bold mt-2 text-truncate top-performer-name"></div>
-      <div class="mono soft top-performer-meta"></div>
+    <div class="top-performer-card">
+      <div class="card app-card-soft hover-card text-center position-relative top-performer-card-shell">
+        <div class="top-performer-rank mb-1"></div>
+        <div class="top-performer-avatar d-flex justify-content-center"></div>
+        <div class="fw-bold mt-2 text-truncate top-performer-name"></div>
+        <div class="mono soft top-performer-meta"></div>
+      </div>
     </div>
   </template>
 
@@ -952,6 +1088,7 @@
       { key: "Physics", from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P" },
       { key: "Chemistry", from: "#d946ef", to: "#ec4899", accent: "#f472b6", icon: "C" },
       { key: "Maths", from: "#f59e0b", to: "#f97316", accent: "#fb923c", icon: "M" },
+      { key: "Biology", from: "#22c55e", to: "#14b8a6", accent: "#6ee7b7", icon: "B" },
     ];
 
     const MEDALS = {
@@ -1030,6 +1167,8 @@
       rankTierBadge: document.getElementById("rankTierBadge"),
       testStreakBadge: document.getElementById("testStreakBadge"),
       rankShiftBadge: document.getElementById("rankShiftBadge"),
+      heroTestTitle: document.getElementById("heroTestTitle"),
+      heroTestMeta: document.getElementById("heroTestMeta"),
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
       homeKpiRow: document.getElementById("homeKpiRow"),
@@ -1157,8 +1296,86 @@
       const value = String(name || "").toLowerCase();
       if (value.includes("physics") || value === "phy") return "Physics";
       if (value.includes("chemistry") || value === "chem") return "Chemistry";
+      if (value.includes("biology") || value === "bio") return "Biology";
       if (value.includes("math")) return "Maths";
       return "";
+    }
+
+    function inferExamTrack(test) {
+      const batchText = String(currentStudent.batch || "").toLowerCase();
+      if (batchText.includes("neet")) return "neet";
+      if (batchText.includes("jee")) return "jee";
+
+      const normalizedSections = (test?.sectionBreakdown || [])
+        .map((section) => normalizeSectionKey(section.name))
+        .filter(Boolean);
+
+      if (normalizedSections.includes("Biology")) return "neet";
+      if (normalizedSections.includes("Maths")) return "jee";
+      return "";
+    }
+
+    function preferredHeroSections(test) {
+      const sections = test?.sectionBreakdown || [];
+      if (!sections.length) {
+        return [];
+      }
+
+      const preferredOrder = inferExamTrack(test) === "neet"
+        ? ["Physics", "Chemistry", "Biology"]
+        : ["Physics", "Chemistry", "Maths"];
+
+      const matched = preferredOrder
+        .map((target) => sections.find((section) => normalizeSectionKey(section.name) === target))
+        .filter(Boolean);
+
+      if (matched.length === preferredOrder.length) {
+        return matched;
+      }
+
+      return sections.slice(0, 3);
+    }
+
+    function rankBadgeConfig(rank, attempted) {
+      if (!attempted || rank === null) {
+        return { label: "Not Attempted", className: "rank-badge-missed" };
+      }
+      if (rank === 1) {
+        return { label: "Champion", className: "rank-badge-rank-1" };
+      }
+      if (rank <= 3) {
+        return { label: "Podium", className: "rank-badge-top-3" };
+      }
+      if (rank <= 10) {
+        return { label: "Elite", className: "rank-badge-top-10" };
+      }
+      if (rank <= 25) {
+        return { label: "Rising", className: "rank-badge-top-25" };
+      }
+      return { label: "Completed", className: "rank-badge-complete" };
+    }
+
+    function formatHeroMeta(test) {
+      const parts = [test?.date, test?.time].filter(Boolean);
+      return parts.join(" • ");
+    }
+
+    function rankShiftPresentation(test) {
+      const attempted = !!test?.attempted;
+      const rankDelta = attempted ? test?.rankDelta : null;
+      if (!attempted) {
+        return { label: "NA", className: "text-bg-secondary" };
+      }
+      if (rankDelta === null || rankDelta === undefined) {
+        return { label: "--", className: "text-bg-secondary" };
+      }
+      if (rankDelta > 0) {
+        return { label: `+${rankDelta}`, className: "text-bg-success" };
+      }
+      if (rankDelta < 0) {
+        return { label: `${rankDelta}`, className: "text-bg-danger" };
+      }
+      return { label: "0", className: "text-bg-secondary" };
     }
 
     function getThemeForSection(name, index = 0) {
@@ -1294,6 +1511,35 @@
       });
     }
 
+    function heroMetricCards(test) {
+      const sections = preferredHeroSections(test);
+      const cards = [
+        {
+          label: "Total Score",
+          value: `${Number(test?.score || 0)}/${Number(test?.totalMarks || 0)}`,
+          extra: "Overall marks",
+        },
+      ];
+
+      sections.forEach((section) => {
+        cards.push({
+          label: section.name,
+          value: `${Number(section.score || 0)}/${Number(section.total || 0)}`,
+          extra: `${Number(section.percentage || 0)}% in this section`,
+        });
+      });
+
+      while (cards.length < 4) {
+        cards.push({
+          label: `Section ${cards.length}`,
+          value: "--",
+          extra: "No section data",
+        });
+      }
+
+      return cards.slice(0, 4);
+    }
+
     function applyTestSlotButtonState(button, slot, slotIndex) {
       button.classList.remove("btn-brand", "btn-outline-light", "test-slot-selected", "test-slot-upcoming");
       button.disabled = false;
@@ -1425,15 +1671,19 @@
     function renderHome() {
       const test = currentTest();
       if (!test) {
-        refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
+        refs.heroTestTitle.textContent = "No test selected";
+        refs.heroTestMeta.textContent = "";
+        refs.rankTierBadge.className = "badge rounded-pill rank-tier-badge rank-badge-missed";
         refs.rankTierBadge.textContent = "NO TESTS YET";
         refs.rankValue.textContent = "--";
         refs.rankSummary.textContent = "No completed tests available yet.";
         refs.testStreakBadge.classList.add("d-none");
         refs.rankShiftBadge.classList.add("d-none");
         renderKpiCards([
-          { label: "Status", value: "Awaiting", extra: "First completed test" },
-          { label: "Window", value: "Soon", extra: "Use the upcoming tab to launch" },
+          { label: "Total Score", value: "--", extra: "Awaiting first test" },
+          { label: "Section 1", value: "--", extra: "No section data" },
+          { label: "Section 2", value: "--", extra: "No section data" },
+          { label: "Section 3", value: "--", extra: "No section data" },
         ]);
         clearNode(refs.topPerformers);
         clearNode(refs.leaderboardBody);
@@ -1444,6 +1694,7 @@
 
       const attempted = !!test.attempted;
       const rank = attempted ? test.rank : null;
+<<<<<<< HEAD
       const rankDelta = attempted ? test.rankDelta : null;
       const scoreValue = Number(test.score || 0);
       const totalMarks = Number(test.totalMarks || 0);
@@ -1500,20 +1751,16 @@
               : `${topEntry.score} - ${topEntry.name}`;
         }
       }
+=======
+      const badge = rankBadgeConfig(rank, attempted);
+>>>>>>> 4d090425929b5a443b6b31bc8c6e6f28454cfe5b
 
-      if (attempted) {
-        refs.rankTierBadge.className = `badge rounded-pill ${
-          rank <= 10 ? "text-bg-info" : rank <= 25 ? "text-bg-primary" : "text-bg-secondary"
-        }`;
-        refs.rankTierBadge.textContent = rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD";
-        refs.rankValue.textContent = `#${rank}`;
-      } else {
-        refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
-        refs.rankTierBadge.textContent = "NOT ATTEMPTED";
-        refs.rankValue.textContent = "--";
-      }
-
-      refs.rankSummary.textContent = `of ${test.totalStudents || currentLeaderboard().length} students - ${test.name}`;
+      refs.heroTestTitle.textContent = test.name || "Test";
+      refs.heroTestMeta.textContent = formatHeroMeta(test);
+      refs.rankTierBadge.className = `badge rounded-pill rank-tier-badge ${badge.className}`;
+      refs.rankTierBadge.textContent = badge.label;
+      refs.rankValue.textContent = attempted && rank !== null ? `#${rank}` : "--";
+      refs.rankSummary.textContent = `of ${test.totalStudents || currentLeaderboard().length} students`;
 
       if (test.testStreak > 0) {
         refs.testStreakBadge.className = "badge rounded-pill text-bg-warning text-dark";
@@ -1523,24 +1770,12 @@
         refs.testStreakBadge.classList.add("d-none");
       }
 
-      refs.rankShiftBadge.classList.remove("d-none", "text-bg-success", "text-bg-danger", "text-bg-secondary");
-      if (!attempted) {
-        refs.rankShiftBadge.classList.add("text-bg-secondary");
-        refs.rankShiftBadge.textContent = "NA";
-      } else if (rankDelta === null) {
-        refs.rankShiftBadge.classList.add("text-bg-secondary");
-        refs.rankShiftBadge.textContent = "0";
-      } else if (rankDelta > 0) {
-        refs.rankShiftBadge.classList.add("text-bg-success");
-        refs.rankShiftBadge.textContent = `↑ ${rankDelta}`;
-      } else if (rankDelta < 0) {
-        refs.rankShiftBadge.classList.add("text-bg-danger");
-        refs.rankShiftBadge.textContent = `↓ ${Math.abs(rankDelta)}`;
-      } else {
-        refs.rankShiftBadge.classList.add("text-bg-secondary");
-        refs.rankShiftBadge.textContent = "0";
-      }
+      const rankShift = rankShiftPresentation(test);
+      refs.rankShiftBadge.className = `badge rounded-pill ${rankShift.className}`;
+      refs.rankShiftBadge.textContent = rankShift.label;
+      refs.rankShiftBadge.classList.remove("d-none");
 
+<<<<<<< HEAD
       renderKpiCards([
         {
           label: "Total",
@@ -1576,6 +1811,9 @@
           extra: `Top: ${subjectTopLabel}`,
         },
       ]);
+=======
+      renderKpiCards(heroMetricCards(test));
+>>>>>>> 4d090425929b5a443b6b31bc8c6e6f28454cfe5b
 
       renderTopPerformers(test);
       renderLeaderboard(test);
@@ -1649,13 +1887,18 @@
     function renderTopPerformers(test) {
       clearNode(refs.topPerformers);
       const entries = (test?.topPerformers && test.topPerformers.length)
-        ? test.topPerformers
-        : currentLeaderboard().slice(0, 5);
+        ? test.topPerformers.filter((entry) => Number(entry.rank) <= 3)
+        : currentLeaderboard().filter((entry) => Number(entry.rank) <= 3);
 
-      entries.forEach((entry) => {
+      if (!entries.length) {
+        return;
+      }
+
+      const decorateNode = (entry, variantClass, avatarSize) => {
         const student = studentMap.get(entry.studentId) || {};
         const node = cloneTemplate("topPerformerTemplate");
         const medal = createRankMedal(entry.rank);
+        node.classList.add(variantClass);
         node.querySelector(".top-performer-rank").textContent = `#${entry.rank}`;
         if (medal) {
           node.querySelector(".top-performer-rank").appendChild(medal);
@@ -1663,15 +1906,35 @@
         node.querySelector(".top-performer-avatar").appendChild(
           createAvatar(
             entry.studentName || student.name || entry.studentId,
-            42,
+            avatarSize,
             entry.profilePhotoUrl || student.profilePhotoUrl || "",
           ),
         );
         node.querySelector(".top-performer-name").textContent = entry.studentName || student.name || entry.studentId;
         node.querySelector(".top-performer-meta").textContent =
           `#${entry.rank} - ${(entry.score ?? entry.total ?? 0)}/${entry.totalMarks || test.totalMarks || 0}`;
-        refs.topPerformers.appendChild(node);
+        return node;
+      };
+
+      const podium = document.createElement("div");
+      podium.className = "top-performer-podium";
+      [2, 1, 3].forEach((rankNumber) => {
+        const rankEntries = entries.filter((item) => Number(item.rank) === rankNumber);
+        if (!rankEntries.length) return;
+        const variantClass = rankNumber === 1
+          ? "top-performer-first"
+          : rankNumber === 2
+            ? "top-performer-second"
+            : "top-performer-third";
+        rankEntries.forEach((entry) => {
+          const avatarSize = rankNumber === 1 ? 68 : rankNumber === 2 ? 54 : 50;
+          podium.appendChild(decorateNode(entry, variantClass, avatarSize));
+        });
       });
+
+      if (podium.childElementCount) {
+        refs.topPerformers.appendChild(podium);
+      }
     }
 
     function renderLeaderboard(test) {
