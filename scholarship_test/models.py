@@ -304,6 +304,13 @@ class ScholarshipStudentAnswer(models.Model):
 class ScholarshipTestFolder(models.Model):
     name = models.CharField(max_length=100)
     tags = models.CharField(max_length=200, blank=True, default="")
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="children",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -321,6 +328,7 @@ class ScholarshipTest(models.Model):
     duration_minutes = models.IntegerField(default=0)
     batch = models.CharField(max_length=50, blank=True, default="")
     stream = models.CharField(max_length=50, blank=True, default="")
+    subject = models.CharField(max_length=50, blank=True, default="Physics")
     folder = models.ForeignKey(
         ScholarshipTestFolder,
         on_delete=models.SET_NULL,

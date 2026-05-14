@@ -3,6 +3,7 @@ var defaultS = {
   duration: "1",
   batch: "",
   stream: "",
+  subject: "Physics",
   tags: "SCHOLARSHIP TEST",
   scheduledStartAt: "",
   instructions: "",
@@ -227,6 +228,7 @@ function getTestDetailsPayload() {
     duration_minutes: duration.minutes,
     batch: S.batch || "",
     stream: S.stream || "",
+    subject: S.subject || "",
     tags: S.tags,
     scheduled_start_at: S.scheduledStartAt || "",
     instructions: S.instructions,
@@ -265,6 +267,7 @@ function loadData() {
             ),
             batch: data.test.batch || "",
             stream: data.test.stream || "",
+            subject: data.test.subject || "Physics",
             tags: data.test.tags,
             scheduledStartAt: data.test.scheduled_start_at || "",
             instructions: data.test.instructions,
@@ -1933,12 +1936,17 @@ window.openTestDetails = function () {
       '" min="0" max="59" step="1"></div>' +
       "</div>" +
       '<div class="form-row">' +
-      '<div class="form-group"><div class="form-label">Batch</div><input class="form-input" id="td-batch" value="' +
-      e(S.batch || "") +
-      '"></div>' +
-      '<div class="form-group"><div class="form-label">Stream</div><input class="form-input" id="td-stream" value="' +
-      e(S.stream || "") +
-      '"></div>' +
+      '<div class="form-group"><div class="form-label">Batch</div>' +
+      buildTestDetailsSelect("td-batch", ["Star 01", "Star 02", "Alpha", "9 th", "10 th"], S.batch || "") +
+      "</div>" +
+      '<div class="form-group"><div class="form-label">Stream</div>' +
+      buildTestDetailsSelect("td-stream", ["JEE", "NEET", "MHTCET", "All"], S.stream || "") +
+      "</div>" +
+      "</div>" +
+      '<div class="form-row">' +
+      '<div class="form-group"><div class="form-label">Subject</div>' +
+      buildTestDetailsSelect("td-subject", ["Physics", "Chemistry", "Maths"], S.subject || "Physics") +
+      "</div>" +
       "</div>" +
       '<div class="form-row">' +
       '<div class="form-group"><div class="form-label">Tags</div><input class="form-input" id="td-tags" value="' +
@@ -1966,6 +1974,7 @@ window.saveTestDetails = function () {
   S.duration = normalizeDurationValue(null, durationHours, durationMinutes);
   S.batch = document.getElementById("td-batch").value.trim();
   S.stream = document.getElementById("td-stream").value.trim();
+  S.subject = document.getElementById("td-subject").value.trim();
   S.tags = document.getElementById("td-tags").value.trim();
   S.scheduledStartAt = document
     .getElementById("td-scheduled-start")
@@ -1992,6 +2001,8 @@ function applySavedTestDetailsState(nextState, result) {
   );
   S.batch = returnedTest.batch != null ? returnedTest.batch : nextState.batch;
   S.stream = returnedTest.stream != null ? returnedTest.stream : nextState.stream;
+  S.subject =
+    returnedTest.subject != null ? returnedTest.subject : nextState.subject;
   S.tags = returnedTest.tags != null ? returnedTest.tags : nextState.tags;
   S.scheduledStartAt =
     returnedTest.scheduled_start_at != null
@@ -2007,6 +2018,40 @@ function applySavedTestDetailsState(nextState, result) {
   if (returnedTest.default_neg_marks != null) {
     S.defaultNegMarks = Number(returnedTest.default_neg_marks);
   }
+}
+
+function buildTestDetailsSelect(id, options, currentValue) {
+  var normalizedCurrent = String(currentValue || "").trim().toLowerCase();
+  var hasCurrent = options.some(function (option) {
+    return option.toLowerCase() === normalizedCurrent;
+  });
+  var selectOptions = options.slice();
+
+  if (currentValue && !hasCurrent) {
+    selectOptions.unshift(String(currentValue).trim());
+  }
+
+  return (
+    '<select class="form-input" id="' +
+    id +
+    '">' +
+    selectOptions
+      .map(function (option) {
+        var selected =
+          option.toLowerCase() === normalizedCurrent ? " selected" : "";
+        return (
+          '<option value="' +
+          e(option) +
+          '"' +
+          selected +
+          ">" +
+          e(option) +
+          "</option>"
+        );
+      })
+      .join("") +
+    "</select>"
+  );
 }
 
 window.saveTestDetails = function () {
@@ -2026,6 +2071,7 @@ window.saveTestDetails = function () {
     duration_minutes: durationParts.minutes,
     batch: document.getElementById("td-batch").value.trim(),
     stream: document.getElementById("td-stream").value.trim(),
+    subject: document.getElementById("td-subject").value.trim(),
     tags: document.getElementById("td-tags").value.trim(),
     scheduled_start_at: document
       .getElementById("td-scheduled-start")
@@ -2071,6 +2117,7 @@ window._legacySaveTest = function () {
       duration_minutes: duration.minutes,
       batch: S.batch || "",
       stream: S.stream || "",
+      subject: S.subject || "",
       tags: tags,
       scheduled_start_at: S.scheduledStartAt || "",
       status: "published",
@@ -2320,6 +2367,7 @@ window.saveTest = function () {
       duration_minutes: duration.minutes,
       batch: S.batch || "",
       stream: S.stream || "",
+      subject: S.subject || "",
       tags: S.tags || "",
       scheduled_start_at: S.scheduledStartAt || "",
       status: "published",

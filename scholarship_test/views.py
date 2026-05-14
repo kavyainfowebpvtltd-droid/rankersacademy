@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.utils import timezone
 from django.db import transaction, IntegrityError
+from sds.models import Student
 
 from scholarship_test.models import (
     RankPredictorLead,
@@ -48,6 +49,19 @@ TOTAL_QUESTIONS = 20
 SELECTED_TEST_SESSION_KEY = 'scholarship_selected_test_id'
 RANK_PREDICTOR_UNLOCKED_SESSION_KEY = 'rank_predictor_unlocked'
 RANK_PREDICTOR_PHONE_SESSION_KEY = 'rank_predictor_phone'
+
+
+def _can_manage_scholarship_tests(user) -> bool:
+    return bool(
+        getattr(user, 'is_authenticated', False)
+        and (
+            getattr(user, 'is_superuser', False)
+            or (
+                hasattr(user, 'teacheradmin')
+                and getattr(user.teacheradmin, 'role', '') == 'Admin'
+            )
+        )
+    )
 
 
 def _is_valid_person_name(name: str) -> bool:
@@ -1253,7 +1267,17 @@ def scholarship_logout(request):
     return redirect('login.html')
 
 def scholarshiptest_management(request):
-    return render(request, "scholarshiptest-management.html")
+    manual_mark_tests = ScholarshipTest.objects.all().order_by('-created_at', '-id')
+    manual_mark_students = Student.objects.select_related('user').order_by('username', 'id')
+
+    return render(
+        request,
+        "scholarshiptest-management.html",
+        {
+            "manual_mark_tests": manual_mark_tests,
+            "manual_mark_students": manual_mark_students,
+        },
+    )
 
 def scholarship_create_test(request):
     response = render(request, "create_test.html")
@@ -1277,6 +1301,7 @@ def api_get_tests(request):
             'duration_minutes': test.duration_minutes,
             'batch': test.batch,
             'stream': test.stream,
+            'subject': test.subject,
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1310,6 +1335,7 @@ def api_create_test(request):
     tags = data.get('tags', '')
     batch = (data.get('batch') or '').strip()
     stream = (data.get('stream') or '').strip()
+    subject = (data.get('subject') or 'Physics').strip() or 'Physics'
     status = data.get('status', 'draft')
     valid_statuses = {choice[0] for choice in ScholarshipTest._meta.get_field('status').choices}
     if status not in valid_statuses:
@@ -1338,6 +1364,7 @@ def api_create_test(request):
         folder=folder,
         batch=batch,
         stream=stream,
+        subject=subject,
         tags=tags,
         duration_hours=duration_hours,
         duration_minutes=duration_minutes,
@@ -1362,11 +1389,121 @@ def api_create_test(request):
             'duration_minutes': test.duration_minutes,
             'batch': test.batch,
             'stream': test.stream,
+            'subject': test.subject,
             'tags': test.tags,
             'status': test.status,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
             'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
         }
+    })
+
+
+def _manual_mark_int(value, field_name):
+    try:
+        score = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} must be a number")
+    if score < 0:
+        raise ValueError(f"{field_name} cannot be negative")
+    if score > 100:
+        raise ValueError(f"{field_name} cannot be greater than 100")
+    return score
+
+
+@csrf_exempt
+@require_POST
+def api_save_manual_marks(request):
+    if not _can_manage_scholarship_tests(request.user):
+        return JsonResponse(
+            {'success': False, 'error': 'Only admins can upload manual marks.'},
+            status=403,
+        )
+
+    try:
+        data = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        data = request.POST
+
+    try:
+        test_id = int(data.get('test_id') or 0)
+        portal_student_id = int(data.get('student_id') or 0)
+    except (TypeError, ValueError):
+        return JsonResponse({'success': False, 'error': 'Select a valid test and student.'}, status=400)
+
+    test = ScholarshipTest.objects.filter(id=test_id).first()
+    portal_student = Student.objects.select_related('user').filter(id=portal_student_id).first()
+    if not test or not portal_student:
+        return JsonResponse({'success': False, 'error': 'Selected test or student was not found.'}, status=404)
+
+    try:
+        physics = _manual_mark_int(data.get('physics'), 'Physics marks')
+        chemistry = _manual_mark_int(data.get('chemistry'), 'Chemistry marks')
+        biology = _manual_mark_int(data.get('biology'), 'Biology marks')
+    except ValueError as error:
+        return JsonResponse({'success': False, 'error': str(error)}, status=400)
+
+    score = physics + chemistry + biology
+    total_marks = 300
+    total_questions = len(test_service.get_runtime_questions_for_test(test)) or 0
+
+    phone_number = _normalize_portal_phone(portal_student.contact) or f"INT{portal_student.id:08d}"[:15]
+    scholarship_student, _created = ScholarshipStudent.objects.get_or_create(
+        phone_number=phone_number,
+        defaults={
+            'name': portal_student.student_name or portal_student.user.username,
+            'grade': portal_student.grade or '',
+            'board': portal_student.board or '',
+            'otp_verified': True,
+        },
+    )
+    scholarship_student.name = portal_student.student_name or portal_student.user.username
+    scholarship_student.grade = portal_student.grade or ''
+    scholarship_student.board = portal_student.board or ''
+    scholarship_student.otp_verified = True
+    scholarship_student.save(update_fields=['name', 'grade', 'board', 'otp_verified', 'updated_at'])
+
+    attempt = (
+        ScholarshipTestAttempt.objects
+        .filter(test=test, portal_student=portal_student)
+        .order_by('-test_started_at', '-id')
+        .first()
+    )
+    if attempt is None:
+        attempt = ScholarshipTestAttempt(
+            student=scholarship_student,
+            test=test,
+            portal_student=portal_student,
+        )
+
+    progress_state = dict(attempt.progress_state or {})
+    progress_state['manual_marks'] = True
+    progress_state['manual_subject_scores'] = {
+        'Physics': physics,
+        'Chemistry': chemistry,
+        'Biology': biology,
+    }
+    progress_state['answers'] = progress_state.get('answers') or {}
+
+    attempt.student = scholarship_student
+    attempt.test = test
+    attempt.portal_student = portal_student
+    attempt.student_batch = portal_student.batch or ''
+    attempt.score = score
+    attempt.total_marks = total_marks
+    attempt.total_questions = total_questions
+    attempt.scholarship_percentage = test_service.calculate_scholarship_percentage(score, total_marks)
+    attempt.status = 'completed'
+    attempt.test_completed_at = timezone.now()
+    attempt.progress_state = progress_state
+    attempt.sms_error = 'Manual marks entry'
+    attempt.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Manual marks saved successfully.',
+        'attempt_id': attempt.id,
+        'score': score,
+        'total_marks': total_marks,
     })
 
 
@@ -1405,6 +1542,8 @@ def api_update_test(request, test_id):
         test.batch = (data.get('batch') or '').strip()
     if 'stream' in data:
         test.stream = (data.get('stream') or '').strip()
+    if 'subject' in data:
+        test.subject = (data.get('subject') or 'Physics').strip() or 'Physics'
     if 'test_date' in data:
         try:
             test.date = _parse_test_date(data.get('test_date'))
@@ -1449,6 +1588,7 @@ def api_update_test(request, test_id):
         'duration_minutes': test.duration_minutes,
         'batch': test.batch,
         'stream': test.stream,
+        'subject': test.subject,
         'tags': test.tags,
         'status': test.status,
         'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
@@ -1500,6 +1640,7 @@ def api_get_folders(request):
             'id': folder.id,
             'name': folder.name,
             'tags': folder.tags,
+            'parentId': folder.parent_id,
         })
     return JsonResponse({'folders': data})
 
@@ -1518,9 +1659,23 @@ def api_create_folder(request):
     if not name:
         return JsonResponse({'error': 'Name is required'}, status=400)
 
-    if ScholarshipTestFolder.objects.filter(name__iexact=name).exists():
+    parent_id = data.get('parentId')
+    parent = None
+    if parent_id:
+        try:
+            parent = ScholarshipTestFolder.objects.get(id=parent_id)
+        except ScholarshipTestFolder.DoesNotExist:
+            return JsonResponse({'error': 'Parent folder not found'}, status=404)
+
+    duplicate_qs = ScholarshipTestFolder.objects.filter(name__iexact=name)
+    if parent is None:
+        duplicate_qs = duplicate_qs.filter(parent__isnull=True)
+    else:
+        duplicate_qs = duplicate_qs.filter(parent_id=parent.id)
+
+    if duplicate_qs.exists():
         return JsonResponse(
-            {'error': 'A folder with this name already exists. Change the name and try again.'},
+            {'error': 'A folder with this name already exists in this location. Change the name and try again.'},
             status=400,
         )
     
@@ -1529,6 +1684,7 @@ def api_create_folder(request):
     folder = ScholarshipTestFolder.objects.create(
         name=name,
         tags=tags,
+        parent=parent,
     )
     
     return JsonResponse({
@@ -1537,6 +1693,7 @@ def api_create_folder(request):
             'id': folder.id,
             'name': folder.name,
             'tags': folder.tags,
+            'parentId': folder.parent_id,
         }
     })
 
@@ -1562,9 +1719,14 @@ def api_update_folder(request, folder_id):
     if not name:
         return JsonResponse({'error': 'Name is required'}, status=400)
 
-    if ScholarshipTestFolder.objects.filter(name__iexact=name).exclude(id=folder_id).exists():
+    duplicate_qs = ScholarshipTestFolder.objects.filter(name__iexact=name).exclude(id=folder_id)
+    if folder.parent_id is None:
+        duplicate_qs = duplicate_qs.filter(parent__isnull=True)
+    else:
+        duplicate_qs = duplicate_qs.filter(parent_id=folder.parent_id)
+    if duplicate_qs.exists():
         return JsonResponse(
-            {'error': 'A folder with this name already exists. Change the name and try again.'},
+            {'error': 'A folder with this name already exists in this location. Change the name and try again.'},
             status=400,
         )
 
@@ -1583,6 +1745,7 @@ def api_update_folder(request, folder_id):
             'id': folder.id,
             'name': folder.name,
             'tags': folder.tags,
+            'parentId': folder.parent_id,
         }
     })
 
@@ -1597,8 +1760,18 @@ def api_delete_folder(request, folder_id):
     except ScholarshipTestFolder.DoesNotExist:
         return JsonResponse({'error': 'Folder not found'}, status=404)
 
-    deleted_tests_count = folder.tests.count()
-    folder.tests.all().delete()
+    descendant_ids = [folder.id]
+    queue = [folder.id]
+    while queue:
+        current_id = queue.pop(0)
+        child_ids = list(
+            ScholarshipTestFolder.objects.filter(parent_id=current_id).values_list('id', flat=True)
+        )
+        descendant_ids.extend(child_ids)
+        queue.extend(child_ids)
+
+    deleted_tests_count = ScholarshipTest.objects.filter(folder_id__in=descendant_ids).count()
+    ScholarshipTest.objects.filter(folder_id__in=descendant_ids).delete()
 
     folder.delete()
     return JsonResponse({'success': True, 'deleted_tests_count': deleted_tests_count})
@@ -1673,6 +1846,7 @@ def api_copy_test(request, test_id):
         folder=original_test.folder,
         batch=original_test.batch,
         stream=original_test.stream,
+        subject=original_test.subject,
         tags=original_test.tags,
         duration_hours=original_test.duration_hours,
         duration_minutes=original_test.duration_minutes,
@@ -1900,6 +2074,7 @@ def api_get_test_details(request, test_id):
             'duration_minutes': test.duration_minutes,
             'batch': test.batch,
             'stream': test.stream,
+            'subject': test.subject,
             'tags': test.tags,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
             'instructions': config.instructions if config else '',
@@ -1937,6 +2112,8 @@ def api_save_test_details(request, test_id):
         test.batch = (data.get('batch') or '').strip()
     if 'stream' in data:
         test.stream = (data.get('stream') or '').strip()
+    if 'subject' in data:
+        test.subject = (data.get('subject') or 'Physics').strip() or 'Physics'
     if 'tags' in data:
         test.tags = data['tags']
     if 'status' in data:
@@ -1977,6 +2154,7 @@ def api_save_test_details(request, test_id):
             'duration_minutes': test.duration_minutes,
             'batch': test.batch,
             'stream': test.stream,
+            'subject': test.subject,
             'tags': test.tags,
             'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
             'instructions': config.instructions,

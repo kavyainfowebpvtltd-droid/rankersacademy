@@ -64,8 +64,10 @@ function buildUsernameFromBatch(batch) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initUserTypeTabs();
+
   if (addUserModalEl) {
-    addUserModal = new bootstrap.Modal(addUserModalEl);
+    addUserModal = typeof bootstrap !== "undefined" ? new bootstrap.Modal(addUserModalEl) : null;
   }
 
   toggleFields();
@@ -96,6 +98,41 @@ document.addEventListener("DOMContentLoaded", () => {
     batchInput.addEventListener("blur", () => generateUsernameFromBatch());
   }
 });
+
+function initUserTypeTabs() {
+  const tabs = document.querySelectorAll(".user-type-tab");
+  const panels = document.querySelectorAll(".user-section-panel");
+
+  if (!tabs.length || !panels.length) {
+    return;
+  }
+
+  const showSection = (section) => {
+    const selectedSection = section || "students";
+
+    tabs.forEach((tab) => {
+      const isActive = tab.dataset.userSection === selectedSection;
+      tab.classList.toggle("active", isActive);
+      tab.setAttribute("aria-pressed", isActive ? "true" : "false");
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    panels.forEach((panel) => {
+      const isActive = panel.dataset.userPanel === selectedSection;
+      panel.classList.toggle("d-none", !isActive);
+      panel.hidden = !isActive;
+      panel.style.display = isActive ? "" : "none";
+    });
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      showSection(tab.dataset.userSection || "students");
+    });
+  });
+
+  showSection("students");
+}
 
 let studentSearchDebounceRef = null;
 let studentFilterAbortController = null;
@@ -247,7 +284,13 @@ function generateUsernameFromBatch(sourceInput = null) {
 }
 
 function openAddUserModal() {
-  if (addUserModal) addUserModal.show();
+  if (addUserModal) {
+    addUserModal.show();
+  } else if (addUserModalEl) {
+    addUserModalEl.classList.add("show");
+    addUserModalEl.style.display = "block";
+    addUserModalEl.removeAttribute("aria-hidden");
+  }
   // Reset form when opening modal
   const form = document.querySelector("#addUserModal form");
   if (form) {

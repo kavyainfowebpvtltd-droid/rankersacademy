@@ -1321,7 +1321,12 @@
         titleRow.appendChild(createBadge(slotLabel, "text-bg-dark test-slot-badge"));
         const meta = document.createElement("span");
         meta.className = "test-slot-meta";
-        meta.textContent = `${slot.date} • ${slot.attempted ? "Completed" : "Not Attempted"}`;
+        const subjectLabel = slot.subject ? `${slot.subject} • ` : "";
+        const attemptedCountLabel =
+          Number(slot.attemptedCount || slot.totalStudents || 0) > 0
+            ? ` • ${slot.attemptedCount || slot.totalStudents} attempted`
+            : "";
+        meta.textContent = `${slot.date} • ${subjectLabel}${slot.attempted ? "Completed" : "Not Attempted"}${attemptedCountLabel}`;
         layout.appendChild(titleRow);
         layout.appendChild(meta);
         renderTestSlotSections(layout, slot);
@@ -1444,6 +1449,57 @@
       const totalMarks = Number(test.totalMarks || 0);
       const previousRank = rank !== null && rankDelta !== null ? rank + rankDelta : null;
       const weakLabels = (test.coachingItems || []).map((item) => item.name).join(", ");
+      const selectedSubjectKey = normalizeSectionKey(test.subject || "");
+      const sectionIndex = (test.sectionBreakdown || []).findIndex(
+        (section) => normalizeSectionKey(section.name || "") === selectedSubjectKey,
+      );
+      const sectionLabel =
+        selectedSubjectKey ||
+        ((test.sectionBreakdown || [])[0] && (test.sectionBreakdown || [])[0].name) ||
+        "Subject";
+      let subjectAverageLabel = "N/A";
+      let subjectTopLabel = "N/A";
+
+      if (sectionIndex >= 0) {
+        const sectionTotal = Number((test.sectionBreakdown[sectionIndex] || {}).total || 0);
+        const sectionScores = (test.leaderboard || [])
+          .map((entry) => {
+            const score = Number(entry.sectionScores?.[sectionIndex]?.score);
+            return Number.isFinite(score) ? score : null;
+          })
+          .filter((score) => score !== null);
+
+        if (sectionScores.length) {
+          const average =
+            Math.round(
+              (sectionScores.reduce((sum, score) => sum + score, 0) / sectionScores.length) *
+                10,
+            ) / 10;
+          subjectAverageLabel =
+            sectionTotal > 0 ? `${average}/${sectionTotal}` : `${average}`;
+        }
+
+        const topEntry = (test.leaderboard || []).reduce((best, entry) => {
+          const currentScore = Number(entry.sectionScores?.[sectionIndex]?.score);
+          if (!Number.isFinite(currentScore)) {
+            return best;
+          }
+          if (!best || currentScore > best.score) {
+            return {
+              score: currentScore,
+              name: entry.studentName || entry.studentId || "Student",
+            };
+          }
+          return best;
+        }, null);
+
+        if (topEntry) {
+          subjectTopLabel =
+            sectionTotal > 0
+              ? `${topEntry.score}/${sectionTotal} - ${topEntry.name}`
+              : `${topEntry.score} - ${topEntry.name}`;
+        }
+      }
 
       if (attempted) {
         refs.rankTierBadge.className = `badge rounded-pill ${
@@ -1513,6 +1569,11 @@
           label: "Date",
           value: test.shortDate || test.date || "--",
           extra: test.time || test.date || "",
+        },
+        {
+          label: `${sectionLabel} Avg`,
+          value: subjectAverageLabel,
+          extra: `Top: ${subjectTopLabel}`,
         },
       ]);
 

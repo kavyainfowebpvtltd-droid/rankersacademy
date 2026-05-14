@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/tests/<int:test_id>/save-section/', views.api_save_section, name="api_save_section"),
     path('api/tests/<int:test_id>/sections/<int:section_id>/delete/', views.api_delete_section, name="api_delete_section"),
     path('api/tests/<int:test_id>/questions/<int:question_id>/delete/', views.api_delete_question, name="api_delete_question"),
+    path('api/manual-marks/save/', views.api_save_manual_marks, name="api_save_manual_marks"),
 
     # Image Management APIs
     path('api/tests/<int:test_id>/upload-image/', views.api_upload_image, name="api_upload_image"),

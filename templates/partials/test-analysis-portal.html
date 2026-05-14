@@ -138,17 +138,17 @@
     <main id="app"></main>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      const SUBJECTS = ["Physics", "Chemistry", "Maths"];
+      const SUBJECTS = ["Physics", "Chemistry", "Biology"];
       const CLUSTER_SIZE = 12;
       const SUBJECT_THEMES = {
         Physics: { from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P", short: "PHY" },
         Chemistry: { from: "#d946ef", to: "#ec4899", accent: "#f472b6", icon: "C", short: "CHM" },
-        Maths: { from: "#f59e0b", to: "#f97316", accent: "#fb923c", icon: "M", short: "MTH" }
+        Biology: { from: "#22c55e", to: "#16a34a", accent: "#4ade80", icon: "B", short: "BIO" }
       };
       const TOPICS = {
         Physics: ["Mechanics", "Thermodynamics", "Waves & Sound", "Optics", "Electrostatics", "Current Electricity", "Magnetism", "Modern Physics"],
         Chemistry: ["Atomic Structure", "Chemical Bonding", "Thermochemistry", "Equilibrium", "Organic Reactions", "Coordination Compounds", "Electrochemistry", "Periodic Table"],
-        Maths: ["Algebra", "Quadratic Equations", "Trigonometry", "Coordinate Geometry", "Differential Calculus", "Integral Calculus", "Vectors & 3D", "Probability"]
+        Biology: ["Cell Biology", "Genetics", "Human Physiology", "Plant Physiology", "Ecology", "Evolution", "Biotechnology", "Diversity in Living World"]
       };
       const ANALYSIS_PAYLOAD = JSON.parse('{{ test_analysis_payload|default:"{}"|escapejs }}');
       const IS_ADMIN_PAGE = document.body.dataset.page === "admin";
@@ -198,13 +198,14 @@
       const CLUSTER_SCHEDULE = {
         Physics: { time: "4:00 - 4:30 PM", faculty: "Mr. Rajesh Kumar", room: "Conference Room A" },
         Chemistry: { time: "4:30 - 5:00 PM", faculty: "Dr. Priya Verma", room: "Conference Room A" },
-        Maths: { time: "5:00 - 5:30 PM", faculty: "Mr. Amit Sharma", room: "Conference Room A" }
+        Biology: { time: "5:00 - 5:30 PM", faculty: "Mr. Amit Sharma", room: "Conference Room A" }
       };
       const ADMIN_CREDS = { user: "admin", pwd: "admin@2026" };
       const FACULTY_CREDS = {
         physics: { user: "physics", pwd: "coach@2026", name: "Mr. Rajesh Kumar", subject: "Physics" },
         chemistry: { user: "chemistry", pwd: "coach@2026", name: "Dr. Priya Verma", subject: "Chemistry" },
-        maths: { user: "maths", pwd: "coach@2026", name: "Mr. Amit Sharma", subject: "Maths" }
+        maths: { user: "maths", pwd: "coach@2026", name: "Mr. Amit Sharma", subject: "Biology" },
+        biology: { user: "biology", pwd: "coach@2026", name: "Mr. Amit Sharma", subject: "Biology" }
       };
       const BADGES = [
         ["first_test", "&#127919;", "Mock Test Starter", "Completed the first academy test", "bronze"],
@@ -236,6 +237,7 @@
         noteCreate: "{% url 'test-analysis-note-create-api' %}",
         noteDelete: "{% url 'test-analysis-note-delete-api' %}"
       };
+      const ANALYSIS_DOWNLOAD_PDF_URL = "{% url 'test-analysis-download-pdf' %}";
       const SERVER_SESSION = JSON.parse('{{ test_analysis_session|escapejs }}');
 
       const state = {
@@ -282,7 +284,7 @@
                 testId: row.testId || t.id,
                 Physics: Number(row.Physics) || 0,
                 Chemistry: Number(row.Chemistry) || 0,
-                Maths: Number(row.Maths) || 0,
+                Biology: Number(row.Biology ?? row.Maths) || 0,
                 total: Number(row.total) || 0,
               })),
             ])
@@ -359,8 +361,8 @@
           const sh = hashCode(s.id);
           const Physics = Math.max(18, Math.min(99, (sh % 65) + 25 + ((testHash + sh) % 22) - 11));
           const Chemistry = Math.max(18, Math.min(99, ((sh * 7) % 65) + 25 + ((testHash * 3 + sh) % 22) - 11));
-          const Maths = Math.max(18, Math.min(99, ((sh * 13) % 65) + 25 + ((testHash * 5 + sh) % 22) - 11));
-          return { studentId: s.id, testId, Physics, Chemistry, Maths, total: Physics + Chemistry + Maths };
+          const Biology = Math.max(18, Math.min(99, ((sh * 13) % 65) + 25 + ((testHash * 5 + sh) % 22) - 11));
+          return { studentId: s.id, testId, Physics, Chemistry, Biology, total: Physics + Chemistry + Biology };
         });
       }
 
@@ -420,7 +422,7 @@
           if (!me || !rankEntry) return;
           const rank = rankEntry.rank;
           bestRank = Math.min(bestRank, rank);
-          ever90 ||= me.Physics >= 90 || me.Chemistry >= 90 || me.Maths >= 90;
+          ever90 ||= me.Physics >= 90 || me.Chemistry >= 90 || me.Biology >= 90;
           if (i) {
             const prevEntry = getRankings(allScores[TESTS[i - 1].id] || []).find((s) => s.studentId === studentId);
             if (prevEntry) {
@@ -498,7 +500,7 @@
         return alerts.sort((a, b) => b.severity - a.severity);
       }
 
-      function blankAttendance() { return { Physics: {}, Chemistry: {}, Maths: {}, finalized: {} }; }
+      function blankAttendance() { return { Physics: {}, Chemistry: {}, Biology: {}, finalized: {} }; }
       function getStore(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
       function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
       function cloneData(value, fallback) {
@@ -654,7 +656,7 @@
         const demo = state.loginMode === "student"
           ? "TRA001 / demo001<br>TRA014 / demo014<br>TRA033 / demo033<br><span class='soft'>Any TRA001-TRA050 with demo&lt;num&gt;</span>"
           : state.loginMode === "faculty"
-            ? "physics / coach@2026<br>chemistry / coach@2026<br>maths / coach@2026"
+            ? "physics / coach@2026<br>chemistry / coach@2026<br>biology / coach@2026"
             : "admin / admin@2026";
         return `<div class="app-shell d-flex align-items-center justify-content-center px-3 py-5">
           <button type="button" class="admin-theme-toggle position-fixed top-0 end-0 m-3" id="adminThemeToggle" onclick="AdminTheme.toggle()" aria-label="Toggle theme" aria-pressed="true"><i class="bi bi-moon-stars"></i><span class="admin-theme-toggle-label">Dark</span></button>
@@ -834,7 +836,7 @@
         const avg = Math.round(currentScores().reduce((n, s) => n + s[sub], 0) / STUDENTS.length);
         const rank = getRankings(currentScores(), sub).find((s) => s.studentId === score.studentId).rank;
         const delta = score[sub] - avg;
-        const boostBadge = sub === "Maths" && flagged ? ` ${badge("Boost", "text-bg-warning text-dark")}` : "";
+        const boostBadge = sub === "Biology" && flagged ? ` ${badge("Boost", "text-bg-warning text-dark")}` : "";
         return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(sub)}<div><b>${sub}</b>${boostBadge}<div class="small soft">Subject rank #${rank}</div></div></div><div class="display fs-2 fw-bold" style="color:${t.accent}">${score[sub]}</div>${progress(score[sub], t.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${avg}/100</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>` )}</div>`;
       }
 
@@ -861,16 +863,29 @@
         render();
       }
 
+      function getBatchRank(score) {
+        const student = scoreStudent(score);
+        const batch = String(student.batch || "").trim();
+        if (!batch) return "NA";
+
+        const batchRanked = getRankings(currentScores())
+          .map(scoreStudent)
+          .filter((item) => String(item.batch || "").trim().toLowerCase() === batch.toLowerCase());
+        const index = batchRanked.findIndex((item) => item.studentId === score.studentId);
+        return index >= 0 ? index + 1 : "NA";
+      }
+
       function leaderboard(ranked, highlightId = "", collapsible = false) {
         const rows = leaderboardRows(ranked, highlightId, collapsible && !state.studentLeaderboardOpen);
         const footer = collapsible ? `<div class="d-flex justify-content-between align-items-center mt-3">
           <div class="small soft">${state.studentLeaderboardOpen ? `Showing all ${ranked.length} students` : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`}</div>
           <button class="btn btn-outline-light btn-sm rounded-pill" onclick="toggleStudentLeaderboard()">${state.studentLeaderboardOpen ? "Show Less" : "View All"}</button>
         </div>` : "";
-        return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>MTH</th><th>Total</th></tr></thead><tbody>${rows.map((r) => {
+        return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>BIO</th><th>TOTAL SCORE</th><th>BATCH RANKING</th><th>INSTITUTE RANKING</th></tr></thead><tbody>${rows.map((r) => {
           const stu = scoreStudent(r);
           const mine = stu.id === highlightId;
-          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(displayStudentId(stu))}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Maths}</td><td><b>${r.total}</b></td></tr>`;
+          const batchRank = getBatchRank(r);
+          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(displayStudentId(stu))}${stu.batch ? ` - ${esc(stu.batch)}` : ""}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Biology}</td><td><b>${r.total}</b></td><td>${batchRank === "NA" ? "NA" : `#${batchRank}`}</td><td>#${r.rank}</td></tr>`;
         }).join("")}</tbody></table></div>${footer}`);
       }
 
@@ -1054,10 +1069,29 @@
 
       function adminView() {
         const tabs = [["overview","Overview"],["predict","At Risk"],["students","Students"],["clusters","Clusters"],["attend","Attendance"],["comms","Comms"]];
+        const current = currentTest();
+        const canExport = Boolean(current && current.id);
         return `<div class="app-shell pb-5"><div class="container-fluid px-3 px-lg-4">
-          ${adminTestSelector()}<div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
+          <div class="d-flex justify-content-between align-items-start gap-2">${adminTestSelector()}
+            <div class="pt-1">
+              <button class="btn btn-brand btn-sm rounded-pill fw-bold" ${canExport ? "" : "disabled"} onclick="downloadAnalysisPdf()">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download PDF
+              </button>
+            </div>
+          </div>
+          <div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
           ${state.adminTab === "overview" ? adminOverview() : state.adminTab === "predict" ? adminPredict() : state.adminTab === "students" ? adminStudents() : state.adminTab === "clusters" ? adminClusters() : state.adminTab === "attend" ? adminAttendance() : parentComms()}
         </div></div>`;
+      }
+
+      function downloadAnalysisPdf() {
+        const test = currentTest();
+        if (!test || !test.id) {
+          window.alert("Please select a completed test first.");
+          return;
+        }
+        const url = `${ANALYSIS_DOWNLOAD_PDF_URL}?test_id=${encodeURIComponent(test.id)}`;
+        window.open(url, "_blank");
       }
 
       function adminOverview() {
@@ -1084,7 +1118,7 @@
       function adminStudents() {
         const q = state.adminSearch.toLowerCase();
         const ranked = getRankings(currentScores(), state.adminSort).map(scoreStudent).filter((s) => !q || s.name.toLowerCase().includes(q) || String(s.id || s.studentRef || "").toLowerCase().includes(q));
-        return card("p-3 mb-4", `<div class="row g-2 mb-3"><div class="col-md"><input class="form-control" value="${esc(state.adminSearch)}" placeholder="Search name or ID" oninput="state.adminSearch=this.value;render()"></div><div class="col-md-auto"><select class="form-select" onchange="state.adminSort=this.value;render()">${["total","Physics","Chemistry","Maths"].map((k) => `<option ${state.adminSort === k ? "selected" : ""} value="${k}">${k}</option>`).join("")}</select></div></div>${leaderboard(ranked)}`);
+        return card("p-3 mb-4", `<div class="row g-2 mb-3"><div class="col-md"><input class="form-control" value="${esc(state.adminSearch)}" placeholder="Search name or ID" oninput="state.adminSearch=this.value;render()"></div><div class="col-md-auto"><select class="form-select" onchange="state.adminSort=this.value;render()">${["total","Physics","Chemistry","Biology"].map((k) => `<option ${state.adminSort === k ? "selected" : ""} value="${k}">${k}</option>`).join("")}</select></div></div>${leaderboard(ranked)}`);
       }
 
       function adminClusters() {
@@ -1092,7 +1126,7 @@
         const schedule = card("p-4 mb-4", `<h5 class="display fw-bold">Cluster Schedule</h5><div class="row g-2">${SUBJECTS.map((sub) => `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft mt-2">${CLUSTER_SCHEDULE[sub].faculty}<br>${CLUSTER_SCHEDULE[sub].time}</div>`)}</div>`).join("")}</div>`);
         const allSubjectBlock = allThree.size ? card("p-4 mb-4", `<h5 class="display fw-bold">All-Subjects Cluster</h5>${[...allThree].map((id) => {
           const s = scoreStudent(sc.find((x) => x.studentId === id));
-          return mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `${avatar(s.name, 30)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><span class="mono small">P${s.Physics} C${s.Chemistry} M${s.Maths}</span>`);
+          return mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `${avatar(s.name, 30)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><span class="mono small">P${s.Physics} C${s.Chemistry} B${s.Biology}</span>`);
         }).join("")}`) : "";
         const subjectBlocks = SUBJECTS.map((sub) => {
           const rows = getBottomCluster(sc, sub)
@@ -1142,7 +1176,7 @@
           const rank = rankEntry.rank;
           const flagged = SUBJECTS.filter((s) => getStudentClusterFlags(stu.id, currentScores())[s]);
           const tone = rank <= 10 ? "Celebrate" : rank <= 25 ? "Positive" : flagged.length === 3 ? "Concerned" : "Support";
-          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/300 - Rank: #${rank} of ${currentScores().length}\nPhysics: ${me.Physics} - Chemistry: ${me.Chemistry} - Maths: ${me.Maths}\n\n`;
+          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/300 - Rank: #${rank} of ${currentScores().length}\nPhysics: ${me.Physics} - Chemistry: ${me.Chemistry} - Biology: ${me.Biology}\n\n`;
           body += tone === "Celebrate" ? `Outstanding performance. ${stu.name.split(" ")[0]} cracked the top 10. Congratulations!` : tone === "Positive" ? `Solid showing this round. Encourage ${stu.name.split(" ")[0]} to keep the momentum.` : flagged.length ? `${stu.name.split(" ")[0]} will join faculty-led revision for ${flagged.join(", ")} after class. Please ensure attendance.` : "Steady performance. Keep up the consistency.";
           body += "\n\n- The Rankers Academy";
           return { studentId: stu.id, student: stu, tone, body, type: "post-test" };
@@ -1185,3 +1219,4 @@
     </script>
   </body>
 </html>
+

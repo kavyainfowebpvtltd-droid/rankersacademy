@@ -2,7 +2,7 @@
   const STORAGE_KEY = "rankersAdminTheme";
 
   function getTheme() {
-    return localStorage.getItem(STORAGE_KEY) === "light" ? "light" : "dark";
+    return "light";
   }
 
   function setThemeAttribute(doc, theme) {
@@ -65,8 +65,8 @@
   }
 
   function saveAndApplyTheme(theme) {
-    localStorage.setItem(STORAGE_KEY, theme);
-    applyTheme(theme);
+    localStorage.setItem(STORAGE_KEY, "light");
+    applyTheme("light");
   }
 
   function watchForThemeLinks() {
@@ -74,6 +74,7 @@
     observer.observe(document.head || document.documentElement, { childList: true, subtree: true });
   }
 
+  localStorage.setItem(STORAGE_KEY, "light");
   const initialTheme = getTheme();
   setThemeAttribute(document, initialTheme);
   syncThemeLinks(document, initialTheme);
@@ -83,7 +84,7 @@
     get: getTheme,
     set: saveAndApplyTheme,
     toggle() {
-      saveAndApplyTheme(getTheme() === "dark" ? "light" : "dark");
+      saveAndApplyTheme("light");
     },
     apply: applyTheme,
   };

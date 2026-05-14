@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 from decimal import Decimal, ROUND_HALF_UP
 from django.db.models import Avg, FloatField, OuterRef, Subquery, Value, DecimalField, Count, Prefetch
-from django.db.models.functions import Coalesce, Cast
+from django.db.models.functions import Coalesce, Cast, Lower
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.contrib.auth import authenticate, login, logout
@@ -1180,8 +1180,7 @@ def user_management(request):
     ):
         return HttpResponseForbidden("Only admins can access user management.")
     
-    # Order by student_name to ensure consistent ordering
-    all_students = Student.objects.select_related("user").order_by("-id")
+    all_students = Student.objects.select_related("user").order_by(Lower("username"), "id")
 
     student_search = (request.GET.get("student_search") or "").strip()
     student_batch_filter = (request.GET.get("student_batch") or "").strip()
@@ -1270,7 +1269,9 @@ def user_management(request):
     for batch, student_list in grouped.items():
         batch_counts[batch] = len(student_list)
 
-    teachers = TeacherAdmin.objects.select_related("user").order_by("role", "name")
+    teachers = TeacherAdmin.objects.select_related("user").order_by(Lower("username"), "id")
+    teaching_staff = teachers.filter(role__iexact="Teacher").order_by(Lower("username"), "id")
+    non_teaching_staff = teachers.exclude(role__iexact="Teacher").order_by(Lower("username"), "id")
 
     student_stream_options = fixed_stream_options
     student_board_options = fixed_board_options
@@ -1299,10 +1300,14 @@ def user_management(request):
             "students": students_page.object_list,              
             "students_grouped": grouped,      
             "teachers": teachers_page.object_list,
+            "teaching_staff": teaching_staff,
+            "non_teaching_staff": non_teaching_staff,
             "students_page": students_page,
             "teachers_page": teachers_page,
             "total_students": all_students.count(),
             "total_teachers": teachers.count(),
+            "total_teaching_staff": teaching_staff.count(),
+            "total_non_teaching_staff": non_teaching_staff.count(),
             "batch_counts_json": json.dumps(batch_counts),
             "student_search": student_search,
             "student_batch_filter": student_batch_filter,
@@ -2362,11 +2367,6 @@ def _build_management_sections():
             "icon": "bi bi-bar-chart-line",
             "iframe_url": reverse("test-analysis"),
         },
-        "bridge-course-management": {
-            "label": "Bridge Course Management",
-            "icon": "bi bi-award",
-            "iframe_url": reverse("bridgecourse:bridgecourse-management"),
-        },
         "user-management": {
             "label": "User Management",
             "icon": "bi bi-people",
@@ -2419,8 +2419,10 @@ def _normalize_test_analysis_subject_name(name: str) -> str:
         return "Physics"
     if value in {"chemistry", "chem"}:
         return "Chemistry"
+    if value in {"biology", "bio", "botany", "zoology"}:
+        return "Biology"
     if value in {"maths", "math", "mathematics", "mathmatics"}:
-        return "Maths"
+        return "Biology"
     return ""
 
 
@@ -2526,6 +2528,175 @@ def _coerce_analysis_test(test_id):
         return ScholarshipTest.objects.prefetch_related("sections__questions").get(id=int(test_id))
     except (TypeError, ValueError, ScholarshipTest.DoesNotExist):
         return None
+
+
+def _coerce_analysis_test_from_query(raw_test_id):
+    value = str(raw_test_id or "").strip()
+    if value.upper().startswith("SCH"):
+        value = value[3:]
+    return _coerce_analysis_test(value)
+
+
+@login_required
+def test_analysis_download_pdf(request):
+    if not _can_access_test_analysis_api(request.user):
+        return HttpResponseForbidden("Only admins and teachers can export test analysis reports.")
+
+    test = _coerce_analysis_test_from_query(request.GET.get("test_id"))
+    if not test:
+        return JsonResponse({"success": False, "error": "Invalid or missing test_id"}, status=400)
+
+    leaderboard = _build_attempt_leaderboard(test)
+    entries = leaderboard.get("entries", [])
+
+    section_names = []
+    if entries and entries[0].get("sectionScores"):
+        section_names = [
+            (item.get("sectionName") or f"Section {index + 1}")
+            for index, item in enumerate(entries[0]["sectionScores"])
+        ]
+
+    # Compute subject averages from leaderboard section scores
+    section_averages = []
+    for index, section_name in enumerate(section_names):
+        vals = []
+        for entry in entries:
+            try:
+                vals.append(float(entry.get("sectionScores", [])[index].get("score", 0)))
+            except Exception:
+                vals.append(0.0)
+        avg = (sum(vals) / len(vals)) if vals else 0.0
+        section_averages.append((section_name, round(avg, 2)))
+
+    total_avg = round(
+        (sum(float(entry.get("score", 0)) for entry in entries) / len(entries)) if entries else 0.0,
+        2,
+    )
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=18,
+        leftMargin=18,
+        topMargin=20,
+        bottomMargin=20,
+    )
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        leading=20,
+        textColor=colors.HexColor("#0b2e59"),
+        spaceAfter=8,
+    )
+    subtitle_style = ParagraphStyle(
+        "Subtitle",
+        parent=styles["Normal"],
+        fontSize=9,
+        textColor=colors.HexColor("#44556b"),
+        spaceAfter=8,
+    )
+    section_style = ParagraphStyle(
+        "Section",
+        parent=styles["Heading3"],
+        fontSize=12,
+        textColor=colors.HexColor("#123b63"),
+        spaceAfter=6,
+        spaceBefore=6,
+    )
+
+    elements = []
+    elements.append(Paragraph("Test Analysis Report", title_style))
+    elements.append(
+        Paragraph(
+            f"<b>Test:</b> {test.name} &nbsp;&nbsp; <b>Date:</b> {timezone.localtime().strftime('%d %b %Y %I:%M %p')}",
+            subtitle_style,
+        )
+    )
+    elements.append(
+        Paragraph(
+            f"<b>Total Students Attempted:</b> {len(entries)} &nbsp;&nbsp; <b>Class Average:</b> {total_avg}",
+            subtitle_style,
+        )
+    )
+
+    if section_averages:
+        elements.append(Paragraph("Subject Averages", section_style))
+        avg_data = [["Subject", "Average Score"]]
+        avg_data.extend([[name, str(avg)] for name, avg in section_averages])
+        avg_table = Table(avg_data, colWidths=[280, 180])
+        avg_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dbeafe")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#9ca3af")),
+                    ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+                ]
+            )
+        )
+        elements.append(avg_table)
+        elements.append(Spacer(1, 8))
+
+    elements.append(Paragraph("Leaderboard", section_style))
+    lb_header = ["#", "Student", "PHY", "CHM", "BIO", "TOTAL", "BATCH RANK", "INSTITUTE RANK"]
+    lb_rows = [lb_header]
+    for entry in entries:
+        section_scores = entry.get("sectionScores", [])
+        phy = section_scores[0].get("score", 0) if len(section_scores) > 0 else 0
+        chm = section_scores[1].get("score", 0) if len(section_scores) > 1 else 0
+        bio = section_scores[2].get("score", 0) if len(section_scores) > 2 else 0
+        batch_rank = entry.get("batchRank")
+        lb_rows.append(
+            [
+                f"#{entry.get('rank', '-')}",
+                entry.get("studentName") or entry.get("studentId"),
+                phy,
+                chm,
+                bio,
+                entry.get("score", 0),
+                f"#{batch_rank}" if isinstance(batch_rank, int) else "NA",
+                f"#{entry.get('rank', '-')}",
+            ]
+        )
+
+    col_widths = [34, 150, 46, 46, 46, 54, 78, 78]
+    lb_table = Table(lb_rows, colWidths=col_widths, repeatRows=1)
+    base_style = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#9ca3af")),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ("ALIGN", (2, 1), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+    ]
+
+    # Highlight top 3 ranks
+    for row_index, row in enumerate(lb_rows[1:], start=1):
+        rank_text = str(row[0]).strip()
+        if rank_text == "#1":
+            base_style.append(("BACKGROUND", (0, row_index), (-1, row_index), colors.HexColor("#fff7cc")))
+        elif rank_text == "#2":
+            base_style.append(("BACKGROUND", (0, row_index), (-1, row_index), colors.HexColor("#eef2f7")))
+        elif rank_text == "#3":
+            base_style.append(("BACKGROUND", (0, row_index), (-1, row_index), colors.HexColor("#ffe8d6")))
+
+    lb_table.setStyle(TableStyle(base_style))
+    elements.append(lb_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    filename = f"test-analysis-{test.id}.pdf"
+    response = FileResponse(buffer, as_attachment=True, filename=filename, content_type="application/pdf")
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 def _analysis_cluster_student_ids(test, subject):
@@ -3971,6 +4142,19 @@ def _student_photo_url(student):
 
 
 def _build_attempt_section_breakdown(attempt):
+    manual_scores = (getattr(attempt, "progress_state", {}) or {}).get("manual_subject_scores")
+    if isinstance(manual_scores, dict):
+        return [
+            {
+                "name": subject,
+                "score": int(manual_scores.get(subject, 0) or 0),
+                "total": 100,
+                "percentage": max(0, min(100, int(manual_scores.get(subject, 0) or 0))),
+                "meta": "Manual marks entry",
+            }
+            for subject in ANALYSIS_SUBJECT_ORDER
+        ]
+
     test = getattr(attempt, "test", None)
     if not test:
         return []
@@ -4104,6 +4288,7 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
             "studentId": f"portal-{portal_student.id}",
             "studentName": portal_student.student_name or portal_student.user.username,
             "studentRef": portal_student.username or portal_student.contact,
+            "studentBatch": portal_student.batch or "",
             "profilePhotoUrl": _student_photo_url(portal_student),
             "score": score_val,
             "totalMarks": total_marks_val,
@@ -4319,6 +4504,7 @@ def _build_my_tests_payload(student):
             "id": f"SCH{test.id}",
             "external_id": test.id,
             "name": test.name,
+            "subject": (test.subject or "").strip(),
             "date": start_at.strftime("%d %b %Y"),
             "shortDate": start_at.strftime("%b %d"),
             "time": start_at.strftime("%I:%M %p").lstrip("0"),
@@ -4361,6 +4547,7 @@ def _build_my_tests_payload(student):
                 "id": f"SCH{test.id}",
                 "external_id": test.id,
                 "name": test.name,
+                "subject": (test.subject or "").strip(),
                 "date": "Awaiting schedule",
                 "shortDate": "Soon",
                 "time": "",
@@ -4460,6 +4647,7 @@ def _build_my_tests_payload(student):
                 "totalMarks": total_marks,
                 "rank": _parse_int(current_entry.get("rank")),
                 "totalStudents": len(leaderboard["entries"]),
+                "attemptedCount": len(leaderboard["entries"]),
                 "sectionBreakdown": section_breakdown,
                 "leaderboard": leaderboard["entries"],
                 "topPerformers": leaderboard["topEntries"],
@@ -4520,7 +4708,7 @@ def _build_my_tests_payload(student):
     }
 
 
-ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Maths"]
+ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Biology"]
 ANALYSIS_CLUSTER_SIZE = 12
 
 
@@ -4530,6 +4718,8 @@ def _normalize_analysis_subject_name(name: str) -> str:
         return "Physics"
     if "chemistry" in value or value == "chem":
         return "Chemistry"
+    if value in {"biology", "bio", "botany", "zoology"} or "biology" in value:
+        return "Biology"
     if value in {"maths", "math", "mathematics", "mathmatics"} or "math" in value:
         return "Maths"
     return ""
@@ -4607,7 +4797,7 @@ def _analysis_student_record_from_leaderboard_entry(entry):
     return {
         "id": entry.get("studentId", ""),
         "name": entry.get("studentName", "") or entry.get("studentId", ""),
-        "batch": "",
+        "batch": entry.get("studentBatch", ""),
         "parentPhone": "",
         "studentRef": entry.get("studentRef", "") or entry.get("studentId", ""),
         "profilePhotoUrl": entry.get("profilePhotoUrl"),
@@ -4732,7 +4922,7 @@ def _build_analysis_dataset_for_test(test, focus_subject=None):
                 "testId": f"SCH{test.id}",
                 "Physics": subject_scores["Physics"],
                 "Chemistry": subject_scores["Chemistry"],
-                "Maths": subject_scores["Maths"],
+                "Biology": subject_scores["Biology"],
                 "total": sum(subject_scores.values()),
             }
         )

@@ -25,11 +25,26 @@ function updatePrimaryActionButton() {
   const label = document.getElementById("primary-action-label");
   if (!label) return;
   label.textContent = isInsideFolderView ? "New Test" : "New Folder";
+  const newFolderBtn = document.getElementById("new-folder-btn");
+  const manualMarksBtn = document.getElementById("manual-marks-btn");
+  if (newFolderBtn) {
+    newFolderBtn.style.display = isInsideFolderView ? "inline-flex" : "none";
+  }
+  if (manualMarksBtn) {
+    manualMarksBtn.style.display = isInsideFolderView ? "inline-flex" : "none";
+  }
 }
 
 function openPrimaryActionModal() {
   const modalId = isInsideFolderView ? "createTestModal" : "createFolderModal";
   const modalElement = document.getElementById(modalId);
+  if (!modalElement) return;
+  const modal = new bootstrap.Modal(modalElement);
+  modal.show();
+}
+
+function openCreateFolderModal() {
+  const modalElement = document.getElementById("createFolderModal");
   if (!modalElement) return;
   const modal = new bootstrap.Modal(modalElement);
   modal.show();
@@ -216,7 +231,7 @@ async function loadData() {
     allFolders = foldersData.folders || [];
 
     allTests.forEach((test) => renderTest(test, false));
-    allFolders.forEach((folder, index) => renderFolder(folder, index));
+    renderVisibleFolders();
     updateCounts();
     updateFolderSelect();
   } catch (err) {
@@ -303,6 +318,7 @@ function handleCreateFolder() {
 
   const data = {
     name: name,
+    parentId: isInsideFolderView ? currentFolderId : null,
   };
 
   fetch("/scholarship/api/folders/create/", {
@@ -324,7 +340,7 @@ function handleCreateFolder() {
       if (result.success) {
         const folder = result.folder;
         allFolders.push(folder);
-        renderFolder(folder, allFolders.length - 1);
+        renderVisibleFolders();
         document.getElementById("create-folder-form").reset();
         const modal = bootstrap.Modal.getInstance(
           document.getElementById("createFolderModal"),
@@ -396,8 +412,7 @@ window.handleEditFolder = function () {
         if (folderIndex !== -1) {
           allFolders[folderIndex] = result.folder;
           // Re-render all folders
-          document.getElementById("folder-grid-container").innerHTML = "";
-          allFolders.forEach((folder, index) => renderFolder(folder, index));
+          renderVisibleFolders();
         }
         const modal = bootstrap.Modal.getInstance(
           document.getElementById("editFolderModal"),
@@ -455,8 +470,7 @@ window.handleDeleteFolder = function (folderId) {
         allFolders = allFolders.filter((f) => f.id != folderId);
         allTests = allTests.filter((test) => test.folderId != folderId);
         // Re-render all folders
-        document.getElementById("folder-grid-container").innerHTML = "";
-        allFolders.forEach((folder, index) => renderFolder(folder, index));
+        renderVisibleFolders();
         updateFolderActions();
 
         const modal = bootstrap.Modal.getInstance(
@@ -728,16 +742,33 @@ function renderFolder(data, index) {
   lucide.createIcons();
 }
 
+function getVisibleFolders() {
+  if (isInsideFolderView && currentFolderId) {
+    return allFolders.filter(
+      (folder) => String(folder.parentId || "") === String(currentFolderId),
+    );
+  }
+  return allFolders.filter((folder) => !folder.parentId);
+}
+
+function renderVisibleFolders() {
+  const container = document.getElementById("folder-grid-container");
+  if (!container) return;
+  container.innerHTML = "";
+  getVisibleFolders().forEach((folder, index) => renderFolder(folder, index));
+}
+
 function showFolderTests(index, folderId, folderName) {
   isInsideFolderView = true;
   currentFolderId = folderId;
   updatePrimaryActionButton();
   updateFolderActions();
   document.getElementById("test-section").style.display = "block";
-  document.getElementById("folder-grid-container").style.display = "none";
-  document.getElementById("folder-section").style.display = "none";
+  document.getElementById("folder-grid-container").style.display = "grid";
+  document.getElementById("folder-section").style.display = "block";
   document.querySelector(".view-all-btn").style.display = "none";
   document.getElementById("back-btn").style.display = "block";
+  renderVisibleFolders();
 
   const testContainer = document.getElementById("test-list-container");
   testContainer.innerHTML = "";
@@ -780,8 +811,7 @@ function showAllItems() {
   testContainer.style.display = "block";
 
   allTests.forEach((test) => renderTest(test, false));
-  document.querySelectorAll(".folder-card").forEach((card) => card.remove());
-  allFolders.forEach((folder, index) => renderFolder(folder, index));
+  renderVisibleFolders();
   const selectAllFolders = document.getElementById("select-all-folders");
   if (selectAllFolders) {
     selectAllFolders.checked = false;
@@ -848,7 +878,7 @@ function updateFolderSelect() {
 
 function updateCounts() {
   const testCount = document.querySelectorAll(".test-item").length;
-  const folderCount = document.querySelectorAll(".folder-card").length;
+  const folderCount = getVisibleFolders().length;
 
   document.getElementById("test-count").innerText = testCount;
   document.getElementById("folder-count").innerText = folderCount;

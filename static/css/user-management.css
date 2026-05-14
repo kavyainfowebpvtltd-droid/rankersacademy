@@ -211,6 +211,37 @@ td {
   min-width: 16rem;
 }
 
+.user-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.user-type-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--slate-200);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--slate-700);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.user-type-tab:hover,
+.user-type-tab.active {
+  border-color: var(--blue-600);
+  background: var(--blue-600);
+  color: #fff;
+}
+
 .entries-control {
   width: 10rem;
 }
@@ -661,5 +692,74 @@ button:hover {
 
   .modal-body {
     padding: 1rem;
+  }
+}
+
+.user-type-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.4rem;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem !important;
+  border: 1px solid #dbe4f0;
+  border-radius: 0.75rem;
+  background: #f8fbff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.user-type-tabs .user-type-tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.7rem;
+  padding: 0.65rem 1.05rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: #334155;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.user-type-tabs .user-type-tab i {
+  font-size: 1rem;
+  color: currentColor;
+}
+
+.user-type-tabs .user-type-tab:hover {
+  opacity: 1;
+  background: #eef6ff;
+  color: #1d4ed8;
+}
+
+.user-type-tabs .user-type-tab.active,
+.user-type-tabs .user-type-tab[aria-selected="true"] {
+  opacity: 1;
+  border-color: #1d4ed8;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+}
+
+@media (max-width: 576px) {
+  .user-type-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .user-type-tabs .user-type-tab {
+    flex: 1 1 100%;
   }
 }

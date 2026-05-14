@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Diagnostic Dashboard</title>
     <link rel="icon" href="{% static 'img/logo.webp' %}" type="image/webp" />
+    <script>
+      localStorage.setItem("rankersAdminTheme", "light");
+    </script>
     <script src="{% static 'js/admin-theme.js' %}"></script>
 
     <link
@@ -36,15 +39,36 @@
           </span>
           <span>Back to all items</span>
         </a>
-        <button
-          id="primary-action-btn"
-          class="btn btn-new d-flex align-items-center gap-2"
-          type="button"
-          onclick="openPrimaryActionModal()"
-        >
-          <i data-lucide="plus"></i>
-          <span id="primary-action-label">New Folder</span>
-        </button>
+        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+          <button
+            id="manual-marks-btn"
+            class="btn btn-outline-primary d-flex align-items-center gap-2"
+            type="button"
+            onclick="openManualMarksModal()"
+          >
+            <i data-lucide="clipboard-pen-line"></i>
+            <span>Manual Marks</span>
+          </button>
+          <button
+            id="new-folder-btn"
+            class="btn btn-new d-flex align-items-center gap-2"
+            type="button"
+            style="display: none"
+            onclick="openCreateFolderModal()"
+          >
+            <i data-lucide="plus"></i>
+            <span>New Folder</span>
+          </button>
+          <button
+            id="primary-action-btn"
+            class="btn btn-new d-flex align-items-center gap-2"
+            type="button"
+            onclick="openPrimaryActionModal()"
+          >
+            <i data-lucide="plus"></i>
+            <span id="primary-action-label">New Folder</span>
+          </button>
+        </div>
       </div>
 
       <div class="mb-2" id="folder-section">
@@ -190,21 +214,28 @@
               </div>
               <div class="mb-4">
                 <label class="form-label">Batch</label>
-                <input
-                  type="text"
+                <select
                   id="test-batch-input"
-                  class="form-control"
-                  placeholder="eg. Star 01"
-                />
+                  class="form-select"
+                >
+                  <option value="Star 01">Star 01</option>
+                  <option value="Star 02">Star 02</option>
+                  <option value="Alpha">Alpha</option>
+                  <option value="9 th">9 th</option>
+                  <option value="10 th">10 th</option>
+                </select>
               </div>
               <div class="mb-4">
                 <label class="form-label">Stream</label>
-                <input
-                  type="text"
+                <select
                   id="test-stream-input"
-                  class="form-control"
-                  placeholder="eg. JEE / NEET"
-                />
+                  class="form-select"
+                >
+                  <option value="JEE">JEE</option>
+                  <option value="NEET">NEET</option>
+                  <option value="MHTCET">MHTCET</option>
+                  <option value="All">All</option>
+                </select>
               </div>
               <div class="mb-4">
                 <label class="form-label">Tags</label>
@@ -490,6 +521,63 @@
                 Yes
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual Marks Modal -->
+    <div class="modal fade" id="manualMarksModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header border-bottom-0 p-4 pb-0">
+            <h5 class="modal-title">Upload Manual Test Marks</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <form id="manual-marks-form">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Test</label>
+                  <select class="form-select" id="manual-test-input" required>
+                    <option value="">Select Test</option>
+                    {% for test in manual_mark_tests %}
+                    <option value="{{ test.id }}">{{ test.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Student</label>
+                  <select class="form-select" id="manual-student-input" required>
+                    <option value="">Select Student</option>
+                    {% for student in manual_mark_students %}
+                    <option value="{{ student.id }}">{{ student.username }} - {{ student.student_name }}{% if student.batch %} ({{ student.batch }}){% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Physics</label>
+                  <input class="form-control manual-score-input" id="manual-physics-input" type="number" min="0" max="100" value="0" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Chemistry</label>
+                  <input class="form-control manual-score-input" id="manual-chemistry-input" type="number" min="0" max="100" value="0" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Biology</label>
+                  <input class="form-control manual-score-input" id="manual-biology-input" type="number" min="0" max="100" value="0" required />
+                </div>
+                <div class="col-12">
+                  <div class="alert alert-info mb-0">
+                    Total Score: <strong id="manual-total-score">0</strong> / 300
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer border-top-0 px-4 pb-4">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-blue-action" id="manual-marks-save-btn" onclick="saveManualMarks()">Save Marks</button>
           </div>
         </div>
       </div>

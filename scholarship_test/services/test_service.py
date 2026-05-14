@@ -1115,9 +1115,6 @@ def can_attempt_test(student, selected_test=None) -> tuple:
     if not student.name:
         return False, "Please complete your registration"
     
-    if not student.grade or not student.board:
-        return False, "Please select your grade and board"
-    
     # Check if already completed a test
     from scholarship_test.models import ScholarshipTestAttempt
     completed_attempts = ScholarshipTestAttempt.objects.filter(
@@ -1142,6 +1139,9 @@ def can_attempt_test(student, selected_test=None) -> tuple:
         if not launch_state["can_launch"]:
             return False, launch_state["message"] or "This test is not available right now"
         return True, "You can attempt the test"
+
+    if not student.grade or not student.board:
+        return False, "Please select your grade and board"
 
     # Legacy fallback while older question-bank data still exists.
     questions = get_test_questions(student.grade, student.board)

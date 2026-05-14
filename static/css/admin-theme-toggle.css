@@ -1,5 +1,5 @@
 .admin-theme-toggle {
-  display: inline-flex;
+  display: none !important;
   align-items: center;
   gap: 7px;
   min-height: 38px;

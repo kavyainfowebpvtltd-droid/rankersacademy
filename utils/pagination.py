@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Iterable
 
 
-PAGE_SIZE_OPTIONS = (10, 25, 50, 100)
+PAGE_SIZE_OPTIONS = (10, 25, 50, 60, 100)
 
 
-def get_entries_per_page(request, param_name: str, default: int = 10) -> int:
+def get_entries_per_page(request, param_name: str, default: int = 60) -> int:
     try:
         value = int(request.GET.get(param_name, default))
     except (TypeError, ValueError):

@@ -9,11 +9,26 @@ function updatePrimaryActionButton() {
   const label = document.getElementById("primary-action-label");
   if (!label) return;
   label.textContent = isInsideFolderView ? "New Test" : "New Folder";
+  const newFolderBtn = document.getElementById("new-folder-btn");
+  const manualMarksBtn = document.getElementById("manual-marks-btn");
+  if (newFolderBtn) {
+    newFolderBtn.style.display = isInsideFolderView ? "inline-flex" : "none";
+  }
+  if (manualMarksBtn) {
+    manualMarksBtn.style.display = isInsideFolderView ? "inline-flex" : "none";
+  }
 }
 
 function openPrimaryActionModal() {
   const modalId = isInsideFolderView ? "createTestModal" : "createFolderModal";
   const modalElement = document.getElementById(modalId);
+  if (!modalElement) return;
+  const modal = new bootstrap.Modal(modalElement);
+  modal.show();
+}
+
+function openCreateFolderModal() {
+  const modalElement = document.getElementById("createFolderModal");
   if (!modalElement) return;
   const modal = new bootstrap.Modal(modalElement);
   modal.show();
@@ -168,6 +183,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("createTestModal")
     .addEventListener("show.bs.modal", updateFolderSelect);
+  document.querySelectorAll(".manual-score-input").forEach((input) => {
+    input.addEventListener("input", updateManualMarksTotal);
+  });
   const copyModalEl = document.getElementById("copyTestModal");
   if (copyModalEl) {
     copyModalEl.addEventListener("hidden.bs.modal", () => {
@@ -175,6 +193,85 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+function updateManualMarksTotal() {
+  const totalEl = document.getElementById("manual-total-score");
+  if (!totalEl) return;
+
+  const fields = [
+    "manual-physics-input",
+    "manual-chemistry-input",
+    "manual-biology-input",
+  ];
+  const total = fields.reduce((sum, id) => {
+    const value = parseInt(document.getElementById(id)?.value || "0", 10);
+    return sum + (Number.isFinite(value) ? value : 0);
+  }, 0);
+  totalEl.textContent = String(total);
+}
+
+function openManualMarksModal() {
+  const form = document.getElementById("manual-marks-form");
+  if (form) form.reset();
+  updateManualMarksTotal();
+  const modalEl = document.getElementById("manualMarksModal");
+  if (!modalEl) return;
+  new bootstrap.Modal(modalEl).show();
+}
+
+function saveManualMarks() {
+  const testInput = document.getElementById("manual-test-input");
+  const studentInput = document.getElementById("manual-student-input");
+  const saveBtn = document.getElementById("manual-marks-save-btn");
+
+  const payload = {
+    test_id: testInput?.value || "",
+    student_id: studentInput?.value || "",
+    physics: document.getElementById("manual-physics-input")?.value || "0",
+    chemistry: document.getElementById("manual-chemistry-input")?.value || "0",
+    biology: document.getElementById("manual-biology-input")?.value || "0",
+  };
+
+  if (!payload.test_id || !payload.student_id) {
+    showToast("Please select test and student");
+    return;
+  }
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+  }
+
+  fetch("/scholarship/api/manual-marks/save/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify(payload),
+  })
+    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok || !data.success) {
+        throw new Error(data.error || "Unable to save marks");
+      }
+      const modal = bootstrap.Modal.getInstance(
+        document.getElementById("manualMarksModal"),
+      );
+      if (modal) modal.hide();
+      showToast(data.message || "Manual marks saved successfully");
+    })
+    .catch((err) => {
+      console.error("Manual marks save failed:", err);
+      showToast(err.message || "Unable to save marks");
+    })
+    .finally(() => {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Marks";
+      }
+    });
+}
 
 async function loadData() {
   try {
@@ -195,7 +292,7 @@ async function loadData() {
     allFolders = foldersData.folders || [];
 
     allTests.forEach((test) => renderTest(test, false));
-    allFolders.forEach((folder, index) => renderFolder(folder, index));
+    renderVisibleFolders();
     updateCounts();
     updateFolderSelect();
   } catch (err) {
@@ -281,6 +378,7 @@ function handleCreateFolder() {
 
   const data = {
     name: name,
+    parentId: isInsideFolderView ? currentFolderId : null,
   };
 
   fetch("/scholarship/api/folders/create/", {
@@ -302,7 +400,7 @@ function handleCreateFolder() {
       if (result.success) {
         const folder = result.folder;
         allFolders.push(folder);
-        renderFolder(folder, allFolders.length - 1);
+        renderVisibleFolders();
         document.getElementById("create-folder-form").reset();
         const modal = bootstrap.Modal.getInstance(
           document.getElementById("createFolderModal"),
@@ -374,8 +472,7 @@ window.handleEditFolder = function () {
         if (folderIndex !== -1) {
           allFolders[folderIndex] = result.folder;
           // Re-render all folders
-          document.getElementById("folder-grid-container").innerHTML = "";
-          allFolders.forEach((folder, index) => renderFolder(folder, index));
+          renderVisibleFolders();
         }
         const modal = bootstrap.Modal.getInstance(
           document.getElementById("editFolderModal"),
@@ -433,8 +530,7 @@ window.handleDeleteFolder = function (folderId) {
         allFolders = allFolders.filter((f) => f.id != folderId);
         allTests = allTests.filter((test) => test.folderId != folderId);
         // Re-render all folders
-        document.getElementById("folder-grid-container").innerHTML = "";
-        allFolders.forEach((folder, index) => renderFolder(folder, index));
+        renderVisibleFolders();
         updateFolderActions();
 
         const modal = bootstrap.Modal.getInstance(
@@ -706,16 +802,33 @@ function renderFolder(data, index) {
   lucide.createIcons();
 }
 
+function getVisibleFolders() {
+  if (isInsideFolderView && currentFolderId) {
+    return allFolders.filter(
+      (folder) => String(folder.parentId || "") === String(currentFolderId),
+    );
+  }
+  return allFolders.filter((folder) => !folder.parentId);
+}
+
+function renderVisibleFolders() {
+  const container = document.getElementById("folder-grid-container");
+  if (!container) return;
+  container.innerHTML = "";
+  getVisibleFolders().forEach((folder, index) => renderFolder(folder, index));
+}
+
 function showFolderTests(index, folderId, folderName) {
   isInsideFolderView = true;
   currentFolderId = folderId;
   updatePrimaryActionButton();
   updateFolderActions();
   document.getElementById("test-section").style.display = "block";
-  document.getElementById("folder-grid-container").style.display = "none";
-  document.getElementById("folder-section").style.display = "none";
+  document.getElementById("folder-grid-container").style.display = "grid";
+  document.getElementById("folder-section").style.display = "block";
   document.querySelector(".view-all-btn").style.display = "none";
   document.getElementById("back-btn").style.display = "block";
+  renderVisibleFolders();
 
   const testContainer = document.getElementById("test-list-container");
   testContainer.innerHTML = "";
@@ -758,8 +871,7 @@ function showAllItems() {
   testContainer.style.display = "block";
 
   allTests.forEach((test) => renderTest(test, false));
-  document.querySelectorAll(".folder-card").forEach((card) => card.remove());
-  allFolders.forEach((folder, index) => renderFolder(folder, index));
+  renderVisibleFolders();
   const selectAllFolders = document.getElementById("select-all-folders");
   if (selectAllFolders) {
     selectAllFolders.checked = false;
@@ -826,7 +938,7 @@ function updateFolderSelect() {
 
 function updateCounts() {
   const testCount = document.querySelectorAll(".test-item").length;
-  const folderCount = document.querySelectorAll(".folder-card").length;
+  const folderCount = getVisibleFolders().length;
 
   document.getElementById("test-count").innerText = testCount;
   document.getElementById("folder-count").innerText = folderCount;
