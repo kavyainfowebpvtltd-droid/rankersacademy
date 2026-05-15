@@ -93,15 +93,14 @@
       <div class="page-wrapper">
         <div class="page-heading">
           <h2>{{ selected_test_name }}</h2>
-          <p>Scholarship Assessment Program</p>
+          <p>Test Name: {{ selected_test_name }}</p>
         </div>
 
         <div class="content-card">
           <div class="content-card-inner">
             <h3>Prepare to Attempt {{ selected_test_name }}</h3>
             <p>
-              Complete the selected scholarship test and view your score and
-              scholarship outcome right after submission.
+              Read all instructions carefully before starting {{ selected_test_name }}. Keep a stable internet connection, avoid refreshing the page during the test, and submit before the timer ends.
             </p>
 
             <div class="feature-grid">
@@ -149,8 +148,8 @@
             </div>
 
             <div class="cta-card">
-              <h4 class="fw-bold">Ready to Start?</h4>
               {% if is_guest %}
+              <h4 class="fw-bold">Ready to Start?</h4>
               <p>Register or log in to continue with {{ selected_test_name }}.</p>
               <div class="d-flex flex-column gap-3">
                 <a
@@ -167,6 +166,7 @@
                 </a>
               </div>
               {% elif active_attempt %}
+              <h4 class="fw-bold">Ready to Start?</h4>
               <p>Your previous attempt is still in progress. Resume it from where you left off.</p>
               <a
                 href="{% url 'scholarship_test:scholarship_test' active_attempt.id %}"
@@ -175,22 +175,16 @@
                 Resume {{ selected_test_name }}
               </a>
               {% elif can_attempt %}
-              <p id="startButtonMessage">
-                {% if can_start_test %}
-                Please ensure you have a stable internet connection.
-                {% else %}
-                {{ start_button_message|default:"The Start button activates 1 minute before the scheduled start time." }}
-                {% endif %}
-              </p>
               <a
                 {% if can_start_test %}href="{% url 'scholarship_test:scholarship_start_test' %}"{% endif %}
                 class="cta-button-sch{% if not can_start_test %} is-disabled{% endif %}"
                 id="startTestButton"
                 {% if not can_start_test %}aria-disabled="true"{% endif %}
               >
-                Start {{ selected_test_name }}
+                Start the Test
               </a>
               {% elif completed and attempt %}
+              <h4 class="fw-bold">Ready to Start?</h4>
               <a
                 href="{% url 'scholarship_test:scholarship_success' attempt.id %}"
                 class="cta-button-sch"
@@ -198,6 +192,7 @@
                 View Your Result
               </a>
               {% else %}
+              <h4 class="fw-bold">Ready to Start?</h4>
               <p>{{ message|default:"Please ensure you have a stable internet connection." }}</p>
               {% endif %}
             </div>
