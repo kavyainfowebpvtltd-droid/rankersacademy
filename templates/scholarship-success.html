@@ -100,17 +100,97 @@
             {% else %}
             <div class="result-summary-box">
               <div class="result-summary-item">
-                <span class="result-summary-label">Student Name</span>
-                <strong>{{ student.name }}</strong>
+                <span class="result-summary-label">Test Name</span>
+                <strong>{{ selected_test_name }}</strong>
               </div>
+              <div class="result-summary-item">
+                <span class="result-summary-label">Result Reference</span>
+                <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
+              </div>
+              {% if completed_at_display %}
+              <div class="result-summary-item">
+                <span class="result-summary-label">Completed On</span>
+                <strong>{{ completed_at_display }}</strong>
+              </div>
+              {% endif %}
             </div>
             {% endif %}
           </div>
 
           <div class="details-section">
+            <h6 class="mb-3">Student Details</h6>
 
-            {% if not is_scholarship_result %}
             <div class="row mb-4">
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-person-fill text-primary me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Name</small>
+                    <p class="fw-semibold mb-0">{{ student.name }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-telephone-fill text-success me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Phone Number</small>
+                    <p class="fw-semibold mb-0">
+                      +91 {{ student.phone_number }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-book-fill text-warning me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Grade</small>
+                    <p class="fw-semibold mb-0">{{ student.grade }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-building text-info me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">{{ academic_field_label }}</small>
+                    <p class="fw-semibold mb-0">{{ academic_field_value }}</p>
+                  </div>
+                </div>
+              </div>
+
+              {% if not is_scholarship_result and attempt.student_batch %}
+              <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center">
+                  <i
+                    class="bi bi-people-fill text-secondary me-3"
+                    style="font-size: 1.5rem"
+                  ></i>
+                  <div>
+                    <small class="text-muted d-block">Batch</small>
+                    <p class="fw-semibold mb-0">{{ attempt.student_batch }}</p>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if not is_scholarship_result %}
               <div class="col-md-6 mb-3">
                 <div class="d-flex align-items-center">
                   <i
@@ -118,15 +198,15 @@
                     style="font-size: 1.5rem"
                   ></i>
                   <div>
-                    <small class="text-muted d-block">Remarks</small>
+                    <small class="text-muted d-block">Result Reference</small>
                     <p class="fw-semibold mb-0">
                       {{ selected_test_reference_prefix }}-{{ attempt.id }}
                     </p>
                   </div>
                 </div>
               </div>
+              {% endif %}
             </div>
-            {% endif %}
 
             <div class="row g-4">
               <div class="{% if is_scholarship_result %}col-md-6{% else %}col-12{% endif %}">

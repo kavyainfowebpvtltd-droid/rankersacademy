@@ -4714,11 +4714,11 @@ ANALYSIS_CLUSTER_SIZE = 12
 
 def _normalize_analysis_subject_name(name: str) -> str:
     value = _norm(name)
-    if "physics" in value or "phy" in value:
+    if "physics" in value or value == "phy":
         return "Physics"
-    if "chemistry" in value or "chem" in value or "chm" in value:
+    if "chemistry" in value or value == "chem":
         return "Chemistry"
-    if value in {"biology", "bio", "botany", "zoology"} or "biology" in value or "bio" in value:
+    if value in {"biology", "bio", "botany", "zoology"} or "biology" in value:
         return "Biology"
     if value in {"maths", "math", "mathematics", "mathmatics"} or "math" in value:
         return "Maths"
@@ -4739,13 +4739,11 @@ def _analysis_subject_scores_from_breakdown(section_breakdown):
         if not mapped or mapped not in scores:
             continue
             
-        # Prefer explicit percentage. If missing, derive from score/total safely.
+        # Ensure percentage is a valid number before rounding
         try:
             raw_percent = item.get("percentage")
             if raw_percent is None or raw_percent == "":
-                score_val = float(item.get("score") or 0)
-                total_val = float(item.get("total") or 0)
-                percent = (score_val / total_val) * 100 if total_val > 0 else 0.0
+                percent = 0.0
             else:
                 percent = float(raw_percent)
             scores[mapped] = int(round(percent))
