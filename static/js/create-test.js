@@ -7,7 +7,7 @@ var defaultS = {
   tags: "SCHOLARSHIP TEST",
   scheduledStartAt: "",
   instructions: "",
-  defaultPosMarks: 2,
+  defaultPosMarks: 4,
   defaultNegMarks: 1,
   sections: [
     {

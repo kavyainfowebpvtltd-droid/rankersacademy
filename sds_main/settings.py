@@ -14,14 +14,12 @@ SECRET_KEY = 'django-insecure-)-#wj42wfm88kx+@@_pc2++83-7f9yls%kw2l+n8kfq6fas6u*
 DEBUG = True
 
 ALLOWED_HOSTS = [
-"147.93.29.224",
-"rankersonlinetest.com",
-"www.rankersonlinetest.com"
-
-
-
-
+    "147.93.29.224",
+    "rankersonlinetest.com",
+    "www.rankersonlinetest.com",
+  
 ]
+
 CSRF_TRUSTED_ORIGINS = [
 "https://rankersonlinetest.com",
 "https://www.rankersonlinetest.com"
@@ -97,6 +95,7 @@ DATABASES = {
         'PORT': '3306',
     }
 }
+
 
 
 # Password validation

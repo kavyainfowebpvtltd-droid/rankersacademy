@@ -104,7 +104,7 @@
                 <strong>{{ selected_test_name }}</strong>
               </div>
               <div class="result-summary-item">
-                <span class="result-summary-label">Result Reference</span>
+                <span class="result-summary-label">Remarks</span>
                 <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
               </div>
               {% if completed_at_display %}
@@ -118,94 +118,17 @@
           </div>
 
           <div class="details-section">
-            <h6 class="mb-3">Student Details</h6>
-
-            <div class="row mb-4">
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
+            <div class="row g-4 mb-4">
+              <div class="col-12">
+                <div class="info-box score-box">
                   <i
-                    class="bi bi-person-fill text-primary me-3"
-                    style="font-size: 1.5rem"
+                    class="bi bi-person-fill text-primary d-block mb-2"
+                    style="font-size: 2rem"
                   ></i>
-                  <div>
-                    <small class="text-muted d-block">Name</small>
-                    <p class="fw-semibold mb-0">{{ student.name }}</p>
-                  </div>
+                  <h6>Student Name</h6>
+                  <h4 class="text-primary">{{ student.name }}</h4>
                 </div>
               </div>
-
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-telephone-fill text-success me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Phone Number</small>
-                    <p class="fw-semibold mb-0">
-                      +91 {{ student.phone_number }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-book-fill text-warning me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Grade</small>
-                    <p class="fw-semibold mb-0">{{ student.grade }}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-building text-info me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">{{ academic_field_label }}</small>
-                    <p class="fw-semibold mb-0">{{ academic_field_value }}</p>
-                  </div>
-                </div>
-              </div>
-
-              {% if not is_scholarship_result and attempt.student_batch %}
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-people-fill text-secondary me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Batch</small>
-                    <p class="fw-semibold mb-0">{{ attempt.student_batch }}</p>
-                  </div>
-                </div>
-              </div>
-              {% endif %}
-
-              {% if not is_scholarship_result %}
-              <div class="col-md-6 mb-3">
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi bi-hash text-dark me-3"
-                    style="font-size: 1.5rem"
-                  ></i>
-                  <div>
-                    <small class="text-muted d-block">Result Reference</small>
-                    <p class="fw-semibold mb-0">
-                      {{ selected_test_reference_prefix }}-{{ attempt.id }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {% endif %}
             </div>
 
             <div class="row g-4">
@@ -240,39 +163,6 @@
                 </div>
               </div>
               {% endif %}
-            </div>
-
-            <div class="card border-0 shadow-sm mt-4">
-              <div class="card-body">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                  <div>
-                    <h6 class="fw-bold mb-1">
-                      <i class="bi bi-file-earmark-check me-2 text-primary"></i>
-                      Attempted Test Paper
-                    </h6>
-                    <p class="text-muted mb-0 small" id="answerKeyAvailabilityText">
-                      {% if answer_key_is_available %}
-                      Answer key and correct answers are now available.
-                      {% else %}
-                      Answer key will be available after {{ answer_key_delay_display }} from test completion.
-                      Available at {{ answer_key_available_at_display }}.
-                      {% endif %}
-                    </p>
-                  </div>
-
-                  <a
-                    href="{{ attempt_review_url }}"
-                    class="btn {% if answer_key_is_available %}btn-primary{% else %}btn-secondary disabled{% endif %} px-4"
-                    id="attemptReviewBtn"
-                    data-review-url="{{ attempt_review_url }}"
-                    data-available-at="{{ answer_key_available_at }}"
-                    data-server-now="{{ answer_key_server_now }}"
-                    {% if not answer_key_is_available %}aria-disabled="true" tabindex="-1"{% endif %}
-                  >
-                    <i class="bi bi-eye me-2"></i>View Attempted Test Paper
-                  </a>
-                </div>
-              </div>
             </div>
 
             {% if leaderboard_top_entries %}
@@ -319,6 +209,39 @@
               </div>
             </div>
             {% endif %}
+
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-body">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      <i class="bi bi-file-earmark-check me-2 text-primary"></i>
+                      Attempted Test Paper
+                    </h6>
+                    <p class="text-muted mb-0 small" id="answerKeyAvailabilityText">
+                      {% if answer_key_is_available %}
+                      Answer key and correct answers are now available.
+                      {% else %}
+                      Answer key will be available after {{ answer_key_delay_display }} from test completion.
+                      Available at {{ answer_key_available_at_display }}.
+                      {% endif %}
+                    </p>
+                  </div>
+
+                  <a
+                    href="{{ attempt_review_url }}"
+                    class="btn {% if answer_key_is_available %}btn-primary{% else %}btn-secondary disabled{% endif %} px-4"
+                    id="attemptReviewBtn"
+                    data-review-url="{{ attempt_review_url }}"
+                    data-available-at="{{ answer_key_available_at }}"
+                    data-server-now="{{ answer_key_server_now }}"
+                    {% if not answer_key_is_available %}aria-disabled="true" tabindex="-1"{% endif %}
+                  >
+                    <i class="bi bi-eye me-2"></i>View Attempted Test Paper
+                  </a>
+                </div>
+              </div>
+            </div>
 
             {% if is_scholarship_result %}
             <div class="claim-box mt-4">
