@@ -756,6 +756,23 @@
         </div>
       </div>
 
+      <div id="coachingSection" class="card app-card p-4 mb-4 d-none">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+          <div>
+            <h5 id="coachingTitle" class="display fw-bold mb-1"></h5>
+            <div id="coachingSchedule" class="small soft"></div>
+          </div>
+          <span id="coachingDurationBadge" class="badge rounded-pill text-bg-primary"></span>
+        </div>
+        <div id="coachingItems" class="row g-2 mt-2"></div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+        <h5 class="display fw-bold mb-0">Subject Performance</h5>
+        <div id="subjectHint" class="small soft"></div>
+      </div>
+      <div id="subjectCards" class="row g-3 mb-4"></div>
+
       <h5 class="display fw-bold">Top Performers</h5>
       <div id="topPerformers" class="d-flex gap-2 overflow-auto pb-1 mb-4"></div>
 
@@ -1033,6 +1050,13 @@
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
       homeKpiRow: document.getElementById("homeKpiRow"),
+      coachingSection: document.getElementById("coachingSection"),
+      coachingTitle: document.getElementById("coachingTitle"),
+      coachingSchedule: document.getElementById("coachingSchedule"),
+      coachingDurationBadge: document.getElementById("coachingDurationBadge"),
+      coachingItems: document.getElementById("coachingItems"),
+      subjectHint: document.getElementById("subjectHint"),
+      subjectCards: document.getElementById("subjectCards"),
       topPerformers: document.getElementById("topPerformers"),
       leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
       leaderboardBody: document.getElementById("leaderboardBody"),
@@ -1090,6 +1114,36 @@
 
     function currentStudentEntry() {
       return currentLeaderboard().find((entry) => entry.studentId === currentStudentId) || null;
+    }
+
+    function currentStudentSectionBreakdown(test) {
+      const configuredSections = test?.sectionBreakdown || [];
+      if (configuredSections.length) {
+        return configuredSections;
+      }
+
+      const currentEntry = currentStudentEntry();
+      if (currentEntry?.sectionScores?.length) {
+        return currentEntry.sectionScores.map((section, index) => ({
+          name: section.name || section.sectionName || `Section ${index + 1}`,
+          sectionName: section.sectionName || section.name || `Section ${index + 1}`,
+          shortLabel:
+            section.shortLabel ||
+            sectionDisplayLabel(
+              { name: section.name || section.sectionName || `Section ${index + 1}` },
+              index,
+            ),
+          score: Number(section.score) || 0,
+          total: Number(section.total) || 0,
+          percentage:
+            Number(section.percentage) ||
+            ((Number(section.total) || 0) > 0
+              ? Math.round(((Number(section.score) || 0) / Number(section.total)) * 1000) / 10
+              : 0),
+        }));
+      }
+
+      return [];
     }
 
     function clearNode(node) {
@@ -1473,6 +1527,10 @@
           { label: "Window", value: "Soon", extra: "Use the upcoming tab to launch" },
         ]);
         clearNode(refs.topPerformers);
+        refs.coachingSection.classList.add("d-none");
+        clearNode(refs.coachingItems);
+        refs.subjectHint.textContent = "";
+        clearNode(refs.subjectCards);
         clearNode(refs.leaderboardBody);
         refs.leaderboardCountBadge.textContent = "0 students";
         refs.leaderboardFooterText.textContent = "";
@@ -1486,19 +1544,20 @@
       const totalMarks = Number(test.totalMarks || 0);
       const previousRank = rank !== null && rankDelta !== null ? rank + rankDelta : null;
       const weakLabels = (test.coachingItems || []).map((item) => item.name).join(", ");
+      const currentSections = currentStudentSectionBreakdown(test);
       const selectedSubjectKey = normalizeSectionKey(test.subject || "");
-      const sectionIndex = (test.sectionBreakdown || []).findIndex(
+      const sectionIndex = currentSections.findIndex(
         (section) => normalizeSectionKey(section.name || "") === selectedSubjectKey,
       );
       const sectionLabel =
         selectedSubjectKey ||
-        ((test.sectionBreakdown || [])[0] && (test.sectionBreakdown || [])[0].name) ||
+        (currentSections[0] && currentSections[0].name) ||
         "Subject";
       let subjectAverageLabel = "N/A";
       let subjectTopLabel = "N/A";
 
       if (sectionIndex >= 0) {
-        const sectionTotal = Number((test.sectionBreakdown[sectionIndex] || {}).total || 0);
+        const sectionTotal = Number((currentSections[sectionIndex] || {}).total || 0);
         const sectionScores = (test.leaderboard || [])
           .map((entry) => {
             const score = Number(entry.sectionScores?.[sectionIndex]?.score);
@@ -1614,6 +1673,8 @@
         },
       ]);
 
+      renderCoaching(test);
+      renderSubjectCards(test);
       renderTopPerformers(test);
       renderLeaderboard(test);
     }
@@ -1650,7 +1711,7 @@
 
     function renderSubjectCards(test) {
       clearNode(refs.subjectCards);
-      const sections = test?.sectionBreakdown || [];
+      const sections = currentStudentSectionBreakdown(test);
       refs.subjectHint.textContent = sections.length ? `${sections.length} tracked section${sections.length === 1 ? "" : "s"}` : "";
 
       sections.forEach((section, index) => {

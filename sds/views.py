@@ -4641,6 +4641,10 @@ def _build_my_tests_payload(student):
             if attempt
             else _build_zero_section_breakdown(test)
         )
+        section_score_total = sum(
+            int(item.get("score", 0) or 0)
+            for item in section_breakdown
+        )
         weak_sections = (
             [
                 item for item in section_breakdown
@@ -4655,6 +4659,9 @@ def _build_my_tests_payload(student):
             if attempt and int(attempt.total_marks or 0) > 0
             else _get_test_total_marks(test)
         )
+        score_value = int(attempt.score or 0) if attempt else 0
+        if score_value <= 0 and section_score_total > 0:
+            score_value = section_score_total
         answer_key_available_at = (
             scholarship_test_service.get_answer_key_available_at(attempt)
             if attempt
@@ -4682,7 +4689,7 @@ def _build_my_tests_payload(student):
                     if attempt
                     else None
                 ),
-                "score": int(attempt.score or 0) if attempt else 0,
+                "score": score_value,
                 "totalMarks": total_marks,
                 "rank": _parse_int(current_entry.get("rank")),
                 "totalStudents": len(leaderboard["entries"]),
