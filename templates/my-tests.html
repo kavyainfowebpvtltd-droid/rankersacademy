@@ -968,7 +968,7 @@
     const THEME_SEQUENCE = [
       { key: "Physics", from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P" },
       { key: "Chemistry", from: "#d946ef", to: "#ec4899", accent: "#f472b6", icon: "C" },
-      { key: "Maths", from: "#f59e0b", to: "#f97316", accent: "#fb923c", icon: "M" },
+      { key: "Biology", from: "#22c55e", to: "#16a34a", accent: "#4ade80", icon: "B" },
     ];
 
     const MEDALS = {
@@ -1211,6 +1211,7 @@
       const value = String(name || "").toLowerCase();
       if (value.includes("physics") || value === "phy") return "Physics";
       if (value.includes("chemistry") || value === "chem") return "Chemistry";
+      if (value.includes("biology") || value === "bio" || value.includes("botany") || value.includes("zoology")) return "Biology";
       if (value.includes("math")) return "Maths";
       return "";
     }

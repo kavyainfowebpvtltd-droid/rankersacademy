@@ -287,6 +287,7 @@
                 Biology: Number(row.Biology ?? row.Maths) || 0,
                 total: Number(row.total) || 0,
                 totalMarks: Number(row.totalMarks) || 0,
+                sectionScores: Array.isArray(row.sectionScores) ? row.sectionScores : [],
                 rank: row.rank,
                 batchRank: row.batchRank,
                 attempted: row.attempted !== false,
@@ -389,6 +390,7 @@
           const rank = Number.parseInt(value, 10);
           return Number.isInteger(rank) ? rank : Number.MAX_SAFE_INTEGER;
         };
+        const useBackendRanks = key === "total" && scores.some((score) => score?.rank !== undefined);
         return [...scores]
           .sort((a, b) => {
             const attemptedA = a?.attempted !== false;
@@ -409,7 +411,12 @@
 
             return String(a?.studentId || "").localeCompare(String(b?.studentId || ""));
           })
-          .map((s, i) => ({ ...s, rank: i + 1 }));
+          .map((s, i) => ({
+            ...s,
+            rank: useBackendRanks
+              ? (s?.attempted === false ? "NA" : (s?.rank ?? i + 1))
+              : (s?.attempted === false ? "NA" : i + 1),
+          }));
       }
 
       function getBottomCluster(scores, subject, count = CLUSTER_SIZE) {
@@ -625,6 +632,38 @@
       function displayStudentId(student) {
         return student?.displayId || student?.studentRef || student?.id || "";
       }
+      function formatRankValue(rank) {
+        const parsed = Number.parseInt(rank, 10);
+        return Number.isInteger(parsed) ? `#${parsed}` : "NA";
+      }
+      function analysisTotalMarks(score = null) {
+        const scoreTotal = Number(score?.totalMarks);
+        if (Number.isFinite(scoreTotal) && scoreTotal > 0) return scoreTotal;
+
+        const testTotal = Number(currentTest()?.totalMarks);
+        if (Number.isFinite(testTotal) && testTotal > 0) return testTotal;
+
+        const rowTotal = currentScores()
+          .map((item) => Number(item?.totalMarks) || 0)
+          .find((value) => value > 0);
+        return rowTotal || 0;
+      }
+      function analysisSectionMeta(score, subject) {
+        const sectionScores = score?.sectionScores || [];
+        const normalized = String(subject || "").trim().toLowerCase();
+        const matched = sectionScores.find((section) => {
+          const raw = String(section?.sectionName || section?.name || "").trim().toLowerCase();
+          return raw === normalized || raw.includes(normalized);
+        });
+        if (matched) {
+          return {
+            score: Number(matched.score) || 0,
+            total: Number(matched.total) || 0,
+          };
+        }
+        const fallbackScore = Number(score?.[subject]) || 0;
+        return { score: fallbackScore, total: 0 };
+      }
       function findClusterStudentIdByInput(subject, rawInput) {
         const normalized = String(rawInput || "").trim().toLowerCase();
         if (!normalized) return "";
@@ -759,7 +798,10 @@
       }
 
       function testSelector() {
-        return `<div class="d-flex gap-2 overflow-auto pb-1 mb-3">${TESTS.map((t) => `<button class="btn btn-sm ${state.testId === t.id ? "btn-brand" : "btn-outline-light"} rounded-pill mono flex-shrink-0" onclick="setTest('${t.id}')">${t.name} - ${t.date}</button>`).join("")}</div>`;
+        if (!TESTS.length) {
+          return `<div class="small soft mb-3">No completed test records available yet.</div>`;
+        }
+        return `<div class="d-flex gap-2 overflow-auto pb-1 mb-3">${TESTS.map((t) => `<button class="btn btn-sm ${state.testId === t.id ? "btn-brand" : "btn-outline-light"} rounded-pill mono flex-shrink-0" onclick="setTest('${t.id}')">${t.shortDate || t.date} - ${t.name}</button>`).join("")}</div>`;
       }
 
       function applyAnalysisTestSlotButtonState(button, test) {
@@ -836,9 +878,9 @@
         return `${card("p-4 mb-4 rise position-relative overflow-hidden", `
           <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:180px;height:180px;filter:blur(45px)"></div>
           <div class="position-relative">${badge(rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD")}
-          <h2 class="display fw-bold mt-2 mb-0" style="font-size:4rem">#${rank}</h2>
+          <h2 class="display fw-bold mt-2 mb-0" style="font-size:4rem">${formatRankValue(rank)}</h2>
           <div class="soft">of ${STUDENTS.length} students - ${currentTest().name}</div>
-          <div class="row g-2 mt-3">${kpi("Total", `${score.total}/300`, delta === null ? "First test" : delta > 0 ? `Up ${delta} ranks` : delta < 0 ? `Down ${Math.abs(delta)} ranks` : "No rank change")}${kpi("Cluster", flagged.length ? flagged.join(", ") : "None", flagged.length === 3 ? "All-subjects session" : "Targeted revision")}</div></div>
+          <div class="row g-2 mt-3">${kpi("Total", `${score.total}/${analysisTotalMarks(score)}`, delta === null ? "First test" : delta > 0 ? `Up ${delta} ranks` : delta < 0 ? `Down ${Math.abs(delta)} ranks` : "No rank change")}${kpi("Cluster", flagged.length ? flagged.join(", ") : "None", flagged.length === 3 ? "All-subjects session" : "Targeted revision")}</div></div>
         `)}
         ${flagged.length ? coaching(student.id, flagged) : ""}
         <h5 class="display fw-bold">Subject Performance</h5>
@@ -861,11 +903,13 @@
 
       function subjectCard(sub, score, flagged) {
         const t = SUBJECT_THEMES[sub];
+        const meta = analysisSectionMeta(score, sub);
+        const total = meta.total || 100;
         const avg = Math.round(currentScores().reduce((n, s) => n + s[sub], 0) / STUDENTS.length);
         const rank = getRankings(currentScores(), sub).find((s) => s.studentId === score.studentId).rank;
         const delta = score[sub] - avg;
         const boostBadge = sub === "Biology" && flagged ? ` ${badge("Boost", "text-bg-warning text-dark")}` : "";
-        return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(sub)}<div><b>${sub}</b>${boostBadge}<div class="small soft">Subject rank #${rank}</div></div></div><div class="display fs-2 fw-bold" style="color:${t.accent}">${score[sub]}</div>${progress(score[sub], t.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${avg}/100</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>` )}</div>`;
+        return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(sub)}<div><b>${sub}</b>${boostBadge}<div class="small soft">Subject rank ${formatRankValue(rank)}</div></div></div><div class="display fs-2 fw-bold" style="color:${t.accent}">${meta.score}${meta.total ? `/${meta.total}` : ""}</div>${progress(meta.total ? Math.round((meta.score / meta.total) * 100) : meta.score, t.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${avg}${meta.total ? `/${meta.total}` : ""}</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>` )}</div>`;
       }
 
       function rankMedal(rank) {
@@ -892,6 +936,7 @@
       }
 
       function getBatchRank(score) {
+        if (String(score?.batchRank || "").toUpperCase() === "NA") return "NA";
         const explicitRank = Number.parseInt(score?.batchRank, 10);
         if (Number.isInteger(explicitRank)) return explicitRank;
 
@@ -916,7 +961,7 @@
           const stu = scoreStudent(r);
           const mine = stu.id === highlightId;
           const batchRank = getBatchRank(r);
-          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>#${r.rank}</span>${rankMedal(r.rank)}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(displayStudentId(stu))}${stu.batch ? ` - ${esc(stu.batch)}` : ""}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Biology}</td><td><b>${r.total}</b></td><td>${batchRank === "NA" ? "NA" : `#${batchRank}`}</td><td>#${r.rank}</td></tr>`;
+          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>${formatRankValue(r.rank)}</span>${Number.isInteger(Number.parseInt(r.rank, 10)) ? rankMedal(Number.parseInt(r.rank, 10)) : ""}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(displayStudentId(stu))}${stu.batch ? ` - ${esc(stu.batch)}` : ""}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Biology}</td><td><b>${r.total}${analysisTotalMarks(r) ? `/${analysisTotalMarks(r)}` : ""}</b></td><td>${batchRank === "NA" ? "NA" : `#${batchRank}`}</td><td>${formatRankValue(r.rank)}</td></tr>`;
         }).join("")}</tbody></table></div>${footer}`);
       }
 
@@ -1131,10 +1176,11 @@
         const participantCount = scores.length;
         const avg = participantCount ? Math.round(scores.reduce((n, s) => n + s.total, 0) / participantCount) : 0;
         const topStudent = ranked[0] ? scoreStudent(ranked[0]).name : "No attempts yet";
-        return `<div class="row g-3 mb-4">${kpi("Class Average", `${avg}/300`, currentTest().name)}${kpi("Top Score", ranked[0]?.total || 0, topStudent)}${kpi("All-Subject Cluster", getAllThreeSet(scores).size, "students")}${kpi("At-Risk Alerts", getPredictiveAlerts().length, "predictive warnings")}</div>
+        return `<div class="row g-3 mb-4">${kpi("Class Average", `${avg}/${analysisTotalMarks()}`, currentTest().name)}${kpi("Top Score", `${ranked[0]?.total || 0}${analysisTotalMarks(ranked[0]) ? `/${analysisTotalMarks(ranked[0])}` : ""}`, topStudent)}${kpi("All-Subject Cluster", getAllThreeSet(scores).size, "students")}${kpi("At-Risk Alerts", getPredictiveAlerts().length, "predictive warnings")}</div>
         ${card("p-4 mb-4", `<h5 class="display fw-bold">Subject Averages</h5><div class="row g-3">${SUBJECTS.map((sub) => {
           const avgSub = participantCount ? Math.round(scores.reduce((n, s) => n + s[sub], 0) / participantCount) : 0;
-          return `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="display fs-3 fw-bold mt-2">${avgSub}</div>${progress(avgSub, SUBJECT_THEMES[sub].accent)}`)}</div>`;
+          const sectionTotal = analysisSectionMeta(scores.find((item) => item?.sectionScores?.length), sub).total || 0;
+          return `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="display fs-3 fw-bold mt-2">${avgSub}${sectionTotal ? `/${sectionTotal}` : ""}</div>${progress(sectionTotal ? Math.round((avgSub / sectionTotal) * 100) : avgSub, SUBJECT_THEMES[sub].accent)}`)}</div>`;
         }).join("")}</div>`)}${leaderboard(ranked.slice(0, 10))}`;
       }
 
@@ -1207,7 +1253,7 @@
           const rank = rankEntry.rank;
           const flagged = SUBJECTS.filter((s) => getStudentClusterFlags(stu.id, currentScores())[s]);
           const tone = rank <= 10 ? "Celebrate" : rank <= 25 ? "Positive" : flagged.length === 3 ? "Concerned" : "Support";
-          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/300 - Rank: #${rank} of ${currentScores().length}\nPhysics: ${me.Physics} - Chemistry: ${me.Chemistry} - Biology: ${me.Biology}\n\n`;
+          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/${analysisTotalMarks(me)} - Rank: ${formatRankValue(rank)} of ${currentScores().length}\nPhysics: ${analysisSectionMeta(me, "Physics").score}${analysisSectionMeta(me, "Physics").total ? `/${analysisSectionMeta(me, "Physics").total}` : ""} - Chemistry: ${analysisSectionMeta(me, "Chemistry").score}${analysisSectionMeta(me, "Chemistry").total ? `/${analysisSectionMeta(me, "Chemistry").total}` : ""} - Biology: ${analysisSectionMeta(me, "Biology").score}${analysisSectionMeta(me, "Biology").total ? `/${analysisSectionMeta(me, "Biology").total}` : ""}\n\n`;
           body += tone === "Celebrate" ? `Outstanding performance. ${stu.name.split(" ")[0]} cracked the top 10. Congratulations!` : tone === "Positive" ? `Solid showing this round. Encourage ${stu.name.split(" ")[0]} to keep the momentum.` : flagged.length ? `${stu.name.split(" ")[0]} will join faculty-led revision for ${flagged.join(", ")} after class. Please ensure attendance.` : "Steady performance. Keep up the consistency.";
           body += "\n\n- The Rankers Academy";
           return { studentId: stu.id, student: stu, tone, body, type: "post-test" };

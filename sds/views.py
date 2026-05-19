@@ -4971,6 +4971,7 @@ def _build_analysis_dataset_for_test(test, focus_subject=None):
                 "Biology": subject_scores["Biology"],
                 "total": total_score,
                 "totalMarks": int(entry.get("totalMarks", 0) or 0),
+                "sectionScores": section_scores,
                 "rank": entry.get("rank"),
                 "batchRank": entry.get("batchRank"),
                 "attempted": bool(entry.get("attemptId")),
@@ -5005,13 +5006,18 @@ def _serialize_test_analysis_upcoming_placeholder():
 
 
 def _serialize_test_analysis_test_item(test, start_at):
+    section_breakdown = _build_zero_section_breakdown(test)
     return {
         "id": f"SCH{test.id}",
         "external_id": test.id,
         "name": test.name,
+        "subject": (getattr(test, "subject", "") or "").strip(),
         "date": start_at.strftime("%d %b %Y"),
         "shortDate": start_at.strftime("%b %d"),
+        "time": start_at.strftime("%I:%M %p").lstrip("0"),
         "sortAt": start_at.isoformat(),
+        "totalMarks": _get_test_total_marks(test),
+        "sectionBreakdown": section_breakdown,
         "kind": "completed",
     }
 
