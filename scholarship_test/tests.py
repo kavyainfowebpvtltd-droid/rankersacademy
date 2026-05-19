@@ -26,7 +26,11 @@ from scholarship_test.models import (
 from scholarship_test.services import test_service
 from scholarship_test.services import word_import_service
 from sds.models import Student
-from sds.views import _build_my_tests_payload
+from sds.views import (
+    _build_analysis_dataset_for_test,
+    _build_attempt_leaderboard,
+    _build_my_tests_payload,
+)
 
 
 class ScholarshipRuntimeTestFlowTests(TestCase):
@@ -1476,6 +1480,60 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             )
         return test
 
+    def create_runtime_test_with_sections(
+        self,
+        *,
+        name="Portal Multi Subject Test",
+        batch="Star 01",
+        stream="JEE",
+        scheduled_start_at=None,
+        section_names=None,
+        marks_per_question=10,
+    ):
+        if scheduled_start_at is None:
+            scheduled_start_at = timezone.now() - timedelta(minutes=5)
+        if section_names is None:
+            section_names = ["Physics", "Chemistry", "Biology"]
+
+        test = ScholarshipTest.objects.create(
+            name=name,
+            date=timezone.localtime(scheduled_start_at).date(),
+            status="published",
+            duration_hours=0,
+            duration_minutes=30,
+            batch=batch,
+            stream=stream,
+            scheduled_start_at=scheduled_start_at,
+        )
+        ScholarshipTestConfig.objects.create(test=test)
+
+        questions = []
+        for index, section_name in enumerate(section_names):
+            section = ScholarshipTestSection.objects.create(
+                test=test,
+                name=section_name,
+                order=index,
+            )
+            question = ScholarshipTestQuestion.objects.create(
+                section=section,
+                question_type="mcq",
+                question_text=f"{section_name} question",
+                order=0,
+                pos_marks=marks_per_question,
+                neg_marks=0,
+                neg_unattempted=0,
+            )
+            for option_index, option_text in enumerate(["A", "B", "C", "D"]):
+                ScholarshipTestOption.objects.create(
+                    question=question,
+                    option_text=option_text,
+                    is_correct=option_index == 1,
+                    order=option_index,
+                )
+            questions.append(question)
+
+        return test, questions
+
     def test_my_tests_payload_only_uses_tests_assigned_to_student_batch_and_stream(self):
         now = timezone.now()
         completed_match = self.create_runtime_test(
@@ -1644,6 +1702,127 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             )
         )
         self.assertEqual(payload["rewards"]["xp"], 0)
+
+    def test_attempt_leaderboard_exposes_section_names_and_batch_ranks(self):
+        now = timezone.now()
+        test, questions = self.create_runtime_test_with_sections(
+            name="Leaderboard Sections Test",
+            scheduled_start_at=now - timedelta(hours=2),
+        )
+
+        peer_user = User.objects.create_user(
+            username="student-star01-batchmate",
+            email="student-star01-batchmate@example.com",
+            password="StudentPass@2026",
+        )
+        peer_portal_student = Student.objects.create(
+            user=peer_user,
+            student_name="Batch Mate",
+            username="student-star01-batchmate",
+            contact="9876500006",
+            email="student-star01-batchmate@example.com",
+            school="Rankers School",
+            stream="JEE",
+            board="CBSE",
+            grade="11th",
+            batch="Star 01",
+            gender="Male",
+        )
+        peer_scholarship_student = ScholarshipStudent.objects.create(
+            name=peer_portal_student.student_name,
+            phone_number=peer_portal_student.contact,
+            grade=peer_portal_student.grade,
+            board=peer_portal_student.board,
+            otp_verified=True,
+        )
+
+        first_attempt = ScholarshipTestAttempt.objects.create(
+            student=peer_scholarship_student,
+            portal_student=peer_portal_student,
+            test=test,
+            status="completed",
+            score=30,
+            total_questions=3,
+            total_marks=30,
+            test_completed_at=now - timedelta(hours=1, minutes=30),
+        )
+        second_attempt = ScholarshipTestAttempt.objects.create(
+            student=self.scholarship_student,
+            portal_student=self.portal_student,
+            test=test,
+            status="completed",
+            score=20,
+            total_questions=3,
+            total_marks=30,
+            test_completed_at=now - timedelta(hours=1, minutes=20),
+        )
+
+        for question in questions:
+            ScholarshipTestAnswer.objects.create(
+                attempt=first_attempt,
+                question=question,
+                selected_option=question.options.get(is_correct=True),
+                is_correct=True,
+                marks_awarded=question.pos_marks,
+            )
+
+        for question in questions[:2]:
+            ScholarshipTestAnswer.objects.create(
+                attempt=second_attempt,
+                question=question,
+                selected_option=question.options.get(is_correct=True),
+                is_correct=True,
+                marks_awarded=question.pos_marks,
+            )
+
+        leaderboard = _build_attempt_leaderboard(test)
+
+        self.assertEqual(
+            [item["sectionName"] for item in leaderboard["entries"][0]["sectionScores"]],
+            ["Physics", "Chemistry", "Biology"],
+        )
+        self.assertEqual(
+            [item["batchRank"] for item in leaderboard["entries"][:2]],
+            [1, 2],
+        )
+        self.assertEqual(leaderboard["entries"][0]["total"], 30)
+
+    def test_analysis_dataset_uses_actual_marks_for_subjects_and_total(self):
+        now = timezone.now()
+        test, questions = self.create_runtime_test_with_sections(
+            name="Analysis Marks Test",
+            scheduled_start_at=now - timedelta(hours=2),
+        )
+
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.scholarship_student,
+            portal_student=self.portal_student,
+            test=test,
+            status="completed",
+            score=20,
+            total_questions=3,
+            total_marks=30,
+            test_completed_at=now - timedelta(hours=1, minutes=10),
+        )
+
+        for question in questions[:2]:
+            ScholarshipTestAnswer.objects.create(
+                attempt=attempt,
+                question=question,
+                selected_option=question.options.get(is_correct=True),
+                is_correct=True,
+                marks_awarded=question.pos_marks,
+            )
+
+        scores, _, _ = _build_analysis_dataset_for_test(test)
+        current_row = next(row for row in scores if row["studentId"] == f"portal-{self.portal_student.id}")
+
+        self.assertEqual(current_row["Physics"], 10)
+        self.assertEqual(current_row["Chemistry"], 10)
+        self.assertEqual(current_row["Biology"], 0)
+        self.assertEqual(current_row["total"], 20)
+        self.assertEqual(current_row["totalMarks"], 30)
+        self.assertTrue(current_row["attempted"])
 
     def test_launch_view_redirects_logged_in_portal_student_to_dashboard_for_rtse_test(self):
         test = self.create_runtime_test(

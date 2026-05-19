@@ -1210,7 +1210,44 @@
     }
 
     function sectionHeaderItems(test) {
-      return test?.sectionBreakdown || [];
+      const configuredSections = test?.sectionBreakdown || [];
+      if (configuredSections.length) {
+        return configuredSections;
+      }
+
+      const leaderboardSections = (test?.leaderboard || []).find(
+        (entry) => Array.isArray(entry.sectionScores) && entry.sectionScores.length,
+      )?.sectionScores || [];
+
+      return leaderboardSections.map((section, index) => ({
+        name: section.name || section.sectionName || `Section ${index + 1}`,
+        shortLabel:
+          section.shortLabel ||
+          sectionDisplayLabel(
+            { name: section.name || section.sectionName || `Section ${index + 1}` },
+            index,
+          ),
+      }));
+    }
+
+    function leaderboardRowTotal(row) {
+      if (row?.score !== undefined && row?.score !== null && row?.score !== "") {
+        return Number(row.score) || 0;
+      }
+      if (row?.total !== undefined && row?.total !== null && row?.total !== "") {
+        return Number(row.total) || 0;
+      }
+      return (row?.sectionScores || []).reduce((sum, section) => sum + (Number(section?.score) || 0), 0);
+    }
+
+    function leaderboardRowTotalMarks(row, test) {
+      if (row?.totalMarks !== undefined && row?.totalMarks !== null && row?.totalMarks !== "") {
+        return Number(row.totalMarks) || 0;
+      }
+      if (test?.totalMarks !== undefined && test?.totalMarks !== null && test?.totalMarks !== "") {
+        return Number(test.totalMarks) || 0;
+      }
+      return (row?.sectionScores || []).reduce((sum, section) => sum + (Number(section?.total) || 0), 0);
     }
 
     function sectionDisplayLabel(section, index = 0) {
@@ -1669,7 +1706,7 @@
         );
         node.querySelector(".top-performer-name").textContent = entry.studentName || student.name || entry.studentId;
         node.querySelector(".top-performer-meta").textContent =
-          `#${entry.rank} - ${(entry.score ?? entry.total ?? 0)}/${entry.totalMarks || test.totalMarks || 0}`;
+          `#${entry.rank} - ${leaderboardRowTotal(entry)}/${leaderboardRowTotalMarks(entry, test)}`;
         refs.topPerformers.appendChild(node);
       });
     }
@@ -1715,11 +1752,11 @@
           const cell = document.createElement("td");
           cell.className = "leaderboard-section-score mono";
           const sectionScore = row.sectionScores?.[index];
-          cell.textContent = sectionScore ? sectionScore.score : "--";
-          cell.title = section.name || `Section ${index + 1}`;
+          cell.textContent = sectionScore?.score ?? row?.[section.name] ?? "--";
+          cell.title = section.name || section.sectionName || `Section ${index + 1}`;
           node.insertBefore(cell, totalCell);
         });
-        node.querySelector(".leaderboard-total").textContent = `${row.score ?? 0}/${row.totalMarks || test.totalMarks || 0}`;
+        node.querySelector(".leaderboard-total").textContent = `${leaderboardRowTotal(row)}/${leaderboardRowTotalMarks(row, test)}`;
         refs.leaderboardBody.appendChild(node);
       });
 

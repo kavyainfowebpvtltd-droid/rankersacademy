@@ -286,6 +286,10 @@
                 Chemistry: Number(row.Chemistry) || 0,
                 Biology: Number(row.Biology ?? row.Maths) || 0,
                 total: Number(row.total) || 0,
+                totalMarks: Number(row.totalMarks) || 0,
+                rank: row.rank,
+                batchRank: row.batchRank,
+                attempted: row.attempted !== false,
               })),
             ])
           )
@@ -381,7 +385,31 @@
       }
 
       function getRankings(scores, key = "total") {
-        return [...scores].sort((a, b) => b[key] - a[key]).map((s, i) => ({ ...s, rank: i + 1 }));
+        const parsedRank = (value) => {
+          const rank = Number.parseInt(value, 10);
+          return Number.isInteger(rank) ? rank : Number.MAX_SAFE_INTEGER;
+        };
+        return [...scores]
+          .sort((a, b) => {
+            const attemptedA = a?.attempted !== false;
+            const attemptedB = b?.attempted !== false;
+            if (attemptedA !== attemptedB) {
+              return attemptedA ? -1 : 1;
+            }
+
+            const scoreDiff = (Number(b?.[key]) || 0) - (Number(a?.[key]) || 0);
+            if (scoreDiff) {
+              return scoreDiff;
+            }
+
+            const rankDiff = parsedRank(a?.rank) - parsedRank(b?.rank);
+            if (rankDiff) {
+              return rankDiff;
+            }
+
+            return String(a?.studentId || "").localeCompare(String(b?.studentId || ""));
+          })
+          .map((s, i) => ({ ...s, rank: i + 1 }));
       }
 
       function getBottomCluster(scores, subject, count = CLUSTER_SIZE) {
@@ -864,6 +892,9 @@
       }
 
       function getBatchRank(score) {
+        const explicitRank = Number.parseInt(score?.batchRank, 10);
+        if (Number.isInteger(explicitRank)) return explicitRank;
+
         const student = scoreStudent(score);
         const batch = String(student.batch || "").trim();
         if (!batch) return "NA";

@@ -2548,19 +2548,19 @@ def test_analysis_download_pdf(request):
 
     leaderboard = _build_attempt_leaderboard(test)
     entries = leaderboard.get("entries", [])
+    attempted_entries = [entry for entry in entries if entry.get("attemptId")]
 
     section_names = []
     if entries and entries[0].get("sectionScores"):
         section_names = [
-            (item.get("sectionName") or f"Section {index + 1}")
+            (item.get("sectionName") or item.get("name") or f"Section {index + 1}")
             for index, item in enumerate(entries[0]["sectionScores"])
         ]
 
-    # Compute subject averages from leaderboard section scores
     section_averages = []
     for index, section_name in enumerate(section_names):
         vals = []
-        for entry in entries:
+        for entry in attempted_entries:
             try:
                 vals.append(float(entry.get("sectionScores", [])[index].get("score", 0)))
             except Exception:
@@ -2569,7 +2569,9 @@ def test_analysis_download_pdf(request):
         section_averages.append((section_name, round(avg, 2)))
 
     total_avg = round(
-        (sum(float(entry.get("score", 0)) for entry in entries) / len(entries)) if entries else 0.0,
+        (
+            sum(float(entry.get("score", 0)) for entry in attempted_entries) / len(attempted_entries)
+        ) if attempted_entries else 0.0,
         2,
     )
 
@@ -2617,7 +2619,7 @@ def test_analysis_download_pdf(request):
     )
     elements.append(
         Paragraph(
-            f"<b>Total Students Attempted:</b> {len(entries)} &nbsp;&nbsp; <b>Class Average:</b> {total_avg}",
+            f"<b>Total Students Attempted:</b> {len(attempted_entries)} &nbsp;&nbsp; <b>Class Average:</b> {total_avg}",
             subtitle_style,
         )
     )
@@ -2643,28 +2645,33 @@ def test_analysis_download_pdf(request):
         elements.append(Spacer(1, 8))
 
     elements.append(Paragraph("Leaderboard", section_style))
-    lb_header = ["#", "Student", "PHY", "CHM", "BIO", "TOTAL", "BATCH RANK", "INSTITUTE RANK"]
+    subject_headers = [_short_section_label(name) for name in section_names]
+    lb_header = ["#", "Student", *subject_headers, "TOTAL", "BATCH RANK", "INSTITUTE RANK"]
     lb_rows = [lb_header]
     for entry in entries:
-        section_scores = entry.get("sectionScores", [])
-        phy = section_scores[0].get("score", 0) if len(section_scores) > 0 else 0
-        chm = section_scores[1].get("score", 0) if len(section_scores) > 1 else 0
-        bio = section_scores[2].get("score", 0) if len(section_scores) > 2 else 0
         batch_rank = entry.get("batchRank")
+        section_score_cells = []
+        for index in range(len(section_names)):
+            section_scores = entry.get("sectionScores", [])
+            score_value = 0
+            if index < len(section_scores):
+                score_value = section_scores[index].get("score", 0)
+            section_score_cells.append(score_value)
         lb_rows.append(
             [
                 f"#{entry.get('rank', '-')}",
                 entry.get("studentName") or entry.get("studentId"),
-                phy,
-                chm,
-                bio,
+                *section_score_cells,
                 entry.get("score", 0),
                 f"#{batch_rank}" if isinstance(batch_rank, int) else "NA",
                 f"#{entry.get('rank', '-')}",
             ]
         )
 
-    col_widths = [34, 150, 46, 46, 46, 54, 78, 78]
+    fixed_width = 34 + 150 + 54 + 78 + 78
+    subject_column_count = max(len(section_names), 1)
+    subject_column_width = max(42, int((520 - fixed_width) / subject_column_count))
+    col_widths = [34, 150, *([subject_column_width] * len(section_names)), 54, 78, 78]
     lb_table = Table(lb_rows, colWidths=col_widths, repeatRows=1)
     base_style = [
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
@@ -4147,6 +4154,8 @@ def _build_attempt_section_breakdown(attempt):
         return [
             {
                 "name": subject,
+                "sectionName": subject,
+                "shortLabel": _short_section_label(subject),
                 "score": int(manual_scores.get(subject, 0) or 0),
                 "total": 100,
                 "percentage": max(0, min(100, int(manual_scores.get(subject, 0) or 0))),
@@ -4182,6 +4191,7 @@ def _build_attempt_section_breakdown(attempt):
         breakdown.append(
             {
                 "name": section.name,
+                "sectionName": section.name,
                 "shortLabel": _short_section_label(section.name),
                 "score": scored_marks,
                 "total": total_marks,
@@ -4213,6 +4223,7 @@ def _build_zero_section_breakdown(test):
         breakdown.append(
             {
                 "name": section.name,
+                "sectionName": section.name,
                 "shortLabel": _short_section_label(section.name),
                 "score": 0,
                 "total": total_marks,
@@ -4273,16 +4284,38 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
 
     for portal_student in assigned_students:
         attempt = latest_attempts.get(portal_student.id)
-        section_scores = (
+        raw_section_scores = (
             _build_attempt_section_breakdown(attempt)
             if attempt
             else [dict(item) for item in zero_section_breakdown]
         )
-        
-        # Ensure we have a valid total score and total marks for ranking
+        section_scores = []
+        section_score_total = 0
+        for index, item in enumerate(raw_section_scores):
+            section_name = (
+                item.get("sectionName")
+                or item.get("name")
+                or f"Section {index + 1}"
+            )
+            score_value = int(item.get("score", 0) or 0)
+            total_value = int(item.get("total", 0) or 0)
+            section_scores.append(
+                {
+                    **item,
+                    "name": section_name,
+                    "sectionName": section_name,
+                    "shortLabel": item.get("shortLabel") or _short_section_label(section_name),
+                    "score": score_value,
+                    "total": total_value,
+                }
+            )
+            section_score_total += score_value
+
         score_val = int(attempt.score or 0) if attempt else 0
+        if section_score_total > 0 and score_val <= 0:
+            score_val = section_score_total
         total_marks_val = int(attempt.total_marks or 0) if attempt and int(attempt.total_marks or 0) > 0 else total_marks
-        
+
         entry = {
             "attemptId": attempt.id if attempt else None,
             "studentId": f"portal-{portal_student.id}",
@@ -4291,6 +4324,7 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
             "studentBatch": portal_student.batch or "",
             "profilePhotoUrl": _student_photo_url(portal_student),
             "score": score_val,
+            "total": score_val,
             "totalMarks": total_marks_val,
             "sectionScores": section_scores,
             "isCurrentStudent": bool(
@@ -4310,13 +4344,11 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
         }
         entries.append(entry)
 
-    # Improved ranking logic: only students who actually attempted the test 
-    # should get a numeric rank. Unattempted students stay at the bottom.
     entries.sort(
         key=lambda entry: (
-            0 if entry["_attempted"] else 1, # Attempted students first
-            -int(entry["score"] or 0),       # Then by score descending
-            entry["_completed_at"] or timezone.now(), # Then by completion time (earlier is better)
+            0 if entry["_attempted"] else 1,
+            -int(entry["score"] or 0),
+            entry["_completed_at"] or timezone.now(),
             entry["_sort_name"],
             entry["studentId"],
         )
@@ -4325,24 +4357,31 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
     current_entry = None
     last_score = None
     last_rank = 0
-    
+
     for idx, entry in enumerate(entries, start=1):
         if entry["_attempted"]:
-            # Standard ranking for attempted tests (with tie-handling)
             if entry["score"] != last_score:
                 last_rank = idx
             entry["rank"] = last_rank
             last_score = entry["score"]
         else:
-            # Unattempted tests don't get a numeric rank in the same way
             entry["rank"] = "NA"
-            
+
         entry.pop("_attempted", None)
         entry.pop("_completed_at", None)
         entry.pop("_sort_name", None)
-        
+
         if entry["isCurrentStudent"]:
             current_entry = entry
+
+    batch_positions = {}
+    for entry in entries:
+        batch_key = (entry.get("studentBatch") or "").strip().casefold()
+        if entry.get("rank") == "NA" or not batch_key:
+            entry["batchRank"] = "NA"
+            continue
+        batch_positions[batch_key] = batch_positions.get(batch_key, 0) + 1
+        entry["batchRank"] = batch_positions[batch_key]
 
     return {
         "entries": entries,
@@ -4647,7 +4686,9 @@ def _build_my_tests_payload(student):
                 "totalMarks": total_marks,
                 "rank": _parse_int(current_entry.get("rank")),
                 "totalStudents": len(leaderboard["entries"]),
-                "attemptedCount": len(leaderboard["entries"]),
+                "attemptedCount": len(
+                    [entry for entry in leaderboard["entries"] if entry.get("attemptId")]
+                ),
                 "sectionBreakdown": section_breakdown,
                 "leaderboard": leaderboard["entries"],
                 "topPerformers": leaderboard["topEntries"],
@@ -4729,24 +4770,19 @@ def _analysis_subject_scores_from_breakdown(section_breakdown):
     scores = {subject: 0 for subject in ANALYSIS_SUBJECT_ORDER}
 
     for index, item in enumerate(section_breakdown):
-        section_name = item.get("name", "")
+        section_name = item.get("name") or item.get("sectionName") or ""
         mapped = _normalize_analysis_subject_name(section_name)
-        
-        # Robust fallback: if mapped name is empty, use the order index
         if not mapped and index < len(ANALYSIS_SUBJECT_ORDER):
             mapped = ANALYSIS_SUBJECT_ORDER[index]
-            
+
         if not mapped or mapped not in scores:
             continue
-            
-        # Ensure percentage is a valid number before rounding
+
         try:
-            raw_percent = item.get("percentage")
-            if raw_percent is None or raw_percent == "":
-                percent = 0.0
-            else:
-                percent = float(raw_percent)
-            scores[mapped] = int(round(percent))
+            raw_score = item.get("score")
+            if raw_score is None or raw_score == "":
+                raw_score = item.get("percentage")
+            scores[mapped] = int(round(float(raw_score or 0)))
         except (ValueError, TypeError):
             scores[mapped] = 0
 
@@ -4916,6 +4952,9 @@ def _build_analysis_dataset_for_test(test, focus_subject=None):
     for entry in leaderboard["entries"]:
         section_scores = entry.get("sectionScores") or []
         subject_scores = _analysis_subject_scores_from_breakdown(section_scores)
+        total_score = int(entry.get("score", 0) or 0)
+        if total_score <= 0 and any(subject_scores.values()):
+            total_score = sum(subject_scores.values())
         scores.append(
             {
                 "studentId": entry.get("studentId"),
@@ -4923,7 +4962,11 @@ def _build_analysis_dataset_for_test(test, focus_subject=None):
                 "Physics": subject_scores["Physics"],
                 "Chemistry": subject_scores["Chemistry"],
                 "Biology": subject_scores["Biology"],
-                "total": sum(subject_scores.values()),
+                "total": total_score,
+                "totalMarks": int(entry.get("totalMarks", 0) or 0),
+                "rank": entry.get("rank"),
+                "batchRank": entry.get("batchRank"),
+                "attempted": bool(entry.get("attemptId")),
             }
         )
         students_by_id[entry["studentId"]] = _analysis_student_record_from_leaderboard_entry(entry)
