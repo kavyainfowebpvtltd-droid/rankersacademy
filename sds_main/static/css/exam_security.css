@@ -1,0 +1,99 @@
+body.scholarship-test-page.exam-security-active,
+body.scholarship-test-page.exam-security-active .question-panel,
+body.scholarship-test-page.exam-security-active .sidebar,
+body.scholarship-test-page.exam-security-active .question-body,
+body.scholarship-test-page.exam-security-active .question-title,
+body.scholarship-test-page.exam-security-active .question-richtext,
+body.scholarship-test-page.exam-security-active .section-instructions,
+body.scholarship-test-page.exam-security-active .option-text,
+body.scholarship-test-page.exam-security-active .option-card,
+body.scholarship-test-page.exam-security-active .navigator-panel,
+body.scholarship-test-page.exam-security-active .question-grid,
+body.scholarship-test-page.exam-security-active .progress-section,
+body.scholarship-test-page.exam-security-active .legend-container {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.scholarship-test-page.exam-security-active ::selection {
+  background: transparent;
+  color: inherit;
+}
+
+body.scholarship-test-page.exam-security-active ::-moz-selection {
+  background: transparent;
+  color: inherit;
+}
+
+body.scholarship-test-page.exam-security-active input,
+body.scholarship-test-page.exam-security-active textarea,
+body.scholarship-test-page.exam-security-active button,
+body.scholarship-test-page.exam-security-active .submit-btn,
+body.scholarship-test-page.exam-security-active .btn-custom,
+body.scholarship-test-page.exam-security-active .q-btn,
+body.scholarship-test-page.exam-security-active .option-label,
+body.scholarship-test-page.exam-security-active .option-input,
+body.scholarship-test-page.exam-security-active .modal,
+body.scholarship-test-page.exam-security-active .modal * {
+  -webkit-touch-callout: default;
+}
+
+body.scholarship-test-page.exam-security-active .answer-input,
+body.scholarship-test-page.exam-security-active input[type="text"],
+body.scholarship-test-page.exam-security-active input[type="number"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+body.scholarship-test-page.exam-security-active .option-label,
+body.scholarship-test-page.exam-security-active .submit-btn,
+body.scholarship-test-page.exam-security-active .btn-custom,
+body.scholarship-test-page.exam-security-active .q-btn {
+  touch-action: manipulation;
+}
+
+.exam-security-alerts {
+  z-index: 1095;
+  pointer-events: none;
+}
+
+.exam-security-alerts .alert {
+  max-width: 760px;
+  margin: 0 auto 0.75rem;
+  pointer-events: auto;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+
+.exam-bootstrap-modal {
+  max-width: none;
+  width: 100%;
+  padding: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+  text-align: inherit;
+}
+
+.exam-bootstrap-modal::before {
+  display: none;
+}
+
+.exam-bootstrap-modal .modal-header,
+.exam-bootstrap-modal .modal-body,
+.exam-bootstrap-modal .modal-footer {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.exam-bootstrap-modal .modal-body {
+  text-align: left;
+}
+
+.exam-bootstrap-modal .modal-footer {
+  justify-content: flex-end;
+}

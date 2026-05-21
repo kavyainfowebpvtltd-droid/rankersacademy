@@ -712,11 +712,11 @@
     persistDraftLocally();
     updateConnectionBanner();
 
-    if (!state.pendingAutoSubmit) {
+    if (state.activated && !state.pendingAutoSubmit) {
       startTimer();
     }
 
-    if (navigator.onLine) {
+    if (state.activated && navigator.onLine) {
       scheduleProgressSync(300);
     }
   }
@@ -789,13 +789,18 @@
       return;
     }
 
-    const activated = await activateTestSession();
-    if (!activated) {
-      return;
-    }
-
     if (startModal) {
       startModal.hide();
+    }
+
+    initializeTest();
+
+    const activated = await activateTestSession();
+    if (!activated) {
+      if (startModal) {
+        startModal.show();
+      }
+      return;
     }
 
     initializeTest();
@@ -895,12 +900,14 @@
       if (data.success) {
         clearPersistedDraft();
         state.pendingAutoSubmit = false;
+        await security.releaseAfterSubmission();
         window.location.href = data.redirect;
         return;
       }
 
       if (data.redirect) {
         clearPersistedDraft();
+        await security.releaseAfterSubmission();
         window.location.href = data.redirect;
         return;
       }
