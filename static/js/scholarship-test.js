@@ -1,11 +1,47 @@
 (function () {
+  function parseJsonScript(id, fallbackValue) {
+    const element = document.getElementById(id);
+    if (!element) {
+      console.error(`Missing JSON script element: ${id}`);
+      return fallbackValue;
+    }
+
+    try {
+      return JSON.parse(element.textContent || "null");
+    } catch (error) {
+      console.error(`Unable to parse JSON from ${id}`, error);
+      return fallbackValue;
+    }
+  }
+
+  function createFallbackSecurityController(config) {
+    return {
+      config: config || {},
+      securityLocked: false,
+      start() {},
+      stop() {},
+      markSubmitted() {},
+      setViolationCount() {},
+      setSecurityLocked(locked) {
+        this.securityLocked = !!locked;
+      },
+      async enterFullscreen() {
+        return Promise.resolve();
+      },
+      showAlert(message) {
+        const syncBanner = document.getElementById("syncStatusBanner");
+        if (syncBanner) {
+          syncBanner.style.display = "block";
+          syncBanner.textContent = message;
+          syncBanner.className = "alert py-2 px-3 mb-3 alert-warning";
+        }
+      },
+    };
+  }
+
   const config = window.SCHOLARSHIP_TEST_CONFIG || {};
-  const questions = JSON.parse(
-    document.getElementById("scholarship-questions-data").textContent,
-  );
-  const savedProgress = JSON.parse(
-    document.getElementById("scholarship-progress-data").textContent,
-  );
+  const questions = parseJsonScript("scholarship-questions-data", []);
+  const savedProgress = parseJsonScript("scholarship-progress-data", {});
 
   const state = {
     currentQuestionIndex: 0,
@@ -42,21 +78,67 @@
         })
       : null;
 
-  const security = new window.ExamSecurityController({
-    maxViolations: Number(config.maxViolations || 3),
-    initialViolationCount: state.violationCount,
-    onViolation(violation) {
-      if (violation.type === "tab-switch" || violation.type === "focus-loss") {
-        state.tabSwitchCount += 1;
+  let security;
+  try {
+    const SecurityController = window.ExamSecurityController;
+    security = SecurityController
+      ? new SecurityController({
+          maxViolations: Number(config.maxViolations || 3),
+          initialViolationCount: state.violationCount,
+          onViolation(violation) {
+            if (violation.type === "tab-switch" || violation.type === "focus-loss") {
+              state.tabSwitchCount += 1;
+            }
+            state.violationCount = violation.count;
+            persistDraftLocally();
+            scheduleProgressSync(0);
+          },
+          onMaxViolations() {
+            autoSubmit("security_violation");
+          },
+        })
+      : createFallbackSecurityController({
+          maxViolations: Number(config.maxViolations || 3),
+        });
+  } catch (error) {
+    console.error("Unable to initialize exam security controller", error);
+    security = createFallbackSecurityController({
+      maxViolations: Number(config.maxViolations || 3),
+    });
+  }
+
+  function renderQuestionPanelMessage(message, options) {
+    const opts = options || {};
+    const questionContext = document.getElementById("questionContext");
+    const sectionInstructions = document.getElementById("sectionInstructions");
+    const questionText = document.getElementById("questionText");
+    const answerInputWrap = document.getElementById("answerInputWrap");
+    const optionsGrid = document.getElementById("optionsGrid");
+
+    if (questionContext) {
+      questionContext.hidden = true;
+    }
+    if (sectionInstructions) {
+      sectionInstructions.innerHTML = "";
+      sectionInstructions.style.display = "none";
+    }
+    if (questionText) {
+      questionText.innerHTML = message || "";
+    }
+    if (answerInputWrap) {
+      answerInputWrap.innerHTML = opts.actionHtml || "";
+    }
+    if (optionsGrid) {
+      optionsGrid.innerHTML = "";
+    }
+
+    if (opts.actionHtml) {
+      const inlineStartButton = document.getElementById("inlineStartExamButton");
+      if (inlineStartButton) {
+        inlineStartButton.addEventListener("click", beginSecureTest);
       }
-      state.violationCount = violation.count;
-      persistDraftLocally();
-      scheduleProgressSync(0);
-    },
-    onMaxViolations() {
-      autoSubmit("security_violation");
-    },
-  });
+    }
+  }
 
   function getQuestionByIndex(index) {
     return questions[index] || null;
@@ -609,8 +691,9 @@
 
   function initializeTest() {
     if (!questions || questions.length === 0) {
-      document.querySelector(".question-body").innerHTML =
-        '<div class="alert alert-warning">No questions available. Please contact admin.</div>';
+      renderQuestionPanelMessage(
+        '<div class="alert alert-warning mb-0">No questions are available for this test. Please contact admin.</div>',
+      );
       return;
     }
 
@@ -916,14 +999,44 @@
     bindGlobalEvents();
     updateTimerDisplay();
     updateConnectionBanner();
+    if (config.startedAt || config.status === "in_progress") {
+      state.activated = true;
+      initializeTest();
+      return;
+    }
+
+    renderQuestionPanelMessage("Click Start Test to load questions.", {
+      actionHtml: `
+        <div class="pt-3">
+          <button type="button" class="btn btn-primary px-4 py-2 rounded-pill" id="inlineStartExamButton">
+            Start Test
+          </button>
+          <div class="small text-muted mt-3">
+            Fullscreen permission is required before the test begins.
+          </div>
+        </div>
+      `,
+    });
+
     if (startModal) {
       startModal.show();
     }
   }
 
+  function boot() {
+    try {
+      initializePage();
+    } catch (error) {
+      console.error("Scholarship test bootstrap failed", error);
+      renderQuestionPanelMessage(
+        '<div class="alert alert-danger mb-0">Unable to initialize this test properly. Please refresh the page and try again.</div>',
+      );
+    }
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializePage);
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    initializePage();
+    boot();
   }
 })();
