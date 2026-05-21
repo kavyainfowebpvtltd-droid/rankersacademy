@@ -913,6 +913,7 @@
       { key: "Physics", from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P" },
       { key: "Chemistry", from: "#d946ef", to: "#ec4899", accent: "#f472b6", icon: "C" },
       { key: "Biology", from: "#22c55e", to: "#16a34a", accent: "#4ade80", icon: "B" },
+      { key: "Maths", from: "#f59e0b", to: "#f97316", accent: "#fb923c", icon: "M" },
     ];
 
     const MEDALS = {
@@ -1053,34 +1054,106 @@
       return currentLeaderboard().find((entry) => entry.studentId === currentStudentId) || null;
     }
 
-    function currentStudentSectionBreakdown(test) {
-      const configuredSections = test?.sectionBreakdown || [];
-      if (configuredSections.length) {
-        return configuredSections;
+    function sectionIdentity(section, index = 0) {
+      const normalized = normalizeSectionKey(section?.name || section?.sectionName || "");
+      if (normalized) {
+        return normalized;
       }
 
-      const currentEntry = currentStudentEntry();
-      if (currentEntry?.sectionScores?.length) {
-        return currentEntry.sectionScores.map((section, index) => ({
-          name: section.name || section.sectionName || `Section ${index + 1}`,
-          sectionName: section.sectionName || section.name || `Section ${index + 1}`,
+      const rawName = String(section?.name || section?.sectionName || "").trim().toLowerCase();
+      return rawName || `section-${index + 1}`;
+    }
+
+    function normalizeSectionBreakdownItems(rawSections) {
+      if (!Array.isArray(rawSections) || !rawSections.length) {
+        return [];
+      }
+
+      return rawSections.map((section, index) => {
+        const sectionName = String(section?.name || section?.sectionName || `Section ${index + 1}`).trim();
+        const score = Number(section?.score || 0);
+        const total = Number(section?.total || 0);
+        const parsedPercentage = Number(section?.percentage);
+        const percentage = Number.isFinite(parsedPercentage)
+          ? parsedPercentage
+          : (total > 0 ? Math.round((score / total) * 1000) / 10 : 0);
+
+        return {
+          ...section,
+          name: sectionName || `Section ${index + 1}`,
+          sectionName: sectionName || `Section ${index + 1}`,
           shortLabel:
-            section.shortLabel ||
+            section?.shortLabel ||
             sectionDisplayLabel(
-              { name: section.name || section.sectionName || `Section ${index + 1}` },
+              { name: sectionName || `Section ${index + 1}` },
               index,
             ),
-          score: Number(section.score) || 0,
-          total: Number(section.total) || 0,
-          percentage:
-            Number(section.percentage) ||
-            ((Number(section.total) || 0) > 0
-              ? Math.round(((Number(section.score) || 0) / Number(section.total)) * 1000) / 10
-              : 0),
-        }));
+          score,
+          total,
+          percentage,
+        };
+      });
+    }
+
+    function currentStudentSectionBreakdown(test) {
+      const currentEntry = currentStudentEntry();
+      const configuredSections = normalizeSectionBreakdownItems(test?.sectionBreakdown);
+      const currentEntrySections = normalizeSectionBreakdownItems(currentEntry?.sectionScores);
+      const leaderboardSections = normalizeSectionBreakdownItems(
+        (test?.leaderboard || []).find(
+          (entry) => Array.isArray(entry.sectionScores) && entry.sectionScores.length,
+        )?.sectionScores,
+      );
+
+      const seedSections = configuredSections.length
+        ? configuredSections
+        : currentEntrySections.length
+          ? currentEntrySections
+          : leaderboardSections;
+
+      if (!seedSections.length) {
+        return [];
       }
 
-      return [];
+      const currentEntrySectionsByKey = new Map(
+        currentEntrySections.map((section, index) => [sectionIdentity(section, index), section]),
+      );
+
+      return seedSections.map((section, index) => {
+        const sectionKey = sectionIdentity(section, index);
+        const currentSection = currentEntrySectionsByKey.get(sectionKey);
+        const resolvedSection = currentSection || section;
+        const sectionName = String(
+          resolvedSection?.name ||
+          resolvedSection?.sectionName ||
+          section?.name ||
+          section?.sectionName ||
+          `Section ${index + 1}`,
+        ).trim();
+        const score = Number(resolvedSection?.score || 0);
+        const total = Number(resolvedSection?.total || section?.total || 0);
+        const parsedPercentage = Number(resolvedSection?.percentage);
+        const percentage = Number.isFinite(parsedPercentage)
+          ? parsedPercentage
+          : (total > 0 ? Math.round((score / total) * 1000) / 10 : 0);
+
+        return {
+          ...section,
+          ...resolvedSection,
+          name: sectionName || `Section ${index + 1}`,
+          sectionName: sectionName || `Section ${index + 1}`,
+          shortLabel:
+            resolvedSection?.shortLabel ||
+            section?.shortLabel ||
+            sectionDisplayLabel(
+              { name: sectionName || `Section ${index + 1}` },
+              index,
+            ),
+          score,
+          total,
+          percentage,
+        };
+      });
     }
 
     function clearNode(node) {
