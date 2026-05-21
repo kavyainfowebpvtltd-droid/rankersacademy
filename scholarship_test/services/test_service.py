@@ -1,4 +1,5 @@
 import logging
+import hashlib
 import re
 from datetime import datetime
 from django.conf import settings
@@ -473,6 +474,24 @@ def get_runtime_questions_for_test(test):
     return runtime_questions
 
 
+def _stable_runtime_question_order_key(attempt, question):
+    attempt_seed = getattr(attempt, "id", None) or getattr(attempt, "student_id", None) or 0
+    payload = f"{attempt_seed}:{getattr(question, 'id', 0)}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def get_runtime_questions_for_attempt(attempt):
+    runtime_test = get_runtime_test_for_attempt(attempt)
+    runtime_questions = list(get_runtime_questions_for_test(runtime_test))
+    if not runtime_questions:
+        return []
+
+    return sorted(
+        runtime_questions,
+        key=lambda question: _stable_runtime_question_order_key(attempt, question),
+    )
+
+
 def get_runtime_test_for_attempt(attempt):
     if getattr(attempt, 'test_id', None):
         return attempt.test
@@ -548,6 +567,15 @@ def get_answer_key_visibility_delay():
     return timedelta(hours=max(0, hours))
 
 
+def get_my_tests_attempt_review_visibility_delay():
+    hours = getattr(settings, 'MY_TESTS_ATTEMPT_REVIEW_DELAY_HOURS', 1)
+    try:
+        hours = float(hours)
+    except (TypeError, ValueError):
+        hours = 1
+    return timedelta(hours=max(0, hours))
+
+
 def get_answer_key_base_end_time(attempt):
     runtime_test = get_runtime_test_for_attempt(attempt)
     if runtime_test and getattr(runtime_test, 'scheduled_start_at', None):
@@ -565,6 +593,16 @@ def is_answer_key_available(attempt, now=None):
     if now is None:
         now = timezone.now()
     return now >= get_answer_key_available_at(attempt)
+
+
+def get_my_tests_attempt_review_available_at(attempt):
+    return get_answer_key_base_end_time(attempt) + get_my_tests_attempt_review_visibility_delay()
+
+
+def is_my_tests_attempt_review_available(attempt, now=None):
+    if now is None:
+        now = timezone.now()
+    return now >= get_my_tests_attempt_review_available_at(attempt)
 
 
 def get_answer_key_delay_hours_display():
@@ -740,7 +778,7 @@ def activate_runtime_test_attempt(attempt_id: int):
         return False, "Test already submitted", attempt
 
     runtime_test = get_runtime_test_for_attempt(attempt)
-    runtime_questions = get_runtime_questions_for_test(runtime_test)
+    runtime_questions = get_runtime_questions_for_attempt(attempt)
     if not runtime_test or not runtime_questions:
         return False, "No configured scholarship test is available", attempt
 
@@ -807,7 +845,7 @@ def save_runtime_test_progress(
         return False, "Test already submitted", attempt
 
     runtime_test = get_runtime_test_for_attempt(attempt)
-    runtime_questions = get_runtime_questions_for_test(runtime_test)
+    runtime_questions = get_runtime_questions_for_attempt(attempt)
     if not runtime_test or not runtime_questions:
         return False, "No configured scholarship test is available", attempt
 
@@ -940,7 +978,7 @@ def submit_runtime_test(
         return False, "Test already submitted", attempt
 
     runtime_test = get_runtime_test_for_attempt(attempt)
-    runtime_questions = get_runtime_questions_for_test(runtime_test)
+    runtime_questions = get_runtime_questions_for_attempt(attempt)
     if not runtime_test or not runtime_questions:
         return False, "No configured scholarship test is available", attempt
 

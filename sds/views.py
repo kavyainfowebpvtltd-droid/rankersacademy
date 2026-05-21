@@ -4702,7 +4702,7 @@ def _build_my_tests_payload(student):
         if score_value <= 0 and section_score_total > 0:
             score_value = section_score_total
         answer_key_available_at = (
-            scholarship_test_service.get_answer_key_available_at(attempt)
+            scholarship_test_service.get_my_tests_attempt_review_available_at(attempt)
             if attempt
             else None
         )
@@ -4714,7 +4714,7 @@ def _build_my_tests_payload(student):
                 "attemptId": attempt.id if attempt else None,
                 "attempted": bool(attempt),
                 "answerKeyAvailable": (
-                    scholarship_test_service.is_answer_key_available(attempt)
+                    scholarship_test_service.is_my_tests_attempt_review_available(attempt)
                     if attempt
                     else False
                 ),

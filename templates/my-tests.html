@@ -749,6 +749,7 @@
           <h2 id="rankValue" class="display fw-bold mt-2 mb-0 rank-hero-number"></h2>
           <div id="rankSummary" class="soft"></div>
           <div id="homeKpiRow" class="hero-kpi-grid mt-4"></div>
+          <div id="homeActionRow" class="d-flex flex-wrap gap-2 mt-3"></div>
         </div>
       </div>
 
@@ -995,6 +996,7 @@
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
       homeKpiRow: document.getElementById("homeKpiRow"),
+      homeActionRow: document.getElementById("homeActionRow"),
       topPerformers: document.getElementById("topPerformers"),
       leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
       leaderboardBody: document.getElementById("leaderboardBody"),
@@ -1471,6 +1473,53 @@
       });
     }
 
+    function formatAvailabilityText(value) {
+      const date = parseIsoDate(value);
+      if (!date) {
+        return "";
+      }
+      return date.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    }
+
+    function renderHomeActions(test) {
+      clearNode(refs.homeActionRow);
+      if (!test?.attempted || !test?.attemptReviewUrl) {
+        return;
+      }
+
+      const reviewButton = document.createElement("a");
+      reviewButton.className = `btn rounded-pill px-4 ${
+        test.answerKeyAvailable ? "btn-brand" : "btn-outline-light disabled"
+      }`;
+      reviewButton.innerHTML = '<i class="bi bi-eye me-2"></i>Attempted Test Paper';
+
+      if (test.answerKeyAvailable) {
+        reviewButton.href = test.attemptReviewUrl;
+      } else {
+        reviewButton.href = "#";
+        reviewButton.setAttribute("aria-disabled", "true");
+        reviewButton.tabIndex = -1;
+      }
+
+      refs.homeActionRow.appendChild(reviewButton);
+
+      if (!test.answerKeyAvailable) {
+        const info = document.createElement("div");
+        info.className = "small soft align-self-center";
+        const availableAtText = formatAvailabilityText(test.answerKeyAvailableAt);
+        info.textContent = availableAtText
+          ? `Available after 1 hour. Unlocks at ${availableAtText}.`
+          : "Available after 1 hour from test completion.";
+        refs.homeActionRow.appendChild(info);
+      }
+    }
+
     function applyTestSlotButtonState(button, slot, slotIndex) {
       button.classList.remove("btn-brand", "btn-outline-light", "test-slot-selected", "test-slot-upcoming");
       button.disabled = false;
@@ -1612,6 +1661,7 @@
           { label: "Status", value: "Awaiting", extra: "First completed test" },
           { label: "Window", value: "Soon", extra: "Use the upcoming tab to launch" },
         ]);
+        clearNode(refs.homeActionRow);
         clearNode(refs.topPerformers);
         clearNode(refs.leaderboardBody);
         refs.leaderboardCountBadge.textContent = "0 students";
@@ -1699,6 +1749,7 @@
       });
 
       renderKpiCards(kpiItems);
+      renderHomeActions(test);
 
       renderTopPerformers(test);
       renderLeaderboard(test);

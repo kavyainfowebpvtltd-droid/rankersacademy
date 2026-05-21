@@ -925,7 +925,7 @@ def scholarship_test(request, attempt_id):
         return redirect('scholarship_test:scholarship_success', attempt_id=attempt.id)
 
     runtime_test = test_service.get_runtime_test_for_attempt(attempt)
-    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+    runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
     time_limit_minutes = test_service.get_test_duration_minutes(runtime_test) if runtime_test else TEST_DURATION_MINUTES
     time_remaining_seconds = test_service.get_attempt_time_remaining_seconds(attempt)
 
@@ -1071,7 +1071,7 @@ def scholarship_submit_test(request, attempt_id):
         submission_reason = ''
     
     runtime_test = test_service.get_runtime_test_for_attempt(attempt)
-    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+    runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
     if runtime_test and runtime_questions:
         success, message, updated_attempt = test_service.submit_runtime_test(
             attempt.id,
@@ -1143,7 +1143,7 @@ def scholarship_save_test_progress(request, attempt_id):
     if not success:
         if message == 'Test time has expired':
             runtime_test = test_service.get_runtime_test_for_attempt(attempt)
-            runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+            runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
             if runtime_test and runtime_questions:
                 _submit_success, _submit_message, updated_attempt = test_service.auto_submit_runtime_test(attempt.id)
             else:
@@ -1211,8 +1211,8 @@ def scholarship_success(request, attempt_id):
         student.board if is_scholarship_result else _get_non_scholarship_stream(attempt)
     )
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
-    answer_key_available_at = test_service.get_answer_key_available_at(attempt)
-    answer_key_is_available = test_service.is_answer_key_available(attempt)
+    answer_key_available_at = test_service.get_answer_key_base_end_time(attempt)
+    answer_key_is_available = True
     answer_key_available_at_display = timezone.localtime(
         answer_key_available_at,
         test_service.ACADEMY_TIMEZONE,
@@ -1309,7 +1309,7 @@ def _runtime_correct_answer_display(question):
 
 def _build_attempt_review_rows(attempt):
     runtime_test = test_service.get_runtime_test_for_attempt(attempt)
-    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+    runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
     rows = []
 
     if runtime_test and runtime_questions:
@@ -1357,7 +1357,7 @@ def _build_attempt_review_rows(attempt):
 def scholarship_attempt_review(request, attempt_id):
     try:
         attempt = (
-            ScholarshipTestAttempt.objects
+            _runtime_attempt_queryset()
             .select_related('student', 'portal_student', 'portal_student__user', 'test')
             .prefetch_related(
                 'answers__question',
@@ -1372,27 +1372,6 @@ def scholarship_attempt_review(request, attempt_id):
 
     if not _student_can_view_attempt(request, attempt):
         return HttpResponseForbidden("You are not allowed to view this attempted paper.")
-
-    if not test_service.is_answer_key_available(attempt):
-        available_at = timezone.localtime(
-            test_service.get_answer_key_available_at(attempt),
-            test_service.ACADEMY_TIMEZONE,
-        ).strftime('%d %b %Y, %I:%M %p')
-        messages.info(
-            request,
-            f"Answer key will be available after {test_service.get_answer_key_delay_hours_display()} from test completion.",
-        )
-        return render(
-            request,
-            'scholarship-attempt-review-locked.html',
-            {
-                'attempt': attempt,
-                'student': attempt.student,
-                'available_at_display': available_at,
-                'answer_key_delay_display': test_service.get_answer_key_delay_hours_display(),
-            },
-            status=403,
-        )
 
     context = {
         'attempt': attempt,
