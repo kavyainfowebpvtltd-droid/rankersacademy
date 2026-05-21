@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from contextlib import suppress
 from datetime import datetime
 from urllib.parse import urlencode
 from django.shortcuts import render, redirect
@@ -10,7 +11,8 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.utils import timezone
-from django.db import transaction, IntegrityError
+from django.db import transaction, IntegrityError, connection
+from django.db.utils import OperationalError
 from django.conf import settings
 from sds.models import Student
 
@@ -357,6 +359,90 @@ def _get_non_scholarship_stream(attempt):
 
     board_value = getattr(portal_student, 'board', '') or getattr(attempt.student, 'board', '')
     return board_value or '-'
+
+
+def _runtime_attempt_queryset():
+    return ScholarshipTestAttempt.objects.defer(
+        'started_at',
+        'submitted_at',
+        'violation_count',
+        'security_status',
+    )
+
+
+def _is_missing_attempt_security_column_error(error: Exception) -> bool:
+    message = str(error or "")
+    return (
+        "Unknown column" in message
+        and any(
+            field_name in message
+            for field_name in ("security_status", "violation_count", "started_at", "submitted_at")
+        )
+    )
+
+
+def _create_runtime_attempt_compat(
+    *,
+    student,
+    active_test,
+    portal_student,
+    total_questions,
+    total_marks,
+    progress_state,
+):
+    create_kwargs = {
+        'student': student,
+        'test': active_test,
+        'portal_student': portal_student,
+        'student_batch': (portal_student.batch if portal_student else ''),
+        'status': 'started',
+        'security_status': 'pending',
+        'total_questions': total_questions,
+        'total_marks': total_marks,
+        'progress_state': progress_state,
+    }
+
+    try:
+        with transaction.atomic():
+            return ScholarshipTestAttempt.objects.create(**create_kwargs)
+    except OperationalError as error:
+        if not _is_missing_attempt_security_column_error(error):
+            raise
+
+    table_name = connection.ops.quote_name(ScholarshipTestAttempt._meta.db_table)
+    progress_state_json = json.dumps(progress_state)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            INSERT INTO {table_name}
+                (student_id, test_id, portal_student_id, student_batch, score,
+                 scholarship_percentage, test_completed_at, status,
+                 total_questions, total_marks, progress_state, sms_sent, sms_error)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            [
+                student.id,
+                active_test.id if active_test else None,
+                portal_student.id if portal_student else None,
+                portal_student.batch if portal_student else '',
+                0,
+                0,
+                None,
+                'started',
+                total_questions,
+                total_marks,
+                progress_state_json,
+                False,
+                None,
+            ],
+        )
+        attempt_id = cursor.lastrowid
+
+    return (
+        _runtime_attempt_queryset()
+        .select_related('test')
+        .get(id=attempt_id)
+    )
 
 
 
@@ -776,26 +862,26 @@ def scholarship_start_test(request):
 
     total_questions = len(active_runtime_questions) if active_runtime_questions else TOTAL_QUESTIONS
 
-    with transaction.atomic():
-        attempt = ScholarshipTestAttempt.objects.create(
-            student=student,
-            test=active_test,
-            portal_student=portal_student,
-            student_batch=(portal_student.batch if portal_student else ''),
-            status='started',
-            security_status='pending',
-            total_questions=total_questions,
-            total_marks=sum(int(question.pos_marks or 0) for question in active_runtime_questions)
-            if active_runtime_questions else total_questions,
-            progress_state={
-                'answers': {},
-                'current_question_index': 0,
-                'tab_switch_count': 0,
-                'violation_count': 0,
-                'security_locked': False,
-                'saved_at': timezone.now().isoformat(),
-            },
-        )
+    progress_state = {
+        'answers': {},
+        'current_question_index': 0,
+        'tab_switch_count': 0,
+        'violation_count': 0,
+        'security_locked': False,
+        'security_status': 'pending',
+        'saved_at': timezone.now().isoformat(),
+    }
+    attempt = _create_runtime_attempt_compat(
+        student=student,
+        active_test=active_test,
+        portal_student=portal_student,
+        total_questions=total_questions,
+        total_marks=(
+            sum(int(question.pos_marks or 0) for question in active_runtime_questions)
+            if active_runtime_questions else total_questions
+        ),
+        progress_state=progress_state,
+    )
 
     return redirect('scholarship_test:scholarship_test', attempt_id=attempt.id)
 
@@ -824,7 +910,7 @@ def scholarship_test(request, attempt_id):
     request.session['scholarship_board'] = student.board
     
     try:
-        attempt = ScholarshipTestAttempt.objects.select_related('test').get(id=attempt_id, student=student)
+        attempt = _runtime_attempt_queryset().select_related('test').get(id=attempt_id, student=student)
     except ScholarshipTestAttempt.DoesNotExist:
         messages.error(request, "Test not found")
         return redirect('scholarship_test:scholarship_dashboard')
@@ -884,6 +970,9 @@ def scholarship_test(request, attempt_id):
         'time_limit': time_limit_minutes,
         'time_remaining_seconds': time_remaining_seconds,
         'saved_progress': test_service.get_saved_progress(attempt),
+        'attempt_started_at': test_service.get_attempt_started_at_value(attempt),
+        'attempt_security_status': test_service.get_attempt_security_status_value(attempt),
+        'attempt_violation_count': test_service.get_attempt_violation_count_value(attempt),
         'security_max_violations': max(1, int(getattr(settings, 'EXAM_SECURITY_MAX_VIOLATIONS', 3) or 3)),
     }
     context.update(_build_test_display_context(runtime_test))
@@ -908,11 +997,11 @@ def scholarship_activate_test(request, attempt_id):
         return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
 
     try:
-        attempt = ScholarshipTestAttempt.objects.select_related('test').get(id=attempt_id, student=student)
+        attempt = _runtime_attempt_queryset().select_related('test').get(id=attempt_id, student=student)
     except ScholarshipTestAttempt.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
 
-    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
+    if attempt.status in ['completed', 'expired'] or test_service.get_attempt_submitted_at_value(attempt):
         return JsonResponse({
             'success': False,
             'error': 'Test already submitted',
@@ -927,10 +1016,14 @@ def scholarship_activate_test(request, attempt_id):
         'success': True,
         'message': message,
         'time_remaining_seconds': test_service.get_attempt_time_remaining_seconds(updated_attempt),
-        'started_at': updated_attempt.started_at.isoformat() if updated_attempt.started_at else None,
+        'started_at': (
+            test_service.get_attempt_started_at_value(updated_attempt).isoformat()
+            if test_service.get_attempt_started_at_value(updated_attempt)
+            else None
+        ),
         'saved_progress': test_service.get_saved_progress(updated_attempt),
-        'violation_count': updated_attempt.violation_count,
-        'security_status': updated_attempt.security_status,
+        'violation_count': test_service.get_attempt_violation_count_value(updated_attempt),
+        'security_status': test_service.get_attempt_security_status_value(updated_attempt),
     })
 
 
@@ -955,23 +1048,23 @@ def scholarship_submit_test(request, attempt_id):
     request.session['scholarship_board'] = student.board
     
     try:
-        attempt = ScholarshipTestAttempt.objects.select_related('test').get(id=attempt_id, student=student)
+        attempt = _runtime_attempt_queryset().select_related('test').get(id=attempt_id, student=student)
     except ScholarshipTestAttempt.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
     
-    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
+    if attempt.status in ['completed', 'expired'] or test_service.get_attempt_submitted_at_value(attempt):
         return JsonResponse({'success': True, 'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id])})
     
   
     try:
         data = json.loads(request.body)
         answers = data.get('answers', {})
-        violation_count = data.get('violation_count', attempt.violation_count)
+        violation_count = data.get('violation_count', test_service.get_attempt_violation_count_value(attempt))
         security_locked = bool(data.get('security_locked', False))
         submission_reason = (data.get('submission_reason') or '').strip()
     except json.JSONDecodeError:
         answers = {}
-        violation_count = attempt.violation_count
+        violation_count = test_service.get_attempt_violation_count_value(attempt)
         security_locked = False
         submission_reason = ''
     
@@ -1014,7 +1107,7 @@ def scholarship_save_test_progress(request, attempt_id):
         return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
 
     try:
-        attempt = ScholarshipTestAttempt.objects.get(id=attempt_id, student=student)
+        attempt = _runtime_attempt_queryset().get(id=attempt_id, student=student)
     except ScholarshipTestAttempt.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
 
@@ -1033,7 +1126,7 @@ def scholarship_save_test_progress(request, attempt_id):
     answers = data.get('answers', {})
     current_question_index = data.get('current_question_index', 0)
     tab_switch_count = data.get('tab_switch_count', 0)
-    violation_count = data.get('violation_count', attempt.violation_count)
+    violation_count = data.get('violation_count', test_service.get_attempt_violation_count_value(attempt))
     security_locked = bool(data.get('security_locked', False))
 
     success, message, updated_attempt = test_service.save_runtime_test_progress(
@@ -1074,7 +1167,7 @@ def scholarship_success(request, attempt_id):
     student_id = request.session.get('scholarship_student_id')
     
     try:
-        attempt = ScholarshipTestAttempt.objects.select_related('student', 'portal_student').get(id=attempt_id)
+        attempt = _runtime_attempt_queryset().select_related('student', 'portal_student').get(id=attempt_id)
         
         student = attempt.student
         
@@ -1085,8 +1178,7 @@ def scholarship_success(request, attempt_id):
             request.session['scholarship_board'] = student.board
         
         student.refresh_from_db()
-        attempt.refresh_from_db()
-        
+
         request.session['scholarship_student_id'] = student.id
         request.session['scholarship_student_name'] = student.name
         request.session['scholarship_grade'] = student.grade

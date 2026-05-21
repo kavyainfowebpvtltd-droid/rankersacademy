@@ -39,8 +39,8 @@
       aria-live="polite"
       aria-atomic="true"
     ></div>
-    <input type="hidden" id="violationCountInput" value="{{ attempt.violation_count|default:0 }}" />
-    <input type="hidden" id="securityLockedInput" value="{% if attempt.security_status == 'locked' %}1{% else %}0{% endif %}" />
+    <input type="hidden" id="violationCountInput" value="{{ attempt_violation_count|default:0 }}" />
+    <input type="hidden" id="securityLockedInput" value="{% if attempt_security_status == 'locked' %}1{% else %}0{% endif %}" />
     <nav
       class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top"
     >
@@ -194,7 +194,7 @@
           </div>
           <div class="modal-footer border-0">
             <button type="button" class="btn btn-primary" id="startExamButton">
-              {% if attempt.started_at or attempt.status == 'in_progress' %}Resume Test{% else %}Start Test{% endif %}
+              {% if attempt_started_at or attempt.status == 'in_progress' %}Resume Test{% else %}Start Test{% endif %}
             </button>
           </div>
         </div>
@@ -335,10 +335,10 @@
         successUrl: "{% url 'scholarship_test:scholarship_success' attempt.id %}",
         localProgressKey: "scholarship-test-progress:{{ attempt.id }}",
         maxViolations: {{ security_max_violations }},
-        startedAt: {% if attempt.started_at %}"{{ attempt.started_at|date:'c' }}"{% else %}null{% endif %},
+        startedAt: {% if attempt_started_at %}"{{ attempt_started_at|date:'c' }}"{% else %}null{% endif %},
         status: "{{ attempt.status }}",
-        securityStatus: "{{ attempt.security_status }}",
-        initialViolationCount: {{ attempt.violation_count|default:0 }},
+        securityStatus: "{{ attempt_security_status }}",
+        initialViolationCount: {{ attempt_violation_count|default:0 }},
       };
     </script>
     <script src="{% static 'js/exam_security.js' %}"></script>
