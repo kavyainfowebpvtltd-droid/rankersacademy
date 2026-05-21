@@ -4291,6 +4291,10 @@ def _latest_completed_attempts_for_test(test):
         ScholarshipTestAttempt.objects
         .filter(test=test, status__in=["completed", "expired"])
         .select_related("student", "portal_student")
+        # These exam-security fields were added in a later migration and are
+        # not required for leaderboard/report rendering on My Tests pages.
+        # Defer them here so older databases without those columns do not fail.
+        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test_completed_at", "test_started_at", "id")
     )
@@ -4644,6 +4648,10 @@ def _build_my_tests_payload(student):
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
+        # My Tests only needs marks, rank, and section data from attempts.
+        # Defer optional exam-security columns so this page remains compatible
+        # with deployments where that schema change is not applied yet.
+        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
