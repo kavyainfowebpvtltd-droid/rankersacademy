@@ -792,6 +792,9 @@ if (editStudentModal) {
     document.getElementById("editStudentBoard").value =
       button.dataset.board || "";
 
+    document.getElementById("editStudentStream").value =
+      button.dataset.stream || "";
+
     document.getElementById("editStudentGrade").value =
       button.dataset.grade || "";
 
