@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.utils import timezone
 from django.db import transaction, IntegrityError
+from django.conf import settings
 from sds.models import Student
 
 from scholarship_test.models import (
@@ -778,6 +779,7 @@ def scholarship_start_test(request):
             portal_student=portal_student,
             student_batch=(portal_student.batch if portal_student else ''),
             status='started',
+            security_status='pending',
             total_questions=total_questions,
             total_marks=sum(int(question.pos_marks or 0) for question in active_runtime_questions)
             if active_runtime_questions else total_questions,
@@ -785,6 +787,8 @@ def scholarship_start_test(request):
                 'answers': {},
                 'current_question_index': 0,
                 'tab_switch_count': 0,
+                'violation_count': 0,
+                'security_locked': False,
                 'saved_at': timezone.now().isoformat(),
             },
         )
@@ -833,10 +837,6 @@ def scholarship_test(request, attempt_id):
     time_limit_minutes = test_service.get_test_duration_minutes(runtime_test) if runtime_test else TEST_DURATION_MINUTES
     time_remaining_seconds = test_service.get_attempt_time_remaining_seconds(attempt)
 
-    if attempt.status == 'started':
-        attempt.status = 'in_progress'
-        attempt.save(update_fields=['status'])
-
     if runtime_test and runtime_questions:
         questions_data = [
             test_service.serialize_runtime_question(question, index + 1)
@@ -880,10 +880,54 @@ def scholarship_test(request, attempt_id):
         'time_limit': time_limit_minutes,
         'time_remaining_seconds': time_remaining_seconds,
         'saved_progress': test_service.get_saved_progress(attempt),
+        'security_max_violations': max(1, int(getattr(settings, 'EXAM_SECURITY_MAX_VIOLATIONS', 3) or 3)),
     }
     context.update(_build_test_display_context(runtime_test))
     
     return render(request, 'scholarship-test.html', context)
+
+
+@require_POST
+@csrf_exempt
+def scholarship_activate_test(request, attempt_id):
+    selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
+
+    try:
+        attempt = ScholarshipTestAttempt.objects.select_related('test').get(id=attempt_id, student=student)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
+
+    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
+        return JsonResponse({
+            'success': False,
+            'error': 'Test already submitted',
+            'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id]),
+        }, status=409)
+
+    success, message, updated_attempt = test_service.activate_runtime_test_attempt(attempt.id)
+    if not success:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'message': message,
+        'time_remaining_seconds': test_service.get_attempt_time_remaining_seconds(updated_attempt),
+        'started_at': updated_attempt.started_at.isoformat() if updated_attempt.started_at else None,
+        'saved_progress': test_service.get_saved_progress(updated_attempt),
+        'violation_count': updated_attempt.violation_count,
+        'security_status': updated_attempt.security_status,
+    })
 
 
 @require_POST
@@ -911,20 +955,32 @@ def scholarship_submit_test(request, attempt_id):
     except ScholarshipTestAttempt.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
     
-    if attempt.status in ['completed', 'expired']:
+    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
         return JsonResponse({'success': True, 'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id])})
     
   
     try:
         data = json.loads(request.body)
         answers = data.get('answers', {})
+        violation_count = data.get('violation_count', attempt.violation_count)
+        security_locked = bool(data.get('security_locked', False))
+        submission_reason = (data.get('submission_reason') or '').strip()
     except json.JSONDecodeError:
         answers = {}
+        violation_count = attempt.violation_count
+        security_locked = False
+        submission_reason = ''
     
     runtime_test = test_service.get_runtime_test_for_attempt(attempt)
     runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
     if runtime_test and runtime_questions:
-        success, message, updated_attempt = test_service.submit_runtime_test(attempt.id, answers)
+        success, message, updated_attempt = test_service.submit_runtime_test(
+            attempt.id,
+            answers,
+            violation_count=violation_count,
+            security_locked=security_locked,
+            submission_reason=submission_reason,
+        )
     else:
         success, message, updated_attempt = test_service.submit_test(attempt.id, answers)
     
@@ -973,12 +1029,16 @@ def scholarship_save_test_progress(request, attempt_id):
     answers = data.get('answers', {})
     current_question_index = data.get('current_question_index', 0)
     tab_switch_count = data.get('tab_switch_count', 0)
+    violation_count = data.get('violation_count', attempt.violation_count)
+    security_locked = bool(data.get('security_locked', False))
 
     success, message, updated_attempt = test_service.save_runtime_test_progress(
         attempt.id,
         answers=answers,
         current_question_index=current_question_index,
         tab_switch_count=tab_switch_count,
+        violation_count=violation_count,
+        security_locked=security_locked,
     )
 
     if not success:

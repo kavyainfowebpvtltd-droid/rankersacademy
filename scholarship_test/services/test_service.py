@@ -16,6 +16,26 @@ ACADEMY_TIMEZONE = ZoneInfo("Asia/Kolkata")
 UTC_TIMEZONE = ZoneInfo("UTC")
 
 
+def get_max_security_violations() -> int:
+    configured_value = getattr(settings, "EXAM_SECURITY_MAX_VIOLATIONS", 3)
+    try:
+        configured_value = int(configured_value)
+    except (TypeError, ValueError):
+        configured_value = 3
+    return max(1, configured_value)
+
+
+def get_attempt_start_time(attempt):
+    if getattr(attempt, "started_at", None):
+        return attempt.started_at
+
+    # Older attempts may only have the original auto-created timestamp.
+    if getattr(attempt, "status", "") != "started":
+        return attempt.test_started_at
+
+    return None
+
+
 def calculate_score_percentage(score: int, total: int) -> int:
     if total <= 0:
         return 0
@@ -418,7 +438,10 @@ def serialize_runtime_question(question, sequence):
 def get_attempt_end_time(attempt):
     runtime_test = get_runtime_test_for_attempt(attempt)
     time_limit = timedelta(minutes=get_test_duration_minutes(runtime_test))
-    return attempt.test_started_at + time_limit
+    start_time = get_attempt_start_time(attempt)
+    if start_time is None:
+        return None
+    return start_time + time_limit
 
 
 def get_answer_key_visibility_delay():
@@ -461,12 +484,17 @@ def get_answer_key_delay_hours_display():
 
 
 def get_attempt_time_remaining_seconds(attempt) -> int:
-    remaining = get_attempt_end_time(attempt) - timezone.now()
+    attempt_end_time = get_attempt_end_time(attempt)
+    if attempt_end_time is None:
+        runtime_test = get_runtime_test_for_attempt(attempt)
+        return get_test_duration_minutes(runtime_test) * 60
+
+    remaining = attempt_end_time - timezone.now()
     return max(0, int(remaining.total_seconds()))
 
 
 def is_attempt_expired(attempt) -> bool:
-    return get_attempt_time_remaining_seconds(attempt) <= 0
+    return get_attempt_end_time(attempt) is not None and get_attempt_time_remaining_seconds(attempt) <= 0
 
 
 def get_saved_progress(attempt):
@@ -487,10 +515,23 @@ def get_saved_progress(attempt):
     except (TypeError, ValueError):
         tab_switch_count = 0
 
+    violation_count = state.get('violation_count', getattr(attempt, 'violation_count', 0))
+    try:
+        violation_count = int(violation_count)
+    except (TypeError, ValueError):
+        violation_count = getattr(attempt, 'violation_count', 0)
+
+    security_locked = state.get(
+        'security_locked',
+        getattr(attempt, 'security_status', '') == 'locked',
+    )
+
     return {
         'answers': answers,
         'current_question_index': max(0, current_question_index),
         'tab_switch_count': max(0, tab_switch_count),
+        'violation_count': max(0, violation_count),
+        'security_locked': bool(security_locked),
         'saved_at': state.get('saved_at'),
     }
 
@@ -584,12 +625,66 @@ def is_runtime_answer_provided(question, selected_answer) -> bool:
 
 
 @transaction.atomic
+def activate_runtime_test_attempt(attempt_id: int):
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    try:
+        attempt = ScholarshipTestAttempt.objects.select_related(
+            'student',
+            'test',
+        ).get(id=attempt_id)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return False, "Test attempt not found", None
+
+    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
+        return False, "Test already submitted", attempt
+
+    runtime_test = get_runtime_test_for_attempt(attempt)
+    runtime_questions = get_runtime_questions_for_test(runtime_test)
+    if not runtime_test or not runtime_questions:
+        return False, "No configured scholarship test is available", attempt
+
+    now = timezone.now()
+    update_fields = []
+
+    if attempt.started_at is None:
+        attempt.started_at = now
+        update_fields.append('started_at')
+
+    if attempt.status == 'started':
+        attempt.status = 'in_progress'
+        update_fields.append('status')
+
+    if attempt.security_status == 'pending':
+        attempt.security_status = 'active'
+        update_fields.append('security_status')
+
+    if not update_fields:
+        return True, "Test already active", attempt
+
+    saved_progress = get_saved_progress(attempt)
+    attempt.progress_state = {
+        'answers': saved_progress.get('answers', {}),
+        'current_question_index': saved_progress.get('current_question_index', 0),
+        'tab_switch_count': saved_progress.get('tab_switch_count', 0),
+        'violation_count': saved_progress.get('violation_count', getattr(attempt, 'violation_count', 0)),
+        'security_locked': saved_progress.get('security_locked', False),
+        'saved_at': now.isoformat(),
+    }
+    update_fields.append('progress_state')
+    attempt.save(update_fields=update_fields)
+    return True, "Test activated", attempt
+
+
+@transaction.atomic
 def save_runtime_test_progress(
     attempt_id: int,
     *,
     answers: dict,
     current_question_index: int = 0,
     tab_switch_count: int = 0,
+    violation_count: int = 0,
+    security_locked: bool = False,
 ):
     from scholarship_test.models import ScholarshipTestAttempt
 
@@ -601,13 +696,16 @@ def save_runtime_test_progress(
     except ScholarshipTestAttempt.DoesNotExist:
         return False, "Test attempt not found", None
 
-    if attempt.status in ['completed', 'expired']:
+    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
         return False, "Test already submitted", attempt
 
     runtime_test = get_runtime_test_for_attempt(attempt)
     runtime_questions = get_runtime_questions_for_test(runtime_test)
     if not runtime_test or not runtime_questions:
         return False, "No configured scholarship test is available", attempt
+
+    if attempt.started_at is None and attempt.status == 'started':
+        return False, "Test has not been activated yet", attempt
 
     if is_attempt_expired(attempt):
         return False, "Test time has expired", attempt
@@ -624,15 +722,37 @@ def save_runtime_test_progress(
     except (TypeError, ValueError):
         tab_switch_count = 0
 
+    try:
+        violation_count = int(violation_count or 0)
+    except (TypeError, ValueError):
+        violation_count = 0
+
+    max_violations = get_max_security_violations()
+    merged_violation_count = max(
+        int(getattr(attempt, 'violation_count', 0) or 0),
+        max(0, violation_count),
+    )
+    security_locked = bool(security_locked or merged_violation_count >= max_violations)
+    if security_locked:
+        security_status = 'locked'
+    elif merged_violation_count > 0:
+        security_status = 'warning'
+    else:
+        security_status = 'active'
+
     attempt.progress_state = {
         'answers': normalized_answers,
         'current_question_index': max(0, current_question_index),
         'tab_switch_count': max(0, tab_switch_count),
+        'violation_count': merged_violation_count,
+        'security_locked': security_locked,
         'saved_at': timezone.now().isoformat(),
     }
     if attempt.status == 'started':
         attempt.status = 'in_progress'
-    attempt.save(update_fields=['progress_state', 'status'])
+    attempt.violation_count = merged_violation_count
+    attempt.security_status = security_status
+    attempt.save(update_fields=['progress_state', 'status', 'violation_count', 'security_status'])
     return True, "Progress saved", attempt
 
 
@@ -679,7 +799,14 @@ def is_runtime_answer_correct(question, selected_answer) -> bool:
 
 
 @transaction.atomic
-def submit_runtime_test(attempt_id: int, answers: dict):
+def submit_runtime_test(
+    attempt_id: int,
+    answers: dict,
+    *,
+    violation_count: int | None = None,
+    security_locked: bool = False,
+    submission_reason: str = '',
+):
     from scholarship_test.models import ScholarshipTestAttempt
 
     try:
@@ -690,13 +817,16 @@ def submit_runtime_test(attempt_id: int, answers: dict):
     except ScholarshipTestAttempt.DoesNotExist:
         return False, "Test attempt not found", None
 
-    if attempt.status == 'completed':
+    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
         return False, "Test already submitted", attempt
 
     runtime_test = get_runtime_test_for_attempt(attempt)
     runtime_questions = get_runtime_questions_for_test(runtime_test)
     if not runtime_test or not runtime_questions:
         return False, "No configured scholarship test is available", attempt
+
+    if attempt.started_at is None and attempt.status == 'started':
+        return False, "Test has not been activated yet", attempt
 
     final_status = 'completed'
     if is_attempt_expired(attempt):
@@ -706,6 +836,16 @@ def submit_runtime_test(attempt_id: int, answers: dict):
     combined_answers = dict(saved_progress.get('answers', {}))
     combined_answers.update(answers if isinstance(answers, dict) else {})
     normalized_answers = normalize_runtime_answers(runtime_questions, combined_answers)
+    if violation_count is None:
+        final_violation_count = saved_progress.get('violation_count', getattr(attempt, 'violation_count', 0))
+    else:
+        try:
+            final_violation_count = int(violation_count)
+        except (TypeError, ValueError):
+            final_violation_count = saved_progress.get('violation_count', getattr(attempt, 'violation_count', 0))
+    final_violation_count = max(int(getattr(attempt, 'violation_count', 0) or 0), max(0, final_violation_count))
+    max_violations = get_max_security_violations()
+    final_security_locked = bool(security_locked or saved_progress.get('security_locked') or final_violation_count >= max_violations)
     correct_answers = 0
     score = 0
     total_marks = 0
@@ -728,17 +868,29 @@ def submit_runtime_test(attempt_id: int, answers: dict):
 
     attempt.score = score
     attempt.scholarship_percentage = scholarship_percentage
-    attempt.test_completed_at = timezone.now()
+    submitted_at = timezone.now()
+    attempt.test_completed_at = submitted_at
+    attempt.submitted_at = submitted_at
     attempt.status = final_status
     attempt.total_questions = len(runtime_questions)
     attempt.total_marks = total_marks
     attempt.test = runtime_test
+    attempt.violation_count = final_violation_count
+    if final_security_locked:
+        attempt.security_status = 'locked'
+    elif final_violation_count > 0:
+        attempt.security_status = 'submitted'
+    else:
+        attempt.security_status = 'submitted'
     attempt.progress_state = {
         'answers': normalized_answers,
         'current_question_index': max(0, len(runtime_questions) - 1),
         'tab_switch_count': saved_progress.get('tab_switch_count', 0),
-        'saved_at': timezone.now().isoformat(),
-        'submitted_at': timezone.now().isoformat(),
+        'violation_count': final_violation_count,
+        'security_locked': final_security_locked,
+        'saved_at': submitted_at.isoformat(),
+        'submitted_at': submitted_at.isoformat(),
+        'submission_reason': submission_reason or ('security_violation' if final_security_locked else 'manual_submit'),
         'correct_answers': correct_answers,
     }
     attempt.save()
@@ -767,7 +919,13 @@ def submit_runtime_test(attempt_id: int, answers: dict):
     return True, "Test submitted successfully", attempt
 
 
-def auto_submit_runtime_test(attempt_id: int):
+def auto_submit_runtime_test(
+    attempt_id: int,
+    *,
+    violation_count: int | None = None,
+    security_locked: bool = False,
+    submission_reason: str = 'time_expired',
+):
     from scholarship_test.models import ScholarshipTestAttempt
 
     try:
@@ -776,7 +934,13 @@ def auto_submit_runtime_test(attempt_id: int):
         return False, "Test attempt not found", None
 
     saved_progress = get_saved_progress(attempt)
-    return submit_runtime_test(attempt_id, saved_progress.get('answers', {}))
+    return submit_runtime_test(
+        attempt_id,
+        saved_progress.get('answers', {}),
+        violation_count=violation_count,
+        security_locked=security_locked,
+        submission_reason=submission_reason,
+    )
 
 
 def finalize_expired_attempts(selected_test=None):
@@ -913,12 +1077,15 @@ def submit_test(attempt_id: int, answers: dict):
         return False, "Test attempt not found", None
     
     # Check if already completed
-    if attempt.status == 'completed':
+    if attempt.status in ['completed', 'expired'] or attempt.submitted_at:
         return False, "Test already submitted", attempt
     
     # Check if time has expired
     time_limit = timedelta(minutes=TEST_DURATION_MINUTES)
-    if timezone.now() > attempt.test_started_at + time_limit:
+    if attempt.started_at is None and attempt.status == 'started':
+        return False, "Test has not been activated yet", attempt
+    attempt_start_time = get_attempt_start_time(attempt) or attempt.test_started_at
+    if timezone.now() > attempt_start_time + time_limit:
         attempt.status = 'expired'
         attempt.save()
         return False, "Test time has expired", attempt
@@ -958,8 +1125,11 @@ def submit_test(attempt_id: int, answers: dict):
     # Update attempt with results
     attempt.score = score
     attempt.scholarship_percentage = scholarship_percentage
-    attempt.test_completed_at = timezone.now()
+    submitted_at = timezone.now()
+    attempt.test_completed_at = submitted_at
+    attempt.submitted_at = submitted_at
     attempt.status = 'completed'
+    attempt.security_status = 'submitted'
     attempt.total_questions = total_questions
     attempt.total_marks = total_questions
     attempt.save()
@@ -1051,8 +1221,11 @@ def auto_submit_expired_test(attempt_id: int):
    
     attempt.score = score
     attempt.scholarship_percentage = scholarship_percentage
-    attempt.test_completed_at = timezone.now()
+    submitted_at = timezone.now()
+    attempt.test_completed_at = submitted_at
+    attempt.submitted_at = submitted_at
     attempt.status = 'expired'
+    attempt.security_status = 'submitted'
     attempt.total_questions = len(questions)
     attempt.save()
     
@@ -1075,7 +1248,7 @@ def auto_submit_expired_test(attempt_id: int):
     # Store SMS status
     attempt.sms_sent = sms_sent
     attempt.sms_error = sms_error
-    attempt.save(update_fields=['sms_sent', 'sms_error', 'score', 'scholarship_percentage', 'test_completed_at', 'status', 'total_questions'])
+    attempt.save(update_fields=['sms_sent', 'sms_error', 'score', 'scholarship_percentage', 'test_completed_at', 'submitted_at', 'status', 'security_status', 'total_questions'])
     
     return True, "Test auto-submitted due to time expiry", attempt
 

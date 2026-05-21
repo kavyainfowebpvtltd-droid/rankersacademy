@@ -265,7 +265,7 @@
     .my-tests-page .hero-kpi-grid {
       display: grid;
       gap: 0.75rem;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
 
     .my-tests-page .summary-card-title {
@@ -285,10 +285,6 @@
     .my-tests-page .summary-card-extra {
       font-size: 0.84rem;
       color: var(--muted);
-    }
-
-    .my-tests-page .subject-card:hover .progress-bar {
-      filter: brightness(1.18);
     }
 
     .my-tests-page .student-highlight {
@@ -756,23 +752,6 @@
         </div>
       </div>
 
-      <div id="coachingSection" class="card app-card p-4 mb-4 d-none">
-        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-          <div>
-            <h5 id="coachingTitle" class="display fw-bold mb-1"></h5>
-            <div id="coachingSchedule" class="small soft"></div>
-          </div>
-          <span id="coachingDurationBadge" class="badge rounded-pill text-bg-primary"></span>
-        </div>
-        <div id="coachingItems" class="row g-2 mt-2"></div>
-      </div>
-
-      <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-        <h5 class="display fw-bold mb-0">Subject Performance</h5>
-        <div id="subjectHint" class="small soft"></div>
-      </div>
-      <div id="subjectCards" class="row g-3 mb-4"></div>
-
       <h5 class="display fw-bold">Top Performers</h5>
       <div id="topPerformers" class="d-flex gap-2 overflow-auto pb-1 mb-4"></div>
 
@@ -835,41 +814,6 @@
       <div class="summary-card-title"></div>
       <div class="summary-card-value"></div>
       <div class="summary-card-extra"></div>
-    </div>
-  </template>
-
-  <template id="clusterItemTemplate">
-    <div class="col-md-4">
-      <div class="card app-card-soft hover-card p-2 d-flex align-items-center gap-2 h-100">
-        <div class="cluster-icon"></div>
-        <div class="flex-grow-1">
-          <b class="cluster-subject"></b>
-          <div class="small soft cluster-faculty"></div>
-        </div>
-        <div class="cluster-status"></div>
-      </div>
-    </div>
-  </template>
-
-  <template id="subjectCardTemplate">
-    <div class="col-md-4">
-      <div class="card app-card hover-card p-3 h-100 subject-card">
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <div class="subject-icon"></div>
-          <div>
-            <b class="subject-title"></b>
-            <div class="small soft subject-rank"></div>
-          </div>
-        </div>
-        <div class="display fs-2 fw-bold subject-score"></div>
-        <div class="progress bg-black bg-opacity-25" style="height:8px">
-          <div class="progress-bar progress-bar-striped progress-bar-animated subject-progress-fill"></div>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mt-2 gap-2">
-          <span class="small soft subject-average"></span>
-          <div class="subject-delta"></div>
-        </div>
-      </div>
     </div>
   </template>
 
@@ -1050,13 +994,6 @@
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
       homeKpiRow: document.getElementById("homeKpiRow"),
-      coachingSection: document.getElementById("coachingSection"),
-      coachingTitle: document.getElementById("coachingTitle"),
-      coachingSchedule: document.getElementById("coachingSchedule"),
-      coachingDurationBadge: document.getElementById("coachingDurationBadge"),
-      coachingItems: document.getElementById("coachingItems"),
-      subjectHint: document.getElementById("subjectHint"),
-      subjectCards: document.getElementById("subjectCards"),
       topPerformers: document.getElementById("topPerformers"),
       leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
       leaderboardBody: document.getElementById("leaderboardBody"),
@@ -1528,10 +1465,6 @@
           { label: "Window", value: "Soon", extra: "Use the upcoming tab to launch" },
         ]);
         clearNode(refs.topPerformers);
-        refs.coachingSection.classList.add("d-none");
-        clearNode(refs.coachingItems);
-        refs.subjectHint.textContent = "";
-        clearNode(refs.subjectCards);
         clearNode(refs.leaderboardBody);
         refs.leaderboardCountBadge.textContent = "0 students";
         refs.leaderboardFooterText.textContent = "";
@@ -1544,59 +1477,7 @@
       const scoreValue = Number(test.score || 0);
       const totalMarks = Number(test.totalMarks || 0);
       const previousRank = rank !== null && rankDelta !== null ? rank + rankDelta : null;
-      const weakLabels = (test.coachingItems || []).map((item) => item.name).join(", ");
       const currentSections = currentStudentSectionBreakdown(test);
-      const selectedSubjectKey = normalizeSectionKey(test.subject || "");
-      const sectionIndex = currentSections.findIndex(
-        (section) => normalizeSectionKey(section.name || "") === selectedSubjectKey,
-      );
-      const sectionLabel =
-        selectedSubjectKey ||
-        (currentSections[0] && currentSections[0].name) ||
-        "Subject";
-      let subjectAverageLabel = "N/A";
-      let subjectTopLabel = "N/A";
-
-      if (sectionIndex >= 0) {
-        const sectionTotal = Number((currentSections[sectionIndex] || {}).total || 0);
-        const sectionScores = (test.leaderboard || [])
-          .map((entry) => {
-            const score = Number(entry.sectionScores?.[sectionIndex]?.score);
-            return Number.isFinite(score) ? score : null;
-          })
-          .filter((score) => score !== null);
-
-        if (sectionScores.length) {
-          const average =
-            Math.round(
-              (sectionScores.reduce((sum, score) => sum + score, 0) / sectionScores.length) *
-                10,
-            ) / 10;
-          subjectAverageLabel =
-            sectionTotal > 0 ? `${average}/${sectionTotal}` : `${average}`;
-        }
-
-        const topEntry = (test.leaderboard || []).reduce((best, entry) => {
-          const currentScore = Number(entry.sectionScores?.[sectionIndex]?.score);
-          if (!Number.isFinite(currentScore)) {
-            return best;
-          }
-          if (!best || currentScore > best.score) {
-            return {
-              score: currentScore,
-              name: entry.studentName || entry.studentId || "Student",
-            };
-          }
-          return best;
-        }, null);
-
-        if (topEntry) {
-          subjectTopLabel =
-            sectionTotal > 0
-              ? `${topEntry.score}/${sectionTotal} - ${topEntry.name}`
-              : `${topEntry.score} - ${topEntry.name}`;
-        }
-      }
 
       if (attempted) {
         refs.rankTierBadge.className = `badge rounded-pill ${
@@ -1638,7 +1519,7 @@
         refs.rankShiftBadge.textContent = "0";
       }
 
-      renderKpiCards([
+      const kpiItems = [
         {
           label: "Total",
           value: `${scoreValue}/${totalMarks}`,
@@ -1652,99 +1533,28 @@
                   : "No rank change"
             : "Missed this test",
         },
-        {
-          label: "Attempt",
-          value: attempted ? "Submitted" : "Not Attempted",
-          extra: attempted ? `Rank #${rank}` : "Cohort data still available",
-        },
-        {
-          label: "Cluster",
-          value: weakLabels || "None",
-          extra: weakLabels ? "Targeted revision" : "Concepts look stable",
-        },
-        {
-          label: "Date",
-          value: test.shortDate || test.date || "--",
-          extra: test.time || test.date || "",
-        },
-        {
-          label: `${sectionLabel} Avg`,
-          value: subjectAverageLabel,
-          extra: `Top: ${subjectTopLabel}`,
-        },
-      ]);
+      ];
 
-      renderCoaching(test);
-      renderSubjectCards(test);
+      currentSections.forEach((section) => {
+        const sectionName = String(section.name || section.sectionName || "Section").trim();
+        const sectionScore = Number(section.score || 0);
+        const sectionTotal = Number(section.total || 0);
+        const sectionPercentage = Number.isFinite(Number(section.percentage))
+          ? Number(section.percentage)
+          : 0;
+
+        kpiItems.push({
+          label: sectionName || "Section",
+          value: `${sectionScore}/${sectionTotal}`,
+          extra: attempted ? `${sectionPercentage}% scored` : "Section score",
+        });
+      });
+
+      renderKpiCards(kpiItems);
+
       renderTopPerformers(test);
       renderLeaderboard(test);
     }
-
-    function renderCoaching(test) {
-      const coachingItems = test?.coachingItems || [];
-      if (!coachingItems.length) {
-        refs.coachingSection.classList.add("d-none");
-        return;
-      }
-
-      refs.coachingSection.classList.remove("d-none");
-      refs.coachingTitle.textContent = coachingItems.length >= 3 ? "All-Subjects Coaching Cluster" : "Coaching Cluster";
-      refs.coachingSchedule.textContent = coachingItems.length >= 3
-        ? "Personal mentorship • 90 minutes"
-        : "Personal mentorship • 30 minutes per subject";
-      refs.coachingDurationBadge.textContent = `${Math.max(coachingItems.length, 1) * 30} MIN`;
-
-      clearNode(refs.coachingItems);
-      coachingItems.forEach((item, index) => {
-        const node = cloneTemplate("clusterItemTemplate");
-        node.querySelector(".cluster-icon").appendChild(createSubjectIcon(item.shortLabel || item.name, index));
-        node.querySelector(".cluster-subject").textContent = item.name;
-        node.querySelector(".cluster-faculty").textContent = `${item.score}/${item.total} marks • ${item.percentage}%`;
-        node.querySelector(".cluster-status").appendChild(
-          createBadge(
-            item.status || "Focus Area",
-            item.status === "On Track" ? "text-bg-success" : "text-bg-danger",
-          ),
-        );
-        refs.coachingItems.appendChild(node);
-      });
-    }
-
-    function renderSubjectCards(test) {
-      clearNode(refs.subjectCards);
-      const sections = currentStudentSectionBreakdown(test);
-      refs.subjectHint.textContent = sections.length ? `${sections.length} tracked section${sections.length === 1 ? "" : "s"}` : "";
-
-      sections.forEach((section, index) => {
-        const theme = getThemeForSection(section.name, index);
-        const average = Math.round(
-          ((test.leaderboard || []).reduce((sum, entry) => {
-            const sectionScore = entry.sectionScores?.[index];
-            return sum + Number(sectionScore ? sectionScore.score : 0);
-          }, 0) / Math.max((test.leaderboard || []).length, 1)) * 10,
-        ) / 10;
-        const node = cloneTemplate("subjectCardTemplate");
-        node.querySelector(".subject-icon").appendChild(createSubjectIcon(section.shortLabel || section.name, index));
-        node.querySelector(".subject-title").textContent = section.name;
-        node.querySelector(".subject-rank").textContent = `${section.score}/${section.total} in this section`;
-        node.querySelector(".subject-score").textContent = section.score;
-        node.querySelector(".subject-score").style.color = theme.accent;
-        node.querySelector(".subject-average").textContent = `Class avg ${average}/${section.total}`;
-        setProgressBar(
-          node.querySelector(".subject-progress-fill"),
-          section.percentage,
-          `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
-        );
-        node.querySelector(".subject-delta").appendChild(
-          createBadge(
-            `${section.percentage}% scored`,
-            section.percentage >= 60 ? "text-bg-success" : "text-bg-danger",
-          ),
-        );
-        refs.subjectCards.appendChild(node);
-      });
-    }
-
     function renderTopPerformers(test) {
       clearNode(refs.topPerformers);
       const entries = (test?.topPerformers && test.topPerformers.length)
@@ -1979,3 +1789,4 @@
   })();
 </script>
 {% endblock %}
+

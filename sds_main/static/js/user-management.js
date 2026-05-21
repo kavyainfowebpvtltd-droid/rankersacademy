@@ -14,6 +14,22 @@ function getCommonUsernameInput() {
   return document.getElementById("commonUsername");
 }
 
+function getBatchUsernames(batch) {
+  const normalizedBatch = String(batch || "").trim();
+  if (!normalizedBatch || typeof batchUsernames === "undefined" || !batchUsernames) {
+    return [];
+  }
+
+  if (Object.prototype.hasOwnProperty.call(batchUsernames, normalizedBatch)) {
+    return Array.isArray(batchUsernames[normalizedBatch]) ? batchUsernames[normalizedBatch] : [];
+  }
+
+  const matchedKey = Object.keys(batchUsernames).find(
+    (key) => String(key || "").trim().toLowerCase() === normalizedBatch.toLowerCase(),
+  );
+  return matchedKey && Array.isArray(batchUsernames[matchedKey]) ? batchUsernames[matchedKey] : [];
+}
+
 function getTeacherUsernameInput() {
   return document.getElementById("teacherUsernameInput");
 }
@@ -77,9 +93,35 @@ function buildUsernameFromBatch(batch) {
   }
 
   const constant = "202628";
-  const existingCount = getBatchCount(batch);
-  const nextSequence = String(existingCount + 1).padStart(2, "0");
-  return `${prefix}${constant}${nextSequence}`;
+  const usernamePrefix = `${prefix}${constant}`;
+  const existingUsernames = getBatchUsernames(batch);
+  const usedSequences = new Set();
+
+  existingUsernames.forEach((username) => {
+    const normalizedUsername = String(username || "").trim();
+    if (!normalizedUsername.startsWith(usernamePrefix)) {
+      return;
+    }
+
+    const sequencePart = normalizedUsername.slice(usernamePrefix.length);
+    if (!/^\d+$/.test(sequencePart)) {
+      return;
+    }
+
+    usedSequences.add(Number.parseInt(sequencePart, 10));
+  });
+
+  let nextSequence = 1;
+  while (usedSequences.has(nextSequence)) {
+    nextSequence += 1;
+  }
+
+  if (!usedSequences.size) {
+    const existingCount = getBatchCount(batch);
+    nextSequence = Math.max(nextSequence, existingCount + 1);
+  }
+
+  return `${prefix}${constant}${String(nextSequence).padStart(2, "0")}`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

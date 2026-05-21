@@ -449,7 +449,9 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         attempt = ScholarshipTestAttempt.objects.create(
             student=self.student,
             test=runtime_test,
-            status='started',
+            status='in_progress',
+            started_at=timezone.now(),
+            security_status='active',
         )
 
         client = Client()
@@ -463,6 +465,8 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
                 'answers': {str(question.id): '1'},
                 'current_question_index': 0,
                 'tab_switch_count': 2,
+                'violation_count': 1,
+                'security_locked': False,
             }),
             content_type='application/json',
         )
@@ -473,6 +477,8 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(attempt.progress_state['answers'][str(question.id)], '1')
         self.assertEqual(attempt.progress_state['current_question_index'], 0)
         self.assertEqual(attempt.progress_state['tab_switch_count'], 2)
+        self.assertEqual(attempt.progress_state['violation_count'], 1)
+        self.assertEqual(attempt.violation_count, 1)
 
     def test_scholarship_test_view_restores_saved_progress(self):
         runtime_test, section = self.create_runtime_test()
@@ -485,6 +491,8 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
                 'answers': {str(question.id): '1'},
                 'current_question_index': 0,
                 'tab_switch_count': 1,
+                'violation_count': 2,
+                'security_locked': False,
                 'saved_at': '2026-05-02T00:00:00Z',
             },
         )
@@ -501,6 +509,65 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['saved_progress']['answers'][str(question.id)], '1')
         self.assertEqual(response.context['saved_progress']['current_question_index'], 0)
+        self.assertEqual(response.context['saved_progress']['violation_count'], 2)
+
+    def test_activate_endpoint_marks_attempt_started_after_secure_start(self):
+        runtime_test, section = self.create_runtime_test(name='Secure Start Test')
+        self.add_mcq_question(section)
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='started',
+            security_status='pending',
+        )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.post(
+            reverse('scholarship_test:scholarship_activate_test', args=[attempt.id]),
+            data=json.dumps({}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.status, 'in_progress')
+        self.assertEqual(attempt.security_status, 'active')
+        self.assertIsNotNone(attempt.started_at)
+
+    def test_submit_endpoint_redirects_for_already_submitted_attempt(self):
+        runtime_test, section = self.create_runtime_test(name='Double Submit Guard')
+        question = self.add_mcq_question(section)
+        submitted_at = timezone.now()
+        attempt = ScholarshipTestAttempt.objects.create(
+            student=self.student,
+            test=runtime_test,
+            status='completed',
+            started_at=submitted_at - timedelta(minutes=5),
+            submitted_at=submitted_at,
+            test_completed_at=submitted_at,
+            security_status='submitted',
+            progress_state={'answers': {str(question.id): '1'}},
+        )
+
+        client = Client()
+        session = client.session
+        session['scholarship_student_id'] = self.student.id
+        session.save()
+
+        response = client.post(
+            reverse('scholarship_test:scholarship_submit_test', args=[attempt.id]),
+            data=json.dumps({'answers': {str(question.id): '1'}}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload['success'])
+        self.assertIn(reverse('scholarship_test:scholarship_success', args=[attempt.id]), payload['redirect'])
 
     def test_finalize_expired_attempts_stores_results_for_selected_test(self):
         target_test, target_section = self.create_runtime_test(name='Target Test')

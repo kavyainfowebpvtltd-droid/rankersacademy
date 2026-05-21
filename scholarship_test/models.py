@@ -149,6 +149,14 @@ class ScholarshipTestAttempt(models.Model):
         ('expired', 'Expired'),
     ]
 
+    SECURITY_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('active', 'Active'),
+        ('warning', 'Warning'),
+        ('submitted', 'Submitted'),
+        ('locked', 'Locked'),
+    ]
+
     student = models.ForeignKey(
         ScholarshipStudent,
         on_delete=models.CASCADE,
@@ -172,8 +180,16 @@ class ScholarshipTestAttempt(models.Model):
     score = models.IntegerField(default=0, help_text="Number of correct answers")
     scholarship_percentage = models.IntegerField(default=0, help_text="Scholarship percentage awarded")
     test_started_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
     test_completed_at = models.DateTimeField(null=True, blank=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='started')
+    violation_count = models.PositiveIntegerField(default=0)
+    security_status = models.CharField(
+        max_length=20,
+        choices=SECURITY_STATUS_CHOICES,
+        default='pending',
+    )
     total_questions = models.IntegerField(default=20)
     total_marks = models.IntegerField(default=20)
     progress_state = models.JSONField(default=dict, blank=True)

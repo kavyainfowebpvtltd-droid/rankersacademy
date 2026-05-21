@@ -89,6 +89,54 @@ def _student_portal_feature_block_response(request, feature_key: str, api: bool 
     return None
 
 
+def _extract_batch_username_prefix(batch: str) -> str:
+    normalized_batch = (batch or "").strip()
+    if not normalized_batch:
+        return ""
+
+    parts = normalized_batch.split()
+    first_word = parts[0] if parts else ""
+    first_letter = first_word[:1].upper() if first_word else ""
+
+    batch_num = "01"
+    if len(parts) >= 2:
+        digits = "".join(filter(str.isdigit, parts[1]))
+        if digits:
+            batch_num = f"{int(digits):02d}"
+
+    return f"{first_letter}{batch_num}"
+
+
+def _get_next_student_username_for_batch(batch: str) -> str:
+    prefix = _extract_batch_username_prefix(batch)
+    if not prefix:
+        return ""
+
+    constant = "202628"
+    username_prefix = f"{prefix}{constant}"
+    existing_usernames = Student.objects.filter(batch=batch).values_list("username", flat=True)
+    used_sequences = set()
+
+    for username in existing_usernames:
+        normalized_username = (username or "").strip()
+        if not normalized_username.startswith(username_prefix):
+            continue
+
+        sequence_part = normalized_username[len(username_prefix):]
+        if not sequence_part.isdigit():
+            continue
+
+        used_sequences.add(int(sequence_part))
+
+    next_sequence = 1
+    while next_sequence in used_sequences or User.objects.filter(
+        username=f"{username_prefix}{next_sequence:02d}"
+    ).exists():
+        next_sequence += 1
+
+    return f"{username_prefix}{next_sequence:02d}"
+
+
 def _extract_scholarship_launch_test_id(next_url: str):
     path = urlsplit(next_url or "").path
     match = SCHOLARSHIP_LAUNCH_PATH_RE.match(path)
@@ -1263,11 +1311,17 @@ def user_management(request):
     grouped = {}
     for s in all_students:
         grouped.setdefault(s.batch or "Unassigned", []).append(s)
-    
-    # Build batch_counts: {batch_name: count_of_students_in_batch}
+
+    # Build batch metadata for username generation in add user modal.
     batch_counts = {}
+    batch_usernames = {}
     for batch, student_list in grouped.items():
         batch_counts[batch] = len(student_list)
+        batch_usernames[batch] = [
+            (student.username or "").strip()
+            for student in student_list
+            if (student.username or "").strip()
+        ]
 
     teachers = TeacherAdmin.objects.select_related("user").order_by(Lower("username"), "id")
     teaching_staff = teachers.filter(role__iexact="Teacher").order_by(Lower("username"), "id")
@@ -1309,6 +1363,7 @@ def user_management(request):
             "total_teaching_staff": teaching_staff.count(),
             "total_non_teaching_staff": non_teaching_staff.count(),
             "batch_counts_json": json.dumps(batch_counts),
+            "batch_usernames_json": json.dumps(batch_usernames),
             "student_search": student_search,
             "student_batch_filter": student_batch_filter,
             "student_stream_filter": student_stream_filter,
@@ -1371,31 +1426,7 @@ def add_user(request):
             messages.error(request, "Batch is required for student.")
             return redirect("user-management")
 
-        # Parse batch to derive prefix (e.g., "Star 01" -> "S01", "Alpha" -> "A01")
-        parts = batch.split()
-        first_letter = parts[0][0].upper() if parts else ""
-        batch_num = "01"
-        if len(parts) >= 2:
-            second = parts[1]
-            # Extract digits; allow leading zeros
-            digits = "".join(filter(str.isdigit, second))
-            if digits:
-                batch_num = f"{int(digits):02d}"  # ensure two-digit
-        prefix = first_letter + batch_num
-        constant = "202628"
-
-        # Count existing students with same batch to determine sequence
-        existing_count = Student.objects.filter(batch=batch).count()
-        seq = existing_count + 1
-        seq_str = f"{seq:02d}"
-
-        username = prefix + constant + seq_str
-
-        # Ensure uniqueness in case of race conditions or manual entries
-        while User.objects.filter(username=username).exists():
-            seq += 1
-            seq_str = f"{seq:02d}"
-            username = prefix + constant + seq_str
+        username = _get_next_student_username_for_batch(batch)
     else:
         username = (request.POST.get("username") or "").strip()
         if not username:

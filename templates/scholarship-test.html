@@ -19,6 +19,7 @@
     />
     <script src="{% static 'js/admin-theme.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/scholarship-test.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/exam_security.css' %}" />
     <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
     <style>
       @media (max-width: 1024px) {
@@ -32,6 +33,14 @@
     </style>
   </head>
   <body class="scholarship-test-page">
+    <div
+      id="examSecurityAlertContainer"
+      class="exam-security-alerts position-fixed top-0 start-50 translate-middle-x w-100 px-3 pt-3"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+    <input type="hidden" id="violationCountInput" value="{{ attempt.violation_count|default:0 }}" />
+    <input type="hidden" id="securityLockedInput" value="{% if attempt.security_status == 'locked' %}1{% else %}0{% endif %}" />
     <nav
       class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top"
     >
@@ -161,6 +170,71 @@
       </div>
     </footer>
 
+    <div
+      class="modal fade"
+      id="examStartModal"
+      tabindex="-1"
+      aria-labelledby="examStartModalLabel"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content exam-bootstrap-modal">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold" id="examStartModalLabel">Secure Test Start</h5>
+          </div>
+          <div class="modal-body pt-2">
+            <p class="mb-3">
+              This test runs in fullscreen mode with copy, selection, and tab-switch monitoring enabled.
+            </p>
+            <div class="alert alert-info mb-0">
+              Click the button below and allow fullscreen to begin the test.
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-primary" id="startExamButton">
+              {% if attempt.started_at or attempt.status == 'in_progress' %}Resume Test{% else %}Start Test{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="examSecurityWarningModal"
+      tabindex="-1"
+      aria-labelledby="examSecurityWarningModalLabel"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content exam-bootstrap-modal">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold" id="examSecurityWarningModalLabel">Security Warning</h5>
+          </div>
+          <div class="modal-body">
+            <p id="examSecurityWarningMessage" class="mb-3">
+              A security violation was detected during this test.
+            </p>
+            <div class="small text-muted">
+              Warnings:
+              <strong id="examSecurityViolationCount">0</strong>
+              /
+              <strong id="examSecurityViolationLimit">{{ security_max_violations }}</strong>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="examSecurityAcknowledgeButton">
+              Return to Test
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
 
 
@@ -250,753 +324,24 @@
     {{ questions|json_script:"scholarship-questions-data" }}
     {{ saved_progress|json_script:"scholarship-progress-data" }}
     <script>
-      const questions = JSON.parse(document.getElementById('scholarship-questions-data').textContent);
-      const savedProgress = JSON.parse(document.getElementById('scholarship-progress-data').textContent);
-      const totalQuestions = questions.length || {{ total_questions }};
-      let timeRemaining = {{ time_remaining_seconds }};
-      const attemptId = {{ attempt.id }};
-      const submitUrl = '/scholarship/test/' + attemptId + '/submit/';
-      const progressUrl = '/scholarship/test/' + attemptId + '/progress/';
-      const successUrl = '/scholarship/success/' + attemptId + '/';
-      const localProgressKey = 'scholarship-test-progress:' + attemptId;
-
-      let currentQuestionIndex = 0;
-      let answers = {};
-      let timerInterval = null;
-      let syncTimer = null;
-      let syncInFlight = false;
-      let isSubmitted = false;
-      let pendingAutoSubmit = false;
-      let tabSwitchCount = 0;
-
-      function getQuestionByIndex(index) {
-        return questions[index] || null;
-      }
-
-      function clampQuestionIndex(index) {
-        if (!questions.length) {
-          return 0;
-        }
-        return Math.min(Math.max(Number(index) || 0, 0), questions.length - 1);
-      }
-
-      function isQuestionAnswered(question) {
-        if (!question) return false;
-        const value = answers[question.id];
-
-        if (Array.isArray(value)) {
-          return value.length > 0;
-        }
-
-        return value != null && String(value).trim() !== '';
-      }
-
-      function getAnsweredCount() {
-        return questions.filter(isQuestionAnswered).length;
-      }
-
-      function readLocalProgress() {
-        try {
-          const raw = localStorage.getItem(localProgressKey);
-          return raw ? JSON.parse(raw) : null;
-        } catch (error) {
-          console.error('Unable to read local progress', error);
-          return null;
-        }
-      }
-
-      function getProgressTimestamp(progress) {
-        if (!progress || !progress.saved_at) {
-          return 0;
-        }
-        const parsed = Date.parse(progress.saved_at);
-        return Number.isNaN(parsed) ? 0 : parsed;
-      }
-
-      function getProgressPayload() {
-        return {
-          answers: answers,
-          current_question_index: currentQuestionIndex,
-          tab_switch_count: tabSwitchCount
-        };
-      }
-
-      function persistDraftLocally() {
-        try {
-          const payload = Object.assign({}, getProgressPayload(), {
-            saved_at: new Date().toISOString()
-          });
-          localStorage.setItem(localProgressKey, JSON.stringify(payload));
-        } catch (error) {
-          console.error('Unable to persist local progress', error);
-        }
-      }
-
-      function clearPersistedDraft() {
-        try {
-          localStorage.removeItem(localProgressKey);
-        } catch (error) {
-          console.error('Unable to clear local progress', error);
-        }
-      }
-
-      function mergeInitialProgress() {
-        const localProgress = readLocalProgress();
-        const preferredProgress =
-          getProgressTimestamp(localProgress) > getProgressTimestamp(savedProgress)
-            ? localProgress
-            : savedProgress;
-
-        answers = preferredProgress && typeof preferredProgress.answers === 'object'
-          ? preferredProgress.answers
-          : {};
-        currentQuestionIndex = clampQuestionIndex(
-          preferredProgress ? preferredProgress.current_question_index : 0
-        );
-        tabSwitchCount = Number(preferredProgress && preferredProgress.tab_switch_count) || 0;
-      }
-
-      function setSyncBanner(message, type) {
-        const banner = document.getElementById('syncStatusBanner');
-        if (!banner) return;
-
-        if (!message) {
-          banner.style.display = 'none';
-          banner.textContent = '';
-          banner.className = 'alert py-2 px-3 mb-3';
-          return;
-        }
-
-        banner.style.display = 'block';
-        banner.textContent = message;
-        banner.className = 'alert py-2 px-3 mb-3 alert-' + (type || 'warning');
-      }
-
-      function updateConnectionBanner() {
-        if (!navigator.onLine) {
-          setSyncBanner('Internet connection lost. Your test is saved in this browser and will sync automatically when the network returns.', 'warning');
-        } else if (pendingAutoSubmit) {
-          setSyncBanner('Time is up. Waiting to reconnect so the test can be submitted automatically.', 'danger');
-        } else {
-          setSyncBanner('', '');
-        }
-      }
-
-      function normalizeStoredAnswer(question, value) {
-        if (!question) return value;
-        if (question.multi_select) {
-          return Array.isArray(value)
-            ? value.filter(function(item) { return item != null && String(item).trim() !== ''; })
-            : [];
-        }
-        return value == null ? '' : value;
-      }
-
-      function setAnswerValue(question, value) {
-        const normalizedValue = normalizeStoredAnswer(question, value);
-        const shouldDelete = Array.isArray(normalizedValue)
-          ? normalizedValue.length === 0
-          : String(normalizedValue).trim() === '';
-
-        if (shouldDelete) {
-          delete answers[question.id];
-        } else {
-          answers[question.id] = normalizedValue;
-        }
-      }
-
-      function initializeTest() {
-        if (!questions || questions.length === 0) {
-          document.querySelector('.question-body').innerHTML = '<div class="alert alert-warning">No questions available. Please contact admin.</div>';
-          return;
-        }
-
-        mergeInitialProgress();
-        buildQuestionNavigator();
-        loadQuestion(currentQuestionIndex, false);
-        startTimer();
-        bindStaticActions();
-        updateNavigator();
-        updateTimerDisplay();
-        updateNavButtons();
-        persistDraftLocally();
-        updateConnectionBanner();
-
-        if (navigator.onLine) {
-          scheduleProgressSync(300);
-        }
-      }
-
-      function bindStaticActions() {
-        const prevBtn = document.querySelector('.btn-prev');
-        const nextBtn = document.querySelector('.btn-next');
-        const submitBtn = document.querySelector('.submit-btn');
-
-        if (prevBtn) {
-          prevBtn.addEventListener('click', function() {
-            if (currentQuestionIndex > 0) {
-              loadQuestion(currentQuestionIndex - 1);
-            }
-          });
-        }
-
-        if (nextBtn) {
-          nextBtn.addEventListener('click', function() {
-            if (currentQuestionIndex < questions.length - 1) {
-              loadQuestion(currentQuestionIndex + 1);
-            }
-          });
-        }
-
-        if (submitBtn) {
-          submitBtn.onclick = function() {
-            if (timeRemaining > 0 || getAnsweredCount() === 0) {
-              showWarningModal();
-            } else {
-              submitTest();
-            }
-          };
-        }
-      }
-
-      function loadQuestion(index, shouldSync) {
-        const question = getQuestionByIndex(index);
-        if (!question) return;
-
-        currentQuestionIndex = clampQuestionIndex(index);
-
-        const questionText = document.getElementById('questionText');
-        const questionContext = document.getElementById('questionContext');
-        const questionSection = document.getElementById('questionSection');
-        const questionType = document.getElementById('questionType');
-        const sectionInstructions = document.getElementById('sectionInstructions');
-        const answerInputWrap = document.getElementById('answerInputWrap');
-        const optionsGrid = document.getElementById('optionsGrid');
-
-        questionText.innerHTML = question.question_html || '';
-        answerInputWrap.innerHTML = '';
-        optionsGrid.innerHTML = '';
-
-        if (question.section_name || question.type) {
-          questionContext.hidden = false;
-          questionSection.textContent = question.section_name || 'Scholarship Test';
-          questionType.textContent = getTypeLabel(question);
-        } else {
-          questionContext.hidden = true;
-        }
-
-        sectionInstructions.innerHTML = question.section_instructions || '';
-        sectionInstructions.style.display = question.section_instructions ? 'block' : 'none';
-
-        renderQuestionInput(question, answerInputWrap, optionsGrid);
-
-        const questionLabel = document.getElementById('currentQuestionNum');
-        if (questionLabel) {
-          questionLabel.textContent = `Question ${String(currentQuestionIndex + 1).padStart(2, '0')} of ${totalQuestions}`;
-        }
-
-        updateNavigator();
-        persistDraftLocally();
-        if (shouldSync !== false) {
-          scheduleProgressSync(400);
-        }
-      }
-
-      function getTypeLabel(question) {
-        const labels = {
-          mcq: question.multi_select ? 'Multiple Select' : 'Multiple Choice',
-          tf: 'True / False',
-          fitb: 'Fill in the Blank',
-          int: 'Integer Type'
-        };
-        return labels[question.type] || 'Question';
-      }
-
-      function renderQuestionInput(question, answerInputWrap, optionsGrid) {
-        if (question.type === 'fitb' || question.type === 'int') {
-          const value = answers[question.id] || '';
-          answerInputWrap.innerHTML = `
-            <input
-              type="${question.type === 'int' ? 'number' : 'text'}"
-              class="answer-input"
-              id="questionAnswerInput"
-              placeholder="${question.input_placeholder || 'Type your answer'}"
-              value="${escapeHtml(value)}"
-            />
-          `;
-
-          const input = document.getElementById('questionAnswerInput');
-          if (input) {
-            input.addEventListener('input', function(event) {
-              setAnswerValue(question, event.target.value);
-              updateNavigator();
-              persistDraftLocally();
-              scheduleProgressSync(500);
-            });
-          }
-          return;
-        }
-
-        const selectedValue = answers[question.id];
-        const selectedValues = Array.isArray(selectedValue) ? selectedValue : [];
-        const inputType = question.multi_select ? 'checkbox' : 'radio';
-
-        (question.options || []).forEach(function(option) {
-          const checked = question.multi_select
-            ? selectedValues.includes(option.value)
-            : selectedValue === option.value;
-
-          const wrapper = document.createElement('label');
-          wrapper.className = 'option-label';
-          wrapper.innerHTML = `
-            <input
-              type="${inputType}"
-              name="question-${question.id}"
-              class="option-input"
-              value="${option.value}"
-              ${checked ? 'checked' : ''}
-            />
-            <div class="option-card ${checked ? 'selected' : ''}">
-              <span class="option-bullet">${option.label}</span>
-              <span class="option-text">${option.text_html || ''}</span>
-            </div>
-          `;
-
-          const input = wrapper.querySelector('input');
-          input.addEventListener('click', function(event) {
-            if (!question.multi_select && answers[question.id] === option.value) {
-              event.preventDefault();
-              setAnswerValue(question, '');
-              loadQuestion(currentQuestionIndex);
-            }
-          });
-          input.addEventListener('change', function(event) {
-            updateAnswer(question, option.value, event.target.checked);
-          });
-
-          const optionText = wrapper.querySelector('.option-text');
-          if (optionText) {
-            optionText.innerHTML = option.text_html || '';
-          }
-
-          optionsGrid.appendChild(wrapper);
-        });
-      }
-
-      function updateAnswer(question, value, checked) {
-        if (question.multi_select) {
-          const currentValues = Array.isArray(answers[question.id]) ? answers[question.id].slice() : [];
-          const nextValues = checked
-            ? Array.from(new Set(currentValues.concat(value)))
-            : currentValues.filter(function(item) { return item !== value; });
-          setAnswerValue(question, nextValues);
-        } else {
-          setAnswerValue(question, value);
-        }
-
-        loadQuestion(currentQuestionIndex);
-      }
-
-      function buildQuestionNavigator() {
-        const grid = document.getElementById('questionGrid');
-        if (!grid) return;
-
-        grid.innerHTML = '';
-        for (let i = 0; i < totalQuestions; i++) {
-          const btn = document.createElement('div');
-          btn.className = 'q-btn';
-          btn.id = 'qdot-' + i;
-          btn.textContent = i + 1;
-          btn.onclick = function() { loadQuestion(i); };
-          grid.appendChild(btn);
-        }
-      }
-
-      function updateNavigator() {
-        for (let i = 0; i < totalQuestions; i++) {
-          const dot = document.getElementById('qdot-' + i);
-          const question = getQuestionByIndex(i);
-          if (!dot || !question) continue;
-
-          dot.classList.remove('answered', 'not-answered', 'current');
-          dot.classList.add(isQuestionAnswered(question) ? 'answered' : 'not-answered');
-
-          if (i === currentQuestionIndex) {
-            dot.classList.add('current');
-          }
-        }
-
-        const answered = getAnsweredCount();
-        const answeredCountEl = document.getElementById('answeredCount');
-        if (answeredCountEl) {
-          answeredCountEl.textContent = answered;
-        }
-
-        const progressFill = document.querySelector('.progress-fill');
-        if (progressFill) {
-          progressFill.style.width = totalQuestions ? ((answered / totalQuestions) * 100) + '%' : '0%';
-        }
-
-        updateNavButtons();
-      }
-
-      function updateNavButtons() {
-        const prevBtn = document.querySelector('.btn-prev');
-        const nextBtn = document.querySelector('.btn-next');
-
-        if (prevBtn) {
-          prevBtn.disabled = currentQuestionIndex === 0;
-          prevBtn.style.opacity = currentQuestionIndex === 0 ? '0.5' : '1';
-          prevBtn.style.pointerEvents = currentQuestionIndex === 0 ? 'none' : 'auto';
-        }
-
-        if (nextBtn) {
-          nextBtn.disabled = currentQuestionIndex === questions.length - 1;
-          nextBtn.style.opacity = currentQuestionIndex === questions.length - 1 ? '0.5' : '1';
-          nextBtn.style.pointerEvents = currentQuestionIndex === questions.length - 1 ? 'none' : 'auto';
-        }
-      }
-
-      function updateTimerDisplay() {
-        const minutes = Math.max(0, Math.floor(timeRemaining / 60));
-        const seconds = Math.max(0, timeRemaining % 60);
-        const timerDisplay = document.getElementById('timerDisplay');
-        if (timerDisplay) {
-          timerDisplay.textContent =
-            'Timer: ' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-        }
-      }
-
-      function startTimer() {
-        updateTimerDisplay();
-
-        timerInterval = setInterval(function() {
-          timeRemaining = Math.max(0, timeRemaining - 1);
-          updateTimerDisplay();
-
-          if (timeRemaining > 0 && timeRemaining % 15 === 0) {
-            persistDraftLocally();
-            scheduleProgressSync(0);
-          }
-
-          if (timeRemaining <= 0) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            autoSubmit();
-          }
-        }, 1000);
-      }
-
-      function scheduleProgressSync(delay) {
-        if (isSubmitted && !pendingAutoSubmit) {
-          return;
-        }
-
-        clearTimeout(syncTimer);
-        syncTimer = setTimeout(function() {
-          flushProgress({ silent: true });
-        }, delay == null ? 600 : delay);
-      }
-
-      async function flushProgress(options) {
-        const opts = options || {};
-        if (syncInFlight || !navigator.onLine || (isSubmitted && !pendingAutoSubmit)) {
-          return false;
-        }
-
-        syncInFlight = true;
-        persistDraftLocally();
-
-        try {
-          const response = await fetch(progressUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify(getProgressPayload()),
-            keepalive: !!opts.keepalive
-          });
-
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            if (!pendingAutoSubmit) {
-              setSyncBanner('', '');
-            }
-            if (typeof data.time_remaining_seconds === 'number') {
-              timeRemaining = Math.min(timeRemaining, data.time_remaining_seconds);
-              updateTimerDisplay();
-            }
-            if (data.saved_at) {
-              persistDraftLocally();
-            }
-            return true;
-          }
-
-          if (response.status === 409 && data.redirect) {
-            clearPersistedDraft();
-            window.location.href = data.redirect;
-            return false;
-          }
-
-          if (data.error === 'Test time has expired') {
-            pendingAutoSubmit = true;
-            updateConnectionBanner();
-            autoSubmit();
-            return false;
-          }
-
-          if (!opts.silent) {
-            setSyncBanner(data.error || 'Unable to save progress right now. Your latest answers remain stored in this browser.', 'warning');
-          }
-          return false;
-        } catch (error) {
-          console.error('Progress sync failed', error);
-          if (!opts.silent) {
-            setSyncBanner('Unable to reach the server. Your latest answers remain stored in this browser and will sync automatically.', 'warning');
-          }
-          return false;
-        } finally {
-          syncInFlight = false;
-        }
-      }
-
-      function autoSubmit() {
-        if (pendingAutoSubmit && !navigator.onLine) {
-          persistDraftLocally();
-          updateConnectionBanner();
-          return;
-        }
-
-        if (isSubmitted) return;
-
-        pendingAutoSubmit = true;
-        const finalCountEl = document.getElementById('finalCount');
-        if (finalCountEl) {
-          finalCountEl.textContent = getAnsweredCount();
-        }
-
-        submitTest(true);
-      }
-
-      function showWarningModal() {
-        const answered = getAnsweredCount();
-        const warningAnsweredCountEl = document.getElementById('warningAnsweredCount');
-        const warningTotalCountEl = document.getElementById('warningTotalCount');
-        const warningModal = document.getElementById('warningModal');
-        const modalTitle = warningModal.querySelector('.modal-title');
-        const modalMessage = warningModal.querySelector('.modal-message');
-
-        if (warningAnsweredCountEl) {
-          warningAnsweredCountEl.textContent = answered;
-        }
-        if (warningTotalCountEl) {
-          warningTotalCountEl.textContent = totalQuestions;
-        }
-
-        if (answered === 0) {
-          modalTitle.textContent = 'No Questions Attempted!';
-          modalMessage.innerHTML = 'You have not attempted any question. Are you sure you want to submit the test?';
-        } else if (timeRemaining > 0) {
-          const minutes = Math.floor(timeRemaining / 60);
-          const seconds = timeRemaining % 60;
-          const timeLeft = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-          modalTitle.textContent = 'Time Remaining!';
-          modalMessage.innerHTML = `You still have <strong>${timeLeft}</strong> remaining and have answered <strong>${answered}</strong> out of <strong>${totalQuestions}</strong> questions. Are you sure you want to submit?`;
-        } else {
-          modalTitle.textContent = 'Submit Test?';
-          modalMessage.innerHTML = `You have answered <strong>${answered}</strong> out of <strong>${totalQuestions}</strong> questions. Are you sure you want to submit?`;
-        }
-
-        if (warningModal) {
-          warningModal.classList.add('active');
-        }
-      }
-
-      function closeWarningModal() {
-        const warningModal = document.getElementById('warningModal');
-        if (warningModal) {
-          warningModal.classList.remove('active');
-        }
-      }
-
-      window.submitExam = function() {
-        closeWarningModal();
-        submitTest();
+      window.SCHOLARSHIP_TEST_CONFIG = {
+        attemptId: {{ attempt.id }},
+        totalQuestions: {{ total_questions }},
+        timeLimit: {{ time_limit }},
+        timeRemainingSeconds: {{ time_remaining_seconds }},
+        submitUrl: "{% url 'scholarship_test:scholarship_submit_test' attempt.id %}",
+        progressUrl: "{% url 'scholarship_test:scholarship_save_test_progress' attempt.id %}",
+        activateUrl: "{% url 'scholarship_test:scholarship_activate_test' attempt.id %}",
+        successUrl: "{% url 'scholarship_test:scholarship_success' attempt.id %}",
+        localProgressKey: "scholarship-test-progress:{{ attempt.id }}",
+        maxViolations: {{ security_max_violations }},
+        startedAt: {% if attempt.started_at %}"{{ attempt.started_at|date:'c' }}"{% else %}null{% endif %},
+        status: "{{ attempt.status }}",
+        securityStatus: "{{ attempt.security_status }}",
+        initialViolationCount: {{ attempt.violation_count|default:0 }},
       };
-
-      async function submitTest(isAutoSubmit) {
-        if (isSubmitted) return;
-        isSubmitted = true;
-
-        clearTimeout(syncTimer);
-        persistDraftLocally();
-
-        if (timerInterval) {
-          clearInterval(timerInterval);
-          timerInterval = null;
-        }
-
-        try {
-          const response = await fetch(submitUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({ answers: answers })
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            clearPersistedDraft();
-            pendingAutoSubmit = false;
-            window.location.href = data.redirect;
-            return;
-          }
-
-          if (data.redirect) {
-            clearPersistedDraft();
-            window.location.href = data.redirect;
-            return;
-          }
-
-          throw new Error(data.error || 'Unable to submit the test');
-        } catch (error) {
-          console.error(error);
-          isSubmitted = false;
-
-          if (isAutoSubmit) {
-            pendingAutoSubmit = true;
-            setSyncBanner(
-              navigator.onLine
-                ? 'Time is up, but the submission could not be completed yet. We will keep trying automatically.'
-                : 'Time is up and the internet connection is unavailable. Submission will happen automatically when the connection returns.',
-              'danger'
-            );
-          } else {
-            setSyncBanner(
-              navigator.onLine
-                ? 'Unable to submit right now. Your latest answers are still saved.'
-                : 'You are offline. Your latest answers are still saved in this browser.',
-              'warning'
-            );
-          }
-
-          if (!timerInterval && timeRemaining > 0 && !pendingAutoSubmit) {
-            startTimer();
-          }
-        }
-      }
-
-      function goToSuccess() {
-        window.location.href = successUrl;
-      }
-
-      function getCSRFToken() {
-        const name = 'csrftoken';
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-          const cookies = document.cookie.split(';');
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
-            }
-          }
-        }
-        return cookieValue;
-      }
-
-      document.addEventListener('visibilitychange', function() {
-        if (document.hidden && !isSubmitted) {
-          tabSwitchCount++;
-          persistDraftLocally();
-          scheduleProgressSync(0);
-
-          if (tabSwitchCount >= 3) {
-            showTabSwitchFinalModal();
-          } else {
-            showTabSwitchWarning();
-          }
-        } else if (!document.hidden && navigator.onLine) {
-          if (pendingAutoSubmit && timeRemaining <= 0) {
-            submitTest(true);
-          } else {
-            scheduleProgressSync(0);
-          }
-        }
-      });
-
-      window.addEventListener('offline', function() {
-        persistDraftLocally();
-        updateConnectionBanner();
-      });
-
-      window.addEventListener('online', function() {
-        updateConnectionBanner();
-        if (pendingAutoSubmit && timeRemaining <= 0) {
-          submitTest(true);
-        } else {
-          scheduleProgressSync(0);
-        }
-      });
-
-      window.addEventListener('beforeunload', function() {
-        persistDraftLocally();
-        flushProgress({ keepalive: true, silent: true });
-      });
-
-      function showTabSwitchWarning() {
-        const tabSwitchModal = document.getElementById('tabSwitchModal');
-        const tabSwitchCountEl = document.getElementById('tabSwitchCount');
-
-        if (tabSwitchCountEl) {
-          tabSwitchCountEl.textContent = tabSwitchCount;
-        }
-
-        if (tabSwitchModal) {
-          tabSwitchModal.classList.add('active');
-        }
-      }
-
-      function closeTabSwitchModal() {
-        const tabSwitchModal = document.getElementById('tabSwitchModal');
-        if (tabSwitchModal) {
-          tabSwitchModal.classList.remove('active');
-        }
-      }
-
-      function showTabSwitchFinalModal() {
-        if (isSubmitted) return;
-        closeTabSwitchModal();
-
-        const finalCountEl = document.getElementById('finalCount');
-        if (finalCountEl) {
-          finalCountEl.textContent = getAnsweredCount();
-        }
-
-        autoSubmit();
-      }
-
-      function escapeHtml(value) {
-        return String(value || '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;');
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeTest);
-      } else {
-        initializeTest();
-      }
     </script>
-    
-   
+    <script src="{% static 'js/exam_security.js' %}"></script>
+    <script src="{% static 'js/scholarship-test.js' %}"></script>
   </body>
 </html>
