@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 from django.conf import settings
 from django.db import transaction
+from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 from datetime import timedelta
 from zoneinfo import ZoneInfo
@@ -26,8 +27,13 @@ def get_max_security_violations() -> int:
 
 
 def get_attempt_start_time(attempt):
-    if getattr(attempt, "started_at", None):
-        return attempt.started_at
+    try:
+        started_at = getattr(attempt, "started_at", None)
+    except (OperationalError, ProgrammingError):
+        started_at = None
+
+    if started_at:
+        return started_at
 
     # Older attempts may only have the original auto-created timestamp.
     if getattr(attempt, "status", "") != "started":
@@ -949,6 +955,11 @@ def finalize_expired_attempts(selected_test=None):
     attempts = ScholarshipTestAttempt.objects.select_related(
         'student',
         'test',
+    ).defer(
+        'started_at',
+        'submitted_at',
+        'violation_count',
+        'security_status',
     ).filter(
         status__in=['started', 'in_progress']
     ).order_by('test_started_at')

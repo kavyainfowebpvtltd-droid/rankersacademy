@@ -149,7 +149,7 @@ def _get_completed_attempt_for_test(student, selected_test):
     attempts = ScholarshipTestAttempt.objects.filter(
         student=student,
         status__in=['completed', 'expired']
-    )
+    ).defer('started_at', 'submitted_at', 'violation_count', 'security_status')
 
     if selected_test:
         attempts = attempts.filter(test=selected_test)
@@ -161,7 +161,7 @@ def _get_active_attempt_for_test(student, selected_test):
     attempts = ScholarshipTestAttempt.objects.filter(
         student=student,
         status__in=['started', 'in_progress']
-    )
+    ).defer('started_at', 'submitted_at', 'violation_count', 'security_status')
 
     if selected_test:
         attempts = attempts.filter(test=selected_test)
@@ -176,12 +176,16 @@ def _expire_attempt_if_needed(attempt):
     if not test_service.is_attempt_expired(attempt):
         return attempt
 
-    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
-    runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
-    if runtime_test and runtime_questions:
-        _success, _message, attempt = test_service.auto_submit_runtime_test(attempt.id)
-    else:
-        _success, _message, attempt = test_service.auto_submit_expired_test(attempt.id)
+    try:
+        runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+        runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+        if runtime_test and runtime_questions:
+            _success, _message, attempt = test_service.auto_submit_runtime_test(attempt.id)
+        else:
+            _success, _message, attempt = test_service.auto_submit_expired_test(attempt.id)
+    except Exception:
+        logger.exception("Failed to expire scholarship attempt %s", getattr(attempt, 'id', None))
+        return attempt
 
     return attempt
 

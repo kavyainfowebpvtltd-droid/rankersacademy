@@ -4735,6 +4735,9 @@ def _build_my_tests_payload(student):
                 "attemptedCount": len(
                     [entry for entry in leaderboard["entries"] if entry.get("attemptId")]
                 ),
+                # Keep an explicit student-scoped section breakdown for the My Tests UI.
+                # This avoids relying on leaderboard inference for previous/recent cards.
+                "studentSectionBreakdown": section_breakdown,
                 "sectionBreakdown": section_breakdown,
                 "leaderboard": leaderboard["entries"],
                 "topPerformers": leaderboard["topEntries"],

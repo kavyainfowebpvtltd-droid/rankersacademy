@@ -1050,8 +1050,9 @@
       return currentTest()?.leaderboard || [];
     }
 
-    function currentStudentEntry() {
-      return currentLeaderboard().find((entry) => entry.studentId === currentStudentId) || null;
+    function currentStudentEntry(test = currentTest()) {
+      const leaderboard = test?.leaderboard || [];
+      return leaderboard.find((entry) => entry.studentId === currentStudentId || entry.isCurrentStudent) || null;
     }
 
     function sectionIdentity(section, index = 0) {
@@ -1096,20 +1097,48 @@
     }
 
     function currentStudentSectionBreakdown(test) {
-      const currentEntry = currentStudentEntry();
-      const configuredSections = normalizeSectionBreakdownItems(test?.sectionBreakdown);
+      const currentEntry = currentStudentEntry(test);
+      const configuredSections = normalizeSectionBreakdownItems(
+        test?.studentSectionBreakdown || test?.sectionBreakdown,
+      );
       const currentEntrySections = normalizeSectionBreakdownItems(currentEntry?.sectionScores);
       const leaderboardSections = normalizeSectionBreakdownItems(
         (test?.leaderboard || []).find(
           (entry) => Array.isArray(entry.sectionScores) && entry.sectionScores.length,
         )?.sectionScores,
       );
+      const legacyEntrySections = normalizeSectionBreakdownItems(
+        sectionHeaderItems(test).map((section, index) => {
+          const sectionName = String(section?.name || section?.sectionName || `Section ${index + 1}`).trim();
+          const normalizedKey = normalizeSectionKey(sectionName);
+          const legacyScoreCandidates = [
+            currentEntry?.[sectionName],
+            normalizedKey ? currentEntry?.[normalizedKey] : undefined,
+            currentEntry?.[section?.sectionName],
+          ];
+          const legacyScore = legacyScoreCandidates.find(
+            (value) => value !== undefined && value !== null && value !== "",
+          );
+
+          return {
+            name: sectionName,
+            sectionName: sectionName,
+            shortLabel:
+              section?.shortLabel ||
+              sectionDisplayLabel({ name: sectionName }, index),
+            score: Number(legacyScore || 0),
+            total: Number(section?.total || 0),
+          };
+        }),
+      );
 
       const seedSections = configuredSections.length
         ? configuredSections
         : currentEntrySections.length
           ? currentEntrySections
-          : leaderboardSections;
+          : leaderboardSections.length
+            ? leaderboardSections
+            : legacyEntrySections;
 
       if (!seedSections.length) {
         return [];
@@ -1118,11 +1147,15 @@
       const currentEntrySectionsByKey = new Map(
         currentEntrySections.map((section, index) => [sectionIdentity(section, index), section]),
       );
+      const legacyEntrySectionsByKey = new Map(
+        legacyEntrySections.map((section, index) => [sectionIdentity(section, index), section]),
+      );
 
       return seedSections.map((section, index) => {
         const sectionKey = sectionIdentity(section, index);
         const currentSection = currentEntrySectionsByKey.get(sectionKey);
-        const resolvedSection = currentSection || section;
+        const legacySection = legacyEntrySectionsByKey.get(sectionKey);
+        const resolvedSection = currentSection || legacySection || section;
         const sectionName = String(
           resolvedSection?.name ||
           resolvedSection?.sectionName ||
@@ -1313,6 +1346,48 @@
         return Number(test.totalMarks) || 0;
       }
       return (row?.sectionScores || []).reduce((sum, section) => sum + (Number(section?.total) || 0), 0);
+    }
+
+    function leaderboardSectionCellData(row, section, index = 0) {
+      const normalizedRowSections = normalizeSectionBreakdownItems(row?.sectionScores);
+      const targetKey = sectionIdentity(section, index);
+      const fallbackName = String(section?.name || section?.sectionName || `Section ${index + 1}`).trim();
+
+      const matchedSection = normalizedRowSections.find(
+        (item, itemIndex) => sectionIdentity(item, itemIndex) === targetKey,
+      );
+      if (matchedSection) {
+        return matchedSection;
+      }
+
+      const indexedSection = normalizedRowSections[index];
+      if (indexedSection) {
+        return indexedSection;
+      }
+
+      const normalizedKey = normalizeSectionKey(fallbackName);
+      const legacyScoreCandidates = [
+        row?.[fallbackName],
+        row?.[section?.sectionName],
+        normalizedKey ? row?.[normalizedKey] : undefined,
+      ];
+      const legacyScore = legacyScoreCandidates.find(
+        (value) => value !== undefined && value !== null && value !== "",
+      );
+
+      if (legacyScore !== undefined) {
+        return {
+          name: fallbackName || `Section ${index + 1}`,
+          sectionName: fallbackName || `Section ${index + 1}`,
+          shortLabel:
+            section?.shortLabel ||
+            sectionDisplayLabel({ name: fallbackName || `Section ${index + 1}` }, index),
+          score: Number(legacyScore || 0),
+          total: Number(section?.total || 0),
+        };
+      }
+
+      return null;
     }
 
     function sectionDisplayLabel(section, index = 0) {
@@ -1696,8 +1771,8 @@
         headers.forEach((section, index) => {
           const cell = document.createElement("td");
           cell.className = "leaderboard-section-score mono";
-          const sectionScore = row.sectionScores?.[index];
-          cell.textContent = sectionScore?.score ?? row?.[section.name] ?? "--";
+          const sectionScore = leaderboardSectionCellData(row, section, index);
+          cell.textContent = sectionScore ? `${Number(sectionScore.score || 0)}` : "--";
           cell.title = section.name || section.sectionName || `Section ${index + 1}`;
           node.insertBefore(cell, totalCell);
         });
