@@ -390,6 +390,7 @@ def _create_runtime_attempt_compat(
     total_marks,
     progress_state,
 ):
+    created_at = timezone.now()
     create_kwargs = {
         'student': student,
         'test': active_test,
@@ -416,9 +417,9 @@ def _create_runtime_attempt_compat(
             f"""
             INSERT INTO {table_name}
                 (student_id, test_id, portal_student_id, student_batch, score,
-                 scholarship_percentage, test_completed_at, status,
+                 scholarship_percentage, test_started_at, test_completed_at, status,
                  total_questions, total_marks, progress_state, sms_sent, sms_error)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             [
                 student.id,
@@ -427,6 +428,7 @@ def _create_runtime_attempt_compat(
                 portal_student.batch if portal_student else '',
                 0,
                 0,
+                created_at,
                 None,
                 'started',
                 total_questions,
