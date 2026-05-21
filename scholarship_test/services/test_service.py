@@ -1124,7 +1124,12 @@ def get_test_leaderboard(test, current_attempt=None, limit: int = 5):
             'current_entry': None,
         }
 
-    attempts = ScholarshipTestAttempt.objects.select_related('student').filter(
+    attempts = ScholarshipTestAttempt.objects.select_related('student').defer(
+        'started_at',
+        'submitted_at',
+        'violation_count',
+        'security_status',
+    ).filter(
         test=test,
         status__in=['completed', 'expired'],
     ).order_by('-score', 'test_completed_at', 'test_started_at', 'id')
