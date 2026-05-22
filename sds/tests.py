@@ -1,11 +1,14 @@
 import json
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 
+from sds import views
 from sds.models import Student, TeacherAdmin
 from sds.password_policy import DEFAULT_ONE_TIME_PASSWORD
 
@@ -48,6 +51,33 @@ class AddUserStudentFieldSelectionTests(TestCase):
         self.assertEqual(student.username, student.user.username)
         self.assertTrue(student.must_change_password)
         self.assertTrue(student.user.check_password(DEFAULT_ONE_TIME_PASSWORD))
+
+
+class UserCreationFallbackTests(TestCase):
+    @patch("sds.views._insert_model_with_db_defaults")
+    @patch("sds.views.User.objects.create_user")
+    def test_auth_user_creation_falls_back_on_missing_mysql_default(self, mock_create_user, mock_insert):
+        fallback_user = User(username="teacher01", email="teacher01@example.com")
+        mock_create_user.side_effect = IntegrityError(
+            '(1364, "Field \'working_hours\' doesn\'t have a default value")'
+        )
+        mock_insert.return_value = fallback_user
+
+        user = views._create_auth_user_with_db_drift_support(
+            username="teacher01",
+            email="teacher01@example.com",
+            password="Secret@123",
+            is_staff=True,
+        )
+
+        self.assertIs(user, fallback_user)
+        mock_insert.assert_called_once()
+        insert_model, insert_values = mock_insert.call_args.args
+        self.assertIs(insert_model, User)
+        self.assertEqual(insert_values["username"], "teacher01")
+        self.assertEqual(insert_values["email"], "teacher01@example.com")
+        self.assertTrue(insert_values["is_staff"])
+        self.assertNotEqual(insert_values["password"], "Secret@123")
 
 
 @override_settings(ROOT_URLCONF="sds.urls")

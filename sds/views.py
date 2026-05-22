@@ -15,7 +15,7 @@ from django.views.decorators.cache import never_cache, cache_control
 from django.views.decorators.http import require_POST, require_GET
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.http import JsonResponse, FileResponse, Http404
-from django.db import transaction
+from django.db import transaction, connection, IntegrityError
 from django.core.cache import cache
 import json
 import os
@@ -72,6 +72,137 @@ def _redirect_authenticated_user_home(user):
 
 
 SCHOLARSHIP_LAUNCH_PATH_RE = re.compile(r"^/scholarship/launch/(?P<test_id>\d+)/?$")
+
+
+def _is_mysql_missing_default_error(exc):
+    return connection.vendor == "mysql" and "doesn't have a default value" in str(exc)
+
+
+def _default_value_for_mysql_column(data_type):
+    normalized = (data_type or "").lower()
+    if normalized in {"char", "varchar", "text", "tinytext", "mediumtext", "longtext", "enum", "set"}:
+        return ""
+    if normalized in {"int", "integer", "bigint", "smallint", "mediumint", "tinyint", "decimal", "numeric", "float", "double", "real"}:
+        return 0
+    if normalized in {"bool", "boolean", "bit"}:
+        return False
+    if normalized == "json":
+        return "{}"
+    if normalized == "date":
+        return timezone.localdate()
+    if normalized in {"datetime", "timestamp"}:
+        return timezone.now()
+    if normalized == "time":
+        return "00:00:00"
+    return ""
+
+
+def _get_missing_required_db_only_columns(table_name, model_columns):
+    if connection.vendor != "mysql":
+        return {}
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s
+            """,
+            [table_name],
+        )
+        rows = cursor.fetchall()
+
+    missing_columns = {}
+    for column_name, data_type, is_nullable, column_default, extra in rows:
+        if column_name in model_columns:
+            continue
+        if is_nullable != "NO" or column_default is not None:
+            continue
+        if "auto_increment" in (extra or "").lower():
+            continue
+        missing_columns[column_name] = _default_value_for_mysql_column(data_type)
+    return missing_columns
+
+
+def _insert_model_with_db_defaults(model_class, values, db_only_values=None):
+    db_only_values = db_only_values or {}
+    insert_values = {}
+    model_columns = set()
+
+    for field in model_class._meta.local_concrete_fields:
+        model_columns.add(field.column)
+        if field.primary_key and field.auto_created:
+            continue
+
+        if field.name in values:
+            value = values[field.name]
+        elif field.attname in values:
+            value = values[field.attname]
+        elif field.has_default():
+            value = field.get_default()
+        elif field.null:
+            value = None
+        elif getattr(field, "empty_strings_allowed", False):
+            value = ""
+        else:
+            continue
+
+        if field.is_relation and value is not None and hasattr(value, "pk"):
+            value = value.pk
+
+        insert_values[field.column] = value
+
+    for column_name, fallback_value in _get_missing_required_db_only_columns(
+        model_class._meta.db_table,
+        model_columns,
+    ).items():
+        insert_values[column_name] = db_only_values.get(column_name, fallback_value)
+
+    columns = list(insert_values.keys())
+    placeholders = ", ".join(["%s"] * len(columns))
+    quoted_columns = ", ".join(f"`{column}`" for column in columns)
+    sql = f"INSERT INTO `{model_class._meta.db_table}` ({quoted_columns}) VALUES ({placeholders})"
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [insert_values[column] for column in columns])
+        inserted_pk = cursor.lastrowid
+
+    return model_class.objects.get(pk=inserted_pk)
+
+
+def _create_auth_user_with_db_drift_support(**user_kwargs):
+    try:
+        return User.objects.create_user(**user_kwargs)
+    except IntegrityError as exc:
+        if not _is_mysql_missing_default_error(exc):
+            raise
+
+    insert_values = {
+        "username": user_kwargs.get("username", ""),
+        "first_name": user_kwargs.get("first_name", ""),
+        "last_name": user_kwargs.get("last_name", ""),
+        "email": user_kwargs.get("email", ""),
+        "password": make_password(user_kwargs.get("password")),
+        "is_staff": user_kwargs.get("is_staff", False),
+        "is_active": user_kwargs.get("is_active", True),
+        "is_superuser": user_kwargs.get("is_superuser", False),
+        "last_login": user_kwargs.get("last_login"),
+        "date_joined": user_kwargs.get("date_joined", timezone.now()),
+    }
+    return _insert_model_with_db_defaults(User, insert_values)
+
+
+def _create_model_with_db_drift_support(model_class, *, db_only_values=None, **create_kwargs):
+    try:
+        return model_class.objects.create(**create_kwargs)
+    except IntegrityError as exc:
+        if not _is_mysql_missing_default_error(exc):
+            raise
+        return _insert_model_with_db_defaults(
+            model_class,
+            create_kwargs,
+            db_only_values=db_only_values,
+        )
 
 
 def _student_portal_feature_block_response(request, feature_key: str, api: bool = False):
@@ -1177,10 +1308,10 @@ def register_student(request):
             return redirect("register")
 
    
-        user = User.objects.create_user(
+        user = _create_auth_user_with_db_drift_support(
             username=email,
             email=email,
-            password=password
+            password=password,
         )
 
         
@@ -1471,7 +1602,7 @@ def add_user(request):
         messages.error(request, "Username or Email already exists")
         return redirect("user-management")
 
-    user = User.objects.create_user(
+    user = _create_auth_user_with_db_drift_support(
         username=username,
         email=email,
         password=password,
@@ -1548,7 +1679,14 @@ def add_user(request):
             messages.error(request, "Designation is required for staff.")
             return redirect("user-management")
         
-        teacher = TeacherAdmin.objects.create(
+        teacher_working_hours = (request.POST.get("working_hours") or "").strip()
+        teacher_db_only_values = {}
+        if teacher_working_hours:
+            teacher_db_only_values["working_hours"] = teacher_working_hours
+
+        teacher = _create_model_with_db_drift_support(
+            TeacherAdmin,
+            db_only_values=teacher_db_only_values,
             user=user,
             name=name,
             username=username,
