@@ -21,6 +21,61 @@
         font-weight: 700;
         font-size: 0.86rem;
       }
+      .option-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .review-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        border: 1px solid #dbe3ee;
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        background: #ffffff;
+      }
+      .review-option.is-correct {
+        border-color: #22c55e;
+        background: #f0fdf4;
+      }
+      .review-option.is-selected-wrong {
+        border-color: #f43f5e;
+        background: #fff1f2;
+      }
+      .option-letter {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #1e40af;
+        font-weight: 800;
+      }
+      .review-option.is-correct .option-letter {
+        background: #22c55e;
+        color: #ffffff;
+      }
+      .review-option.is-selected-wrong .option-letter {
+        background: #f43f5e;
+        color: #ffffff;
+      }
+      .option-text {
+        min-width: 0;
+        flex: 1;
+      }
+      .option-text img {
+        max-width: 100%;
+        height: auto;
+      }
+      .option-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.45rem;
+      }
     </style>
   </head>
   <body>
@@ -50,17 +105,42 @@
               {% endif %}
             </div>
             <div class="question-body mb-3">{{ row.question_html|safe }}</div>
+            {% if row.options %}
+            <div class="mb-3">
+              <div class="text-muted small fw-bold text-uppercase mb-2">Options</div>
+              <div class="option-list">
+                {% for option in row.options %}
+                <div class="review-option {% if option.is_correct %}is-correct{% endif %} {% if option.is_selected and not option.is_correct %}is-selected-wrong{% endif %}">
+                  <span class="option-letter">{{ option.label }}</span>
+                  <div class="option-text">
+                    <div>{{ option.text_html|safe }}</div>
+                    {% if option.is_selected or option.is_correct %}
+                    <div class="option-tags">
+                      {% if option.is_selected %}
+                      <span class="badge rounded-pill {% if option.is_correct %}text-bg-success{% else %}text-bg-danger{% endif %}">Student Answer</span>
+                      {% endif %}
+                      {% if option.is_correct %}
+                      <span class="badge rounded-pill text-bg-success">Correct Answer</span>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="p-3 rounded border h-100">
                   <div class="text-muted small fw-bold text-uppercase mb-1">Your Answer</div>
-                  <div>{{ row.selected_answer }}</div>
+                  <div>{{ row.selected_answer|safe }}</div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="p-3 rounded border h-100">
                   <div class="text-muted small fw-bold text-uppercase mb-1">Correct Answer</div>
-                  <div>{{ row.correct_answer }}</div>
+                  <div>{{ row.correct_answer|safe }}</div>
                 </div>
               </div>
             </div>

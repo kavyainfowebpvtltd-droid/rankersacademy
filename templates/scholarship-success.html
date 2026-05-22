@@ -326,7 +326,7 @@
             {% endif %}
 
             <a
-              href="{% url 'login' %}"
+              href="{% url 'my_tests' %}"
               class="btn btn-light w-100 mt-4 py-3 border"
               style="border-radius: 10px"
             >
@@ -361,6 +361,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+      (() => {
+        if (!window.history || !window.history.replaceState) return;
+
+        // Mark current history state so we can detect back navigation.
+        window.history.replaceState({ scholarshipSuccess: true }, "", window.location.href);
+        // Push a second state so pressing back triggers a popstate event.
+        window.history.pushState({ scholarshipSuccess: true }, "", window.location.href);
+
+        // On back navigation, redirect to a safe page (home/my_tests) instead
+        // of allowing the browser to go back to the test page.
+        window.addEventListener("popstate", () => {
+          window.location.replace("{% url 'my_tests' %}");
+        });
+      })();
+
       (() => {
         const button = document.getElementById("attemptReviewBtn");
         const message = document.getElementById("answerKeyAvailabilityText");

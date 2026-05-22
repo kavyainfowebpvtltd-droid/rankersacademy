@@ -132,23 +132,298 @@
         white-space: pre-wrap;
         font-size: .78rem;
       }
+      .analysis-toolbar {
+        border: 1px solid rgba(148, 163, 184, .24);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, .62);
+        box-shadow: 0 18px 38px rgba(2, 6, 23, .18);
+      }
+      .analysis-control {
+        min-width: 220px;
+      }
+      .analysis-batch-control {
+        min-width: min(100%, 520px);
+      }
+      .analysis-toolbar-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .analysis-selector-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 1rem;
+      }
+      .analysis-test-control {
+        min-width: 0;
+        width: 100%;
+      }
+      .analysis-control label {
+        display: block;
+        margin-bottom: .4rem;
+        color: var(--muted);
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+      .analysis-input-wrap {
+        position: relative;
+      }
+      .analysis-input-wrap i {
+        position: absolute;
+        top: 50%;
+        left: .85rem;
+        transform: translateY(-50%);
+        color: #38bdf8;
+        pointer-events: none;
+      }
+      .analysis-picker {
+        width: 100%;
+        height: 42px;
+        padding-left: 2.35rem;
+        border: 1px solid rgba(148, 163, 184, .28);
+        border-radius: 8px;
+        background: rgba(2, 6, 23, .3);
+        color: inherit;
+        font-weight: 700;
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+      }
+      .analysis-picker:hover {
+        border-color: rgba(56, 189, 248, .68);
+      }
+      .analysis-picker:focus {
+        outline: none;
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 .2rem rgba(56, 189, 248, .18);
+      }
+      .analysis-picker option {
+        color: #111827;
+      }
+      .analysis-test-dropdown {
+        width: 100%;
+      }
+      .analysis-test-button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        min-height: 42px;
+        height: auto;
+        padding: .6rem 2.45rem .6rem 2.35rem;
+        text-align: left;
+      }
+      .analysis-test-button:disabled {
+        opacity: .62;
+        cursor: not-allowed;
+      }
+      .analysis-test-text {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .analysis-input-wrap .analysis-test-chevron {
+        left: auto;
+        right: .85rem;
+      }
+      .analysis-test-menu {
+        width: 100%;
+        max-height: min(360px, 52vh);
+        overflow-y: auto;
+        padding: .35rem;
+        border: 1px solid rgba(148, 163, 184, .28);
+        border-radius: 8px;
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        box-shadow: 0 1.1rem 2.4rem rgba(2, 6, 23, .22);
+      }
+      .analysis-test-option {
+        display: block;
+        width: 100%;
+        padding: .65rem .75rem;
+        border-radius: 6px;
+        color: inherit;
+        font-weight: 700;
+        line-height: 1.25;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .analysis-test-option:hover,
+      .analysis-test-option:focus {
+        background: rgba(56, 189, 248, .12);
+        color: inherit;
+      }
+      .analysis-test-option.active,
+      .analysis-test-option:active {
+        background: linear-gradient(135deg, #0ea5e9, #2563eb);
+        color: #fff;
+      }
+      .analysis-batch-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+      }
+      .analysis-batch-tab {
+        min-height: 42px;
+        padding: 0 .9rem;
+        border: 1px solid rgba(148, 163, 184, .3);
+        border-radius: 8px;
+        background: rgba(2, 6, 23, .3);
+        color: inherit;
+        font-weight: 800;
+        white-space: nowrap;
+        transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+      }
+      .analysis-batch-tab:hover {
+        transform: translateY(-1px);
+        border-color: rgba(56, 189, 248, .7);
+      }
+      .analysis-batch-tab.active {
+        border-color: transparent;
+        background: linear-gradient(135deg, #0ea5e9, #2563eb);
+        color: #fff;
+        box-shadow: 0 .7rem 1.3rem rgba(37, 99, 235, .2);
+      }
+      .analysis-chip-row {
+        display: flex;
+        gap: .55rem;
+        overflow-x: auto;
+        padding: .15rem .05rem .7rem;
+        scrollbar-width: thin;
+      }
+      .analysis-chip {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        max-width: min(480px, 86vw);
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, .3);
+        background: rgba(15, 23, 42, .44);
+        color: inherit;
+        padding: .55rem .85rem;
+        font-size: .82rem;
+        font-weight: 800;
+        transition: transform .18s ease, border-color .18s ease, background .18s ease;
+      }
+      .analysis-chip:hover {
+        transform: translateY(-1px);
+        border-color: #38bdf8;
+      }
+      .analysis-chip.active {
+        border-color: transparent;
+        background: linear-gradient(135deg, #0ea5e9, #2563eb);
+        color: #fff;
+        box-shadow: 0 .7rem 1.3rem rgba(37, 99, 235, .22);
+      }
+      .analysis-chip-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .analysis-chip-date {
+        flex: 0 0 auto;
+      }
+      .analysis-download-btn {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      @media (max-width: 575.98px) {
+        .analysis-selector-row {
+          grid-template-columns: 1fr;
+        }
+        .analysis-download-btn {
+          width: 100%;
+        }
+      }
+      .analysis-section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-bottom: .8rem;
+      }
+      .analysis-section-title h5 {
+        margin: 0;
+      }
+      .analysis-bar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin-top: .7rem;
+      }
+      .analysis-bar-label {
+        width: 86px;
+        font-size: .76rem;
+        font-weight: 800;
+      }
+      .analysis-bar-track {
+        flex: 1;
+        height: 12px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, .18);
+      }
+      .analysis-bar-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #14b8a6, #0ea5e9);
+      }
+      .analysis-empty {
+        min-height: 260px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+      html[data-admin-theme="light"] body:not(.login-page-body) .analysis-toolbar,
+      html[data-admin-theme="light"] body:not(.login-page-body) .analysis-chip {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #111827 !important;
+        box-shadow: 0 12px 28px rgba(30, 64, 175, .08) !important;
+      }
+      html[data-admin-theme="light"] body:not(.login-page-body) .analysis-picker {
+        background: #f8fbff !important;
+        border-color: #dbe4f0 !important;
+        color: #111827 !important;
+      }
+      html[data-admin-theme="light"] body:not(.login-page-body) .analysis-batch-tab {
+        background: #f8fbff !important;
+        border-color: #dbe4f0 !important;
+        color: #111827 !important;
+      }
+      html[data-admin-theme="light"] body:not(.login-page-body) .analysis-batch-tab.active {
+        background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+        color: #ffffff !important;
+      }
+      html[data-admin-theme="light"] body:not(.login-page-body) .analysis-chip.active {
+        background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+        color: #ffffff !important;
+      }
     </style>
   </head>
   <body data-page="{{ analysis_page }}">
     <main id="app"></main>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      const SUBJECTS = ["Physics", "Chemistry", "Biology"];
+      const SUBJECTS = ["Physics", "Chemistry", "Biology", "Maths"];
       const CLUSTER_SIZE = 12;
       const SUBJECT_THEMES = {
         Physics: { from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P", short: "PHY" },
         Chemistry: { from: "#d946ef", to: "#ec4899", accent: "#f472b6", icon: "C", short: "CHM" },
-        Biology: { from: "#22c55e", to: "#16a34a", accent: "#4ade80", icon: "B", short: "BIO" }
+        Biology: { from: "#22c55e", to: "#16a34a", accent: "#4ade80", icon: "B", short: "BIO" },
+        Maths: { from: "#f59e0b", to: "#f97316", accent: "#fb923c", icon: "M", short: "MAT" }
       };
       const TOPICS = {
         Physics: ["Mechanics", "Thermodynamics", "Waves & Sound", "Optics", "Electrostatics", "Current Electricity", "Magnetism", "Modern Physics"],
         Chemistry: ["Atomic Structure", "Chemical Bonding", "Thermochemistry", "Equilibrium", "Organic Reactions", "Coordination Compounds", "Electrochemistry", "Periodic Table"],
-        Biology: ["Cell Biology", "Genetics", "Human Physiology", "Plant Physiology", "Ecology", "Evolution", "Biotechnology", "Diversity in Living World"]
+        Biology: ["Cell Biology", "Genetics", "Human Physiology", "Plant Physiology", "Ecology", "Evolution", "Biotechnology", "Diversity in Living World"],
+        Maths: ["Algebra", "Trigonometry", "Coordinate Geometry", "Calculus", "Vectors", "Probability", "Matrices", "Complex Numbers"]
       };
       const ANALYSIS_PAYLOAD = JSON.parse('{{ test_analysis_payload|default:"{}"|escapejs }}');
       const IS_ADMIN_PAGE = document.body.dataset.page === "admin";
@@ -167,17 +442,26 @@
         name,
         password: `demo${String(i + 1).padStart(3, "0")}`,
         batch: i < 25 ? "Alpha" : "Star-01",
+        grade: i % 2 ? "10th Grade" : "9th Grade",
         parentPhone: `+91 9${String(800000000 + i * 13579).slice(0, 9)}`
       }));
       const DEMO_TESTS = [
-        { id: "T01", name: "Mock Test 01", date: "15 Apr 2026", shortDate: "Apr 15" },
-        { id: "T02", name: "Mock Test 02", date: "22 Apr 2026", shortDate: "Apr 22" },
-        { id: "T03", name: "Mock Test 03", date: "29 Apr 2026", shortDate: "Apr 29" }
+        { id: "T01", name: "VECTOR ADDITION TEST", batch: "Star-01", batchKeys: ["star01"], date: "15 Apr 2026", shortDate: "Apr 15" },
+        { id: "T02", name: "MOTION TEST", batch: "Alpha", batchKeys: ["alpha"], date: "22 Apr 2026", shortDate: "Apr 22" },
+        { id: "T03", name: "WEEKLY MOCK TEST", batch: "Star-01", batchKeys: ["star01"], date: "29 Apr 2026", shortDate: "Apr 29" }
       ];
       const USE_BACKEND_ANALYSIS_DATA = Boolean(ACTIVE_ANALYSIS);
       const STUDENTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.students || []) : DEMO_STUDENTS;
       const TESTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.completedTests || []) : DEMO_TESTS;
-      const ADMIN_VISIBLE_COMPLETED_TESTS = TESTS.slice(-2);
+      const BACKEND_BATCHES = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.batches || []) : [];
+      const BATCH_TABS = [
+        { id: "star01", label: "STAR 01" },
+        { id: "star02", label: "STAR 02" },
+        { id: "alpha", label: "Alpha Batch" },
+        { id: "grade10", label: "10th Grade" },
+        { id: "grade9", label: "9th Grade" },
+      ];
+      const BATCHES = buildBatchOptions();
       const DEFAULT_ADMIN_UPCOMING_TEST = {
         id: "",
         name: "Upcoming Test",
@@ -190,21 +474,17 @@
       const ADMIN_UPCOMING_TEST = USE_BACKEND_ANALYSIS_DATA
         ? (ACTIVE_ANALYSIS.upcomingTest || DEFAULT_ADMIN_UPCOMING_TEST)
         : DEFAULT_ADMIN_UPCOMING_TEST;
-      const ADMIN_TEST_SELECTOR_SLOTS = [
-        ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
-        ADMIN_VISIBLE_COMPLETED_TESTS[1] || ADMIN_VISIBLE_COMPLETED_TESTS[0] || TESTS.at(-1) || null,
-        ADMIN_UPCOMING_TEST,
-      ];
       const CLUSTER_SCHEDULE = {
         Physics: { time: "4:00 - 4:30 PM", faculty: "Mr. Rajesh Kumar", room: "Conference Room A" },
         Chemistry: { time: "4:30 - 5:00 PM", faculty: "Dr. Priya Verma", room: "Conference Room A" },
-        Biology: { time: "5:00 - 5:30 PM", faculty: "Mr. Amit Sharma", room: "Conference Room A" }
+        Biology: { time: "5:00 - 5:30 PM", faculty: "Mr. Amit Sharma", room: "Conference Room A" },
+        Maths: { time: "5:30 - 6:00 PM", faculty: "Mr. Amit Sharma", room: "Conference Room A" }
       };
       const ADMIN_CREDS = { user: "admin", pwd: "admin@2026" };
       const FACULTY_CREDS = {
         physics: { user: "physics", pwd: "coach@2026", name: "Mr. Rajesh Kumar", subject: "Physics" },
         chemistry: { user: "chemistry", pwd: "coach@2026", name: "Dr. Priya Verma", subject: "Chemistry" },
-        maths: { user: "maths", pwd: "coach@2026", name: "Mr. Amit Sharma", subject: "Biology" },
+        maths: { user: "maths", pwd: "coach@2026", name: "Mr. Amit Sharma", subject: "Maths" },
         biology: { user: "biology", pwd: "coach@2026", name: "Mr. Amit Sharma", subject: "Biology" }
       };
       const BADGES = [
@@ -235,29 +515,30 @@
         attendanceStatus: "{% url 'test-analysis-attendance-status-api' %}",
         attendanceFinalize: "{% url 'test-analysis-attendance-finalize-api' %}",
         noteCreate: "{% url 'test-analysis-note-create-api' %}",
-        noteDelete: "{% url 'test-analysis-note-delete-api' %}"
+        noteDelete: "{% url 'test-analysis-note-delete-api' %}",
+        batches: "{% url 'test-analysis-batches-api' %}",
+        tests: "{% url 'test-analysis-tests-api' %}",
+        summary: "{% url 'test-analysis-summary-api' %}"
       };
       const ANALYSIS_DOWNLOAD_PDF_URL = "{% url 'test-analysis-download-pdf' %}";
       const SERVER_SESSION = JSON.parse('{{ test_analysis_session|escapejs }}');
+      const ANALYSIS_URL_PARAMS = new URLSearchParams(window.location.search);
+      const DEFAULT_ANALYSIS_BATCH_ID = resolveInitialBatchId();
+      const DEFAULT_ANALYSIS_TEST_ID = resolveInitialTestId(DEFAULT_ANALYSIS_BATCH_ID);
 
       const state = {
         page: document.body.dataset.page || "login",
         user: SERVER_SESSION || getStore(StorageKeys.session, null),
         loginMode: "student",
-        testId:
-          (document.body.dataset.page === "admin" &&
-            ((ADMIN_TEST_SELECTOR_SLOTS[1] && ADMIN_TEST_SELECTOR_SLOTS[1].id) ||
-              (ADMIN_TEST_SELECTOR_SLOTS[0] && ADMIN_TEST_SELECTOR_SLOTS[0].id) ||
-              TESTS.at(-1)?.id ||
-              "")) ||
-          TESTS.at(-1)?.id ||
-          "",
+        batchId: DEFAULT_ANALYSIS_BATCH_ID,
+        testId: document.body.dataset.page === "admin" ? DEFAULT_ANALYSIS_TEST_ID : (TESTS.at(-1)?.id || ""),
         studentTab: "home",
         studentLeaderboardOpen: false,
         facultyTab: "attend",
         adminTab: "overview",
         adminSort: "total",
         adminSearch: "",
+        adminRecentTestIds: [],
         commsTab: "post-test",
         online: navigator.onLine,
         attendance: blankAttendance(),
@@ -284,7 +565,8 @@
                 testId: row.testId || t.id,
                 Physics: Number(row.Physics) || 0,
                 Chemistry: Number(row.Chemistry) || 0,
-                Biology: Number(row.Biology ?? row.Maths) || 0,
+                Biology: Number(row.Biology) || 0,
+                Maths: Number(row.Maths) || 0,
                 total: Number(row.total) || 0,
                 totalMarks: Number(row.totalMarks) || 0,
                 sectionScores: Array.isArray(row.sectionScores) ? row.sectionScores : [],
@@ -297,7 +579,7 @@
         : Object.fromEntries(TESTS.map((t) => [t.id, generateScores(t.id)]));
       const STUDENT_LOOKUP = new Map(STUDENTS.map((student) => [student.id, student]));
       const TEST_LOOKUP = new Map(
-        [...TESTS, ...ADMIN_TEST_SELECTOR_SLOTS.filter(Boolean)].map((test) => [test.id, test])
+        [...TESTS, ADMIN_UPCOMING_TEST].filter(Boolean).map((test) => [test.id, test])
       );
       const ALL_STUDENT_IDS = Array.from(
         new Set([
@@ -317,8 +599,18 @@
         }
       });
 
+      if (IS_ADMIN_PAGE) {
+        const initialBatchTests = testsForBatch(state.batchId);
+        if (!initialBatchTests.some((test) => test.id === state.testId)) {
+          state.testId = latestTestForList(initialBatchTests)?.id || "";
+        }
+        seedAdminRecentTestTabs();
+      }
       loadAttendance();
-      if (!guardRoute()) render();
+      if (!guardRoute()) {
+        syncAnalysisUrlParams(true);
+        render();
+      }
 
       function guardRoute() {
         if (!state.user) {
@@ -360,6 +652,131 @@
         return Math.abs(h);
       }
 
+      function normalizeBatchKey(value) {
+        const normalized = String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+        const aliases = {
+          star1: "star01",
+          star01: "star01",
+          star2: "star02",
+          star02: "star02",
+          alpha: "alpha",
+          alphabatch: "alpha",
+          grade10: "grade10",
+          class10: "grade10",
+          "10th": "grade10",
+          "10": "grade10",
+          grade9: "grade9",
+          class9: "grade9",
+          "9th": "grade9",
+          "9": "grade9",
+        };
+        return aliases[normalized] || normalized;
+      }
+
+      function batchDisplayLabel(value) {
+        const preferred = {
+          star01: "STAR 01",
+          star02: "STAR 02",
+          alpha: "Alpha Batch",
+          grade10: "10th Grade",
+          grade9: "9th Grade",
+        };
+        const key = normalizeBatchKey(value);
+        return preferred[key] || String(value || "").trim() || "Unassigned";
+      }
+
+      function splitBatchValues(value) {
+        return String(value || "").split(/[,/&|]+/).map((item) => item.trim()).filter(Boolean);
+      }
+
+      function batchKeysForTest(test) {
+        const explicitKeys = Array.isArray(test?.batchKeys) ? test.batchKeys.map(normalizeBatchKey).filter(Boolean) : [];
+        if (explicitKeys.length) return explicitKeys;
+        return splitBatchValues(test?.batch).map(normalizeBatchKey).filter(Boolean);
+      }
+
+      function buildBatchOptions() {
+        const options = new Map();
+        const add = (value, label = "") => {
+          const key = normalizeBatchKey(value || label);
+          if (!key || options.has(key)) return;
+          options.set(key, { id: key, label: label || batchDisplayLabel(value), studentCount: 0, testCount: 0 });
+        };
+
+        BATCH_TABS.forEach((batch) => add(batch.id, batch.label));
+        BACKEND_BATCHES.forEach((batch) => add(batch.id || batch.label, batch.label));
+        STUDENTS.forEach((student) => {
+          add(student.batch);
+          if (["grade10", "grade9"].includes(normalizeBatchKey(student.grade))) add(student.grade);
+        });
+        TESTS.forEach((test) => splitBatchValues(test.batch).forEach((value) => add(value)));
+
+        const rows = Array.from(options.values());
+        rows.forEach((batch) => {
+          batch.studentCount = STUDENTS.filter((student) => studentMatchesBatch(student, batch.id)).length;
+          batch.testCount = TESTS.filter((test) => testHasDeclaredBatch(test, batch.id)).length;
+        });
+        return rows;
+      }
+
+      function currentBatch() {
+        return BATCHES.find((batch) => batch.id === state.batchId) || BATCHES[0] || { id: "", label: "Select Batch" };
+      }
+
+      function visibleBatchTabs() {
+        return BATCH_TABS.map((tab) => BATCHES.find((batch) => batch.id === tab.id) || tab);
+      }
+
+      function studentMatchesBatch(student, batchId = state.batchId) {
+        if (!batchId) return true;
+        return [student?.batch, student?.grade].some((value) => normalizeBatchKey(value) === batchId);
+      }
+
+      function testHasDeclaredBatch(test, batchId) {
+        if (!batchId) return true;
+        const keys = batchKeysForTest(test);
+        return !keys.length || keys.includes(batchId);
+      }
+
+      function testsForInitialBatch(batchId) {
+        return TESTS.filter((test) => testHasDeclaredBatch(test, batchId));
+      }
+
+      function resolveInitialBatchId() {
+        const rawBatch = ANALYSIS_URL_PARAMS.get("batch_id") || ANALYSIS_URL_PARAMS.get("batch");
+        const batchFromUrl = normalizeBatchKey(rawBatch);
+        if (batchFromUrl && BATCHES.some((batch) => batch.id === batchFromUrl)) return batchFromUrl;
+
+        const urlTest = normalizeTestId(ANALYSIS_URL_PARAMS.get("test_id") || ANALYSIS_URL_PARAMS.get("test"));
+        const selectedTest = TESTS.find((test) => test.id === urlTest);
+        const testBatch = batchKeysForTest(selectedTest)[0];
+        if (testBatch && BATCHES.some((batch) => batch.id === testBatch)) return testBatch;
+
+        const batchWithTests = BATCHES.find((batch) => testsForInitialBatch(batch.id).length);
+        const tabWithTests = BATCH_TABS.find((batch) => testsForInitialBatch(batch.id).length);
+        return tabWithTests?.id || batchWithTests?.id || BATCH_TABS[0]?.id || BATCHES[0]?.id || "";
+      }
+
+      function resolveInitialTestId(batchId) {
+        const rawTest = ANALYSIS_URL_PARAMS.get("test_id") || ANALYSIS_URL_PARAMS.get("test");
+        const urlTest = normalizeTestId(rawTest);
+        const tests = testsForInitialBatch(batchId);
+        if (urlTest && tests.some((test) => test.id === urlTest)) return urlTest;
+        return latestTestForList(tests)?.id || TESTS.at(-1)?.id || "";
+      }
+
+      function normalizeTestId(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        if (/^SCH/i.test(raw)) return `SCH${raw.replace(/^SCH/i, "")}`;
+        if (/^\d+$/.test(raw)) return `SCH${raw}`;
+        return raw;
+      }
+
+      function latestTestForList(tests) {
+        return [...tests].sort((a, b) => String(a.sortAt || a.date || "").localeCompare(String(b.sortAt || b.date || ""))).at(-1) || null;
+      }
+
       function generateScores(testId) {
         const testHash = hashCode(testId);
         return STUDENTS.map((s) => {
@@ -367,7 +784,8 @@
           const Physics = Math.max(18, Math.min(99, (sh % 65) + 25 + ((testHash + sh) % 22) - 11));
           const Chemistry = Math.max(18, Math.min(99, ((sh * 7) % 65) + 25 + ((testHash * 3 + sh) % 22) - 11));
           const Biology = Math.max(18, Math.min(99, ((sh * 13) % 65) + 25 + ((testHash * 5 + sh) % 22) - 11));
-          return { studentId: s.id, testId, Physics, Chemistry, Biology, total: Physics + Chemistry + Biology };
+          const Maths = Math.max(18, Math.min(99, ((sh * 17) % 65) + 25 + ((testHash * 7 + sh) % 22) - 11));
+          return { studentId: s.id, testId, Physics, Chemistry, Biology, Maths, total: Physics + Chemistry + Biology + Maths };
         });
       }
 
@@ -379,10 +797,168 @@
             score: Number(item.score) || 0,
           }));
         }
-        return TOPICS[subject].map((topic, i) => {
+        const topics = TOPICS[subject] || TOPICS[normalizeSubjectName(subject)] || [`${subject || "Subject"} focus`];
+        return topics.map((topic, i) => {
           const score = (hashCode(studentId) + hashCode(testId) + hashCode(subject) + hashCode(topic) + i * 7) % 100;
           return { topic, score: Math.max(15, Math.min(98, score)) };
         });
+      }
+
+      function normalizeSubjectName(name) {
+        const value = String(name || "").trim().toLowerCase();
+        if (value.includes("physics") || value === "phy") return "Physics";
+        if (value.includes("chemistry") || value === "chem") return "Chemistry";
+        if (value.includes("biology") || value === "bio" || value.includes("botany") || value.includes("zoology")) return "Biology";
+        if (value.includes("math")) return "Maths";
+        return "";
+      }
+
+      function sectionDisplayLabel(section, index = 0) {
+        if (section?.shortLabel) return section.shortLabel;
+        const normalized = normalizeSubjectName(section?.name || section?.sectionName);
+        if (normalized && SUBJECT_THEMES[normalized]?.short) return SUBJECT_THEMES[normalized].short;
+
+        const rawName = String(section?.name || section?.sectionName || `SEC ${index + 1}`).trim();
+        if (!rawName) return `SEC ${index + 1}`;
+        const compactName = rawName.replace(/\s+/g, " ");
+        if (compactName.length <= 8) return compactName.toUpperCase();
+        const parts = compactName.split(" ").filter(Boolean);
+        if (parts.length === 1) return compactName.slice(0, 8).toUpperCase();
+        return parts.slice(0, 3).map((part) => part[0]).join("").toUpperCase();
+      }
+
+      function sectionIdentity(section, index = 0) {
+        const rawName = String(section?.name || section?.sectionName || "").trim().toLowerCase();
+        const normalized = normalizeSubjectName(rawName);
+        return normalized || rawName || `section-${index}`;
+      }
+
+      function normalizeSectionItems(sections = []) {
+        return (Array.isArray(sections) ? sections : []).map((section, index) => {
+          const sectionName = String(section?.name || section?.sectionName || `Section ${index + 1}`).trim();
+          const score = Number(section?.score || 0);
+          const total = Number(section?.total || 0);
+          const parsedPercentage = Number(section?.percentage);
+          const percentage = Number.isFinite(parsedPercentage)
+            ? parsedPercentage
+            : (total > 0 ? Math.round((score / total) * 1000) / 10 : 0);
+          return {
+            ...section,
+            name: sectionName,
+            sectionName,
+            shortLabel: section?.shortLabel || sectionDisplayLabel({ name: sectionName }, index),
+            score,
+            total,
+            percentage,
+          };
+        });
+      }
+
+      function subjectTheme(subject, index = 0) {
+        return SUBJECT_THEMES[subject] || Object.values(SUBJECT_THEMES)[index % Object.values(SUBJECT_THEMES).length] || SUBJECT_THEMES.Physics;
+      }
+
+      function subjectDefinitionsForTest(test = currentTest()) {
+        const configuredSections = normalizeSectionItems(test?.sectionBreakdown || []);
+        const scoreSections = normalizeSectionItems(
+          (rawScoresForTest(test?.id) || []).find((row) => Array.isArray(row.sectionScores) && row.sectionScores.length)?.sectionScores || [],
+        );
+        const seedSections = configuredSections.length ? configuredSections : scoreSections;
+
+        if (!seedSections.length) {
+          return SUBJECTS.map((subject, index) => ({
+            key: subject,
+            label: subject,
+            name: subject,
+            sectionName: subject,
+            shortLabel: SUBJECT_THEMES[subject]?.short || sectionDisplayLabel({ name: subject }, index),
+            total: 0,
+            index,
+          }));
+        }
+
+        const fallbackTestSubject = seedSections.length === 1 ? normalizeSubjectName(test?.subject) : "";
+        return seedSections.map((section, index) => {
+          const sectionName = section.name || section.sectionName || `Section ${index + 1}`;
+          const normalized = normalizeSubjectName(sectionName);
+          const fallbackSubject = fallbackTestSubject || SUBJECTS[index] || normalized || sectionName;
+          const key = normalized || fallbackSubject;
+          const label = SUBJECT_THEMES[key] ? key : sectionName;
+          return {
+            ...section,
+            key,
+            label,
+            shortLabel: SUBJECT_THEMES[key]?.short || section.shortLabel || sectionDisplayLabel(section, index),
+            total: Number(section.total) || 0,
+            index,
+          };
+        });
+      }
+
+      function currentSubjectDefinitions() {
+        return subjectDefinitionsForTest(currentTest());
+      }
+
+      function currentSubjectKeys() {
+        return currentSubjectDefinitions().map((subject) => subject.key);
+      }
+
+      function leaderboardSectionCellData(row, subject, index = 0) {
+        const normalizedRowSections = normalizeSectionItems(row?.sectionScores || []);
+        const targetKey = sectionIdentity(subject, index);
+        const fallbackName = String(subject?.name || subject?.sectionName || subject?.key || `Section ${index + 1}`).trim();
+
+        const matchedSection = normalizedRowSections.find(
+          (item, itemIndex) => sectionIdentity(item, itemIndex) === targetKey,
+        );
+        if (matchedSection) return matchedSection;
+
+        const indexedSection = normalizedRowSections[index];
+        if (indexedSection) return indexedSection;
+
+        const normalizedKey = normalizeSubjectName(fallbackName);
+        const legacyScoreCandidates = [
+          row?.[fallbackName],
+          row?.[subject?.sectionName],
+          subject?.key ? row?.[subject.key] : undefined,
+          normalizedKey ? row?.[normalizedKey] : undefined,
+        ];
+        const legacyScore = legacyScoreCandidates.find((value) => value !== undefined && value !== null && value !== "");
+        if (legacyScore !== undefined) {
+          return {
+            name: fallbackName || subject?.key || `Section ${index + 1}`,
+            sectionName: fallbackName || subject?.key || `Section ${index + 1}`,
+            shortLabel: subject?.shortLabel || sectionDisplayLabel({ name: fallbackName }, index),
+            score: Number(legacyScore || 0),
+            total: Number(subject?.total || 0),
+          };
+        }
+        return null;
+      }
+
+      function scoreForSubject(score, subject, index = 0) {
+        const section = leaderboardSectionCellData(score, subject, index);
+        if (section) return Number(section.score) || 0;
+        const key = typeof subject === "string" ? subject : subject?.key;
+        return Number(score?.[key]) || 0;
+      }
+
+      function totalForSubject(score, subject, index = 0) {
+        const section = leaderboardSectionCellData(score, subject, index);
+        if (section && Number(section.total) > 0) return Number(section.total) || 0;
+        return Number(subject?.total) || 0;
+      }
+
+      function rowTotalScore(row) {
+        const total = Number(row?.total);
+        if (Number.isFinite(total) && total > 0) return total;
+        return normalizeSectionItems(row?.sectionScores || []).reduce((sum, section) => sum + (Number(section.score) || 0), 0);
+      }
+
+      function rowTotalMarks(row) {
+        const total = analysisTotalMarks(row);
+        if (total) return total;
+        return normalizeSectionItems(row?.sectionScores || []).reduce((sum, section) => sum + (Number(section.total) || 0), 0);
       }
 
       function getRankings(scores, key = "total") {
@@ -420,11 +996,13 @@
       }
 
       function getBottomCluster(scores, subject, count = CLUSTER_SIZE) {
-        return [...scores].sort((a, b) => a[subject] - b[subject]).slice(0, count);
+        const subjectDef = currentSubjectDefinitions().find((item) => item.key === subject) || { key: subject, name: subject, sectionName: subject, index: 0 };
+        const index = Number.isInteger(subjectDef.index) ? subjectDef.index : 0;
+        return [...scores].sort((a, b) => scoreForSubject(a, subjectDef, index) - scoreForSubject(b, subjectDef, index)).slice(0, count);
       }
 
       function getStudentClusterFlags(studentId, scores) {
-        return Object.fromEntries(SUBJECTS.map((sub) => [sub, getBottomCluster(scores, sub).some((s) => s.studentId === studentId)]));
+        return Object.fromEntries(currentSubjectKeys().map((sub) => [sub, getBottomCluster(scores, sub).some((s) => s.studentId === studentId)]));
       }
 
       function calculateXP(studentId) {
@@ -457,7 +1035,7 @@
           if (!me || !rankEntry) return;
           const rank = rankEntry.rank;
           bestRank = Math.min(bestRank, rank);
-          ever90 ||= me.Physics >= 90 || me.Chemistry >= 90 || me.Biology >= 90;
+          ever90 ||= subjectDefinitionsForTest(t).some((subject, index) => scoreForSubject(me, subject, index) >= 90);
           if (i) {
             const prevEntry = getRankings(allScores[TESTS[i - 1].id] || []).find((s) => s.studentId === studentId);
             if (prevEntry) {
@@ -475,7 +1053,7 @@
         if (ever90) earned.add("subject_90");
         const latestTestId = TESTS.at(-1)?.id;
         const flags = latestTestId ? getStudentClusterFlags(studentId, allScores[latestTestId] || []) : {};
-        const flagged = SUBJECTS.filter((s) => flags[s]);
+        const flagged = currentSubjectKeys().filter((s) => flags[s]);
         if (!flagged.length) earned.add("no_cluster");
         if (flagged.length && flagged.every((s) => ["present", "late"].includes(state.attendance[s]?.[studentId]))) earned.add("attend_perfect");
         return earned;
@@ -497,12 +1075,20 @@
 
       function getPredictiveAlerts() {
         const alerts = [];
-        ALL_STUDENT_IDS.forEach((studentId) => {
+        const scopedTests = state.user?.type === "admin" ? testsForBatch() : TESTS;
+        const scoresFor = (testId) => state.user?.type === "admin"
+          ? filterScoresByBatch(rawScoresForTest(testId), state.batchId)
+          : (allScores[testId] || []);
+        const scopedStudentIds = state.user?.type === "admin"
+          ? Array.from(new Set(scopedTests.flatMap((test) => scoresFor(test.id).map((score) => score.studentId))))
+          : ALL_STUDENT_IDS;
+
+        scopedStudentIds.forEach((studentId) => {
           const stu = getStudentById(studentId) || { id: studentId, name: studentId, parentPhone: "", batch: "" };
           const reasons = [];
           let severity = 0;
-          const ranks = TESTS.map((t) => {
-            const rankEntry = getRankings(allScores[t.id] || []).find((s) => s.studentId === studentId);
+          const ranks = scopedTests.map((t) => {
+            const rankEntry = getRankings(scoresFor(t.id)).find((s) => s.studentId === studentId);
             return rankEntry ? rankEntry.rank : null;
           });
           const recentRanks = ranks.filter((rank) => Number.isInteger(rank));
@@ -512,19 +1098,19 @@
             if (drop >= 8) { reasons.push(`Dropped ${drop} ranks vs last test`); severity += 3; }
             else if (drop >= 4) { reasons.push(`Dropped ${drop} ranks vs last test`); severity += 1; }
           }
-          if (TESTS.length && TESTS.every((t, index) => {
-            const totalStudents = (allScores[t.id] || []).length;
+          if (scopedTests.length && scopedTests.every((t, index) => {
+            const totalStudents = scoresFor(t.id).length;
             const rank = ranks[index];
             return totalStudents > 0 && rank !== null && rank > Math.max(0, totalStudents - 15);
           })) { reasons.push("Bottom-15 in all tests"); severity += 2; }
-          const clusterCount = TESTS.reduce((n, t) => {
-            const testScores = allScores[t.id] || [];
+          const clusterCount = scopedTests.reduce((n, t) => {
+            const testScores = scoresFor(t.id);
             if (!testScores.some((score) => score.studentId === studentId)) return n;
             return n + Object.values(getStudentClusterFlags(studentId, testScores)).filter(Boolean).length;
           }, 0);
-          if (clusterCount >= 6) { reasons.push(`In ${clusterCount} subject clusters across ${TESTS.length} tests`); severity += 2; }
+          if (clusterCount >= 6) { reasons.push(`In ${clusterCount} subject clusters across ${scopedTests.length} tests`); severity += 2; }
           let absent = 0, marked = 0;
-          SUBJECTS.forEach((sub) => {
+          currentSubjectKeys().forEach((sub) => {
             const status = state.attendance[sub]?.[studentId];
             if (status) marked++;
             if (status === "absent") absent++;
@@ -535,7 +1121,7 @@
         return alerts.sort((a, b) => b.severity - a.severity);
       }
 
-      function blankAttendance() { return { Physics: {}, Chemistry: {}, Biology: {}, finalized: {} }; }
+      function blankAttendance() { return { ...Object.fromEntries(SUBJECTS.map((subject) => [subject, {}])), finalized: {} }; }
       function getStore(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
       function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
       function cloneData(value, fallback) {
@@ -600,8 +1186,34 @@
         return data;
       }
       function esc(v) { return String(v ?? "").replace(/[&<>\"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); }
-      function currentScores() { return allScores[state.testId] || []; }
+      function rawScoresForTest(testId) {
+        return allScores[testId] || [];
+      }
+      function filterScoresByBatch(scores, batchId = state.batchId) {
+        if (!batchId) return scores;
+        return scores.filter((score) => studentMatchesBatch(getStudentById(score.studentId) || {}, batchId));
+      }
+      function testHasScoresInBatch(test, batchId = state.batchId) {
+        return rawScoresForTest(test?.id).some((score) => studentMatchesBatch(getStudentById(score.studentId) || {}, batchId));
+      }
+      function testMatchesBatch(test, batchId = state.batchId) {
+        if (!batchId) return true;
+        const keys = batchKeysForTest(test);
+        if (keys.includes(batchId)) return true;
+        if (!keys.length) return true;
+        return testHasScoresInBatch(test, batchId);
+      }
+      function testsForBatch(batchId = state.batchId) {
+        return TESTS.filter((test) => testMatchesBatch(test, batchId));
+      }
+      function currentScores() {
+        const scores = rawScoresForTest(state.testId);
+        return state.user?.type === "admin" ? filterScoresByBatch(scores, state.batchId) : scores;
+      }
       function currentTest() {
+        if (!state.testId && state.user?.type === "admin") {
+          return { id: "", name: "No test selected", date: "", shortDate: "", totalMarks: 0 };
+        }
         return (
           TEST_LOOKUP.get(state.testId) ||
           TESTS.at(-1) ||
@@ -649,20 +1261,12 @@
         return rowTotal || 0;
       }
       function analysisSectionMeta(score, subject) {
-        const sectionScores = score?.sectionScores || [];
-        const normalized = String(subject || "").trim().toLowerCase();
-        const matched = sectionScores.find((section) => {
-          const raw = String(section?.sectionName || section?.name || "").trim().toLowerCase();
-          return raw === normalized || raw.includes(normalized);
-        });
-        if (matched) {
-          return {
-            score: Number(matched.score) || 0,
-            total: Number(matched.total) || 0,
-          };
-        }
-        const fallbackScore = Number(score?.[subject]) || 0;
-        return { score: fallbackScore, total: 0 };
+        const subjectDef = typeof subject === "string" ? { key: subject, name: subject, sectionName: subject } : subject;
+        const index = Number.isInteger(subjectDef?.index) ? subjectDef.index : 0;
+        return {
+          score: scoreForSubject(score, subjectDef, index),
+          total: totalForSubject(score, subjectDef, index),
+        };
       }
       function findClusterStudentIdByInput(subject, rawInput) {
         const normalized = String(rawInput || "").trim().toLowerCase();
@@ -694,7 +1298,7 @@
       }
 
       function subjectIcon(sub) {
-        const t = SUBJECT_THEMES[sub];
+        const t = subjectTheme(sub);
         return `<span class="d-inline-flex align-items-center justify-content-center rounded-3 text-white fw-bold flex-shrink-0" style="width:36px;height:36px;background:linear-gradient(135deg,${t.from},${t.to})">${t.icon}</span>`;
       }
 
@@ -804,48 +1408,125 @@
         return `<div class="d-flex gap-2 overflow-auto pb-1 mb-3">${TESTS.map((t) => `<button class="btn btn-sm ${state.testId === t.id ? "btn-brand" : "btn-outline-light"} rounded-pill mono flex-shrink-0" onclick="setTest('${t.id}')">${t.shortDate || t.date} - ${t.name}</button>`).join("")}</div>`;
       }
 
-      function applyAnalysisTestSlotButtonState(button, test) {
-        button.classList.remove("btn-brand", "btn-outline-light");
-        button.disabled = false;
-        button.title = "";
+      function testPickerLabel(test) {
+        if (!test?.id) return "No tests available";
+        return `${test.name} - ${test.date || "Date pending"}`;
+      }
 
-        if (!test) {
-          button.textContent = "Unavailable";
-          button.disabled = true;
-          button.classList.add("btn-outline-light");
+      function seedAdminRecentTestTabs() {
+        const tests = testsForBatch();
+        const orderedIds = [
+          state.testId,
+          ...[...tests].reverse().map((test) => test.id),
+        ].filter(Boolean);
+        state.adminRecentTestIds = [...new Set(orderedIds)].slice(0, 3);
+      }
+
+      function rememberAdminTestTab(id) {
+        const availableIds = new Set(testsForBatch().map((test) => test.id));
+        if (!availableIds.has(id)) {
+          seedAdminRecentTestTabs();
           return;
         }
+        state.adminRecentTestIds = [
+          id,
+          ...state.adminRecentTestIds.filter((testId) => testId !== id && availableIds.has(testId)),
+        ].slice(0, 3);
+      }
 
-        if (test.kind === "placeholder") {
-          button.textContent = `${test.name} - ${test.date}`;
-          button.disabled = true;
-          button.title = "No upcoming test has been scheduled yet.";
-          button.classList.add("btn-outline-light");
-          return;
+      function adminRecentTests() {
+        const tests = testsForBatch();
+        const byId = new Map(tests.map((test) => [test.id, test]));
+        const chipTests = state.adminRecentTestIds.map((id) => byId.get(id)).filter(Boolean);
+        if (state.testId && byId.has(state.testId) && !chipTests.some((test) => test.id === state.testId)) {
+          chipTests.unshift(byId.get(state.testId));
         }
+        return chipTests.slice(0, 3);
+      }
 
-        button.textContent = `${test.name} - ${test.date}`;
-        button.classList.add(test.id === state.testId ? "btn-brand" : "btn-outline-light");
+      function syncAnalysisUrlParams(replace = false) {
+        if (state.user?.type !== "admin") return;
+        const params = new URLSearchParams(window.location.search);
+        const batch = currentBatch();
+        if (batch.id) params.set("batch", batch.id);
+        else params.delete("batch");
+        if (state.testId) params.set("test_id", currentBackendTestId() || state.testId);
+        else params.delete("test_id");
+        const nextUrl = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+        window.history[replace ? "replaceState" : "pushState"](null, "", nextUrl);
+      }
+
+      function setAdminBatch(batchId) {
+        state.batchId = batchId;
+        const availableTests = testsForBatch(batchId);
+        if (!availableTests.some((test) => test.id === state.testId)) {
+          state.testId = latestTestForList(availableTests)?.id || "";
+        }
+        seedAdminRecentTestTabs();
+        state.adminSearch = "";
+        loadAttendance();
+        syncAnalysisUrlParams();
+        render();
+      }
+
+      function setAdminTest(id) {
+        if (!id) return;
+        state.testId = id;
+        rememberAdminTestTab(id);
+        state.adminSearch = "";
+        loadAttendance();
+        syncAnalysisUrlParams();
+        render();
       }
 
       function adminTestSelector() {
-        return `<div id="adminTestSelector" class="d-flex gap-2 overflow-auto pb-1 mb-3">
-          ${ADMIN_TEST_SELECTOR_SLOTS.map((_, index) => `<button type="button" class="btn btn-sm rounded-pill mono flex-shrink-0" data-slot-index="${index}" onclick="setAdminSlotTest(${index})"></button>`).join("")}
-        </div>`;
+        const tests = testsForBatch();
+        const current = currentTest();
+        const selectedTest = tests.find((test) => test.id === current?.id) || current;
+        const canExport = Boolean(current?.id && tests.some((test) => test.id === current.id));
+        return `<section class="analysis-toolbar p-3 p-lg-4 mb-3">
+          <div class="analysis-toolbar-stack">
+            <div class="analysis-control analysis-batch-control">
+              <label>Select Batch</label>
+              <div class="analysis-batch-tabs" role="tablist" aria-label="Batch selector">
+                ${visibleBatchTabs().map((item) => `<button type="button" role="tab" aria-selected="${state.batchId === item.id ? "true" : "false"}" class="analysis-batch-tab ${state.batchId === item.id ? "active" : ""}" onclick="setAdminBatch('${item.id}')">${esc(item.label)}</button>`).join("")}
+              </div>
+            </div>
+            <div class="analysis-selector-row">
+              <div class="analysis-control analysis-test-control">
+                <label id="testPickerLabel" for="testPicker">Select Test</label>
+                <div class="analysis-input-wrap analysis-test-dropdown dropdown">
+                  <i class="bi bi-clipboard-data"></i>
+                  <button id="testPicker" type="button" class="analysis-picker analysis-test-button" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="testPickerLabel" ${tests.length ? "" : "disabled"}>
+                    <span class="analysis-test-text">${esc(tests.length ? testPickerLabel(selectedTest) : "No tests available")}</span>
+                    <i class="bi bi-chevron-down analysis-test-chevron"></i>
+                  </button>
+                  <div class="dropdown-menu analysis-test-menu" aria-labelledby="testPicker">
+                    ${tests.length ? tests.map((test) => `<button type="button" class="dropdown-item analysis-test-option ${state.testId === test.id ? "active" : ""}" onclick="setAdminTest('${test.id}')">${esc(testPickerLabel(test))}</button>`).join("") : `<span class="dropdown-item-text soft">No tests available</span>`}
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-brand fw-bold px-4 analysis-download-btn" ${canExport ? "" : "disabled"} onclick="downloadAnalysisPdf()">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download PDF
+              </button>
+            </div>
+          </div>
+        </section>`;
       }
 
-      function setAdminSlotTest(index) {
-        const slot = ADMIN_TEST_SELECTOR_SLOTS[index];
-        if (!slot?.id) return;
-        setTest(slot.id);
+      function adminRecentTestChips() {
+        const tests = adminRecentTests();
+        if (!tests.length) {
+          return `<div class="small soft mb-4">No tests available for ${esc(currentBatch().label)} yet.</div>`;
+        }
+        return `<div class="analysis-chip-row mb-3" aria-label="Recent tests">${tests.map((test) => `
+          <button type="button" class="analysis-chip ${state.testId === test.id ? "active" : ""}" onclick="setAdminTest('${test.id}')">
+            <span class="analysis-chip-name">${esc(test.name)}</span><span class="soft ms-1 analysis-chip-date">${esc(test.shortDate || test.date || "")}</span>
+          </button>
+        `).join("")}</div>`;
       }
 
-      function hydrateAdminTestSelector() {
-        document.querySelectorAll("#adminTestSelector [data-slot-index]").forEach((button) => {
-          const test = ADMIN_TEST_SELECTOR_SLOTS[Number(button.dataset.slotIndex)];
-          applyAnalysisTestSlotButtonState(button, test);
-        });
-      }
+      function hydrateAdminTestSelector() {}
 
       function nav(items, active, setter) {
         return `<ul class="nav nav-pills bg-black bg-opacity-25 rounded-pill p-1 mb-3">${items.map(([id, label]) => `<li class="nav-item flex-fill"><button class="nav-link w-100 ${active === id ? "active" : ""}" onclick="${setter}='${id}';render()">${label}</button></li>`).join("")}</ul>`;
@@ -871,7 +1552,8 @@
 
       function studentHome(student, score, rank, ranked) {
         const flags = getStudentClusterFlags(student.id, currentScores());
-        const flagged = SUBJECTS.filter((s) => flags[s]);
+        const subjects = currentSubjectDefinitions();
+        const flagged = subjects.map((subject) => subject.key).filter((s) => flags[s]);
         const testIndex = TESTS.findIndex((t) => t.id === state.testId);
         const prevRank = testIndex ? getRankings(allScores[TESTS[testIndex - 1].id]).find((s) => s.studentId === student.id).rank : null;
         const delta = prevRank ? prevRank - rank : null;
@@ -880,11 +1562,11 @@
           <div class="position-relative">${badge(rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD")}
           <h2 class="display fw-bold mt-2 mb-0" style="font-size:4rem">${formatRankValue(rank)}</h2>
           <div class="soft">of ${STUDENTS.length} students - ${currentTest().name}</div>
-          <div class="row g-2 mt-3">${kpi("Total", `${score.total}/${analysisTotalMarks(score)}`, delta === null ? "First test" : delta > 0 ? `Up ${delta} ranks` : delta < 0 ? `Down ${Math.abs(delta)} ranks` : "No rank change")}${kpi("Cluster", flagged.length ? flagged.join(", ") : "None", flagged.length === 3 ? "All-subjects session" : "Targeted revision")}</div></div>
+          <div class="row g-2 mt-3">${kpi("Total", `${rowTotalScore(score)}/${rowTotalMarks(score)}`, delta === null ? "First test" : delta > 0 ? `Up ${delta} ranks` : delta < 0 ? `Down ${Math.abs(delta)} ranks` : "No rank change")}${kpi("Cluster", flagged.length ? flagged.join(", ") : "None", flagged.length === subjects.length ? "All-subjects session" : "Targeted revision")}</div></div>
         `)}
         ${flagged.length ? coaching(student.id, flagged) : ""}
         <h5 class="display fw-bold">Subject Performance</h5>
-        <div class="row g-3 mb-4">${SUBJECTS.map((sub) => subjectCard(sub, score, flags[sub])).join("")}</div>
+        <div class="row g-3 mb-4">${subjects.map((sub, index) => subjectCard(sub, score, flags[sub.key], index)).join("")}</div>
         <h5 class="display fw-bold">Top Performers</h5>
         <div class="d-flex gap-2 overflow-auto pb-1 mb-4">${ranked.slice(0, 5).map((r) => {
           const stu = scoreStudent(r);
@@ -894,22 +1576,24 @@
       }
 
       function coaching(studentId, flagged) {
-        const all = flagged.length === 3;
+        const all = flagged.length === currentSubjectKeys().length;
         return card("p-3 mb-4", `
-          <div class="d-flex justify-content-between align-items-start"><div><h5 class="display fw-bold mb-1">${all ? "All-Subjects Coaching Cluster" : "Coaching Cluster"}</h5><div class="small soft">${all ? "4:00 - 5:30 PM - 90 minutes" : flagged.map((s) => `${s}: ${CLUSTER_SCHEDULE[s].time}`).join(" | ")}</div></div>${badge(all ? "90 MIN" : "30 MIN", "text-bg-primary")}</div>
-          <div class="row g-2 mt-2">${flagged.map((sub) => `<div class="col-md-4">${mini("p-2 d-flex align-items-center gap-2", `${subjectIcon(sub)}<div class="flex-grow-1"><b>${sub}</b><div class="small soft">${CLUSTER_SCHEDULE[sub].faculty}</div></div>${badge(state.attendance[sub]?.[studentId] || "pending", state.attendance[sub]?.[studentId] || "pending")}`)}</div>`).join("")}</div>
+          <div class="d-flex justify-content-between align-items-start"><div><h5 class="display fw-bold mb-1">${all ? "All-Subjects Coaching Cluster" : "Coaching Cluster"}</h5><div class="small soft">${all ? "4:00 - 5:30 PM - 90 minutes" : flagged.map((s) => `${s}: ${(CLUSTER_SCHEDULE[s] || {}).time || "To be scheduled"}`).join(" | ")}</div></div>${badge(all ? "90 MIN" : "30 MIN", "text-bg-primary")}</div>
+          <div class="row g-2 mt-2">${flagged.map((sub) => `<div class="col-md-4">${mini("p-2 d-flex align-items-center gap-2", `${subjectIcon(sub)}<div class="flex-grow-1"><b>${esc(sub)}</b><div class="small soft">${esc((CLUSTER_SCHEDULE[sub] || {}).faculty || "Faculty")}</div></div>${badge(state.attendance[sub]?.[studentId] || "pending", state.attendance[sub]?.[studentId] || "pending")}`)}</div>`).join("")}</div>
         `);
       }
 
-      function subjectCard(sub, score, flagged) {
-        const t = SUBJECT_THEMES[sub];
+      function subjectCard(subject, score, flagged, index = 0) {
+        const sub = typeof subject === "string" ? { key: subject, label: subject, name: subject, index } : subject;
+        const t = subjectTheme(sub.key, index);
         const meta = analysisSectionMeta(score, sub);
         const total = meta.total || 100;
-        const avg = Math.round(currentScores().reduce((n, s) => n + s[sub], 0) / STUDENTS.length);
-        const rank = getRankings(currentScores(), sub).find((s) => s.studentId === score.studentId).rank;
-        const delta = score[sub] - avg;
-        const boostBadge = sub === "Biology" && flagged ? ` ${badge("Boost", "text-bg-warning text-dark")}` : "";
-        return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(sub)}<div><b>${sub}</b>${boostBadge}<div class="small soft">Subject rank ${formatRankValue(rank)}</div></div></div><div class="display fs-2 fw-bold" style="color:${t.accent}">${meta.score}${meta.total ? `/${meta.total}` : ""}</div>${progress(meta.total ? Math.round((meta.score / meta.total) * 100) : meta.score, t.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${avg}${meta.total ? `/${meta.total}` : ""}</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>` )}</div>`;
+        const scoreBasis = currentScores();
+        const avg = scoreBasis.length ? Math.round(scoreBasis.reduce((n, s) => n + scoreForSubject(s, sub, index), 0) / scoreBasis.length) : 0;
+        const rank = getRankings(scoreBasis, sub.key).find((s) => s.studentId === score.studentId)?.rank || "NA";
+        const delta = meta.score - avg;
+        const boostBadge = sub.key === "Biology" && flagged ? ` ${badge("Boost", "text-bg-warning text-dark")}` : "";
+        return `<div class="col-md-4">${card("p-3 h-100 subject-card", `<div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(sub.key)}<div><b>${esc(sub.label || sub.key)}</b>${boostBadge}<div class="small soft">Subject rank ${formatRankValue(rank)}</div></div></div><div class="display fs-2 fw-bold" style="color:${t.accent}">${meta.score}${meta.total ? `/${meta.total}` : ""}</div>${progress(meta.total ? Math.round((meta.score / meta.total) * 100) : meta.score, t.accent)}<div class="d-flex justify-content-between align-items-center mt-2"><span class="small soft">Class avg ${avg}${meta.total ? `/${meta.total}` : ""}</span>${badge(delta >= 0 ? `+${delta} vs avg` : `${delta} vs avg`, delta >= 0 ? "text-bg-success" : "text-bg-danger")}</div>` )}</div>`;
       }
 
       function rankMedal(rank) {
@@ -936,6 +1620,12 @@
       }
 
       function getBatchRank(score) {
+        if (state.user?.type === "admin" && state.batchId) {
+          const rankedForSelectedBatch = getRankings(currentScores()).map(scoreStudent);
+          const index = rankedForSelectedBatch.findIndex((item) => item.studentId === score.studentId);
+          return index >= 0 ? index + 1 : "NA";
+        }
+
         if (String(score?.batchRank || "").toUpperCase() === "NA") return "NA";
         const explicitRank = Number.parseInt(score?.batchRank, 10);
         if (Number.isInteger(explicitRank)) return explicitRank;
@@ -953,15 +1643,18 @@
 
       function leaderboard(ranked, highlightId = "", collapsible = false) {
         const rows = leaderboardRows(ranked, highlightId, collapsible && !state.studentLeaderboardOpen);
+        const subjectDefs = currentSubjectDefinitions();
         const footer = collapsible ? `<div class="d-flex justify-content-between align-items-center mt-3">
           <div class="small soft">${state.studentLeaderboardOpen ? `Showing all ${ranked.length} students` : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`}</div>
           <button class="btn btn-outline-light btn-sm rounded-pill" onclick="toggleStudentLeaderboard()">${state.studentLeaderboardOpen ? "Show Less" : "View All"}</button>
         </div>` : "";
-        return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th><th>PHY</th><th>CHM</th><th>BIO</th><th>TOTAL SCORE</th><th>BATCH RANKING</th><th>INSTITUTE RANKING</th></tr></thead><tbody>${rows.map((r) => {
+        return card("p-3 mb-4", `<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="display fw-bold mb-0">Leaderboard</h5>${collapsible ? badge(`${ranked.length} students`, "text-bg-info") : ""}</div><div class="table-responsive"><table class="table table-sm table-dark table-striped table-hover align-middle mb-0"><thead><tr><th>#</th><th>Student</th>${subjectDefs.map((subject, index) => `<th title="${esc(subject.name || subject.sectionName || subject.label || subject.key)}">${esc(subject.shortLabel || sectionDisplayLabel(subject, index))}</th>`).join("")}<th>TOTAL SCORE</th><th>BATCH RANKING</th><th>INSTITUTE RANKING</th></tr></thead><tbody>${rows.map((r) => {
           const stu = scoreStudent(r);
           const mine = stu.id === highlightId;
           const batchRank = getBatchRank(r);
-          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>${formatRankValue(r.rank)}</span>${Number.isInteger(Number.parseInt(r.rank, 10)) ? rankMedal(Number.parseInt(r.rank, 10)) : ""}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(displayStudentId(stu))}${stu.batch ? ` - ${esc(stu.batch)}` : ""}</div></div></div></td><td>${r.Physics}</td><td>${r.Chemistry}</td><td>${r.Biology}</td><td><b>${r.total}${analysisTotalMarks(r) ? `/${analysisTotalMarks(r)}` : ""}</b></td><td>${batchRank === "NA" ? "NA" : `#${batchRank}`}</td><td>${formatRankValue(r.rank)}</td></tr>`;
+          const subjectCells = subjectDefs.map((subject, index) => `<td>${scoreForSubject(r, subject, index)}</td>`).join("");
+          const totalMarks = rowTotalMarks(r);
+          return `<tr class="${mine ? "table-active student-highlight" : ""}"><td class="mono leaderboard-rank"><span>${formatRankValue(r.rank)}</span>${Number.isInteger(Number.parseInt(r.rank, 10)) ? rankMedal(Number.parseInt(r.rank, 10)) : ""}</td><td class="leaderboard-student"><div class="d-flex align-items-center gap-2">${avatar(stu.name, 28)}<div class="overflow-hidden"><span class="fw-semibold">${esc(stu.name)}</span>${mine ? ` ${badge("You", "text-bg-info")}` : ""}<div class="small soft mono">${esc(displayStudentId(stu))}${stu.batch ? ` - ${esc(stu.batch)}` : ""}</div></div></div></td>${subjectCells}<td><b>${rowTotalScore(r)}${totalMarks ? `/${totalMarks}` : ""}</b></td><td>${batchRank === "NA" ? "NA" : `#${batchRank}`}</td><td>${formatRankValue(r.rank)}</td></tr>`;
         }).join("")}</tbody></table></div>${footer}`);
       }
 
@@ -969,9 +1662,10 @@
         const ranks = TESTS.map((t) => getRankings(allScores[t.id]).find((s) => s.studentId === student.id).rank);
         return `${card("p-4 mb-4", `<h5 class="display fw-bold">Rank Journey</h5><div class="row g-2">${TESTS.map((t, i) => kpi(t.shortDate, `#${ranks[i]}`, i ? `${ranks[i - 1] - ranks[i] >= 0 ? "Up" : "Down"} ${Math.abs(ranks[i - 1] - ranks[i])}` : "Baseline")).join("")}</div>`)}
         <h5 class="display fw-bold">Topic Analytics</h5>
-        <div class="vstack gap-3 mb-4">${SUBJECTS.map((sub) => {
-          const t = SUBJECT_THEMES[sub];
-          return card("p-3", `<div class="d-flex align-items-center justify-content-between mb-2"><div class="d-flex align-items-center gap-2">${subjectIcon(sub)}<div><b style="color:${t.accent}">${sub}</b><div class="small soft">Topic-wise mastery</div></div></div><span class="mono">${score[sub]}/100</span></div>${generateTopicMastery(student.id, state.testId, sub).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span class="soft">${x.score}%</span></div>${progress(x.score, t.accent)}</div>`).join("")}`);
+        <div class="vstack gap-3 mb-4">${currentSubjectDefinitions().map((sub, index) => {
+          const t = subjectTheme(sub.key, index);
+          const meta = analysisSectionMeta(score, sub);
+          return card("p-3", `<div class="d-flex align-items-center justify-content-between mb-2"><div class="d-flex align-items-center gap-2">${subjectIcon(sub.key)}<div><b style="color:${t.accent}">${esc(sub.label || sub.key)}</b><div class="small soft">Topic-wise mastery</div></div></div><span class="mono">${meta.score}${meta.total ? `/${meta.total}` : ""}</span></div>${generateTopicMastery(student.id, state.testId, sub.key).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span class="soft">${x.score}%</span></div>${progress(x.score, t.accent)}</div>`).join("")}`);
         }).join("")}</div>`;
       }
 
@@ -998,7 +1692,9 @@
         const marked = counts.reduce((a, b) => a + b, 0);
         const finalized = !!state.attendance.finalized?.[subject];
         const allThree = getAllThreeSet(currentScores());
-        return `${card("p-4 mb-4", `${badge("Tonight's Session", "text-bg-primary")}<h2 class="display fw-bold mt-2">${subject} Revision</h2><div class="soft small mono">${CLUSTER_SCHEDULE[subject].time} - ${CLUSTER_SCHEDULE[subject].room} - ${cluster.length} students</div><div class="row g-2 mt-3">${kpi("Present", counts[0], "marked")}${kpi("Late", counts[1], "marked")}${kpi("Absent", counts[2], "marked")}</div><div class="mt-3">${progress(Math.round(marked / cluster.length * 100), SUBJECT_THEMES[subject].accent)}</div><div class="d-flex gap-2 flex-wrap mt-3"><button class="btn btn-outline-light" ${finalized ? "disabled" : ""} onclick="openQR('${subject}')">Scan QR</button>${finalized ? `${badge("Finalized", "text-bg-success")}<button class="btn btn-outline-light btn-sm" onclick="resetAttendance('${subject}')">Re-open</button>` : `<button class="btn btn-brand flex-grow-1" onclick="finalizeAttendance('${subject}')">Finalize and auto-mark rest absent</button>`}</div>`)}
+        const scheduleItem = CLUSTER_SCHEDULE[subject] || { time: "To be scheduled", room: "Room pending" };
+        const theme = subjectTheme(subject);
+        return `${card("p-4 mb-4", `${badge("Tonight's Session", "text-bg-primary")}<h2 class="display fw-bold mt-2">${subject} Revision</h2><div class="soft small mono">${scheduleItem.time} - ${scheduleItem.room} - ${cluster.length} students</div><div class="row g-2 mt-3">${kpi("Present", counts[0], "marked")}${kpi("Late", counts[1], "marked")}${kpi("Absent", counts[2], "marked")}</div><div class="mt-3">${progress(cluster.length ? Math.round(marked / cluster.length * 100) : 0, theme.accent)}</div><div class="d-flex gap-2 flex-wrap mt-3"><button class="btn btn-outline-light" ${finalized ? "disabled" : ""} onclick="openQR('${subject}')">Scan QR</button>${finalized ? `${badge("Finalized", "text-bg-success")}<button class="btn btn-outline-light btn-sm" onclick="resetAttendance('${subject}')">Re-open</button>` : `<button class="btn btn-brand flex-grow-1" onclick="finalizeAttendance('${subject}')">Finalize and auto-mark rest absent</button>`}</div>`)}
         <h5 class="display fw-bold">Mark Attendance</h5><div class="vstack gap-2 mb-4">${cluster.map((s, i) => attendanceRow(s, i, att[s.studentId] || "pending", allThree.has(s.studentId), finalized, subject)).join("")}</div>`;
       }
 
@@ -1008,8 +1704,9 @@
       }
 
       function getAllThreeSet(scores) {
-        const clusters = Object.fromEntries(SUBJECTS.map((sub) => [sub, getBottomCluster(scores, sub).map((s) => s.studentId)]));
-        return new Set(STUDENTS.filter((s) => SUBJECTS.every((sub) => clusters[sub].includes(s.id))).map((s) => s.id));
+        const subjects = currentSubjectKeys();
+        const clusters = Object.fromEntries(subjects.map((sub) => [sub, getBottomCluster(scores, sub).map((s) => s.studentId)]));
+        return new Set(STUDENTS.filter((s) => subjects.every((sub) => clusters[sub].includes(s.id))).map((s) => s.id));
       }
 
       async function setAttendanceStatus(subject, studentId, status) {
@@ -1092,7 +1789,8 @@
 
       function facultyTopics(subject) {
         const cluster = getBottomCluster(currentScores(), subject).map(scoreStudent);
-        return card("p-4 mb-4", `<h5 class="display fw-bold">${subject} Topic Focus</h5>${cluster.map((s) => mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2 mb-2">${avatar(s.name, 32)}<div><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))} - score ${s[subject]}</div></div></div>${generateTopicMastery(s.studentId, state.testId, subject).sort((a,b) => a.score - b.score).slice(0,4).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span>${x.score}%</span></div>${progress(x.score, SUBJECT_THEMES[subject].accent)}</div>`).join("")}`)).join("")}`);
+        const theme = subjectTheme(subject);
+        return card("p-4 mb-4", `<h5 class="display fw-bold">${subject} Topic Focus</h5>${cluster.map((s) => mini("p-3 mb-2", `<div class="d-flex align-items-center gap-2 mb-2">${avatar(s.name, 32)}<div><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))} - score ${s[subject] || 0}</div></div></div>${generateTopicMastery(s.studentId, state.testId, subject).sort((a,b) => a.score - b.score).slice(0,4).map((x) => `<div class="mt-2"><div class="d-flex justify-content-between small"><span>${esc(x.topic)}</span><span>${x.score}%</span></div>${progress(x.score, theme.accent)}</div>`).join("")}`)).join("")}`);
       }
 
       function facultyNotes(subject) {
@@ -1144,19 +1842,10 @@
       }
 
       function adminView() {
-        const tabs = [["overview","Overview"],["predict","At Risk"],["students","Students"],["clusters","Clusters"],["attend","Attendance"],["comms","Comms"]];
-        const current = currentTest();
-        const canExport = Boolean(current && current.id);
         return `<div class="app-shell pb-5"><div class="container-fluid px-3 px-lg-4">
-          <div class="d-flex justify-content-between align-items-start gap-2">${adminTestSelector()}
-            <div class="pt-1">
-              <button class="btn btn-brand btn-sm rounded-pill fw-bold" ${canExport ? "" : "disabled"} onclick="downloadAnalysisPdf()">
-                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download PDF
-              </button>
-            </div>
-          </div>
-          <div class="d-flex gap-2 overflow-auto pb-1 mb-4">${tabs.map(([id,label]) => `<button class="btn btn-sm ${state.adminTab === id ? "btn-light" : "btn-outline-light"} rounded-pill fw-bold flex-shrink-0" onclick="state.adminTab='${id}';render()">${label}</button>`).join("")}</div>
-          ${state.adminTab === "overview" ? adminOverview() : state.adminTab === "predict" ? adminPredict() : state.adminTab === "students" ? adminStudents() : state.adminTab === "clusters" ? adminClusters() : state.adminTab === "attend" ? adminAttendance() : parentComms()}
+          ${adminTestSelector()}
+          ${adminRecentTestChips()}
+          ${adminOverview()}
         </div></div>`;
       }
 
@@ -1166,28 +1855,179 @@
           window.alert("Please select a completed test first.");
           return;
         }
-        const url = `${ANALYSIS_DOWNLOAD_PDF_URL}?test_id=${encodeURIComponent(test.id)}`;
+        const params = new URLSearchParams({ test_id: currentBackendTestId() || test.id });
+        if (state.batchId) params.set("batch_id", state.batchId);
+        const url = `${ANALYSIS_DOWNLOAD_PDF_URL}?${params}`;
         window.open(url, "_blank");
       }
 
       function adminOverview() {
         const scores = currentScores();
+        const tests = testsForBatch();
+        if (!tests.length || !state.testId) {
+          return adminEmptyState();
+        }
+
+        const appeared = scores.filter((score) => score.attempted !== false);
+        const analyticsScores = appeared.length ? appeared : scores;
         const ranked = getRankings(scores);
-        const participantCount = scores.length;
-        const avg = participantCount ? Math.round(scores.reduce((n, s) => n + s.total, 0) / participantCount) : 0;
-        const topStudent = ranked[0] ? scoreStudent(ranked[0]).name : "No attempts yet";
-        return `<div class="row g-3 mb-4">${kpi("Class Average", `${avg}/${analysisTotalMarks()}`, currentTest().name)}${kpi("Top Score", `${ranked[0]?.total || 0}${analysisTotalMarks(ranked[0]) ? `/${analysisTotalMarks(ranked[0])}` : ""}`, topStudent)}${kpi("All-Subject Cluster", getAllThreeSet(scores).size, "students")}${kpi("At-Risk Alerts", getPredictiveAlerts().length, "predictive warnings")}</div>
-        ${card("p-4 mb-4", `<h5 class="display fw-bold">Subject Averages</h5><div class="row g-3">${SUBJECTS.map((sub) => {
-          const avgSub = participantCount ? Math.round(scores.reduce((n, s) => n + s[sub], 0) / participantCount) : 0;
-          const sectionTotal = analysisSectionMeta(scores.find((item) => item?.sectionScores?.length), sub).total || 0;
-          return `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="display fs-3 fw-bold mt-2">${avgSub}${sectionTotal ? `/${sectionTotal}` : ""}</div>${progress(sectionTotal ? Math.round((avgSub / sectionTotal) * 100) : avgSub, SUBJECT_THEMES[sub].accent)}`)}</div>`;
-        }).join("")}</div>`)}${leaderboard(ranked.slice(0, 10))}`;
+        const attemptedRanked = ranked.filter((score) => score.attempted !== false);
+        const participantCount = appeared.length;
+        const avg = analyticsScores.length ? Math.round(analyticsScores.reduce((n, s) => n + rowTotalScore(s), 0) / analyticsScores.length) : 0;
+        const top = attemptedRanked[0] || null;
+        const topStudent = top ? scoreStudent(top).name : "No attempts yet";
+        const attendance = attendanceSummary(scores);
+        const batch = currentBatch();
+        const test = currentTest();
+
+        return `<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
+          <div>
+            <h4 class="display fw-bold mb-1">Batch-wise Test Analysis Dashboard</h4>
+          </div>
+          ${badge(`${participantCount}/${scores.length} appeared`, "text-bg-info")}
+        </div>
+        <div class="row g-3 mb-4">
+          ${kpi("Total Students Appeared", `${participantCount}`, `${scores.length} assigned`)}
+          ${kpi("Highest Score", `${top ? rowTotalScore(top) : 0}${rowTotalMarks(top) ? `/${rowTotalMarks(top)}` : ""}`, topStudent)}
+          ${kpi("Average Score", `${avg}${analysisTotalMarks() ? `/${analysisTotalMarks()}` : ""}`, "selected batch")}
+          ${kpi("Attendance", `${attendance.rate}%`, `${attendance.present}/${attendance.marked || 0} marked present`)}
+        </div>
+        ${adminSubjectAverages(scores)}
+        ${leaderboard(ranked.slice(0, 25))}`;
+      }
+
+      function adminEmptyState() {
+        return card("analysis-empty p-4 mb-4", `<div><div class="display fw-bold fs-4 mb-2">No tests found for ${esc(currentBatch().label)}</div><div class="soft">Once a test is assigned or attempted for this batch, the overview dashboard will appear here.</div></div>`);
+      }
+
+      function attendanceSummary(scores) {
+        let present = 0, marked = 0;
+        currentSubjectKeys().forEach((sub) => {
+          getBottomCluster(scores, sub).forEach((score) => {
+            const status = state.attendance[sub]?.[score.studentId];
+            if (!status) return;
+            marked += 1;
+            if (["present", "late"].includes(status)) present += 1;
+          });
+        });
+        return { present, marked, rate: marked ? Math.round((present / marked) * 100) : 0 };
+      }
+
+      function adminSubjectAverages(scores) {
+        const appeared = scores.filter((score) => score.attempted !== false);
+        const basis = appeared.length ? appeared : scores;
+        const subjects = currentSubjectDefinitions();
+        return `<div class="analysis-section-title"><h5 class="display fw-bold">Subject-wise Performance</h5>${badge(`${basis.length} students`, "text-bg-secondary")}</div>
+        <div class="row g-3 mb-4">${subjects.map((sub, index) => {
+          const t = subjectTheme(sub.key, index);
+          const avgSub = basis.length ? Math.round(basis.reduce((n, s) => n + scoreForSubject(s, sub, index), 0) / basis.length) : 0;
+          const sectionTotal = totalForSubject(basis.find((item) => item?.sectionScores?.length), sub, index) || sub.total || 0;
+          const subjectRows = appeared
+            .map((score) => ({ ...score, subjectScore: scoreForSubject(score, sub, index) }))
+            .sort((a, b) => b.subjectScore - a.subjectScore || rowTotalScore(b) - rowTotalScore(a));
+          const top = subjectRows[0] || null;
+          const topStudent = top ? scoreStudent(top) : null;
+          const topperText = topStudent
+            ? `Highest: ${topStudent.name} - ${top.subjectScore}${sectionTotal ? `/${sectionTotal}` : ""}`
+            : "Highest: No attempts yet";
+          return `<div class="col-md-4">${mini("p-3 h-100", `${subjectIcon(sub.key)}<b class="ms-2">${esc(sub.label || sub.key)}</b><div class="small soft mt-3">Average marks</div><div class="display fs-3 fw-bold">${avgSub}${sectionTotal ? `/${sectionTotal}` : ""}</div>${progress(sectionTotal ? Math.round((avgSub / sectionTotal) * 100) : avgSub, t.accent)}<div class="small soft mt-2">${esc(topperText)}</div>`)}</div>`;
+        }).join("")}</div>`;
+      }
+
+      function adminDistributionChart(scores) {
+        const totalMarks = analysisTotalMarks() || 100;
+        const buckets = [
+          { label: "0-20%", min: 0, max: 20 },
+          { label: "21-40%", min: 21, max: 40 },
+          { label: "41-60%", min: 41, max: 60 },
+          { label: "61-80%", min: 61, max: 80 },
+          { label: "81-100%", min: 81, max: 100 },
+        ].map((bucket) => ({
+          ...bucket,
+          count: scores.filter((score) => {
+            const pct = totalMarks ? Math.round(rowTotalScore(score) / totalMarks * 100) : 0;
+            return pct >= bucket.min && pct <= bucket.max;
+          }).length,
+        }));
+        const maxCount = Math.max(1, ...buckets.map((bucket) => bucket.count));
+        return card("p-3 h-100", `<div class="analysis-section-title"><h5 class="display fw-bold">Performance Distribution</h5>${badge(`${scores.length} appeared`, "text-bg-info")}</div>
+          ${buckets.map((bucket) => `<div class="analysis-bar"><div class="analysis-bar-label mono">${bucket.label}</div><div class="analysis-bar-track"><div class="analysis-bar-fill" style="width:${Math.round(bucket.count / maxCount * 100)}%"></div></div><b class="mono">${bucket.count}</b></div>`).join("")}`);
+      }
+
+      function adminTopperPanel(ranked) {
+        const rows = ranked.slice(0, 5).map((score, index) => {
+          const stu = scoreStudent(score);
+          return `<div class="d-flex align-items-center gap-2 py-2 border-bottom border-secondary border-opacity-25">
+            <span class="mono soft" style="width:28px">#${index + 1}</span>${avatar(stu.name, 34)}
+            <div class="flex-grow-1 overflow-hidden"><b class="text-truncate d-block">${esc(stu.name)}</b><div class="small soft mono">${esc(displayStudentId(stu))}</div></div>
+            <b>${rowTotalScore(score)}${rowTotalMarks(score) ? `/${rowTotalMarks(score)}` : ""}</b>
+          </div>`;
+        }).join("");
+        return card("p-3 h-100", `<div class="analysis-section-title"><h5 class="display fw-bold">Toppers List</h5>${badge("Top 5", "text-bg-success")}</div>${rows || `<div class="soft small">No topper data yet.</div>`}`);
+      }
+
+      function adminRiskPanel(alerts) {
+        const rows = alerts.slice(0, 6).map((alert) => `<div class="py-2 border-bottom border-secondary border-opacity-25">
+          <div class="d-flex align-items-center gap-2">${avatar(alert.name, 32)}<div class="flex-grow-1"><b>${esc(alert.name)}</b><div class="small soft mono">${esc(alert.studentRef || alert.id)}</div></div>${badge(`S${alert.severity}`, alert.severity >= 4 ? "text-bg-danger" : "text-bg-warning text-dark")}</div>
+          <div class="small soft mt-2">${alert.reasons.map(esc).join(" | ")}</div>
+        </div>`).join("");
+        return card("p-3 h-100", `<div class="analysis-section-title"><h5 class="display fw-bold">Student Risk Alerts</h5>${badge(alerts.length, alerts.length ? "text-bg-danger" : "text-bg-success")}</div>${rows || `<div class="soft small">No active risk alerts for this batch.</div>`}`);
+      }
+
+      function adminWeakConcepts(scores) {
+        const rows = currentSubjectKeys().map((sub) => {
+          const topics = new Map();
+          getBottomCluster(scores, sub, Math.min(6, scores.length)).forEach((score) => {
+            generateTopicMastery(score.studentId, state.testId, sub)
+              .sort((a, b) => a.score - b.score)
+              .slice(0, 2)
+              .forEach((item) => {
+                const current = topics.get(item.topic) || { count: 0, total: 0 };
+                topics.set(item.topic, { count: current.count + 1, total: current.total + item.score });
+              });
+          });
+          const weak = [...topics.entries()]
+            .map(([topic, value]) => ({ topic, count: value.count, avg: Math.round(value.total / value.count) }))
+            .sort((a, b) => b.count - a.count || a.avg - b.avg)
+            .slice(0, 3);
+          return `<div class="mb-3"><div class="d-flex align-items-center gap-2 mb-2">${subjectIcon(sub)}<b>${esc(sub)}</b></div>${weak.map((item) => `<div class="d-flex justify-content-between small py-1"><span>${esc(item.topic)}</span><span class="soft">${item.count} flags</span></div>`).join("") || `<div class="small soft">No weak concepts detected.</div>`}</div>`;
+        }).join("");
+        return card("p-3 h-100", `<div class="analysis-section-title"><h5 class="display fw-bold">Weak Concepts</h5>${badge("Focus", "text-bg-warning text-dark")}</div>${rows}`);
+      }
+
+      function adminAttendanceSnapshot(scores) {
+        const rows = currentSubjectKeys().map((sub) => {
+          const cluster = getBottomCluster(scores, sub);
+          const statuses = cluster.map((score) => state.attendance[sub]?.[score.studentId]).filter(Boolean);
+          const present = statuses.filter((status) => ["present", "late"].includes(status)).length;
+          const rate = statuses.length ? Math.round((present / statuses.length) * 100) : 0;
+          return `<div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-25"><span>${subjectIcon(sub)} <b class="ms-2">${esc(sub)}</b></span>${badge(`${rate}%`, rate >= 80 ? "text-bg-success" : rate >= 50 ? "text-bg-warning text-dark" : "text-bg-secondary")}</div>`;
+        }).join("");
+        return card("p-3 h-100", `<div class="analysis-section-title"><h5 class="display fw-bold">Attendance %</h5></div>${rows}`);
+      }
+
+      function adminClusterSnapshot(scores) {
+        const allThree = getAllThreeSet(scores);
+        const rows = currentSubjectKeys().map((sub) => `<div class="d-flex justify-content-between py-2 border-bottom border-secondary border-opacity-25"><span>${esc(sub)} cluster</span><b>${getBottomCluster(scores, sub).length}</b></div>`).join("");
+        return card("p-3 h-100", `<div class="analysis-section-title"><h5 class="display fw-bold">Clusters</h5>${badge(`${allThree.size} all-subject`, "text-bg-info")}</div>${rows}`);
+      }
+
+      function adminPerformanceTrend() {
+        const tests = testsForBatch().slice(-5);
+        const rows = tests.map((test) => {
+          const scores = filterScoresByBatch(rawScoresForTest(test.id), state.batchId).filter((score) => score.attempted !== false);
+          const total = Number(test.totalMarks) || analysisTotalMarks() || 100;
+          const avg = scores.length ? Math.round(scores.reduce((sum, score) => sum + rowTotalScore(score), 0) / scores.length) : 0;
+          const pct = total ? Math.round(avg / total * 100) : avg;
+          return `<div class="analysis-bar"><div class="analysis-bar-label text-truncate">${esc(test.shortDate || test.date || test.name)}</div><div class="analysis-bar-track"><div class="analysis-bar-fill" style="width:${Math.max(0, Math.min(100, pct))}%"></div></div><b class="mono">${avg}</b></div>`;
+        }).join("");
+        return card("p-3 h-100", `<div class="analysis-section-title"><h5 class="display fw-bold">Performance Trends</h5></div>${rows || `<div class="soft small">Trend appears after tests are available.</div>`}`);
       }
 
       function adminPredict() {
         const alerts = getPredictiveAlerts();
         return card("p-4 mb-4", `<h5 class="display fw-bold">Predictive Alerts</h5><div class="vstack gap-2">${alerts.map((a) => {
-          const notes = SUBJECTS.flatMap((sub) => state.facultyNotes[noteStateKey(a.id, sub)] || []);
+          const notes = currentSubjectKeys().flatMap((sub) => state.facultyNotes[noteStateKey(a.id, sub)] || []);
           return mini("p-3", `<div class="d-flex align-items-start gap-3">${avatar(a.name, 38)}<div class="flex-grow-1"><div class="d-flex justify-content-between"><b>${esc(a.name)}</b>${badge(`S${a.severity}`, a.severity >= 4 ? "text-bg-danger" : "text-bg-warning text-dark")}</div><div class="small soft mono">${esc(a.studentRef || a.id)} - ranks ${a.ranks.join(" -> ")}</div><ul class="small soft mb-1 mt-2">${a.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>${notes.length ? `<div class="small text-info">Faculty notes: ${notes.map((n) => esc(n.text)).join("; ")}</div>` : ""}</div></div>`);
         }).join("") || `<div class="soft small">No active risk alerts.</div>`}</div>`);
       }
@@ -1195,23 +2035,30 @@
       function adminStudents() {
         const q = state.adminSearch.toLowerCase();
         const ranked = getRankings(currentScores(), state.adminSort).map(scoreStudent).filter((s) => !q || s.name.toLowerCase().includes(q) || String(s.id || s.studentRef || "").toLowerCase().includes(q));
-        return card("p-3 mb-4", `<div class="row g-2 mb-3"><div class="col-md"><input class="form-control" value="${esc(state.adminSearch)}" placeholder="Search name or ID" oninput="state.adminSearch=this.value;render()"></div><div class="col-md-auto"><select class="form-select" onchange="state.adminSort=this.value;render()">${["total","Physics","Chemistry","Biology"].map((k) => `<option ${state.adminSort === k ? "selected" : ""} value="${k}">${k}</option>`).join("")}</select></div></div>${leaderboard(ranked)}`);
+        const sortOptions = ["total", ...currentSubjectKeys()];
+        return card("p-3 mb-4", `<div class="row g-2 mb-3"><div class="col-md"><input class="form-control" value="${esc(state.adminSearch)}" placeholder="Search name or ID" oninput="state.adminSearch=this.value;render()"></div><div class="col-md-auto"><select class="form-select" onchange="state.adminSort=this.value;render()">${sortOptions.map((k) => `<option ${state.adminSort === k ? "selected" : ""} value="${k}">${esc(k)}</option>`).join("")}</select></div></div>${leaderboard(ranked)}`);
       }
 
       function adminClusters() {
         const sc = currentScores(), allThree = getAllThreeSet(sc), notice = buildNotice(sc);
-        const schedule = card("p-4 mb-4", `<h5 class="display fw-bold">Cluster Schedule</h5><div class="row g-2">${SUBJECTS.map((sub) => `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft mt-2">${CLUSTER_SCHEDULE[sub].faculty}<br>${CLUSTER_SCHEDULE[sub].time}</div>`)}</div>`).join("")}</div>`);
+        const subjects = currentSubjectDefinitions();
+        const schedule = card("p-4 mb-4", `<h5 class="display fw-bold">Cluster Schedule</h5><div class="row g-2">${subjects.map((sub) => {
+          const scheduleItem = CLUSTER_SCHEDULE[sub.key] || { faculty: "Faculty", time: "To be scheduled" };
+          return `<div class="col-md-4">${mini("p-3", `${subjectIcon(sub.key)}<b class="ms-2">${esc(sub.label || sub.key)}</b><div class="small soft mt-2">${esc(scheduleItem.faculty)}<br>${esc(scheduleItem.time)}</div>`)}</div>`;
+        }).join("")}</div>`);
         const allSubjectBlock = allThree.size ? card("p-4 mb-4", `<h5 class="display fw-bold">All-Subjects Cluster</h5>${[...allThree].map((id) => {
           const s = scoreStudent(sc.find((x) => x.studentId === id));
-          return mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `${avatar(s.name, 30)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><span class="mono small">P${s.Physics} C${s.Chemistry} B${s.Biology}</span>`);
+          const scoreText = subjects.map((sub, index) => `${sub.shortLabel || sub.key}: ${scoreForSubject(s, sub, index)}`).join(" ");
+          return mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `${avatar(s.name, 30)}<div class="flex-grow-1"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><span class="mono small">${esc(scoreText)}</span>`);
         }).join("")}`) : "";
-        const subjectBlocks = SUBJECTS.map((sub) => {
-          const rows = getBottomCluster(sc, sub)
+        const subjectBlocks = subjects.map((sub, index) => {
+          const t = subjectTheme(sub.key, index);
+          const rows = getBottomCluster(sc, sub.key)
             .filter((s) => !allThree.has(s.studentId))
             .map(scoreStudent)
-            .map((s, i) => mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft">${i + 1}</span>${avatar(s.name, 28)}<div class="flex-grow-1 text-truncate"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><b style="color:${SUBJECT_THEMES[sub].accent}">${s[sub]}</b>`))
-            .join("") || `<div class="small soft">All weak ${sub} students are in the all-subjects group.</div>`;
-          return `<div class="col-lg-4">${card("p-3 h-100", `<h6 class="display fw-bold">${sub} Cluster</h6>${rows}`)}</div>`;
+            .map((s, i) => mini("p-2 mb-2 d-flex flex-row align-items-center gap-2", `<span class="mono soft">${i + 1}</span>${avatar(s.name, 28)}<div class="flex-grow-1 text-truncate"><b>${esc(s.name)}</b><div class="small soft mono">${esc(displayStudentId(s))}</div></div><b style="color:${t.accent}">${scoreForSubject(s, sub, index)}</b>`))
+            .join("") || `<div class="small soft">All weak ${esc(sub.label || sub.key)} students are in the all-subjects group.</div>`;
+          return `<div class="col-lg-4">${card("p-3 h-100", `<h6 class="display fw-bold">${esc(sub.label || sub.key)} Cluster</h6>${rows}`)}</div>`;
         }).join("");
         const noticeBlock = card("p-4 my-4", `<div class="d-flex justify-content-between"><h5 class="display fw-bold">Faculty Notice</h5><button class="btn btn-outline-light btn-sm" onclick="navigator.clipboard?.writeText(document.getElementById('notice').innerText)">Copy</button></div><pre id="notice" class="message-box bg-black bg-opacity-25 border border-secondary border-opacity-25 rounded-3 p-3 mono">${esc(notice)}</pre>`);
         return `${schedule}${allSubjectBlock}<div class="row g-3">${subjectBlocks}</div>${noticeBlock}`;
@@ -1219,21 +2066,25 @@
 
       function buildNotice(sc) {
         const lines = [`The Rankers Academy - ${currentTest().name}`, `Cluster sessions for ${currentTest().date}`, ""];
-        SUBJECTS.forEach((sub) => {
-          lines.push(`${sub} (${CLUSTER_SCHEDULE[sub].time}) - ${CLUSTER_SCHEDULE[sub].faculty}`);
-          getBottomCluster(sc, sub).map(scoreStudent).forEach((s, i) => lines.push(`${i + 1}. ${s.name} (${displayStudentId(s)}) - ${s[sub]}/100`));
+        currentSubjectDefinitions().forEach((sub, index) => {
+          const scheduleItem = CLUSTER_SCHEDULE[sub.key] || { faculty: "Faculty", time: "To be scheduled" };
+          const total = sub.total || totalForSubject(sc.find((item) => item?.sectionScores?.length), sub, index) || 100;
+          lines.push(`${sub.label || sub.key} (${scheduleItem.time}) - ${scheduleItem.faculty}`);
+          getBottomCluster(sc, sub.key).map(scoreStudent).forEach((s, i) => lines.push(`${i + 1}. ${s.name} (${displayStudentId(s)}) - ${scoreForSubject(s, sub, index)}/${total}`));
           lines.push("");
         });
         return lines.join("\n");
       }
 
       function adminAttendance() {
-        return card("p-4 mb-4", `<h5 class="display fw-bold">Attendance Records</h5>${SUBJECTS.map((sub) => {
-          const cluster = getBottomCluster(currentScores(), sub), att = state.attendance[sub] || {};
+        return card("p-4 mb-4", `<h5 class="display fw-bold">Attendance Records</h5>${currentSubjectDefinitions().map((sub, index) => {
+          const t = subjectTheme(sub.key, index);
+          const scheduleItem = CLUSTER_SCHEDULE[sub.key] || { time: "To be scheduled" };
+          const cluster = getBottomCluster(currentScores(), sub.key), att = state.attendance[sub.key] || {};
           const present = cluster.filter((s) => ["present", "late"].includes(att[s.studentId])).length;
           const rate = cluster.length ? Math.round(present / cluster.length * 100) : 0;
           const absent = cluster.map(scoreStudent).filter((s) => att[s.studentId] === "absent");
-          return mini("p-3 mb-3", `<div class="d-flex justify-content-between align-items-center"><div>${subjectIcon(sub)}<b class="ms-2">${sub}</b><div class="small soft">${CLUSTER_SCHEDULE[sub].time}</div></div>${badge(`${rate}%`, rate >= 80 ? "text-bg-success" : rate >= 50 ? "text-bg-warning text-dark" : "text-bg-danger")}</div><div class="mt-2">${progress(rate, SUBJECT_THEMES[sub].accent)}</div>${absent.length ? `<div class="small text-danger mt-2">Absentees: ${absent.map((s) => `${esc(s.name)} (${esc(displayStudentId(s))})`).join(", ")}</div>` : ""}`);
+          return mini("p-3 mb-3", `<div class="d-flex justify-content-between align-items-center"><div>${subjectIcon(sub.key)}<b class="ms-2">${esc(sub.label || sub.key)}</b><div class="small soft">${esc(scheduleItem.time)}</div></div>${badge(`${rate}%`, rate >= 80 ? "text-bg-success" : rate >= 50 ? "text-bg-warning text-dark" : "text-bg-danger")}</div><div class="mt-2">${progress(rate, t.accent)}</div>${absent.length ? `<div class="small text-danger mt-2">Absentees: ${absent.map((s) => `${esc(s.name)} (${esc(displayStudentId(s))})`).join(", ")}</div>` : ""}`);
         }).join("")}`);
       }
 
@@ -1246,14 +2097,19 @@
 
       function postTestMessages() {
         const ranked = getRankings(currentScores());
+        const subjects = currentSubjectDefinitions();
         return currentScores().map(scoreStudent).map((stu) => {
           const me = currentScores().find((s) => s.studentId === stu.id);
           const rankEntry = ranked.find((s) => s.studentId === stu.id);
           if (!me || !rankEntry) return null;
           const rank = rankEntry.rank;
-          const flagged = SUBJECTS.filter((s) => getStudentClusterFlags(stu.id, currentScores())[s]);
-          const tone = rank <= 10 ? "Celebrate" : rank <= 25 ? "Positive" : flagged.length === 3 ? "Concerned" : "Support";
-          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${me.total}/${analysisTotalMarks(me)} - Rank: ${formatRankValue(rank)} of ${currentScores().length}\nPhysics: ${analysisSectionMeta(me, "Physics").score}${analysisSectionMeta(me, "Physics").total ? `/${analysisSectionMeta(me, "Physics").total}` : ""} - Chemistry: ${analysisSectionMeta(me, "Chemistry").score}${analysisSectionMeta(me, "Chemistry").total ? `/${analysisSectionMeta(me, "Chemistry").total}` : ""} - Biology: ${analysisSectionMeta(me, "Biology").score}${analysisSectionMeta(me, "Biology").total ? `/${analysisSectionMeta(me, "Biology").total}` : ""}\n\n`;
+          const flagged = subjects.map((subject) => subject.key).filter((s) => getStudentClusterFlags(stu.id, currentScores())[s]);
+          const tone = rank <= 10 ? "Celebrate" : rank <= 25 ? "Positive" : flagged.length === subjects.length ? "Concerned" : "Support";
+          const subjectLine = subjects.map((subject, index) => {
+            const meta = analysisSectionMeta(me, subject);
+            return `${subject.label || subject.key}: ${meta.score}${meta.total ? `/${meta.total}` : ""}`;
+          }).join(" - ");
+          let body = `Dear Parent,\n\n${stu.name} appeared in ${currentTest().name} (${currentTest().date}) at The Rankers Academy.\n\nTotal: ${rowTotalScore(me)}/${rowTotalMarks(me)} - Rank: ${formatRankValue(rank)} of ${currentScores().length}\n${subjectLine}\n\n`;
           body += tone === "Celebrate" ? `Outstanding performance. ${stu.name.split(" ")[0]} cracked the top 10. Congratulations!` : tone === "Positive" ? `Solid showing this round. Encourage ${stu.name.split(" ")[0]} to keep the momentum.` : flagged.length ? `${stu.name.split(" ")[0]} will join faculty-led revision for ${flagged.join(", ")} after class. Please ensure attendance.` : "Steady performance. Keep up the consistency.";
           body += "\n\n- The Rankers Academy";
           return { studentId: stu.id, student: stu, tone, body, type: "post-test" };
@@ -1262,10 +2118,11 @@
 
       function absenceMessages() {
         const messages = [];
-        SUBJECTS.forEach((sub) => Object.entries(state.attendance[sub] || {}).forEach(([sid, status]) => {
+        currentSubjectKeys().forEach((sub) => Object.entries(state.attendance[sub] || {}).forEach(([sid, status]) => {
           if (status !== "absent") return;
           const stu = getStudentById(sid) || { id: sid, name: sid, parentPhone: "" };
-          messages.push({ studentId: sid, student: stu, subject: sub, type: "absence", tone: "Absence", body: `Dear Parent,\n\n${stu.name} was marked ABSENT for the ${sub} revision session today (${CLUSTER_SCHEDULE[sub].time}).\n\nThis was a faculty-led targeted coaching session for students who scored below the threshold. Missing it directly impacts ${stu.name.split(" ")[0]}'s performance.\n\nPlease discuss this at home.\n\n- ${CLUSTER_SCHEDULE[sub].faculty}\n  The Rankers Academy` });
+          const scheduleItem = CLUSTER_SCHEDULE[sub] || { faculty: "Faculty", time: "To be scheduled" };
+          messages.push({ studentId: sid, student: stu, subject: sub, type: "absence", tone: "Absence", body: `Dear Parent,\n\n${stu.name} was marked ABSENT for the ${sub} revision session today (${scheduleItem.time}).\n\nThis was a faculty-led targeted coaching session for students who scored below the threshold. Missing it directly impacts ${stu.name.split(" ")[0]}'s performance.\n\nPlease discuss this at home.\n\n- ${scheduleItem.faculty}\n  The Rankers Academy` });
         }));
         return messages;
       }

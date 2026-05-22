@@ -42,9 +42,15 @@
   const config = window.SCHOLARSHIP_TEST_CONFIG || {};
   const questions = parseJsonScript("scholarship-questions-data", []);
   const savedProgress = parseJsonScript("scholarship-progress-data", {});
+  const TIME_WARNING_THRESHOLDS = [
+    { seconds: 10 * 60, label: "10 minutes", tone: "notice" },
+    { seconds: 5 * 60, label: "5 minutes", tone: "warning" },
+    { seconds: 60, label: "1 minute", tone: "urgent" },
+  ];
 
   const state = {
     currentQuestionIndex: 0,
+    activeSubjectKey: "",
     answers: {},
     timerInterval: null,
     syncTimer: null,
@@ -54,10 +60,12 @@
     autoSubmitReason: "",
     tabSwitchCount: 0,
     violationCount: Number(config.initialViolationCount || 0),
+    fullscreenRetryArmed: false,
     initialized: false,
     activated: false,
     activationInFlight: false,
     timeRemaining: Number(config.timeRemainingSeconds || 0),
+    timeWarningShown: new Set(),
   };
 
   const refs = {
@@ -153,6 +161,241 @@
 
   function getTotalQuestions() {
     return questions.length || Number(config.totalQuestions || 0);
+  }
+
+  const SUBJECT_LABELS = {
+    physics: "Physics",
+    chemistry: "Chemistry",
+    math: "Math",
+    bio: "Bio",
+  };
+  const SUBJECT_ORDER = ["physics", "chemistry", "math", "bio"];
+
+  function normalizeSubjectKey(value) {
+    const compact = String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+    if (!compact) {
+      return "";
+    }
+    if (compact.includes("physics") || compact === "phy") {
+      return "physics";
+    }
+    if (compact.includes("chemistry") || compact === "chem") {
+      return "chemistry";
+    }
+    if (
+      compact.includes("mathematics") ||
+      compact.includes("maths") ||
+      compact === "math" ||
+      compact === "maths"
+    ) {
+      return "math";
+    }
+    if (
+      compact.includes("biology") ||
+      compact === "bio" ||
+      compact.includes("botany") ||
+      compact.includes("zoology")
+    ) {
+      return "bio";
+    }
+    return "";
+  }
+
+  function normalizeSubjectTabs(tabs) {
+    if (!Array.isArray(tabs)) {
+      return [];
+    }
+
+    const seen = new Set();
+    return tabs
+      .map((tab) => {
+        const rawKey = typeof tab === "string" ? tab : tab && (tab.key || tab.label);
+        const key = normalizeSubjectKey(rawKey);
+        if (!key || seen.has(key)) {
+          return null;
+        }
+        seen.add(key);
+        return {
+          key,
+          label: (tab && tab.label) || SUBJECT_LABELS[key],
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function inferConfiguredSubjectTabs() {
+    const configured = normalizeSubjectTabs(config.subjectTabs);
+    if (configured.length) {
+      return configured;
+    }
+
+    const compact = [
+      config.studentStream,
+      config.testStream,
+      config.testSubject,
+      document.title,
+    ]
+      .map((item) => String(item || "").toLowerCase())
+      .join(" ")
+      .replace(/[^a-z0-9]+/g, "");
+    const isNeet = compact.includes("neet") || compact.includes("pcb");
+    const isJee =
+      compact.includes("jee") || compact.includes("pcm") || compact.includes("mhtcet");
+
+    if (isNeet && !isJee) {
+      return normalizeSubjectTabs(["physics", "chemistry", "bio"]);
+    }
+    if (isJee) {
+      return normalizeSubjectTabs(["physics", "chemistry", "math"]);
+    }
+    if (compact.includes("biology") || compact.includes("bio")) {
+      return normalizeSubjectTabs(["physics", "chemistry", "bio"]);
+    }
+    if (
+      compact.includes("mathematics") ||
+      compact.includes("maths") ||
+      compact.includes("math")
+    ) {
+      return normalizeSubjectTabs(["physics", "chemistry", "math"]);
+    }
+    return [];
+  }
+
+  const configuredSubjectTabs = inferConfiguredSubjectTabs();
+
+  function getFallbackSubjectKey(index) {
+    if (!configuredSubjectTabs.length || !questions.length) {
+      return "";
+    }
+
+    const safeIndex = Math.max(0, Math.min(Number(index) || 0, questions.length - 1));
+    const baseSize = Math.floor(questions.length / configuredSubjectTabs.length);
+    const remainder = questions.length % configuredSubjectTabs.length;
+    let start = 0;
+
+    for (let tabIndex = 0; tabIndex < configuredSubjectTabs.length; tabIndex += 1) {
+      const size = baseSize + (tabIndex < remainder ? 1 : 0);
+      const end = start + size;
+      if (safeIndex >= start && safeIndex < end) {
+        return configuredSubjectTabs[tabIndex].key;
+      }
+      start = end;
+    }
+
+    return configuredSubjectTabs[configuredSubjectTabs.length - 1].key;
+  }
+
+  function getQuestionSubjectKey(question, index) {
+    if (!question) {
+      return "";
+    }
+    const explicitSubjectKey = normalizeSubjectKey(
+      question.subject_name || question.subject || question.section_name,
+    );
+    return explicitSubjectKey || getFallbackSubjectKey(index);
+  }
+
+  function getSubjectTabs() {
+    const byKey = new Map();
+
+    questions.forEach((question, index) => {
+      const key = getQuestionSubjectKey(question, index);
+      if (!key) {
+        return;
+      }
+      if (!byKey.has(key)) {
+        const configuredTab = configuredSubjectTabs.find((tab) => tab.key === key);
+        byKey.set(key, {
+          key,
+          label: (configuredTab && configuredTab.label) || SUBJECT_LABELS[key],
+          firstIndex: index,
+          indexes: [],
+        });
+      }
+      byKey.get(key).indexes.push(index);
+    });
+
+    return Array.from(byKey.values()).sort((a, b) => {
+      const orderA = SUBJECT_ORDER.indexOf(a.key);
+      const orderB = SUBJECT_ORDER.indexOf(b.key);
+      const safeOrderA = orderA === -1 ? SUBJECT_ORDER.length : orderA;
+      const safeOrderB = orderB === -1 ? SUBJECT_ORDER.length : orderB;
+      return safeOrderA - safeOrderB || a.firstIndex - b.firstIndex;
+    });
+  }
+
+  function ensureActiveSubject() {
+    const tabs = getSubjectTabs();
+    if (!tabs.length) {
+      state.activeSubjectKey = "";
+      return;
+    }
+
+    const currentSubjectKey = getQuestionSubjectKey(
+      getQuestionByIndex(state.currentQuestionIndex),
+      state.currentQuestionIndex,
+    );
+    if (currentSubjectKey && tabs.some((tab) => tab.key === currentSubjectKey)) {
+      state.activeSubjectKey = currentSubjectKey;
+      return;
+    }
+
+    if (!tabs.some((tab) => tab.key === state.activeSubjectKey)) {
+      state.activeSubjectKey = tabs[0].key;
+    }
+  }
+
+  function getVisibleQuestionIndexes() {
+    const tabs = getSubjectTabs();
+    if (!tabs.length || !state.activeSubjectKey) {
+      return questions.map((_, index) => index);
+    }
+    const activeTab = tabs.find((tab) => tab.key === state.activeSubjectKey);
+    return activeTab ? activeTab.indexes : questions.map((_, index) => index);
+  }
+
+  function getAdjacentVisibleQuestionIndex(direction) {
+    const visibleIndexes = getVisibleQuestionIndexes();
+    const position = visibleIndexes.indexOf(state.currentQuestionIndex);
+    const nextPosition = position + direction;
+    if (position === -1 || nextPosition < 0 || nextPosition >= visibleIndexes.length) {
+      return null;
+    }
+    return visibleIndexes[nextPosition];
+  }
+
+  function renderSubjectTabs() {
+    const container = document.getElementById("subjectTabs");
+    if (!container) {
+      return;
+    }
+
+    const tabs = getSubjectTabs();
+    if (!tabs.length) {
+      container.innerHTML = "";
+      return;
+    }
+
+    ensureActiveSubject();
+    container.innerHTML = "";
+
+    tabs.forEach((tab) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className =
+        "subject-tab" + (state.activeSubjectKey === tab.key ? " active" : "");
+      button.setAttribute(
+        "aria-pressed",
+        state.activeSubjectKey === tab.key ? "true" : "false",
+      );
+      button.innerHTML = `${escapeHtml(tab.label)} <span class="subject-tab-count">${tab.indexes.length}</span>`;
+      button.addEventListener("click", () => {
+        state.activeSubjectKey = tab.key;
+        buildQuestionNavigator();
+        loadQuestion(tab.indexes[0]);
+      });
+      container.appendChild(button);
+    });
   }
 
   function isQuestionAnswered(question) {
@@ -405,7 +648,13 @@
       return;
     }
 
+    const previousSubjectKey = state.activeSubjectKey;
     state.currentQuestionIndex = clampQuestionIndex(index);
+    const subjectKey = getQuestionSubjectKey(question, state.currentQuestionIndex);
+    if (subjectKey) {
+      state.activeSubjectKey = subjectKey;
+    }
+    const subjectChanged = previousSubjectKey !== state.activeSubjectKey;
 
     const questionText = document.getElementById("questionText");
     const questionContext = document.getElementById("questionContext");
@@ -436,9 +685,20 @@
 
     const questionLabel = document.getElementById("currentQuestionNum");
     if (questionLabel) {
-      questionLabel.textContent = `Question ${String(state.currentQuestionIndex + 1).padStart(2, "0")} of ${getTotalQuestions()}`;
+      const visibleIndexes = getVisibleQuestionIndexes();
+      const visiblePosition = visibleIndexes.indexOf(state.currentQuestionIndex);
+      const subjectLabel = SUBJECT_LABELS[state.activeSubjectKey];
+      if (subjectLabel && visiblePosition >= 0) {
+        questionLabel.textContent = `${subjectLabel} Question ${String(visiblePosition + 1).padStart(2, "0")} of ${visibleIndexes.length}`;
+      } else {
+        questionLabel.textContent = `Question ${String(state.currentQuestionIndex + 1).padStart(2, "0")} of ${getTotalQuestions()}`;
+      }
     }
 
+    renderSubjectTabs();
+    if (subjectChanged) {
+      buildQuestionNavigator();
+    }
     updateNavigator();
     persistDraftLocally();
     if (shouldSync !== false) {
@@ -469,44 +729,47 @@
     }
 
     grid.innerHTML = "";
-    for (let index = 0; index < getTotalQuestions(); index += 1) {
+    getVisibleQuestionIndexes().forEach((questionIndex, visibleIndex) => {
       const btn = document.createElement("div");
       btn.className = "q-btn";
-      btn.id = "qdot-" + index;
-      btn.textContent = index + 1;
+      btn.id = "qdot-" + questionIndex;
+      btn.textContent = visibleIndex + 1;
+      btn.title = `Question ${questionIndex + 1}`;
       btn.addEventListener("click", () => {
-        loadQuestion(index);
+        loadQuestion(questionIndex);
       });
       grid.appendChild(btn);
-    }
+    });
   }
 
   function updateNavButtons() {
     const prevBtn = document.querySelector(".btn-prev");
     const nextBtn = document.querySelector(".btn-next");
+    const visibleIndexes = getVisibleQuestionIndexes();
+    const visiblePosition = visibleIndexes.indexOf(state.currentQuestionIndex);
+    const isFirstVisible = visiblePosition <= 0;
+    const isLastVisible =
+      visiblePosition === -1 || visiblePosition >= visibleIndexes.length - 1;
 
     if (prevBtn) {
-      prevBtn.disabled = state.currentQuestionIndex === 0;
-      prevBtn.style.opacity = state.currentQuestionIndex === 0 ? "0.5" : "1";
-      prevBtn.style.pointerEvents =
-        state.currentQuestionIndex === 0 ? "none" : "auto";
+      prevBtn.disabled = isFirstVisible;
+      prevBtn.style.opacity = isFirstVisible ? "0.5" : "1";
+      prevBtn.style.pointerEvents = isFirstVisible ? "none" : "auto";
     }
 
     if (nextBtn) {
-      nextBtn.disabled = state.currentQuestionIndex === questions.length - 1;
-      nextBtn.style.opacity =
-        state.currentQuestionIndex === questions.length - 1 ? "0.5" : "1";
-      nextBtn.style.pointerEvents =
-        state.currentQuestionIndex === questions.length - 1 ? "none" : "auto";
+      nextBtn.disabled = isLastVisible;
+      nextBtn.style.opacity = isLastVisible ? "0.5" : "1";
+      nextBtn.style.pointerEvents = isLastVisible ? "none" : "auto";
     }
   }
 
   function updateNavigator() {
-    for (let index = 0; index < getTotalQuestions(); index += 1) {
+    getVisibleQuestionIndexes().forEach((index) => {
       const dot = document.getElementById("qdot-" + index);
       const question = getQuestionByIndex(index);
       if (!dot || !question) {
-        continue;
+        return;
       }
 
       dot.classList.remove("answered", "not-answered", "current");
@@ -517,7 +780,7 @@
       if (index === state.currentQuestionIndex) {
         dot.classList.add("current");
       }
-    }
+    });
 
     const answeredCountEl = document.getElementById("answeredCount");
     if (answeredCountEl) {
@@ -543,6 +806,63 @@
     }
   }
 
+  function getTimeWarningContainer() {
+    let container = document.getElementById("timeWarningAlertContainer");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "timeWarningAlertContainer";
+      container.className = "time-warning-alert-container";
+      container.setAttribute("aria-live", "polite");
+      container.setAttribute("aria-atomic", "true");
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  function showTimeWarningAlert(threshold) {
+    const container = getTimeWarningContainer();
+    const alertEl = document.createElement("div");
+    alertEl.className = `time-warning-alert time-warning-alert-${threshold.tone}`;
+    alertEl.innerHTML = `
+      <div class="time-warning-icon"><i class="bi bi-clock-fill"></i></div>
+      <div class="time-warning-copy">
+        <strong>${threshold.label} remaining</strong>
+        <span>Please review and submit on time.</span>
+      </div>
+      <button type="button" class="time-warning-close" aria-label="Dismiss time warning">&times;</button>
+    `;
+
+    const closeAlert = () => {
+      alertEl.classList.add("hiding");
+      window.setTimeout(() => alertEl.remove(), 220);
+    };
+
+    alertEl.querySelector(".time-warning-close")?.addEventListener("click", closeAlert);
+    container.appendChild(alertEl);
+    window.setTimeout(closeAlert, threshold.tone === "urgent" ? 9000 : 6500);
+  }
+
+  function checkTimeWarningAlerts(previousRemaining) {
+    if (state.isSubmitted || state.timeRemaining <= 0) {
+      return;
+    }
+
+    const crossedThresholds = TIME_WARNING_THRESHOLDS.filter(
+      (threshold) =>
+        !state.timeWarningShown.has(threshold.seconds) &&
+        state.timeRemaining <= threshold.seconds &&
+        previousRemaining > threshold.seconds,
+    );
+    const thresholdToShow = crossedThresholds.at(-1);
+
+    crossedThresholds.forEach((threshold) => {
+      state.timeWarningShown.add(threshold.seconds);
+    });
+    if (thresholdToShow) {
+      showTimeWarningAlert(thresholdToShow);
+    }
+  }
+
   function stopTimer() {
     if (state.timerInterval) {
       clearInterval(state.timerInterval);
@@ -553,10 +873,13 @@
   function startTimer() {
     stopTimer();
     updateTimerDisplay();
+    checkTimeWarningAlerts(state.timeRemaining + 1);
 
     state.timerInterval = window.setInterval(() => {
+      const previousRemaining = state.timeRemaining;
       state.timeRemaining = Math.max(0, state.timeRemaining - 1);
       updateTimerDisplay();
+      checkTimeWarningAlerts(previousRemaining);
 
       if (state.timeRemaining > 0 && state.timeRemaining % 15 === 0) {
         persistDraftLocally();
@@ -613,11 +936,13 @@
           setSyncBanner("", "");
         }
         if (typeof data.time_remaining_seconds === "number") {
+          const previousRemaining = state.timeRemaining;
           state.timeRemaining = Math.min(
             state.timeRemaining,
             data.time_remaining_seconds,
           );
           updateTimerDisplay();
+          checkTimeWarningAlerts(previousRemaining);
         }
         return true;
       }
@@ -662,8 +987,9 @@
 
     if (prevBtn && prevBtn.dataset.bound !== "true") {
       prevBtn.addEventListener("click", () => {
-        if (state.currentQuestionIndex > 0) {
-          loadQuestion(state.currentQuestionIndex - 1);
+        const previousQuestionIndex = getAdjacentVisibleQuestionIndex(-1);
+        if (previousQuestionIndex != null) {
+          loadQuestion(previousQuestionIndex);
         }
       });
       prevBtn.dataset.bound = "true";
@@ -671,8 +997,9 @@
 
     if (nextBtn && nextBtn.dataset.bound !== "true") {
       nextBtn.addEventListener("click", () => {
-        if (state.currentQuestionIndex < questions.length - 1) {
-          loadQuestion(state.currentQuestionIndex + 1);
+        const nextQuestionIndex = getAdjacentVisibleQuestionIndex(1);
+        if (nextQuestionIndex != null) {
+          loadQuestion(nextQuestionIndex);
         }
       });
       nextBtn.dataset.bound = "true";
@@ -699,6 +1026,8 @@
 
     if (!state.initialized) {
       mergeInitialProgress();
+      ensureActiveSubject();
+      renderSubjectTabs();
       buildQuestionNavigator();
       bindStaticActions();
       state.initialized = true;
@@ -743,7 +1072,9 @@
 
       if (response.ok && data.success) {
         state.activated = true;
+        const previousRemaining = state.timeRemaining + 1;
         state.timeRemaining = Number(data.time_remaining_seconds || state.timeRemaining);
+        checkTimeWarningAlerts(previousRemaining);
         config.startedAt = data.started_at || config.startedAt;
         if (data.saved_progress && typeof data.saved_progress === "object") {
           state.violationCount = Math.max(
@@ -778,14 +1109,73 @@
     }
   }
 
-  async function beginSecureTest() {
+  function isFullscreenActive() {
+    return typeof security.isFullscreenActive === "function"
+      ? security.isFullscreenActive()
+      : !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.msFullscreenElement
+        );
+  }
+
+  function retryFullscreenOnUserGesture() {
+    if (state.fullscreenRetryArmed) {
+      return;
+    }
+    state.fullscreenRetryArmed = true;
+
+    const retry = async () => {
+      document.removeEventListener("pointerdown", retry, true);
+      document.removeEventListener("keydown", retry, true);
+      state.fullscreenRetryArmed = false;
+      if (state.isSubmitted || isFullscreenActive()) {
+        return;
+      }
+      try {
+        await security.enterFullscreen();
+      } catch (_error) {
+        security.showAlert("Click anywhere on the test page to enter fullscreen mode.", "warning");
+        retryFullscreenOnUserGesture();
+      }
+    };
+
+    document.addEventListener("pointerdown", retry, true);
+    document.addEventListener("keydown", retry, true);
+  }
+
+  async function requestFullscreenForTest(options) {
+    const opts = options || {};
+    if (isFullscreenActive()) {
+      return true;
+    }
+
     try {
       await security.enterFullscreen();
+      return true;
     } catch (error) {
-      security.showAlert(
-        "Please allow fullscreen access to start the test.",
-        "danger",
-      );
+      if (!opts.silent) {
+        security.showAlert(
+          "Click anywhere on the test page to enter fullscreen mode.",
+          "warning",
+        );
+      }
+      retryFullscreenOnUserGesture();
+      return false;
+    }
+  }
+
+  async function beginSecureTest(options) {
+    const opts = options || {};
+    if (opts.loadBeforeFullscreen) {
+      initializeTest();
+    }
+
+    const fullscreenReady = await requestFullscreenForTest({
+      silent: opts.silentFullscreen,
+    });
+
+    if (!fullscreenReady && opts.requireFullscreen !== false) {
       return;
     }
 
@@ -793,11 +1183,13 @@
       startModal.hide();
     }
 
-    initializeTest();
+    if (!opts.loadBeforeFullscreen) {
+      initializeTest();
+    }
 
-    const activated = await activateTestSession();
+    const activated = state.activated || (await activateTestSession());
     if (!activated) {
-      if (startModal) {
+      if (startModal && opts.showModalOnFailure) {
         startModal.show();
       }
       return;
@@ -1008,26 +1400,14 @@
     updateConnectionBanner();
     if (config.startedAt || config.status === "in_progress") {
       state.activated = true;
-      initializeTest();
-      return;
     }
 
-    renderQuestionPanelMessage("Click Start Test to load questions.", {
-      actionHtml: `
-        <div class="pt-3">
-          <button type="button" class="btn btn-primary px-4 py-2 rounded-pill" id="inlineStartExamButton">
-            Start Test
-          </button>
-          <div class="small text-muted mt-3">
-            Fullscreen permission is required before the test begins.
-          </div>
-        </div>
-      `,
+    beginSecureTest({
+      requireFullscreen: false,
+      silentFullscreen: true,
+      showModalOnFailure: false,
+      loadBeforeFullscreen: true,
     });
-
-    if (startModal) {
-      startModal.show();
-    }
   }
 
   function boot() {

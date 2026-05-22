@@ -2597,7 +2597,7 @@ def _normalize_test_analysis_subject_name(name: str) -> str:
     if value in {"biology", "bio", "botany", "zoology"}:
         return "Biology"
     if value in {"maths", "math", "mathematics", "mathmatics"}:
-        return "Biology"
+        return "Maths"
     return ""
 
 
@@ -2722,7 +2722,21 @@ def test_analysis_download_pdf(request):
         return JsonResponse({"success": False, "error": "Invalid or missing test_id"}, status=400)
 
     leaderboard = _build_attempt_leaderboard(test)
+    batch_key = _analysis_batch_key(request.GET.get("batch_id") or request.GET.get("batch"))
+    batch_label = _analysis_batch_display_label(batch_key) if batch_key else ""
     entries = leaderboard.get("entries", [])
+    if batch_key:
+        entries = [
+            entry
+            for entry in entries
+            if _analysis_student_matches_batch(
+                {
+                    "batch": entry.get("studentBatch", ""),
+                    "grade": entry.get("studentGrade", ""),
+                },
+                batch_key,
+            )
+        ]
     attempted_entries = [entry for entry in entries if entry.get("attemptId")]
 
     section_names = []
@@ -2788,7 +2802,9 @@ def test_analysis_download_pdf(request):
     elements.append(Paragraph("Test Analysis Report", title_style))
     elements.append(
         Paragraph(
-            f"<b>Test:</b> {test.name} &nbsp;&nbsp; <b>Date:</b> {timezone.localtime().strftime('%d %b %Y %I:%M %p')}",
+            f"<b>Test:</b> {test.name}"
+            f"{f' &nbsp;&nbsp; <b>Batch:</b> {batch_label}' if batch_label else ''}"
+            f" &nbsp;&nbsp; <b>Date:</b> {timezone.localtime().strftime('%d %b %Y %I:%M %p')}",
             subtitle_style,
         )
     )
@@ -3832,13 +3848,6 @@ from .models import (
 
 
 
-def _pct(n, d):
-    if d == 0:
-        return Decimal("0.00")
-    return (Decimal(n) * Decimal("100.00") / Decimal(d)).quantize(
-        Decimal("0.01"), rounding=ROUND_HALF_UP
-    )
-
 def _to_e164_india(phone10: str) -> str:
    
     p = _normalize_phone(phone10)
@@ -4326,17 +4335,34 @@ def _student_photo_url(student):
 def _build_attempt_section_breakdown(attempt):
     manual_scores = (getattr(attempt, "progress_state", {}) or {}).get("manual_subject_scores")
     if isinstance(manual_scores, dict):
+        normalized_manual_scores = {}
+        for raw_subject, raw_score in manual_scores.items():
+            subject = _normalize_analysis_subject_name(raw_subject) or str(raw_subject or "").strip()
+            if subject:
+                normalized_manual_scores[subject] = raw_score
+
+        ordered_subjects = [
+            subject
+            for subject in ANALYSIS_SUBJECT_ORDER
+            if subject in normalized_manual_scores
+        ]
+        ordered_subjects.extend(
+            subject
+            for subject in normalized_manual_scores
+            if subject not in ordered_subjects
+        )
+
         return [
             {
                 "name": subject,
                 "sectionName": subject,
                 "shortLabel": _short_section_label(subject),
-                "score": int(manual_scores.get(subject, 0) or 0),
+                "score": int(normalized_manual_scores.get(subject, 0) or 0),
                 "total": 100,
-                "percentage": max(0, min(100, int(manual_scores.get(subject, 0) or 0))),
+                "percentage": max(0, min(100, int(normalized_manual_scores.get(subject, 0) or 0))),
                 "meta": "Manual marks entry",
             }
-            for subject in ANALYSIS_SUBJECT_ORDER
+            for subject in ordered_subjects
         ]
 
     test = getattr(attempt, "test", None)
@@ -4508,6 +4534,7 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
             "studentName": portal_student.student_name or portal_student.user.username,
             "studentRef": portal_student.username or portal_student.contact,
             "studentBatch": portal_student.batch or "",
+            "studentGrade": portal_student.grade or "",
             "profilePhotoUrl": _student_photo_url(portal_student),
             "score": total_score,
             "total": total_score,
@@ -4989,8 +5016,125 @@ def _build_my_tests_live_signature(student):
     )
 
 
-ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Biology"]
+ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Biology", "Maths"]
 ANALYSIS_CLUSTER_SIZE = 12
+PREFERRED_ANALYSIS_BATCH_LABELS = ["STAR 01", "STAR 02", "Alpha Batch", "10th Grade", "9th Grade"]
+
+
+def _analysis_batch_key(value) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "", str(value or "").strip().casefold())
+    if not normalized:
+        return ""
+    aliases = {
+        "star1": "star01",
+        "star01": "star01",
+        "star2": "star02",
+        "star02": "star02",
+        "alpha": "alpha",
+        "alphabatch": "alpha",
+        "grade10": "grade10",
+        "grade10th": "grade10",
+        "10thgrade": "grade10",
+        "class10": "grade10",
+        "10th": "grade10",
+        "10": "grade10",
+        "grade9": "grade9",
+        "grade9th": "grade9",
+        "9thgrade": "grade9",
+        "class9": "grade9",
+        "9th": "grade9",
+        "9": "grade9",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def _analysis_batch_display_label(value) -> str:
+    preferred = {
+        "star01": "STAR 01",
+        "star02": "STAR 02",
+        "alpha": "Alpha Batch",
+        "grade10": "10th Grade",
+        "grade9": "9th Grade",
+    }
+    key = _analysis_batch_key(value)
+    if key in preferred:
+        return preferred[key]
+    return re.sub(r"\s+", " ", str(value or "").strip()) or "Unassigned"
+
+
+def _analysis_split_batch_values(raw_value):
+    return [
+        part.strip()
+        for part in re.split(r"[,/&|]+", str(raw_value or ""))
+        if part.strip()
+    ]
+
+
+def _analysis_test_batch_keys(test):
+    return [
+        key
+        for key in (_analysis_batch_key(value) for value in _analysis_split_batch_values(getattr(test, "batch", "")))
+        if key
+    ]
+
+
+def _build_test_analysis_batches_payload():
+    options = {}
+
+    def add_option(value, label=None):
+        key = _analysis_batch_key(value or label)
+        if not key or key in options:
+            return
+        options[key] = {
+            "id": key,
+            "label": label or _analysis_batch_display_label(value),
+        }
+
+    for label in PREFERRED_ANALYSIS_BATCH_LABELS:
+        add_option(label, label)
+
+    for batch in Student.objects.values_list("batch", flat=True).distinct():
+        add_option(batch)
+
+    for grade in Student.objects.values_list("grade", flat=True).distinct():
+        if _analysis_batch_key(grade) in {"grade10", "grade9"}:
+            add_option(grade)
+
+    for batch in ScholarshipTest.objects.values_list("batch", flat=True).distinct():
+        for value in _analysis_split_batch_values(batch):
+            add_option(value)
+
+    student_counts = {key: 0 for key in options}
+    for batch, grade in Student.objects.values_list("batch", "grade"):
+        keys = {_analysis_batch_key(batch), _analysis_batch_key(grade)}
+        for key in keys:
+            if key in student_counts:
+                student_counts[key] += 1
+
+    test_counts = {key: 0 for key in options}
+    for batch in ScholarshipTest.objects.filter(status="published").values_list("batch", flat=True):
+        keys = {_analysis_batch_key(value) for value in _analysis_split_batch_values(batch)}
+        for key in keys:
+            if key in test_counts:
+                test_counts[key] += 1
+
+    return [
+        {
+            **option,
+            "studentCount": student_counts.get(option["id"], 0),
+            "testCount": test_counts.get(option["id"], 0),
+        }
+        for option in options.values()
+    ]
+
+
+def _analysis_student_matches_batch(student, batch_key):
+    if not batch_key:
+        return True
+    return batch_key in {
+        _analysis_batch_key(student.get("batch")),
+        _analysis_batch_key(student.get("grade")),
+    }
 
 
 def _normalize_analysis_subject_name(name: str) -> str:
@@ -5006,12 +5150,15 @@ def _normalize_analysis_subject_name(name: str) -> str:
     return ""
 
 
-def _analysis_subject_scores_from_breakdown(section_breakdown):
+def _analysis_subject_scores_from_breakdown(section_breakdown, test_subject=""):
     scores = {subject: 0 for subject in ANALYSIS_SUBJECT_ORDER}
+    fallback_subject = _normalize_analysis_subject_name(test_subject)
 
     for index, item in enumerate(section_breakdown):
         section_name = item.get("name") or item.get("sectionName") or ""
         mapped = _normalize_analysis_subject_name(section_name)
+        if not mapped and len(section_breakdown) == 1 and fallback_subject:
+            mapped = fallback_subject
         if not mapped and index < len(ANALYSIS_SUBJECT_ORDER):
             mapped = ANALYSIS_SUBJECT_ORDER[index]
 
@@ -5063,6 +5210,7 @@ def _analysis_student_record_from_attempt(attempt):
         "id": _analysis_attempt_student_id(attempt),
         "name": name,
         "batch": batch,
+        "grade": getattr(portal_student, "grade", "") if portal_student else "",
         "parentPhone": phone,
         "studentRef": student_ref,
         "profilePhotoUrl": profile_photo_url,
@@ -5074,6 +5222,7 @@ def _analysis_student_record_from_leaderboard_entry(entry):
         "id": entry.get("studentId", ""),
         "name": entry.get("studentName", "") or entry.get("studentId", ""),
         "batch": entry.get("studentBatch", ""),
+        "grade": entry.get("studentGrade", ""),
         "parentPhone": "",
         "studentRef": entry.get("studentRef", "") or entry.get("studentId", ""),
         "profilePhotoUrl": entry.get("profilePhotoUrl"),
@@ -5191,7 +5340,7 @@ def _build_analysis_dataset_for_test(test, focus_subject=None):
 
     for entry in leaderboard["entries"]:
         section_scores = entry.get("sectionScores") or []
-        subject_scores = _analysis_subject_scores_from_breakdown(section_scores)
+        subject_scores = _analysis_subject_scores_from_breakdown(section_scores, getattr(test, "subject", ""))
         total_score = int(entry.get("score", 0) or 0)
         if total_score <= 0 and any(subject_scores.values()):
             total_score = sum(subject_scores.values())
@@ -5202,6 +5351,7 @@ def _build_analysis_dataset_for_test(test, focus_subject=None):
                 "Physics": subject_scores["Physics"],
                 "Chemistry": subject_scores["Chemistry"],
                 "Biology": subject_scores["Biology"],
+                "Maths": subject_scores["Maths"],
                 "total": total_score,
                 "totalMarks": int(entry.get("totalMarks", 0) or 0),
                 "sectionScores": section_scores,
@@ -5244,6 +5394,12 @@ def _serialize_test_analysis_test_item(test, start_at):
         "id": f"SCH{test.id}",
         "external_id": test.id,
         "name": test.name,
+        "batch": (getattr(test, "batch", "") or "").strip(),
+        "batchKeys": _analysis_test_batch_keys(test),
+        "batchLabels": [
+            _analysis_batch_display_label(value)
+            for value in _analysis_split_batch_values(getattr(test, "batch", ""))
+        ],
         "subject": (getattr(test, "subject", "") or "").strip(),
         "date": start_at.strftime("%d %b %Y"),
         "shortDate": start_at.strftime("%b %d"),
@@ -5305,6 +5461,7 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
             students_by_id.values(),
             key=lambda item: ((item.get("name") or "").lower(), item.get("id") or ""),
         ),
+        "batches": _build_test_analysis_batches_payload(),
         "completedTests": completed_tests,
         "upcomingTest": upcoming_test or _serialize_test_analysis_upcoming_placeholder(),
         "scoresByTest": scores_by_test,
@@ -5380,6 +5537,157 @@ def _build_admin_test_analysis_payload():
             ),
         }
     }
+
+
+def _analysis_client_test_id(raw_test_id):
+    value = str(raw_test_id or "").strip()
+    if not value:
+        return ""
+    if value.upper().startswith("SCH"):
+        return f"SCH{value[3:]}"
+    try:
+        return f"SCH{int(value)}"
+    except (TypeError, ValueError):
+        return value
+
+
+def _analysis_test_item_matches_batch(test_item, batch_key, students_by_id, scores_by_test):
+    if not batch_key:
+        return True
+
+    test_batch_keys = set(test_item.get("batchKeys") or [])
+    if batch_key in test_batch_keys:
+        return True
+
+    score_rows = scores_by_test.get(test_item.get("id"), [])
+    if any(_analysis_student_matches_batch(students_by_id.get(row.get("studentId"), {}), batch_key) for row in score_rows):
+        return True
+
+    return not test_batch_keys and not score_rows
+
+
+def _filter_analysis_score_rows_for_batch(score_rows, students_by_id, batch_key):
+    if not batch_key:
+        return list(score_rows)
+    return [
+        row
+        for row in score_rows
+        if _analysis_student_matches_batch(students_by_id.get(row.get("studentId"), {}), batch_key)
+    ]
+
+
+def _filter_analysis_payload(payload, *, batch_key="", test_id=""):
+    selected_test_id = _analysis_client_test_id(test_id)
+    students_by_id = {student.get("id"): student for student in payload.get("students", [])}
+    scores_by_test = payload.get("scoresByTest", {})
+    filtered_tests = [
+        test
+        for test in payload.get("completedTests", [])
+        if _analysis_test_item_matches_batch(test, batch_key, students_by_id, scores_by_test)
+    ]
+    if selected_test_id:
+        filtered_tests = [test for test in filtered_tests if test.get("id") == selected_test_id]
+
+    filtered_test_ids = {test.get("id") for test in filtered_tests}
+    filtered_scores_by_test = {
+        current_test_id: _filter_analysis_score_rows_for_batch(score_rows, students_by_id, batch_key)
+        for current_test_id, score_rows in scores_by_test.items()
+        if current_test_id in filtered_test_ids
+    }
+    filtered_student_ids = {
+        row.get("studentId")
+        for score_rows in filtered_scores_by_test.values()
+        for row in score_rows
+    }
+
+    if filtered_student_ids:
+        filtered_students = [
+            student
+            for student in payload.get("students", [])
+            if student.get("id") in filtered_student_ids
+        ]
+    elif batch_key:
+        filtered_students = [
+            student
+            for student in payload.get("students", [])
+            if _analysis_student_matches_batch(student, batch_key)
+        ]
+    else:
+        filtered_students = payload.get("students", [])
+
+    return {
+        **payload,
+        "completedTests": filtered_tests,
+        "scoresByTest": filtered_scores_by_test,
+        "students": filtered_students,
+        "attendanceByTest": {
+            key: value
+            for key, value in (payload.get("attendanceByTest") or {}).items()
+            if key in filtered_test_ids
+        },
+        "notesByTest": {
+            key: value
+            for key, value in (payload.get("notesByTest") or {}).items()
+            if key in filtered_test_ids
+        },
+    }
+
+
+def _build_test_analysis_api_payload(user):
+    if _is_teacher_user(user):
+        return _build_faculty_test_analysis_payload(user)["faculty"]
+    return _build_admin_test_analysis_payload()["admin"]
+
+
+@login_required
+@require_GET
+def test_analysis_batches_api(request):
+    if not _can_access_test_analysis_api(request.user):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+    return JsonResponse({"batches": _build_test_analysis_batches_payload()})
+
+
+@login_required
+@require_GET
+def test_analysis_tests_api(request):
+    if not _can_access_test_analysis_api(request.user):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+    batch_key = _analysis_batch_key(request.GET.get("batch_id") or request.GET.get("batch"))
+    payload = _filter_analysis_payload(
+        _build_test_analysis_api_payload(request.user),
+        batch_key=batch_key,
+    )
+    return JsonResponse(
+        {
+            "batch": {
+                "id": batch_key,
+                "label": _analysis_batch_display_label(batch_key) if batch_key else "",
+            },
+            "tests": payload.get("completedTests", []),
+        }
+    )
+
+
+@login_required
+@require_GET
+def test_analysis_summary_api(request):
+    if not _can_access_test_analysis_api(request.user):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+    batch_key = _analysis_batch_key(request.GET.get("batch_id") or request.GET.get("batch"))
+    payload = _filter_analysis_payload(
+        _build_test_analysis_api_payload(request.user),
+        batch_key=batch_key,
+        test_id=request.GET.get("test_id") or request.GET.get("test"),
+    )
+    return JsonResponse(
+        {
+            "batch": {
+                "id": batch_key,
+                "label": _analysis_batch_display_label(batch_key) if batch_key else "",
+            },
+            "analysis": payload,
+        }
+    )
 
 
 @login_required
@@ -7104,7 +7412,7 @@ CBSE_ALIASES = {
     "CBSE", "CENTRAL BOARD OF SECONDARY EDUCATION",
 }
 
-def _normalize_grade(raw: str) -> str:
+def _normalize_study_material_grade(raw: str) -> str:
     
     if raw is None:
         return ""
@@ -7121,7 +7429,7 @@ def _normalize_grade(raw: str) -> str:
 
     return ""
 
-def _normalize_board(raw: str) -> str:
+def _normalize_study_material_board(raw: str) -> str:
     
     if raw is None:
         return ""
@@ -7155,8 +7463,8 @@ def study_material_redirect(request):
 
     raw_grade = (student.grade or "").strip()
     raw_board = (student.board or "").strip()
-    grade = _normalize_grade(raw_grade)
-    board = _normalize_board(raw_board)
+    grade = _normalize_study_material_grade(raw_grade)
+    board = _normalize_study_material_board(raw_board)
 
     grade_digits = "".join(ch for ch in raw_grade if ch.isdigit())
     board_upper = raw_board.upper()
