@@ -4697,6 +4697,8 @@ def _build_my_tests_payload(student):
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
+        # Optional exam-security columns may be absent on older DB schemas.
+        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
@@ -4803,6 +4805,8 @@ def _build_my_tests_payload(student):
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
+        # Optional exam-security columns may be absent on older DB schemas.
+        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
