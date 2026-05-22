@@ -216,6 +216,12 @@ def recompute_portal_student_leaderboard(portal_student_id: int):
             status__in=["completed", "expired"],
             test__isnull=False,
         )
+        .defer(
+            "started_at",
+            "submitted_at",
+            "violation_count",
+            "security_status",
+        )
         .select_related("test")
         .order_by("test_id", "test_completed_at", "id")
     )
