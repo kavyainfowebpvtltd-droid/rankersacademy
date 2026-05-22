@@ -4459,6 +4459,11 @@ def _schema_safe_scholarship_attempt_queryset():
 
 def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_student=None):
     assigned_students = _get_assigned_portal_students_for_test(test)
+    latest_attempts = {
+        attempt.portal_student_id: attempt
+        for attempt in _latest_completed_attempts_for_test(test)
+        if getattr(attempt, "portal_student_id", None)
+    }
     aggregate_by_student = {
         row.portal_student_id: row
         for row in ScholarshipStudentLeaderboard.objects.filter(
@@ -4479,25 +4484,34 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
 
     for portal_student in assigned_students:
         attempt = latest_attempts.get(portal_student.id)
-        section_scores = (
-            _build_attempt_section_breakdown(attempt)
-            if attempt
-            else [dict(item) for item in zero_section_breakdown]
-        )
-        
-        # Ensure we have a valid total score and total marks for ranking
-        score_val = int(attempt.score or 0) if attempt else 0
-        total_marks_val = int(attempt.total_marks or 0) if attempt and int(attempt.total_marks or 0) > 0 else total_marks
-        
+        aggregate = aggregate_by_student.get(portal_student.id)
+        phy = int(getattr(aggregate, "phy_marks", 0) or 0)
+        chm = int(getattr(aggregate, "chm_marks", 0) or 0)
+        bio = int(getattr(aggregate, "bio_marks", 0) or 0)
+        math = int(getattr(aggregate, "math_marks", 0) or 0)
+        phy_attempted = int(getattr(aggregate, "phy_tests_count", 0) or 0) > 0
+        chm_attempted = int(getattr(aggregate, "chm_tests_count", 0) or 0) > 0
+        bio_attempted = int(getattr(aggregate, "bio_tests_count", 0) or 0) > 0
+        math_attempted = int(getattr(aggregate, "math_tests_count", 0) or 0) > 0
+        attempted_any_subject = phy_attempted or chm_attempted or bio_attempted or math_attempted
+        total_score = int(getattr(aggregate, "total_score", 0) or 0)
+        section_scores = [
+            {"name": "Physics", "sectionName": "Physics", "shortLabel": "PHY", "score": phy if phy_attempted else None, "total": phy, "percentage": 0, "meta": "Cumulative"},
+            {"name": "Chemistry", "sectionName": "Chemistry", "shortLabel": "CHM", "score": chm if chm_attempted else None, "total": chm, "percentage": 0, "meta": "Cumulative"},
+            {"name": "Biology", "sectionName": "Biology", "shortLabel": "BIO", "score": bio if bio_attempted else None, "total": bio, "percentage": 0, "meta": "Cumulative"},
+            {"name": "Math", "sectionName": "Math", "shortLabel": "MATH", "score": math if math_attempted else None, "total": math, "percentage": 0, "meta": "Cumulative"},
+        ]
+
         entry = {
-            "attemptId": None,
+            "attemptId": attempt.id if attempt else None,
             "studentId": f"portal-{portal_student.id}",
             "studentName": portal_student.student_name or portal_student.user.username,
             "studentRef": portal_student.username or portal_student.contact,
             "studentBatch": portal_student.batch or "",
             "profilePhotoUrl": _student_photo_url(portal_student),
-            "score": score_val,
-            "totalMarks": total_marks_val,
+            "score": total_score,
+            "total": total_score,
+            "totalMarks": total_score,
             "sectionScores": section_scores,
             "phyAttempted": phy_attempted,
             "chmAttempted": chm_attempted,
@@ -4512,19 +4526,17 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
             "isCurrentStudent": bool(
                 current_portal_student and portal_student.id == current_portal_student.id
             ),
-            "_attempted": attempted_any_subject,
+            "_attempted": bool(attempted_any_subject or attempt),
             "_completed_at": timezone.now(),
             "_sort_name": (portal_student.student_name or portal_student.user.username or "").casefold(),
         }
         entries.append(entry)
 
-    # Improved ranking logic: only students who actually attempted the test 
-    # should get a numeric rank. Unattempted students stay at the bottom.
     entries.sort(
         key=lambda entry: (
-            0 if entry["_attempted"] else 1, # Attempted students first
-            -int(entry["score"] or 0),       # Then by score descending
-            entry["_completed_at"] or timezone.now(), # Then by completion time (earlier is better)
+            0 if entry["_attempted"] else 1,
+            -int(entry["score"] or 0),
+            entry["_completed_at"] or timezone.now(),
             entry["_sort_name"],
             entry["studentId"],
         )
