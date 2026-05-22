@@ -203,6 +203,33 @@ class ScholarshipTestAttempt(models.Model):
         return f"Attempt {self.id} - {self.student.name} - Score: {self.score}/{self.total_questions}"
 
 
+class ScholarshipStudentLeaderboard(models.Model):
+    portal_student = models.OneToOneField(
+        "sds.Student",
+        on_delete=models.CASCADE,
+        related_name="scholarship_leaderboard",
+    )
+    student_batch = models.CharField(max_length=50, blank=True, default="")
+    phy_marks = models.IntegerField(default=0)
+    chm_marks = models.IntegerField(default=0)
+    bio_marks = models.IntegerField(default=0)
+    math_marks = models.IntegerField(default=0)
+    total_score = models.IntegerField(default=0)
+    phy_tests_count = models.IntegerField(default=0)
+    chm_tests_count = models.IntegerField(default=0)
+    bio_tests_count = models.IntegerField(default=0)
+    math_tests_count = models.IntegerField(default=0)
+    batch_rank = models.IntegerField(null=True, blank=True)
+    institute_rank = models.IntegerField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-total_score", "portal_student_id"]
+
+    def __str__(self):
+        return f"{self.portal_student_id} - {self.total_score}"
+
+
 class ScholarshipTestFacultyAttendanceSession(models.Model):
     test = models.ForeignKey(
         'ScholarshipTest',

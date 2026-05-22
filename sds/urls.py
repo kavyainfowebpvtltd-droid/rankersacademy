@@ -57,6 +57,7 @@ urlpatterns = [
     # Student Module
  
     path("my-tests/", views.my_tests, name="my_tests"),
+    path("my-tests/live-state/", views.my_tests_live_state, name="my_tests_live_state"),
     path("gap-analysis/", views.gap_analysis, name="gap_analysis"),
     path("subject-analysis/", views.subject_analysis, name="subject_analysis"),
     path("reports/", views.report, name="reports"),

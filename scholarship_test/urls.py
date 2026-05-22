@@ -66,6 +66,7 @@ urlpatterns = [
     
     # Result
     path('success/<int:attempt_id>/', views.scholarship_success, name='scholarship_success'),
+    path('success/<int:attempt_id>/live-state/', views.scholarship_success_live_state, name='scholarship_success_live_state'),
     path('attempt/<int:attempt_id>/review/', views.scholarship_attempt_review, name='scholarship_attempt_review'),
     
     # Logout

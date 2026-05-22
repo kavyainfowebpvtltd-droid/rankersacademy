@@ -31,6 +31,7 @@ from scholarship_test.models import (
     ScholarshipTestOption,
     ScholarshipTestAnswer,
     ScholarshipTestImage,
+    ScholarshipStudentLeaderboard,
 )
 from scholarship_test.forms import (
     ScholarshipRegistrationStepOneForm,
@@ -1261,6 +1262,69 @@ def scholarship_success(request, attempt_id):
     }
     context.update(_build_test_display_context(attempt.test))
     return render(request, 'scholarship-success.html', context)
+
+
+def scholarship_success_live_state(request, attempt_id):
+    try:
+        attempt = ScholarshipTestAttempt.objects.select_related("student", "portal_student", "test").get(id=attempt_id)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Attempt not found"}, status=404)
+
+    if not _student_can_view_attempt(request, attempt):
+        return JsonResponse({"success": False, "error": "Not authorized"}, status=403)
+
+    leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
+    aggregate = None
+    if attempt.portal_student_id:
+        aggregate = ScholarshipStudentLeaderboard.objects.filter(portal_student_id=attempt.portal_student_id).first()
+
+    payload = {
+        "success": True,
+        "attempt_id": attempt.id,
+        "score": int(attempt.score or 0),
+        "total_marks": int(attempt.total_marks or 0),
+        "subject_scores": {
+            "phy_marks": (
+                int(getattr(aggregate, "phy_marks", 0) or 0)
+                if int(getattr(aggregate, "phy_tests_count", 0) or 0) > 0
+                else None
+            ),
+            "chm_marks": (
+                int(getattr(aggregate, "chm_marks", 0) or 0)
+                if int(getattr(aggregate, "chm_tests_count", 0) or 0) > 0
+                else None
+            ),
+            "bio_marks": (
+                int(getattr(aggregate, "bio_marks", 0) or 0)
+                if int(getattr(aggregate, "bio_tests_count", 0) or 0) > 0
+                else None
+            ),
+            "math_marks": (
+                int(getattr(aggregate, "math_marks", 0) or 0)
+                if int(getattr(aggregate, "math_tests_count", 0) or 0) > 0
+                else None
+            ),
+        },
+        "total_score": int(getattr(aggregate, "total_score", 0) or 0),
+        "batch_rank": getattr(aggregate, "batch_rank", None),
+        "institute_rank": getattr(aggregate, "institute_rank", None),
+        "leaderboard_position": (leaderboard.get("current_entry") or {}).get("rank"),
+        "top_performer_status": bool((leaderboard.get("current_entry") or {}).get("rank") == 1),
+        "leaderboard_top_entries": leaderboard.get("top_entries", []),
+        "leaderboard_current_entry": leaderboard.get("current_entry"),
+        "signature": "|".join(
+            [
+                str(attempt.score or 0),
+                str(attempt.total_marks or 0),
+                str(getattr(aggregate, "updated_at", "") or ""),
+                str((leaderboard.get("current_entry") or {}).get("rank") or ""),
+            ]
+        ),
+    }
+    response = JsonResponse(payload)
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 def _student_can_view_attempt(request, attempt):

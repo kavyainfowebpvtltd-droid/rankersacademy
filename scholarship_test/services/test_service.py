@@ -130,6 +130,7 @@ def get_attempt_security_status_value(attempt) -> str:
     if getattr(attempt, "status", "") == "in_progress":
         return "warning" if get_attempt_violation_count_value(attempt) > 0 else "active"
     return "pending"
+SUBJECT_BUCKETS = ("phy", "chm", "bio", "math")
 
 
 def calculate_score_percentage(score: int, total: int) -> int:
@@ -181,6 +182,94 @@ def is_scholarship_test(test) -> bool:
 
 def requires_otp_login(test) -> bool:
     return is_rtse_test(test) or is_scholarship_test(test)
+
+
+def _normalize_subject_bucket(subject_name: str) -> str:
+    value = re.sub(r"[^a-z]", "", str(subject_name or "").lower())
+    if "phy" in value or "physics" in value:
+        return "phy"
+    if "chem" in value:
+        return "chm"
+    if "bio" in value or "botany" in value or "zoology" in value:
+        return "bio"
+    if "math" in value:
+        return "math"
+    return ""
+
+
+def recompute_portal_student_leaderboard(portal_student_id: int):
+    from scholarship_test.models import ScholarshipStudentLeaderboard, ScholarshipTestAttempt
+    from sds.models import Student
+
+    if not portal_student_id:
+        return
+
+    try:
+        portal_student = Student.objects.get(id=portal_student_id)
+    except Student.DoesNotExist:
+        return
+
+    attempts = (
+        ScholarshipTestAttempt.objects
+        .filter(
+            portal_student_id=portal_student_id,
+            status__in=["completed", "expired"],
+            test__isnull=False,
+        )
+        .select_related("test")
+        .order_by("test_id", "test_completed_at", "id")
+    )
+
+    latest_by_test = {}
+    for attempt in attempts:
+        latest_by_test[attempt.test_id] = attempt
+
+    marks = {bucket: 0 for bucket in SUBJECT_BUCKETS}
+    counts = {bucket: 0 for bucket in SUBJECT_BUCKETS}
+    for attempt in latest_by_test.values():
+        bucket = _normalize_subject_bucket(getattr(attempt.test, "subject", ""))
+        if not bucket:
+            continue
+        marks[bucket] += int(attempt.score or 0)
+        counts[bucket] += 1
+
+    total_score = sum(marks.values())
+    aggregate, _created = ScholarshipStudentLeaderboard.objects.get_or_create(
+        portal_student=portal_student,
+        defaults={"student_batch": portal_student.batch or ""},
+    )
+    aggregate.student_batch = portal_student.batch or ""
+    aggregate.phy_marks = marks["phy"]
+    aggregate.chm_marks = marks["chm"]
+    aggregate.bio_marks = marks["bio"]
+    aggregate.math_marks = marks["math"]
+    aggregate.phy_tests_count = counts["phy"]
+    aggregate.chm_tests_count = counts["chm"]
+    aggregate.bio_tests_count = counts["bio"]
+    aggregate.math_tests_count = counts["math"]
+    aggregate.total_score = total_score
+    aggregate.save()
+
+    # Recompute institute ranking once after this student's aggregate update.
+    institute_rows = list(
+        ScholarshipStudentLeaderboard.objects
+        .select_related("portal_student")
+        .order_by("-total_score", "updated_at", "portal_student_id")
+    )
+    for rank, row in enumerate(institute_rows, start=1):
+        row.institute_rank = rank
+    ScholarshipStudentLeaderboard.objects.bulk_update(institute_rows, ["institute_rank"])
+
+    # Recompute batch ranking for only the impacted batch.
+    batch_rows = list(
+        ScholarshipStudentLeaderboard.objects
+        .filter(student_batch__iexact=aggregate.student_batch or "")
+        .order_by("-total_score", "updated_at", "portal_student_id")
+    )
+    for rank, row in enumerate(batch_rows, start=1):
+        row.batch_rank = rank
+    if batch_rows:
+        ScholarshipStudentLeaderboard.objects.bulk_update(batch_rows, ["batch_rank"])
 
 
 def _academy_localtime(value=None):
@@ -559,12 +648,8 @@ def get_attempt_end_time(attempt):
 
 
 def get_answer_key_visibility_delay():
-    hours = getattr(settings, 'ANSWER_KEY_VISIBILITY_DELAY_HOURS', 2)
-    try:
-        hours = float(hours)
-    except (TypeError, ValueError):
-        hours = 2
-    return timedelta(hours=max(0, hours))
+    # Answer key is now visible immediately after submission.
+    return timedelta(seconds=0)
 
 
 def get_my_tests_attempt_review_visibility_delay():
@@ -586,13 +671,18 @@ def get_answer_key_base_end_time(attempt):
 
 
 def get_answer_key_available_at(attempt):
-    return get_answer_key_base_end_time(attempt) + get_answer_key_visibility_delay()
+    completed_at = getattr(attempt, "test_completed_at", None)
+    if completed_at:
+        return completed_at
+    return get_answer_key_base_end_time(attempt)
 
 
 def is_answer_key_available(attempt, now=None):
-    if now is None:
-        now = timezone.now()
-    return now >= get_answer_key_available_at(attempt)
+    return bool(
+        attempt
+        and getattr(attempt, "status", None) in ["completed", "expired"]
+        and getattr(attempt, "test_completed_at", None)
+    )
 
 
 def get_my_tests_attempt_review_available_at(attempt):
@@ -606,14 +696,7 @@ def is_my_tests_attempt_review_available(attempt, now=None):
 
 
 def get_answer_key_delay_hours_display():
-    delay = get_answer_key_visibility_delay()
-    total_seconds = int(delay.total_seconds())
-    if total_seconds % 3600 == 0:
-        hours = total_seconds // 3600
-        return f"{hours} hour" if hours == 1 else f"{hours} hours"
-
-    minutes = total_seconds // 60
-    return f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
+    return "immediately"
 
 
 def get_attempt_time_remaining_seconds(attempt) -> int:
@@ -1081,6 +1164,8 @@ def submit_runtime_test(
     attempt.sms_sent = sms_sent
     attempt.sms_error = sms_error
     attempt.save(update_fields=['sms_sent', 'sms_error'])
+    if attempt.portal_student_id:
+        recompute_portal_student_leaderboard(attempt.portal_student_id)
 
     if final_status == 'expired':
         return True, "Test auto-submitted due to time expiry", attempt
@@ -1358,6 +1443,8 @@ def submit_test(attempt_id: int, answers: dict):
     attempt.sms_sent = sms_sent
     attempt.sms_error = sms_error
     attempt.save(update_fields=['sms_sent', 'sms_error'])
+    if attempt.portal_student_id:
+        recompute_portal_student_leaderboard(attempt.portal_student_id)
     
     return True, "Test submitted successfully", attempt
 
@@ -1479,6 +1566,8 @@ def auto_submit_expired_test(attempt_id: int):
     attempt.sms_sent = sms_sent
     attempt.sms_error = sms_error
     attempt.save(update_fields=['sms_sent', 'sms_error'])
+    if attempt.portal_student_id:
+        recompute_portal_student_leaderboard(attempt.portal_student_id)
     
     return True, "Test auto-submitted due to time expiry", attempt
 

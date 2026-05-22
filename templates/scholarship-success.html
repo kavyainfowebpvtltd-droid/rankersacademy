@@ -27,6 +27,25 @@
           text-align: center !important;
         }
       }
+
+      .attempt-review-action {
+        width: 100%;
+        max-width: 260px;
+        margin-left: auto;
+        text-align: center;
+        white-space: nowrap;
+        padding: 0.4rem 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+      }
+
+      @media (min-width: 992px) {
+        .attempt-review-action {
+          width: 25%;
+        }
+      }
     </style>
   </head>
 
@@ -139,7 +158,7 @@
                     style="font-size: 2rem"
                   ></i>
                   <h6>Your Score</h6>
-                  <h4 class="text-primary">
+                  <h4 class="text-primary" id="liveScoreValue">
                     {{ attempt.score }} / {{ attempt.total_marks }}
                   </h4>
                 </div>
@@ -182,7 +201,7 @@
                         <th scope="col">Score</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="liveLeaderboardBody">
                       {% for entry in leaderboard_top_entries %}
                       <tr{% if entry.is_current_student %} class="table-primary"{% endif %}>
                         <td class="fw-bold">#{{ entry.rank }}</td>
@@ -200,15 +219,29 @@
                 </div>
 
                 {% if leaderboard_current_entry %}
-                <div class="alert alert-info mt-3 mb-0">
-                  Your Rank: <strong>#{{ leaderboard_current_entry.rank }}</strong>
+                <div class="alert alert-info mt-3 mb-0" id="liveCurrentRankBox">
+                  Your Rank: <strong id="liveCurrentRank">#{{ leaderboard_current_entry.rank }}</strong>
                   |
-                  Your Score: <strong>{{ leaderboard_current_entry.score }} / {{ leaderboard_current_entry.total_marks }}</strong>
+                  Your Score: <strong id="liveCurrentRankScore">{{ leaderboard_current_entry.score }} / {{ leaderboard_current_entry.total_marks }}</strong>
                 </div>
                 {% endif %}
               </div>
             </div>
             {% endif %}
+
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-6 col-md-3"><div class="small text-muted">PHY</div><div class="fw-bold" id="livePhyMarks">0</div></div>
+                  <div class="col-6 col-md-3"><div class="small text-muted">CHM</div><div class="fw-bold" id="liveChmMarks">0</div></div>
+                  <div class="col-6 col-md-3"><div class="small text-muted">BIO</div><div class="fw-bold" id="liveBioMarks">0</div></div>
+                  <div class="col-6 col-md-3"><div class="small text-muted">MATH</div><div class="fw-bold" id="liveMathMarks">0</div></div>
+                  <div class="col-6 col-md-4"><div class="small text-muted">TOTAL SCORE</div><div class="fw-bold text-primary" id="liveTotalScore">0</div></div>
+                  <div class="col-6 col-md-4"><div class="small text-muted">BATCH RANK</div><div class="fw-bold" id="liveBatchRank">--</div></div>
+                  <div class="col-12 col-md-4"><div class="small text-muted">INSTITUTE RANK</div><div class="fw-bold" id="liveInstituteRank">--</div></div>
+                </div>
+              </div>
+            </div>
 
             <div class="card border-0 shadow-sm mt-4">
               <div class="card-body">
@@ -230,11 +263,13 @@
 
                   <a
                     href="{{ attempt_review_url }}"
-                    class="btn {% if answer_key_is_available %}btn-primary{% else %}btn-secondary disabled{% endif %} px-4"
+                    class="btn {% if answer_key_is_available %}btn-primary{% else %}btn-secondary disabled{% endif %} attempt-review-action"
                     id="attemptReviewBtn"
                     data-review-url="{{ attempt_review_url }}"
                     data-available-at="{{ answer_key_available_at }}"
                     data-server-now="{{ answer_key_server_now }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     {% if not answer_key_is_available %}aria-disabled="true" tabindex="-1"{% endif %}
                   >
                     <i class="bi bi-eye me-2"></i>View Attempted Test Paper
@@ -354,6 +389,67 @@
         };
 
         tick();
+      })();
+
+      (() => {
+        const attemptId = {{ attempt.id }};
+        let lastSignature = "";
+
+        function rankText(value) {
+          return Number.isInteger(value) ? `#${value}` : "--";
+        }
+
+        function renderLeaderboardRows(entries) {
+          const body = document.getElementById("liveLeaderboardBody");
+          if (!body || !Array.isArray(entries)) return;
+          body.innerHTML = "";
+          entries.forEach((entry) => {
+            const tr = document.createElement("tr");
+            if (entry.is_current_student) tr.classList.add("table-primary");
+            tr.innerHTML = `
+              <td class="fw-bold">#${entry.rank}</td>
+              <td>${entry.student_name}${entry.is_current_student ? ' <span class="badge bg-primary ms-2">You</span>' : ""}</td>
+              <td>${entry.score} / ${entry.total_marks}</td>
+            `;
+            body.appendChild(tr);
+          });
+        }
+
+        async function pollSuccessLiveState() {
+          try {
+            const response = await fetch(`/scholarship/success/${attemptId}/live-state/`, {
+              method: "GET",
+              cache: "no-store",
+              headers: { "X-Requested-With": "XMLHttpRequest" },
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            if (!data?.success) return;
+
+            if (lastSignature && data.signature === lastSignature) return;
+            lastSignature = data.signature || "";
+
+            const scoreNode = document.getElementById("liveScoreValue");
+            if (scoreNode) scoreNode.textContent = `${data.score} / ${data.total_marks}`;
+            const currentRank = document.getElementById("liveCurrentRank");
+            if (currentRank) currentRank.textContent = rankText(data.leaderboard_position);
+            const currentScore = document.getElementById("liveCurrentRankScore");
+            if (currentScore) currentScore.textContent = `${data.score} / ${data.total_marks}`;
+
+            document.getElementById("livePhyMarks").textContent = data.subject_scores?.phy_marks ?? 0;
+            document.getElementById("liveChmMarks").textContent = data.subject_scores?.chm_marks ?? 0;
+            document.getElementById("liveBioMarks").textContent = data.subject_scores?.bio_marks ?? 0;
+            document.getElementById("liveMathMarks").textContent = data.subject_scores?.math_marks ?? 0;
+            document.getElementById("liveTotalScore").textContent = data.total_score ?? 0;
+            document.getElementById("liveBatchRank").textContent = rankText(data.batch_rank);
+            document.getElementById("liveInstituteRank").textContent = rankText(data.institute_rank);
+            renderLeaderboardRows(data.leaderboard_top_entries || []);
+          } catch (_error) {
+          }
+        }
+
+        setInterval(pollSuccessLiveState, 3000);
+        pollSuccessLiveState();
       })();
     </script>
   </body>

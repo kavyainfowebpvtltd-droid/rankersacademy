@@ -269,29 +269,43 @@
     }
 
     .my-tests-page .summary-card-title {
-      color: var(--muted);
-      font-size: 0.78rem;
+      color: #768396;
+      font-size: 0.76rem;
       text-transform: uppercase;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+      font-weight: 800;
+      letter-spacing: 0.09em;
     }
 
     .my-tests-page .summary-card-value {
-      font-size: 1.6rem;
-      font-weight: 800;
-      line-height: 1.05;
+      font-size: clamp(2.05rem, 2.9vw, 2.75rem);
+      font-weight: 900;
+      line-height: 1;
+      color: #111827;
     }
 
     .my-tests-page .summary-card-extra {
-      font-size: 0.84rem;
-      color: var(--muted);
+      font-size: 0.9rem;
+      color: #7b8697;
+    }
+
+    .my-tests-page .result-stat-card {
+      background: #ffffff;
+      border: 1px solid #dfe7f2;
+      border-radius: 1.28rem;
+      min-height: 128px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+      padding: 1.15rem 1.28rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.34rem;
     }
 
     .my-tests-page .student-highlight {
-      --bs-table-bg: var(--page-highlight-bg);
-      --bs-table-striped-bg: var(--page-highlight-striped);
-      outline: 2px solid var(--page-highlight-outline);
-      outline-offset: -2px;
+      --bs-table-bg: transparent;
+      --bs-table-striped-bg: transparent;
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
     }
 
     .my-tests-page .rank-medal {
@@ -541,8 +555,197 @@
       font-size: 4rem;
     }
 
+    .my-tests-page .result-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      margin-top: 0.35rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .my-tests-page .result-test-title {
+      font-weight: 700;
+      font-size: clamp(1rem, 1.55vw, 1.2rem);
+      letter-spacing: 0.01em;
+      color: var(--page-text);
+      min-width: 0;
+    }
+
+    .my-tests-page .result-test-date {
+      color: #4b5563;
+      font-size: 1.05rem;
+      font-weight: 700;
+      white-space: nowrap;
+      text-align: right;
+    }
+
     .my-tests-page .top-performer-card {
-      width: 140px;
+      --tp-size: clamp(210px, 24vw, 270px);
+      width: var(--tp-size);
+      height: var(--tp-size);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0.6rem;
+      padding: clamp(1.05rem, 2.2vw, 1.45rem);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.04) 40%, transparent 64%),
+        linear-gradient(155deg, rgba(8, 12, 28, 0.9), rgba(7, 10, 22, 0.78));
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.24),
+        0 16px 36px rgba(3, 8, 25, 0.5),
+        0 0 24px rgba(99, 102, 241, 0.28);
+      transition: transform 0.26s ease, box-shadow 0.26s ease, filter 0.26s ease;
+      backdrop-filter: blur(14px) saturate(145%);
+      isolation: isolate;
+    }
+
+    .my-tests-page .top-performer-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      padding: 2px;
+      background: conic-gradient(from 0deg, #22d3ee, #4f46e5, #8b5cf6, #ec4899, #22d3ee);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.98;
+      animation: top-performer-border-spin 5.2s linear infinite;
+    }
+
+    .my-tests-page .top-performer-card:hover {
+      transform: translateY(-6px) scale(1.04);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.26),
+        0 22px 44px rgba(3, 8, 25, 0.58),
+        0 0 34px rgba(129, 140, 248, 0.46);
+      filter: saturate(118%);
+    }
+
+    @keyframes top-performer-border-spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .my-tests-page .top-performer-rank {
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      font-size: clamp(0.86rem, 1.5vw, 1rem);
+      margin-bottom: 0.2rem !important;
+      line-height: 1;
+      color: #0f172a;
+      text-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.18));
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 999px;
+      padding: 0.2rem 0.62rem;
+    }
+
+    .my-tests-page .top-performer-avatar {
+      width: clamp(90px, 10vw, 110px);
+      height: clamp(90px, 10vw, 110px);
+      margin: 0 auto;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(129, 140, 248, 0.85);
+      background: rgba(15, 23, 42, 0.72);
+      box-shadow:
+        0 0 0 4px rgba(59, 130, 246, 0.24),
+        0 0 22px rgba(139, 92, 246, 0.38),
+        0 12px 22px rgba(2, 6, 23, 0.48);
+    }
+
+    .my-tests-page .top-performer-avatar img,
+    .my-tests-page .top-performer-avatar span {
+      width: calc(clamp(90px, 10vw, 110px) - 10px) !important;
+      height: calc(clamp(90px, 10vw, 110px) - 10px) !important;
+      border-radius: 999px !important;
+    }
+
+    .my-tests-page .top-performer-name,
+    .my-tests-page .top-performer-meta {
+      width: 100%;
+      text-align: center;
+    }
+
+    .my-tests-page .top-performer-name {
+      font-size: clamp(0.94rem, 1.65vw, 1.16rem);
+      font-weight: 800;
+      margin-top: 0.28rem !important;
+      color: #0b1220;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+      background: linear-gradient(135deg, #0f172a, #1d4ed8 58%, #7c3aed);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .my-tests-page .top-performer-meta {
+      font-size: clamp(0.76rem, 1.3vw, 0.88rem);
+      line-height: 1.3;
+      color: #0f172a !important;
+      font-weight: 800;
+      margin-top: 0.08rem;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 999px;
+      padding: 0.2rem 0.62rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.28rem;
+    }
+
+    .my-tests-page .top-performer-meta .top-performer-rank-no {
+      color: #1d4ed8;
+      font-weight: 800;
+      text-shadow: 0 0 10px rgba(59, 130, 246, 0.32);
+    }
+
+    .my-tests-page .top-performer-meta .top-performer-score-no {
+      color: #7c3aed;
+      font-weight: 900;
+      text-shadow: 0 0 10px rgba(124, 58, 237, 0.24);
+    }
+
+    html:not([data-admin-theme="light"]) .my-tests-page .top-performer-rank {
+      color: #e2e8f0;
+      text-shadow: 0 0 10px rgba(148, 163, 184, 0.35);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(245, 158, 11, 0.14));
+      border-color: rgba(251, 191, 36, 0.5);
+    }
+
+    html:not([data-admin-theme="light"]) .my-tests-page .top-performer-name {
+      text-shadow: 0 2px 12px rgba(15, 23, 42, 0.4);
+      background: linear-gradient(135deg, #ffffff, #c4b5fd 56%, #93c5fd);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    html:not([data-admin-theme="light"]) .my-tests-page .top-performer-meta {
+      color: #cbd5e1 !important;
+      background: rgba(148, 163, 184, 0.12);
+      border-color: rgba(129, 140, 248, 0.32);
     }
 
     .my-tests-page .leaderboard-table {
@@ -586,12 +789,23 @@
       background: var(--page-table-body-bg-hover);
     }
 
-    .my-tests-page .leaderboard-table tbody tr.table-active.student-highlight {
-      background: var(--page-highlight-bg) !important;
+    .my-tests-page .leaderboard-table tbody tr.student-highlight,
+    .my-tests-page .leaderboard-table tbody tr.student-highlight:hover,
+    .my-tests-page .leaderboard-table tbody tr.student-highlight td {
+      background: transparent !important;
+      outline: none !important;
+      box-shadow: none !important;
     }
 
-    .my-tests-page .leaderboard-table tbody tr.table-active.student-highlight td {
-      background: transparent !important;
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight,
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight:hover,
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight td {
+      background: #f8fbff !important;
+      color: var(--page-table-row-color) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight .leaderboard-id {
+      color: #64748b !important;
     }
 
     .my-tests-page #leaderboardCountBadge {
@@ -639,6 +853,24 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      color: #2563eb;
+    }
+
+    .my-tests-page .leaderboard-name.is-current {
+      text-shadow: 0 0 8px rgba(37, 99, 235, 0.28);
+      filter: saturate(110%);
+    }
+
+    .my-tests-page .leaderboard-you .badge {
+      background: rgba(22, 163, 74, 0.14) !important;
+      border: 1px solid rgba(22, 163, 74, 0.35) !important;
+      color: #16a34a !important;
+      box-shadow: 0 0 10px rgba(22, 163, 74, 0.24);
+      border-radius: 999px;
+      padding: 0.08rem 0.34rem;
+      font-size: 0.66rem;
+      font-weight: 700;
+      line-height: 1;
     }
 
     .my-tests-page .leaderboard-id {
@@ -655,6 +887,11 @@
     .my-tests-page .leaderboard-section-score {
       text-align: center;
       white-space: nowrap;
+    }
+
+    .my-tests-page .leaderboard-section-score.score-na {
+      color: var(--muted) !important;
+      font-weight: 600;
     }
 
     .my-tests-page .leaderboard-total-cell {
@@ -676,6 +913,25 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+    }
+
+    .my-tests-page .attempt-review-action {
+      width: 100%;
+      max-width: 260px;
+      margin-left: auto;
+      text-align: center;
+      white-space: nowrap;
+      padding: 0.38rem 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    @media (min-width: 992px) {
+      .my-tests-page .attempt-review-action {
+        width: 25%;
+      }
     }
 
     @media (max-width: 991.98px) {
@@ -705,6 +961,14 @@
         grid-template-columns: 1fr;
       }
 
+      .my-tests-page .result-meta-row {
+        align-items: flex-start;
+      }
+
+      .my-tests-page .result-test-date {
+        text-align: left;
+      }
+
       .my-tests-page .test-slot-btn {
         min-height: 5.7rem;
         padding: 0.95rem 1rem;
@@ -712,6 +976,11 @@
 
       .my-tests-page .test-slot-title-row {
         flex-wrap: wrap;
+      }
+
+      .my-tests-page .top-performer-card {
+        --tp-size: clamp(188px, 64vw, 228px);
+        margin-inline: auto;
       }
     }
   </style>
@@ -748,13 +1017,28 @@
           </div>
           <h2 id="rankValue" class="display fw-bold mt-2 mb-0 rank-hero-number"></h2>
           <div id="rankSummary" class="soft"></div>
-          <div id="homeKpiRow" class="hero-kpi-grid mt-4"></div>
+          <div class="result-meta-row">
+            <div id="resultTestTitle" class="result-test-title text-truncate"></div>
+            <div id="resultTestDateTime" class="result-test-date"></div>
+          </div>
+          <div id="homeKpiRow" class="hero-kpi-grid mt-3"></div>
           <div id="homeActionRow" class="d-flex flex-wrap gap-2 mt-3"></div>
+          <div id="attemptReviewPanel" class="card app-card-soft p-3 mt-3 d-none">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+              <div>
+                <div class="fw-semibold">Attempted Test Paper</div>
+                <div id="attemptReviewHint" class="small soft"></div>
+              </div>
+              <a id="attemptReviewBtn" class="btn btn-sm btn-outline-light rounded-pill attempt-review-action disabled" href="#" aria-disabled="true" tabindex="-1" target="_blank" rel="noopener noreferrer">
+                View Attempted Test Paper
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
       <h5 class="display fw-bold">Top Performers</h5>
-      <div id="topPerformers" class="d-flex gap-2 overflow-auto pb-1 mb-4"></div>
+      <div id="topPerformers" class="d-flex gap-4 overflow-auto pb-2 mb-4"></div>
 
       <div class="card app-card p-3 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -767,7 +1051,13 @@
               <tr id="leaderboardHeadRow">
                 <th>#</th>
                 <th>Student</th>
-                <th class="text-end leaderboard-total-head">Total</th>
+                <th class="leaderboard-section-head">PHY</th>
+                <th class="leaderboard-section-head">CHM</th>
+                <th class="leaderboard-section-head">BIO</th>
+                <th class="leaderboard-section-head">MATH</th>
+                <th class="text-end leaderboard-total-head">TOTAL SCORE</th>
+                <th class="leaderboard-section-head">BATCH RANK</th>
+                <th class="leaderboard-section-head">INSTITUTE RANK</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
@@ -811,7 +1101,7 @@
   </div>
 
   <template id="kpiTemplate">
-    <div class="card app-card-soft hover-card p-3 h-100">
+    <div class="card result-stat-card h-100">
       <div class="summary-card-title"></div>
       <div class="summary-card-value"></div>
       <div class="summary-card-extra"></div>
@@ -845,7 +1135,13 @@
           </div>
         </div>
       </td>
+      <td class="leaderboard-section-score mono leaderboard-phy"></td>
+      <td class="leaderboard-section-score mono leaderboard-chm"></td>
+      <td class="leaderboard-section-score mono leaderboard-bio"></td>
+      <td class="leaderboard-section-score mono leaderboard-math"></td>
       <td class="leaderboard-total-cell"><b class="leaderboard-total mono"></b></td>
+      <td class="leaderboard-section-score mono leaderboard-batch-rank"></td>
+      <td class="leaderboard-section-score mono leaderboard-institute-rank"></td>
     </tr>
   </template>
 
@@ -894,6 +1190,7 @@
 </div>
 
 {{ my_tests_payload|json_script:"my-tests-payload" }}
+<script id="my-tests-live-signature" type="application/json">{{ my_tests_live_signature|default:"" }}</script>
 
 <script>
   (() => {
@@ -924,6 +1221,7 @@
     };
 
     const payload = JSON.parse(document.getElementById("my-tests-payload").textContent || "{}");
+    let liveSignature = (document.getElementById("my-tests-live-signature")?.textContent || "").trim();
     const currentStudent = payload.student || {};
     const completedTests = (payload.completedTests || [])
       .map((test) => ({ ...test, kind: "completed" }))
@@ -995,9 +1293,14 @@
       rankShiftBadge: document.getElementById("rankShiftBadge"),
       rankValue: document.getElementById("rankValue"),
       rankSummary: document.getElementById("rankSummary"),
+      resultTestTitle: document.getElementById("resultTestTitle"),
+      resultTestDateTime: document.getElementById("resultTestDateTime"),
       homeKpiRow: document.getElementById("homeKpiRow"),
       homeActionRow: document.getElementById("homeActionRow"),
       topPerformers: document.getElementById("topPerformers"),
+      attemptReviewPanel: document.getElementById("attemptReviewPanel"),
+      attemptReviewHint: document.getElementById("attemptReviewHint"),
+      attemptReviewBtn: document.getElementById("attemptReviewBtn"),
       leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
       leaderboardBody: document.getElementById("leaderboardBody"),
       leaderboardHeadRow: document.getElementById("leaderboardHeadRow"),
@@ -1440,17 +1743,7 @@
     }
 
     function renderLeaderboardHeaders(test) {
-      const headRow = refs.leaderboardHeadRow;
-      const totalHead = headRow.querySelector(".leaderboard-total-head");
-      [...headRow.querySelectorAll(".leaderboard-section-head")].forEach((node) => node.remove());
-
-      sectionHeaderItems(test).forEach((section, index) => {
-        const th = document.createElement("th");
-        th.className = "leaderboard-section-head";
-        th.textContent = sectionDisplayLabel(section, index);
-        th.title = section.name || `Section ${index + 1}`;
-        headRow.insertBefore(th, totalHead);
-      });
+      return test;
     }
 
     function leaderboardRows(rows, highlightId, collapsed) {
@@ -1655,6 +1948,8 @@
         refs.rankTierBadge.textContent = "NO TESTS YET";
         refs.rankValue.textContent = "--";
         refs.rankSummary.textContent = "No completed tests available yet.";
+        refs.resultTestTitle.textContent = "";
+        refs.resultTestDateTime.textContent = "";
         refs.testStreakBadge.classList.add("d-none");
         refs.rankShiftBadge.classList.add("d-none");
         renderKpiCards([
@@ -1670,7 +1965,13 @@
       }
 
       const attempted = !!test.attempted;
-      const rank = attempted ? test.rank : null;
+      const leaderboardEntry = currentStudentEntry();
+      const parsedLeaderboardRank = Number.isInteger(leaderboardEntry?.rank)
+        ? leaderboardEntry.rank
+        : null;
+      const rank = attempted
+        ? (Number.isInteger(test.rank) ? test.rank : parsedLeaderboardRank)
+        : null;
       const rankDelta = attempted ? test.rankDelta : null;
       const scoreValue = Number(test.score || 0);
       const totalMarks = Number(test.totalMarks || 0);
@@ -1679,17 +1980,27 @@
 
       if (attempted) {
         refs.rankTierBadge.className = `badge rounded-pill ${
-          rank <= 10 ? "text-bg-info" : rank <= 25 ? "text-bg-primary" : "text-bg-secondary"
+          Number.isInteger(rank) && rank <= 10
+            ? "text-bg-info"
+            : Number.isInteger(rank) && rank <= 25
+              ? "text-bg-primary"
+              : "text-bg-secondary"
         }`;
-        refs.rankTierBadge.textContent = rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD";
-        refs.rankValue.textContent = `#${rank}`;
+        refs.rankTierBadge.textContent = Number.isInteger(rank)
+          ? (rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD")
+          : "ATTEMPTED";
+        refs.rankValue.textContent = Number.isInteger(rank) ? `#${rank}` : "NA";
       } else {
         refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
         refs.rankTierBadge.textContent = "NOT ATTEMPTED";
         refs.rankValue.textContent = "--";
       }
 
-      refs.rankSummary.textContent = `of ${test.totalStudents || currentLeaderboard().length} students - ${test.name}`;
+      refs.rankSummary.textContent = `of ${test.totalStudents || currentLeaderboard().length} students`;
+      refs.resultTestTitle.textContent = test.name || "--";
+      refs.resultTestDateTime.textContent = [test.shortDate || test.date || "--", test.time || ""]
+        .filter(Boolean)
+        .join(", ");
 
       if (test.testStreak > 0) {
         refs.testStreakBadge.className = "badge rounded-pill text-bg-warning text-dark";
@@ -1753,6 +2064,47 @@
 
       renderTopPerformers(test);
       renderLeaderboard(test);
+      renderAttemptReviewPanel(test);
+    }
+
+    function renderAttemptReviewPanel(test) {
+      if (!refs.attemptReviewPanel || !refs.attemptReviewHint || !refs.attemptReviewBtn) {
+        return;
+      }
+
+      const hasAttempt = !!(test && test.attempted && test.attemptId);
+      if (!hasAttempt) {
+        refs.attemptReviewPanel.classList.add("d-none");
+        refs.attemptReviewHint.textContent = "";
+        refs.attemptReviewBtn.classList.add("disabled");
+        refs.attemptReviewBtn.setAttribute("aria-disabled", "true");
+        refs.attemptReviewBtn.setAttribute("tabindex", "-1");
+        refs.attemptReviewBtn.href = "#";
+        return;
+      }
+
+      refs.attemptReviewPanel.classList.remove("d-none");
+      const available = !!test.answerKeyAvailable;
+      const availableAt = parseIsoDate(test.answerKeyAvailableAt);
+      const availableAtText = availableAt
+        ? availableAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+        : "";
+
+      if (available && test.attemptReviewUrl) {
+        refs.attemptReviewHint.textContent = "Answer key and your submitted responses are available.";
+        refs.attemptReviewBtn.classList.remove("disabled");
+        refs.attemptReviewBtn.removeAttribute("aria-disabled");
+        refs.attemptReviewBtn.removeAttribute("tabindex");
+        refs.attemptReviewBtn.href = test.attemptReviewUrl;
+      } else {
+        refs.attemptReviewHint.textContent = availableAtText
+          ? `Answer key will be available at ${availableAtText}.`
+          : "Answer key will be available soon.";
+        refs.attemptReviewBtn.classList.add("disabled");
+        refs.attemptReviewBtn.setAttribute("aria-disabled", "true");
+        refs.attemptReviewBtn.setAttribute("tabindex", "-1");
+        refs.attemptReviewBtn.href = "#";
+      }
     }
     function renderTopPerformers(test) {
       clearNode(refs.topPerformers);
@@ -1786,8 +2138,14 @@
       const ranked = currentLeaderboard();
       refs.leaderboardCountBadge.textContent = `${ranked.length} students`;
       clearNode(refs.leaderboardBody);
-      const headers = sectionHeaderItems(test);
       renderLeaderboardHeaders(test);
+
+      function setSubjectScoreCell(cell, value) {
+        if (!cell) return;
+        const hasScore = value !== null && value !== undefined;
+        cell.classList.toggle("score-na", !hasScore);
+        cell.textContent = hasScore ? value : "-";
+      }
 
       const rows = leaderboardRows(ranked, currentStudentId, !state.studentLeaderboardOpen);
       rows.forEach((row) => {
@@ -1797,7 +2155,7 @@
         const medal = createRankMedal(row.rank);
 
         if (mine) {
-          node.classList.add("table-active", "student-highlight");
+          node.classList.add("student-highlight");
         }
 
         node.querySelector(".leaderboard-rank-text").textContent = `#${row.rank}`;
@@ -1815,19 +2173,19 @@
         node.querySelector(".leaderboard-name").textContent = row.studentName || student.name || row.studentId;
         node.querySelector(".leaderboard-id").textContent = row.studentRef || student.studentRef || row.studentId;
         if (mine) {
+          node.querySelector(".leaderboard-name").classList.add("is-current");
           node.querySelector(".leaderboard-you").appendChild(createBadge("You", "text-bg-info"));
         }
 
-        const totalCell = node.querySelector(".leaderboard-total-cell");
-        headers.forEach((section, index) => {
-          const cell = document.createElement("td");
-          cell.className = "leaderboard-section-score mono";
-          const sectionScore = leaderboardSectionCellData(row, section, index);
-          cell.textContent = sectionScore ? `${Number(sectionScore.score || 0)}` : "--";
-          cell.title = section.name || section.sectionName || `Section ${index + 1}`;
-          node.insertBefore(cell, totalCell);
-        });
-        node.querySelector(".leaderboard-total").textContent = `${leaderboardRowTotal(row)}/${leaderboardRowTotalMarks(row, test)}`;
+        setSubjectScoreCell(node.querySelector(".leaderboard-phy"), row.phyMarks);
+        setSubjectScoreCell(node.querySelector(".leaderboard-chm"), row.chmMarks);
+        setSubjectScoreCell(node.querySelector(".leaderboard-bio"), row.bioMarks);
+        setSubjectScoreCell(node.querySelector(".leaderboard-math"), row.mathMarks);
+        node.querySelector(".leaderboard-total").textContent = `${row.score ?? 0}`;
+        node.querySelector(".leaderboard-batch-rank").textContent =
+          Number.isInteger(row.batchRank) ? `#${row.batchRank}` : "--";
+        node.querySelector(".leaderboard-institute-rank").textContent =
+          Number.isInteger(row.instituteRank) ? `#${row.instituteRank}` : "--";
         refs.leaderboardBody.appendChild(node);
       });
 
@@ -1983,6 +2341,29 @@
     setInterval(() => {
       renderHeader();
     }, 5000);
+
+    async function pollRealtimeLeaderboardState() {
+      if (!state.online) return;
+      try {
+        const qs = new URLSearchParams({ since: liveSignature || "" });
+        const response = await fetch(`/my-tests/live-state/?${qs.toString()}`, {
+          method: "GET",
+          cache: "no-store",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data?.success || !data?.signature) return;
+        if (liveSignature && data.signature !== liveSignature) {
+          window.location.reload();
+          return;
+        }
+        liveSignature = data.signature;
+      } catch (_error) {
+      }
+    }
+
+    setInterval(pollRealtimeLeaderboardState, 3000);
 
     render();
   })();

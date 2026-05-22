@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.core.paginator import Paginator
 from decimal import Decimal, ROUND_HALF_UP
-from django.db.models import Avg, FloatField, OuterRef, Subquery, Value, DecimalField, Count, Prefetch
+from django.db.models import Avg, FloatField, OuterRef, Subquery, Value, DecimalField, Count, Prefetch, Max
 from django.db.models.functions import Coalesce, Cast, Lower
 from django.contrib import messages
 from django.core.mail import send_mail
@@ -49,6 +49,7 @@ from scholarship_test.models import (
     ScholarshipTestFacultyAttendance,
     ScholarshipTestFacultyAttendanceSession,
     ScholarshipTestFacultyNote,
+    ScholarshipStudentLeaderboard,
 )
 from scholarship_test.services import test_service as scholarship_test_service
 from .password_policy import (
@@ -4451,82 +4452,72 @@ def _latest_completed_attempts_for_test(test):
 
 def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_student=None):
     assigned_students = _get_assigned_portal_students_for_test(test)
-    latest_attempts = {
-        attempt.portal_student_id: attempt
-        for attempt in _latest_completed_attempts_for_test(test)
-        if getattr(attempt, "portal_student_id", None)
+    aggregate_by_student = {
+        row.portal_student_id: row
+        for row in ScholarshipStudentLeaderboard.objects.filter(
+            portal_student_id__in=[item.id for item in assigned_students]
+        )
     }
-    total_marks = _get_test_total_marks(test)
-    zero_section_breakdown = _build_zero_section_breakdown(test)
+    missing_ids = [item.id for item in assigned_students if item.id not in aggregate_by_student]
+    for portal_student_id in missing_ids:
+        scholarship_test_service.recompute_portal_student_leaderboard(portal_student_id)
+    if missing_ids:
+        aggregate_by_student = {
+            row.portal_student_id: row
+            for row in ScholarshipStudentLeaderboard.objects.filter(
+                portal_student_id__in=[item.id for item in assigned_students]
+            )
+        }
     entries = []
 
     for portal_student in assigned_students:
         attempt = latest_attempts.get(portal_student.id)
-        raw_section_scores = (
+        section_scores = (
             _build_attempt_section_breakdown(attempt)
             if attempt
             else [dict(item) for item in zero_section_breakdown]
         )
-        section_scores = []
-        section_score_total = 0
-        for index, item in enumerate(raw_section_scores):
-            section_name = (
-                item.get("sectionName")
-                or item.get("name")
-                or f"Section {index + 1}"
-            )
-            score_value = int(item.get("score", 0) or 0)
-            total_value = int(item.get("total", 0) or 0)
-            section_scores.append(
-                {
-                    **item,
-                    "name": section_name,
-                    "sectionName": section_name,
-                    "shortLabel": item.get("shortLabel") or _short_section_label(section_name),
-                    "score": score_value,
-                    "total": total_value,
-                }
-            )
-            section_score_total += score_value
-
+        
+        # Ensure we have a valid total score and total marks for ranking
         score_val = int(attempt.score or 0) if attempt else 0
-        if section_score_total > 0 and score_val <= 0:
-            score_val = section_score_total
         total_marks_val = int(attempt.total_marks or 0) if attempt and int(attempt.total_marks or 0) > 0 else total_marks
-
+        
         entry = {
-            "attemptId": attempt.id if attempt else None,
+            "attemptId": None,
             "studentId": f"portal-{portal_student.id}",
             "studentName": portal_student.student_name or portal_student.user.username,
             "studentRef": portal_student.username or portal_student.contact,
             "studentBatch": portal_student.batch or "",
             "profilePhotoUrl": _student_photo_url(portal_student),
             "score": score_val,
-            "total": score_val,
             "totalMarks": total_marks_val,
             "sectionScores": section_scores,
+            "phyAttempted": phy_attempted,
+            "chmAttempted": chm_attempted,
+            "bioAttempted": bio_attempted,
+            "mathAttempted": math_attempted,
+            "phyMarks": phy if phy_attempted else None,
+            "chmMarks": chm if chm_attempted else None,
+            "bioMarks": bio if bio_attempted else None,
+            "mathMarks": math if math_attempted else None,
+            "batchRank": getattr(aggregate, "batch_rank", None),
+            "instituteRank": getattr(aggregate, "institute_rank", None),
             "isCurrentStudent": bool(
-                (current_attempt_id and attempt and attempt.id == current_attempt_id)
-                or (
-                    current_portal_student
-                    and portal_student.id == current_portal_student.id
-                )
+                current_portal_student and portal_student.id == current_portal_student.id
             ),
-            "_attempted": bool(attempt),
-            "_completed_at": (
-                attempt.test_completed_at or attempt.test_started_at
-                if attempt
-                else None
-            ),
+            "_attempted": attempted_any_subject,
+            "_completed_at": timezone.now(),
             "_sort_name": (portal_student.student_name or portal_student.user.username or "").casefold(),
         }
         entries.append(entry)
 
+    # Improved ranking logic: only students who actually attempted the test 
+    # should get a numeric rank. Unattempted students stay at the bottom.
     entries.sort(
         key=lambda entry: (
-            0 if entry["_attempted"] else 1,
-            -int(entry["score"] or 0),
-            entry["_completed_at"] or timezone.now(),
+            0 if entry["_attempted"] else 1, # Attempted students first
+            -int(entry["score"] or 0),       # Then by score descending
+            entry["_completed_at"] or timezone.now(), # Then by completion time (earlier is better)
             entry["_sort_name"],
             entry["studentId"],
         )
@@ -4698,6 +4689,21 @@ def _build_my_tests_payload(student):
     completed_published_tests = []
     upcoming_test = None
     published_tests_by_id = {}
+    attempt_queryset = (
+        ScholarshipTestAttempt.objects
+        .filter(
+            portal_student=student,
+            status__in=["completed", "expired"],
+            test__isnull=False,
+        )
+        .select_related("student", "portal_student", "test")
+        .prefetch_related("answers__question__section", "test__sections__questions")
+        .order_by("test__scheduled_start_at", "test_completed_at", "id")
+    )
+
+    latest_attempt_by_test = {}
+    for attempt in attempt_queryset:
+        latest_attempt_by_test[attempt.test_id] = attempt
 
     published_tests = (
         ScholarshipTest.objects
@@ -4707,9 +4713,14 @@ def _build_my_tests_payload(student):
     )
 
     for test in published_tests:
-        if not scholarship_test_service.get_runtime_questions_for_test(test):
+        attempt = latest_attempt_by_test.get(test.id)
+        has_attempt = bool(attempt)
+
+        # Keep legacy compatibility: if student has a submitted attempt for this test,
+        # we must show it even when current assignment/runtime rules no longer match.
+        if not scholarship_test_service.get_runtime_questions_for_test(test) and not has_attempt:
             continue
-        if not scholarship_test_service.is_test_assigned_to_portal_student(test, student):
+        if not scholarship_test_service.is_test_assigned_to_portal_student(test, student) and not has_attempt:
             continue
 
         start_at, end_at, launch_window_opens_at = scholarship_test_service.get_test_launch_window(test)
@@ -4732,7 +4743,8 @@ def _build_my_tests_payload(student):
             "launchUrl": reverse("scholarship_test:scholarship_launch_test", args=[test.id]),
         }
 
-        if end_at <= now:
+        # Show submitted tests immediately in completed cards, even if the test window is still live.
+        if end_at <= now or attempt:
             completed_published_tests.append(item)
             continue
 
@@ -4791,10 +4803,6 @@ def _build_my_tests_payload(student):
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
-        # My Tests only needs marks, rank, and section data from attempts.
-        # Defer optional exam-security columns so this page remains compatible
-        # with deployments where that schema change is not applied yet.
-        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
@@ -4932,6 +4940,7 @@ def _build_my_tests_payload(student):
             "name": student.student_name,
             "username": student.username,
             "batch": student.batch,
+            "stream": student.stream,
             "parentPhone": student.contact,
             "profilePhotoUrl": _student_photo_url(student),
         },
@@ -4939,6 +4948,26 @@ def _build_my_tests_payload(student):
         "upcomingTest": upcoming_test,
         "rewards": rewards,
     }
+
+
+def _build_my_tests_live_signature(student):
+    batch_value = (student.batch or "").strip()
+    agg_qs = ScholarshipStudentLeaderboard.objects.all()
+    if batch_value:
+        agg_qs = agg_qs.filter(student_batch__iexact=batch_value)
+    aggregate_max = agg_qs.aggregate(max_updated=Max("updated_at")).get("max_updated")
+    attempts_max = (
+        ScholarshipTestAttempt.objects
+        .filter(test__isnull=False, status__in=["completed", "expired"])
+        .aggregate(max_completed=Max("test_completed_at"))
+        .get("max_completed")
+    )
+    return "|".join(
+        [
+            aggregate_max.isoformat() if aggregate_max else "none",
+            attempts_max.isoformat() if attempts_max else "none",
+        ]
+    )
 
 
 ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Biology"]
@@ -5346,8 +5375,31 @@ def my_tests(request):
         {
             "student": student,
             "my_tests_payload": _build_my_tests_payload(student),
+            "my_tests_live_signature": _build_my_tests_live_signature(student),
         },
     )
+
+
+@login_required
+def my_tests_live_state(request):
+    if not hasattr(request.user, "student"):
+        return JsonResponse({"success": False, "error": "Student not found"}, status=404)
+
+    student = request.user.student
+    current_signature = _build_my_tests_live_signature(student)
+    client_signature = str(request.GET.get("since", "") or "").strip()
+    changed = bool(client_signature) and client_signature != current_signature
+
+    response = JsonResponse(
+        {
+            "success": True,
+            "signature": current_signature,
+            "changed": changed,
+        }
+    )
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 @login_required
