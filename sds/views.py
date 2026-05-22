@@ -170,13 +170,17 @@ def _insert_model_with_db_defaults(model_class, values, db_only_values=None):
     return model_class.objects.get(pk=inserted_pk)
 
 
-def _create_auth_user_with_db_drift_support(**user_kwargs):
+def _run_with_mysql_missing_default_fallback(primary_create, fallback_create):
     try:
-        return User.objects.create_user(**user_kwargs)
+        with transaction.atomic():
+            return primary_create()
     except IntegrityError as exc:
         if not _is_mysql_missing_default_error(exc):
             raise
+        return fallback_create()
 
+
+def _create_auth_user_with_db_drift_support(**user_kwargs):
     insert_values = {
         "username": user_kwargs.get("username", ""),
         "first_name": user_kwargs.get("first_name", ""),
@@ -189,20 +193,21 @@ def _create_auth_user_with_db_drift_support(**user_kwargs):
         "last_login": user_kwargs.get("last_login"),
         "date_joined": user_kwargs.get("date_joined", timezone.now()),
     }
-    return _insert_model_with_db_defaults(User, insert_values)
+    return _run_with_mysql_missing_default_fallback(
+        lambda: User.objects.create_user(**user_kwargs),
+        lambda: _insert_model_with_db_defaults(User, insert_values),
+    )
 
 
 def _create_model_with_db_drift_support(model_class, *, db_only_values=None, **create_kwargs):
-    try:
-        return model_class.objects.create(**create_kwargs)
-    except IntegrityError as exc:
-        if not _is_mysql_missing_default_error(exc):
-            raise
-        return _insert_model_with_db_defaults(
+    return _run_with_mysql_missing_default_fallback(
+        lambda: model_class.objects.create(**create_kwargs),
+        lambda: _insert_model_with_db_defaults(
             model_class,
             create_kwargs,
             db_only_values=db_only_values,
-        )
+        ),
+    )
 
 
 def _student_portal_feature_block_response(request, feature_key: str, api: bool = False):

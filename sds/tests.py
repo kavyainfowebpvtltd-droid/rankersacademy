@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.test import Client, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -54,6 +54,17 @@ class AddUserStudentFieldSelectionTests(TestCase):
 
 
 class UserCreationFallbackTests(TestCase):
+    @patch("sds.views._is_mysql_missing_default_error", return_value=True)
+    def test_integrity_fallback_works_inside_outer_atomic_block(self, mock_is_missing_default):
+        with transaction.atomic():
+            result = views._run_with_mysql_missing_default_fallback(
+                lambda: (_ for _ in ()).throw(IntegrityError("missing default")),
+                lambda: "fallback-ok",
+            )
+
+        self.assertEqual(result, "fallback-ok")
+        mock_is_missing_default.assert_called_once()
+
     @patch("sds.views._insert_model_with_db_defaults")
     @patch("sds.views.User.objects.create_user")
     def test_auth_user_creation_falls_back_on_missing_mysql_default(self, mock_create_user, mock_insert):
