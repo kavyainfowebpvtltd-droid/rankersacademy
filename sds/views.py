@@ -4432,13 +4432,9 @@ def _get_assigned_portal_students_for_test(test):
 
 def _latest_completed_attempts_for_test(test):
     attempts = (
-        ScholarshipTestAttempt.objects
+        _schema_safe_scholarship_attempt_queryset()
         .filter(test=test, status__in=["completed", "expired"])
         .select_related("student", "portal_student")
-        # These exam-security fields were added in a later migration and are
-        # not required for leaderboard/report rendering on My Tests pages.
-        # Defer them here so older databases without those columns do not fail.
-        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test_completed_at", "test_started_at", "id")
     )
@@ -4448,6 +4444,17 @@ def _latest_completed_attempts_for_test(test):
         latest_by_student[_analysis_attempt_student_id(attempt)] = attempt
 
     return list(latest_by_student.values())
+
+
+def _schema_safe_scholarship_attempt_queryset():
+    # These exam-security fields were introduced in a later migration.
+    # Deferring them keeps reads compatible with older production schemas.
+    return ScholarshipTestAttempt.objects.defer(
+        "started_at",
+        "submitted_at",
+        "violation_count",
+        "security_status",
+    )
 
 
 def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_student=None):
@@ -4690,15 +4697,13 @@ def _build_my_tests_payload(student):
     upcoming_test = None
     published_tests_by_id = {}
     attempt_queryset = (
-        ScholarshipTestAttempt.objects
+        _schema_safe_scholarship_attempt_queryset()
         .filter(
             portal_student=student,
             status__in=["completed", "expired"],
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
-        # Optional exam-security columns may be absent on older DB schemas.
-        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
@@ -4798,15 +4803,13 @@ def _build_my_tests_payload(student):
             break
 
     attempt_queryset = (
-        ScholarshipTestAttempt.objects
+        _schema_safe_scholarship_attempt_queryset()
         .filter(
             portal_student=student,
             status__in=["completed", "expired"],
             test__isnull=False,
         )
         .select_related("student", "portal_student", "test")
-        # Optional exam-security columns may be absent on older DB schemas.
-        .defer("started_at", "submitted_at", "violation_count", "security_status")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
@@ -4961,7 +4964,7 @@ def _build_my_tests_live_signature(student):
         agg_qs = agg_qs.filter(student_batch__iexact=batch_value)
     aggregate_max = agg_qs.aggregate(max_updated=Max("updated_at")).get("max_updated")
     attempts_max = (
-        ScholarshipTestAttempt.objects
+        _schema_safe_scholarship_attempt_queryset()
         .filter(test__isnull=False, status__in=["completed", "expired"])
         .aggregate(max_completed=Max("test_completed_at"))
         .get("max_completed")
