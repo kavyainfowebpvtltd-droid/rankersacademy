@@ -1723,6 +1723,7 @@ def add_user(request):
 
 @login_required
 @require_POST
+@transaction.atomic
 def edit_student(request, id):
    
     if not (
@@ -1735,6 +1736,7 @@ def edit_student(request, id):
     new_username = (request.POST.get("username") or "").strip()
     new_email = _normalize_email(request.POST.get("email"))
     new_contact = _normalize_phone(request.POST.get("contact"))
+    new_batch = (request.POST.get("batch") or "").strip()
     father_name = (request.POST.get("father_name") or "").strip()
     emergency_contact_name = (request.POST.get("emergency_contact_name") or "").strip()
     emergency_contact = _normalize_phone(request.POST.get("emergency_contact"))
@@ -1799,11 +1801,11 @@ def edit_student(request, id):
     student.emergency_contact = emergency_contact
     student.email = new_email
     student.stream = (request.POST.get("stream") or "").strip()
-    student.board = request.POST.get("board")
-    student.grade = request.POST.get("grade")
-    student.batch = request.POST.get("batch") or student.batch  
+    student.board = (request.POST.get("board") or "").strip()
+    student.grade = (request.POST.get("grade") or "").strip()
+    student.batch = new_batch or student.batch
     student.blood_group = (request.POST.get("blood_group") or "").strip()
-    student.gender = request.POST.get("gender")
+    student.gender = (request.POST.get("gender") or "").strip()
 
     if "profile_photo" in request.FILES:
         student.profile_photo = request.FILES["profile_photo"]
@@ -1827,6 +1829,7 @@ def edit_student(request, id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def edit_teacher(request, id):
     if not (
         request.user.is_superuser
@@ -1839,9 +1842,19 @@ def edit_teacher(request, id):
     new_username = (request.POST.get("username") or "").strip()
     new_email = _normalize_email(request.POST.get("email"))
     new_contact = _normalize_phone(request.POST.get("contact"))
+    new_role = _normalize_staff_designation(request.POST.get("role") or teacher.role)
+    new_batch = (request.POST.get("batch") or "").strip()
+    new_subjects = (request.POST.get("subjects") or "").strip()
     password = (request.POST.get("password") or "").strip()
 
-   
+    if not new_username:
+        messages.error(request, "Username is required.")
+        return redirect("user-management")
+
+    if not new_email:
+        messages.error(request, "Email is required.")
+        return redirect("user-management")
+
     if new_username and new_username != teacher.user.username:
         if User.objects.filter(username=new_username).exclude(id=teacher.user.id).exists():
             messages.error(request, "Username already exists")
@@ -1879,13 +1892,13 @@ def edit_teacher(request, id):
     teacher.username = new_username or teacher.username
     teacher.email = new_email or teacher.email
     teacher.contact = new_contact
-    teacher.gender = request.POST.get("gender")
-    teacher.role = _normalize_staff_designation(request.POST.get("role") or teacher.role)
-    teacher.grade = request.POST.get("grade")
-    teacher.board = request.POST.get("board")
-    teacher.batch = request.POST.get("batch") if _is_teacher_designation(teacher.role) else ""
+    teacher.gender = (request.POST.get("gender") or "").strip()
+    teacher.role = new_role
+    teacher.grade = (request.POST.get("grade") or "").strip()
+    teacher.board = (request.POST.get("board") or "").strip()
+    teacher.batch = new_batch if _is_teacher_designation(new_role) else ""
     teacher.blood_group = (request.POST.get("blood_group") or "").strip()
-    teacher.subjects = (request.POST.get("subjects") or "").strip() if _is_teacher_designation(teacher.role) else ""
+    teacher.subjects = new_subjects if _is_teacher_designation(new_role) else ""
     
     # Handle profile picture upload
     if "profile_picture" in request.FILES:

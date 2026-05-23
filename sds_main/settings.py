@@ -17,7 +17,6 @@ ALLOWED_HOSTS = [
     "147.93.29.224",
     "rankersonlinetest.com",
     "www.rankersonlinetest.com",
-  
 ]
 
 CSRF_TRUSTED_ORIGINS = [
