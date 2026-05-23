@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 from zoneinfo import ZoneInfo
+from sds.models import Student
 
 logger = logging.getLogger(__name__)
 
