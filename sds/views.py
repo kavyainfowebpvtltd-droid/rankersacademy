@@ -16,8 +16,10 @@ from django.views.decorators.http import require_POST, require_GET
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.http import JsonResponse, FileResponse, Http404
 from django.db import transaction, connection, IntegrityError
+from django.db.utils import OperationalError, ProgrammingError
 from django.core.cache import cache
 import json
+import logging
 import os
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
@@ -59,6 +61,8 @@ from .password_policy import (
 )
 from .portal_features import is_student_portal_feature_enabled
 
+logger = logging.getLogger(__name__)
+
 
 # Login and Logout Views
 
@@ -66,7 +70,7 @@ def _redirect_authenticated_user_home(user):
     if user_needs_password_change(user):
         return redirect("force_password_change")
     if hasattr(user, "student"):
-        return redirect("student-dashboard")
+        return redirect("my_tests")
     if _is_admin_or_teacher(user):
         return redirect("admin-dashboard")
     return redirect("login")
@@ -376,7 +380,7 @@ def login_view(request):
 
         if role == "Student":
             if hasattr(user, "student"):
-                return redirect("student-dashboard")
+                return redirect("my_tests")
             messages.error(request, "You are not registered as a student")
             return redirect("login")
 
@@ -778,7 +782,7 @@ def verify_login_otp(request):
         return JsonResponse({"ok": True, "redirect": reverse("force_password_change")})
 
     if role == "Student":
-        return JsonResponse({"ok": True, "redirect": "/dashboard/student-dashboard/"})
+        return JsonResponse({"ok": True, "redirect": reverse("my_tests")})
     return JsonResponse({"ok": True, "redirect": "/dashboard/admin-dashboard/"})
 
 
@@ -2943,6 +2947,8 @@ def _serialize_faculty_note(note):
 def test_analysis_attendance_status_api(request):
     if request.method != "POST" or not _can_access_test_analysis_api(request.user):
         return JsonResponse({"error": "Forbidden"}, status=403)
+    if not _analysis_model_table_available(ScholarshipTestFacultyAttendance):
+        return _analysis_feature_unavailable_response("Attendance tracking")
 
     try:
         data = json.loads(request.body or "{}")
@@ -2981,6 +2987,11 @@ def test_analysis_attendance_status_api(request):
 def test_analysis_attendance_finalize_api(request):
     if request.method != "POST" or not _can_access_test_analysis_api(request.user):
         return JsonResponse({"error": "Forbidden"}, status=403)
+    if (
+        not _analysis_model_table_available(ScholarshipTestFacultyAttendance)
+        or not _analysis_model_table_available(ScholarshipTestFacultyAttendanceSession)
+    ):
+        return _analysis_feature_unavailable_response("Attendance finalization")
 
     try:
         data = json.loads(request.body or "{}")
@@ -3038,6 +3049,8 @@ def test_analysis_attendance_finalize_api(request):
 def test_analysis_note_create_api(request):
     if request.method != "POST" or not _can_access_test_analysis_api(request.user):
         return JsonResponse({"error": "Forbidden"}, status=403)
+    if not _analysis_model_table_available(ScholarshipTestFacultyNote):
+        return _analysis_feature_unavailable_response("Faculty notes")
 
     try:
         data = json.loads(request.body or "{}")
@@ -3073,6 +3086,8 @@ def test_analysis_note_create_api(request):
 def test_analysis_note_delete_api(request):
     if request.method != "POST" or not _can_access_test_analysis_api(request.user):
         return JsonResponse({"error": "Forbidden"}, status=403)
+    if not _analysis_model_table_available(ScholarshipTestFacultyNote):
+        return _analysis_feature_unavailable_response("Faculty notes")
 
     try:
         data = json.loads(request.body or "{}")
@@ -4404,6 +4419,31 @@ def _schema_safe_scholarship_attempt_queryset():
     )
 
 
+def _analysis_model_table_available(model_class):
+    try:
+        return model_class._meta.db_table in connection.introspection.table_names()
+    except (OperationalError, ProgrammingError) as exc:
+        logger.warning(
+            "Unable to verify availability of analysis table %s: %s",
+            model_class._meta.db_table,
+            exc,
+        )
+        return False
+
+
+def _analysis_feature_unavailable_response(feature_name):
+    return JsonResponse(
+        {
+            "error": (
+                f"{feature_name} is temporarily unavailable because the related "
+                "test-analysis database tables are missing. Please run the latest "
+                "`scholarship_test` migrations."
+            )
+        },
+        status=503,
+    )
+
+
 def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_student=None):
     return scholarship_test_service.get_test_attempt_leaderboard_data(
         test,
@@ -5279,33 +5319,60 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
 
 def _build_attendance_state_payload(test_ids=None, subject=None):
     attendance_by_test = {}
-    attendance_qs = ScholarshipTestFacultyAttendance.objects.all()
-    session_qs = ScholarshipTestFacultyAttendanceSession.objects.all()
+    attendance_table_available = _analysis_model_table_available(
+        ScholarshipTestFacultyAttendance
+    )
+    session_table_available = _analysis_model_table_available(
+        ScholarshipTestFacultyAttendanceSession
+    )
 
-    if test_ids is not None:
-        attendance_qs = attendance_qs.filter(test_id__in=test_ids)
-        session_qs = session_qs.filter(test_id__in=test_ids)
-    if subject:
-        attendance_qs = attendance_qs.filter(subject=subject)
-        session_qs = session_qs.filter(subject=subject)
+    if not attendance_table_available and not session_table_available:
+        logger.warning(
+            "Skipping test analysis attendance payload because attendance tables are unavailable."
+        )
+        return attendance_by_test
 
-    for record in attendance_qs.select_related("portal_student"):
-        test_key = f"SCH{record.test_id}"
-        state = attendance_by_test.setdefault(test_key, {sub: {} for sub in ANALYSIS_SUBJECT_ORDER})
-        state.setdefault(record.subject, {})
-        state[record.subject][f"portal-{record.portal_student_id}"] = record.status
+    if attendance_table_available:
+        attendance_qs = ScholarshipTestFacultyAttendance.objects.all()
+        if test_ids is not None:
+            attendance_qs = attendance_qs.filter(test_id__in=test_ids)
+        if subject:
+            attendance_qs = attendance_qs.filter(subject=subject)
 
-    for session in session_qs:
-        test_key = f"SCH{session.test_id}"
-        state = attendance_by_test.setdefault(test_key, {sub: {} for sub in ANALYSIS_SUBJECT_ORDER})
-        finalized = state.setdefault("finalized", {})
-        finalized[session.subject] = bool(session.finalized)
+        for record in attendance_qs.select_related("portal_student"):
+            test_key = f"SCH{record.test_id}"
+            state = attendance_by_test.setdefault(
+                test_key, {sub: {} for sub in ANALYSIS_SUBJECT_ORDER}
+            )
+            state.setdefault(record.subject, {})
+            state[record.subject][f"portal-{record.portal_student_id}"] = record.status
+
+    if session_table_available:
+        session_qs = ScholarshipTestFacultyAttendanceSession.objects.all()
+        if test_ids is not None:
+            session_qs = session_qs.filter(test_id__in=test_ids)
+        if subject:
+            session_qs = session_qs.filter(subject=subject)
+
+        for session in session_qs:
+            test_key = f"SCH{session.test_id}"
+            state = attendance_by_test.setdefault(
+                test_key, {sub: {} for sub in ANALYSIS_SUBJECT_ORDER}
+            )
+            finalized = state.setdefault("finalized", {})
+            finalized[session.subject] = bool(session.finalized)
 
     return attendance_by_test
 
 
 def _build_note_state_payload(user, test_ids=None, subject=None):
     notes_by_test = {}
+    if not _analysis_model_table_available(ScholarshipTestFacultyNote):
+        logger.warning(
+            "Skipping test analysis note payload because the faculty note table is unavailable."
+        )
+        return notes_by_test
+
     notes_qs = ScholarshipTestFacultyNote.objects.all()
 
     if _is_teacher_user(user):

@@ -212,7 +212,7 @@ class LoginThrottleTests(TestCase):
             REMOTE_ADDR=shared_ip,
         )
 
-        self.assertRedirects(response, reverse("student-dashboard"))
+        self.assertRedirects(response, reverse("my_tests"))
 
     def test_account_lock_still_applies_after_repeated_failures(self):
         for _ in range(5):
@@ -324,6 +324,76 @@ class AdminDashboardSearchTests(TestCase):
         self.assertContains(response, 'id="adminDashboardTableSection"')
         self.assertContains(response, "Rohit Kumar")
         self.assertNotContains(response, 'id="adminDashboardSearchForm"')
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
+class StudentLoginRedirectTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="mytests01",
+            email="mytests01@example.com",
+            password="StudentPass@2026",
+        )
+        Student.objects.create(
+            user=self.user,
+            student_name="My Tests Student",
+            username="mytests01",
+            contact="9876543299",
+            email="mytests01@example.com",
+            school="Rankers School",
+            board="CBSE",
+            grade="10th",
+            batch="B1",
+            gender="Male",
+        )
+
+    def test_password_login_redirects_student_to_my_tests(self):
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "mytests01",
+                "password": "StudentPass@2026",
+                "role": "Student",
+            },
+        )
+
+        self.assertRedirects(response, reverse("my_tests"))
+
+    @patch("sds.views._is_msg91_verified", return_value=True)
+    @patch("sds.views._msg91_verify_otp", return_value={"type": "success"})
+    def test_otp_login_redirects_student_to_my_tests(self, _mock_verify, _mock_is_verified):
+        cache.set(
+            "otp:login:9876543299",
+            {"user_id": self.user.id, "role": "Student", "attempts": 0},
+            600,
+        )
+
+        response = self.client.post(
+            reverse("verify_login_otp"),
+            {
+                "phone": "9876543299",
+                "otp": "1234",
+                "role": "Student",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content.decode("utf-8"),
+            {"ok": True, "redirect": reverse("my_tests")},
+        )
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
+class TestAnalysisSchemaSafetyTests(TestCase):
+    def test_attendance_payload_returns_empty_when_analysis_tables_are_unavailable(self):
+        with patch("sds.views._analysis_model_table_available", return_value=False):
+            self.assertEqual(views._build_attendance_state_payload(), {})
+
+    def test_note_payload_returns_empty_when_analysis_note_table_is_unavailable(self):
+        with patch("sds.views._analysis_model_table_available", return_value=False):
+            self.assertEqual(views._build_note_state_payload(None), {})
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
