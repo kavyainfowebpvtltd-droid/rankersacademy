@@ -590,10 +590,10 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
-      gap: 0.6rem;
-      padding: clamp(1.15rem, 2.3vw, 1.55rem);
+      gap: 0.45rem;
+      padding: clamp(1.05rem, 2.1vw, 1.4rem);
       overflow: hidden;
       background:
         radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.04) 40%, transparent 64%),
@@ -672,8 +672,8 @@
     }
 
     .my-tests-page .top-performer-avatar {
-      width: clamp(90px, 10vw, 110px);
-      height: clamp(90px, 10vw, 110px);
+      width: clamp(106px, 12vw, 128px);
+      height: clamp(106px, 12vw, 128px);
       margin: 0 auto;
       border-radius: 999px;
       overflow: hidden;
@@ -690,8 +690,8 @@
 
     .my-tests-page .top-performer-avatar img,
     .my-tests-page .top-performer-avatar span {
-      width: calc(clamp(90px, 10vw, 110px) - 10px) !important;
-      height: calc(clamp(90px, 10vw, 110px) - 10px) !important;
+      width: calc(clamp(106px, 12vw, 128px) - 10px) !important;
+      height: calc(clamp(106px, 12vw, 128px) - 10px) !important;
       border-radius: 999px !important;
     }
 
@@ -712,7 +712,7 @@
     .my-tests-page .top-performer-name {
       font-size: clamp(0.94rem, 1.65vw, 1.16rem);
       font-weight: 800;
-      margin-top: 0.28rem !important;
+      margin-top: 0.65rem !important;
       color: #f8fafc;
       letter-spacing: 0.01em;
       text-shadow: 0 2px 12px rgba(15, 23, 42, 0.4);
@@ -732,7 +732,7 @@
       line-height: 1.3;
       color: #e2e8f0 !important;
       font-weight: 800;
-      margin-top: 0.08rem;
+      margin-top: auto;
       background: rgba(148, 163, 184, 0.12);
       border: 1px solid rgba(129, 140, 248, 0.32);
       border-radius: 999px;
