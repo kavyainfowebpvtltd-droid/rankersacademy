@@ -967,6 +967,23 @@
           return Number.isInteger(rank) ? rank : Number.MAX_SAFE_INTEGER;
         };
         const useBackendRanks = key === "total" && scores.some((score) => score?.rank !== undefined);
+        const subjectDef = key === "total"
+          ? null
+          : currentSubjectDefinitions().find((subject) => (
+            subject.key === key
+            || subject.name === key
+            || subject.sectionName === key
+          ));
+        const subjectIndex = Number.isInteger(subjectDef?.index) ? subjectDef.index : 0;
+        const scoreValueForKey = (row) => {
+          if (key === "total") {
+            return rowTotalScore(row);
+          }
+          if (subjectDef) {
+            return scoreForSubject(row, subjectDef, subjectIndex);
+          }
+          return Number(row?.[key]) || 0;
+        };
         return [...scores]
           .sort((a, b) => {
             const attemptedA = a?.attempted !== false;
@@ -975,7 +992,7 @@
               return attemptedA ? -1 : 1;
             }
 
-            const scoreDiff = (Number(b?.[key]) || 0) - (Number(a?.[key]) || 0);
+            const scoreDiff = scoreValueForKey(b) - scoreValueForKey(a);
             if (scoreDiff) {
               return scoreDiff;
             }

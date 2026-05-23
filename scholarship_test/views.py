@@ -31,7 +31,6 @@ from scholarship_test.models import (
     ScholarshipTestOption,
     ScholarshipTestAnswer,
     ScholarshipTestImage,
-    ScholarshipStudentLeaderboard,
 )
 from scholarship_test.forms import (
     ScholarshipRegistrationStepOneForm,
@@ -347,12 +346,11 @@ def _get_non_scholarship_stream(attempt):
     if not portal_student:
         return getattr(attempt.student, 'board', '') or '-'
 
-    interested_exams = getattr(portal_student, 'interested_exams', []) or []
-    normalized_exams = [str(exam).strip().upper() for exam in interested_exams if str(exam).strip()]
-
     matched_streams = []
-    for stream_name in ('JEE', 'NEET'):
-        if any(stream_name in exam for exam in normalized_exams):
+    stream_values = test_service.get_portal_student_stream_values(portal_student)
+    normalized_streams = {str(value or "").strip().upper() for value in stream_values if str(value or "").strip()}
+    for stream_name in ('JEE', 'NEET', 'MHTCET'):
+        if any(stream_name in value for value in normalized_streams):
             matched_streams.append(stream_name)
 
     if matched_streams:
@@ -363,48 +361,19 @@ def _get_non_scholarship_stream(attempt):
 
 
 def _build_attempt_subject_tabs(runtime_test, portal_student=None):
-    text_parts = [
-        getattr(runtime_test, 'stream', ''),
-        getattr(runtime_test, 'subject', ''),
-        getattr(runtime_test, 'name', ''),
-        getattr(portal_student, 'stream', ''),
-        ' '.join(str(item or '') for item in (getattr(portal_student, 'interested_exams', []) or [])),
-    ]
-    normalized = re.sub(r'[^a-z0-9]+', ' ', ' '.join(text_parts).casefold())
-    compact = normalized.replace(' ', '')
-
-    is_neet = 'neet' in compact or 'pcb' in compact
-    is_jee = 'jee' in compact or 'pcm' in compact or 'mhtcet' in compact
-
-    if is_neet and not is_jee:
-        return [
-            {'key': 'physics', 'label': 'Physics'},
-            {'key': 'chemistry', 'label': 'Chemistry'},
-            {'key': 'bio', 'label': 'Bio'},
-        ]
-
-    if is_jee:
-        return [
-            {'key': 'physics', 'label': 'Physics'},
-            {'key': 'chemistry', 'label': 'Chemistry'},
-            {'key': 'math', 'label': 'Math'},
-        ]
-
-    if 'biology' in compact or 'bio' in compact:
-        return [
-            {'key': 'physics', 'label': 'Physics'},
-            {'key': 'chemistry', 'label': 'Chemistry'},
-            {'key': 'bio', 'label': 'Bio'},
-        ]
-
-    if 'mathematics' in compact or 'maths' in compact or 'math' in compact:
-        return [
-            {'key': 'physics', 'label': 'Physics'},
-            {'key': 'chemistry', 'label': 'Chemistry'},
-            {'key': 'math', 'label': 'Math'},
-        ]
-
-    return []
+    subject_tabs = []
+    for index, section in enumerate(
+        test_service.get_test_section_definitions(runtime_test, portal_student=portal_student)
+    ):
+        section_name = str(section.get('name') or section.get('sectionName') or f'Section {index + 1}').strip()
+        normalized = re.sub(r'[^a-z0-9]+', ' ', section_name.casefold()).strip()
+        subject_tabs.append(
+            {
+                'key': normalized.replace(' ', '-') or f'section-{index + 1}',
+                'label': section_name,
+            }
+        )
+    return subject_tabs
 
 
 def _runtime_attempt_queryset():
@@ -1262,6 +1231,18 @@ def scholarship_success(request, attempt_id):
         student.board if is_scholarship_result else _get_non_scholarship_stream(attempt)
     )
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
+    per_test_leaderboard = (
+        test_service.get_test_attempt_leaderboard_data(
+            attempt.test,
+            current_attempt_id=attempt.id,
+            current_portal_student=attempt.portal_student,
+            limit=5,
+        )
+        if attempt.portal_student_id
+        else None
+    )
+    current_portal_entry = (per_test_leaderboard or {}).get("currentEntry") or {}
+    subject_score_sections = test_service.build_attempt_section_breakdown(attempt)
     answer_key_available_at = test_service.get_answer_key_base_end_time(attempt)
     answer_key_is_available = True
     answer_key_available_at_display = timezone.localtime(
@@ -1303,6 +1284,11 @@ def scholarship_success(request, attempt_id):
         'academic_field_value': academic_field_value,
         'leaderboard_top_entries': leaderboard['top_entries'],
         'leaderboard_current_entry': leaderboard['current_entry'],
+        'subject_score_sections': subject_score_sections,
+        'subject_score_total': int(attempt.score or 0),
+        'subject_score_total_marks': int(attempt.total_marks or 0),
+        'live_batch_rank': current_portal_entry.get('batchRank', 'NA'),
+        'live_institute_rank': current_portal_entry.get('instituteRank', 'NA'),
         'answer_key_is_available': answer_key_is_available,
         'answer_key_available_at': answer_key_available_at.isoformat(),
         'answer_key_available_at_display': answer_key_available_at_display,
@@ -1329,40 +1315,28 @@ def scholarship_success_live_state(request, attempt_id):
         return JsonResponse({"success": False, "error": "Not authorized"}, status=403)
 
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
-    aggregate = None
-    if attempt.portal_student_id:
-        aggregate = ScholarshipStudentLeaderboard.objects.filter(portal_student_id=attempt.portal_student_id).first()
+    per_test_leaderboard = (
+        test_service.get_test_attempt_leaderboard_data(
+            attempt.test,
+            current_attempt_id=attempt.id,
+            current_portal_student=attempt.portal_student,
+            limit=5,
+        )
+        if attempt.portal_student_id
+        else None
+    )
+    current_portal_entry = (per_test_leaderboard or {}).get("currentEntry") or {}
+    section_scores = test_service.build_attempt_section_breakdown(attempt)
 
     payload = {
         "success": True,
         "attempt_id": attempt.id,
         "score": int(attempt.score or 0),
         "total_marks": int(attempt.total_marks or 0),
-        "subject_scores": {
-            "phy_marks": (
-                int(getattr(aggregate, "phy_marks", 0) or 0)
-                if int(getattr(aggregate, "phy_tests_count", 0) or 0) > 0
-                else None
-            ),
-            "chm_marks": (
-                int(getattr(aggregate, "chm_marks", 0) or 0)
-                if int(getattr(aggregate, "chm_tests_count", 0) or 0) > 0
-                else None
-            ),
-            "bio_marks": (
-                int(getattr(aggregate, "bio_marks", 0) or 0)
-                if int(getattr(aggregate, "bio_tests_count", 0) or 0) > 0
-                else None
-            ),
-            "math_marks": (
-                int(getattr(aggregate, "math_marks", 0) or 0)
-                if int(getattr(aggregate, "math_tests_count", 0) or 0) > 0
-                else None
-            ),
-        },
-        "total_score": int(getattr(aggregate, "total_score", 0) or 0),
-        "batch_rank": getattr(aggregate, "batch_rank", None),
-        "institute_rank": getattr(aggregate, "institute_rank", None),
+        "subject_scores": section_scores,
+        "total_score": int(attempt.score or 0),
+        "batch_rank": current_portal_entry.get("batchRank", "NA"),
+        "institute_rank": current_portal_entry.get("instituteRank", "NA"),
         "leaderboard_position": (leaderboard.get("current_entry") or {}).get("rank"),
         "top_performer_status": bool((leaderboard.get("current_entry") or {}).get("rank") == 1),
         "leaderboard_top_entries": leaderboard.get("top_entries", []),
@@ -1371,7 +1345,7 @@ def scholarship_success_live_state(request, attempt_id):
             [
                 str(attempt.score or 0),
                 str(attempt.total_marks or 0),
-                str(getattr(aggregate, "updated_at", "") or ""),
+                json.dumps(section_scores, sort_keys=True),
                 str((leaderboard.get("current_entry") or {}).get("rank") or ""),
             ]
         ),

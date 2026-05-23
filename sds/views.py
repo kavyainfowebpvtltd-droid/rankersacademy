@@ -4346,107 +4346,15 @@ def _student_photo_url(student):
 
 
 def _build_attempt_section_breakdown(attempt):
-    manual_scores = (getattr(attempt, "progress_state", {}) or {}).get("manual_subject_scores")
-    if isinstance(manual_scores, dict):
-        normalized_manual_scores = {}
-        for raw_subject, raw_score in manual_scores.items():
-            subject = _normalize_analysis_subject_name(raw_subject) or str(raw_subject or "").strip()
-            if subject:
-                normalized_manual_scores[subject] = raw_score
-
-        ordered_subjects = [
-            subject
-            for subject in ANALYSIS_SUBJECT_ORDER
-            if subject in normalized_manual_scores
-        ]
-        ordered_subjects.extend(
-            subject
-            for subject in normalized_manual_scores
-            if subject not in ordered_subjects
-        )
-
-        return [
-            {
-                "name": subject,
-                "sectionName": subject,
-                "shortLabel": _short_section_label(subject),
-                "score": int(normalized_manual_scores.get(subject, 0) or 0),
-                "total": 100,
-                "percentage": max(0, min(100, int(normalized_manual_scores.get(subject, 0) or 0))),
-                "meta": "Manual marks entry",
-            }
-            for subject in ordered_subjects
-        ]
-
-    test = getattr(attempt, "test", None)
-    if not test:
-        return []
-
-    correct_question_ids = {
-        answer.question_id
-        for answer in attempt.answers.all()
-        if answer.is_correct
-    }
-    breakdown = []
-
-    for section in test.sections.all().order_by("order", "id"):
-        questions = list(section.questions.all())
-        total_marks = sum(int(question.pos_marks or 0) for question in questions)
-        if total_marks <= 0:
-            total_marks = len(questions)
-
-        scored_marks = sum(
-            int(question.pos_marks or 0) if int(question.pos_marks or 0) > 0 else 1
-            for question in questions
-            if question.id in correct_question_ids
-        )
-        percentage = round((scored_marks / total_marks) * 100, 1) if total_marks else 0
-
-        breakdown.append(
-            {
-                "name": section.name,
-                "sectionName": section.name,
-                "shortLabel": _short_section_label(section.name),
-                "score": scored_marks,
-                "total": total_marks,
-                "percentage": percentage,
-                "meta": section.instructions or "Section score",
-            }
-        )
-
-    return breakdown
+    return scholarship_test_service.build_attempt_section_breakdown(attempt)
 
 
 def _get_test_total_marks(test):
-    total_marks = 0
-    for question in scholarship_test_service.get_runtime_questions_for_test(test):
-        marks = int(getattr(question, "pos_marks", 0) or 0)
-        total_marks += marks if marks > 0 else 1
-    return total_marks
+    return scholarship_test_service.get_test_total_marks(test)
 
 
 def _build_zero_section_breakdown(test):
-    breakdown = []
-
-    for section in test.sections.all().order_by("order", "id"):
-        questions = list(section.questions.all())
-        total_marks = sum(int(question.pos_marks or 0) for question in questions)
-        if total_marks <= 0:
-            total_marks = len(questions)
-
-        breakdown.append(
-            {
-                "name": section.name,
-                "sectionName": section.name,
-                "shortLabel": _short_section_label(section.name),
-                "score": 0,
-                "total": total_marks,
-                "percentage": 0,
-                "meta": section.instructions or "Section score",
-            }
-        )
-
-    return breakdown
+    return scholarship_test_service.build_zero_section_breakdown(test)
 
 
 def _get_assigned_portal_students_for_test(test):
@@ -4497,125 +4405,12 @@ def _schema_safe_scholarship_attempt_queryset():
 
 
 def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_student=None):
-    assigned_students = _get_assigned_portal_students_for_test(test)
-    latest_attempts = {
-        attempt.portal_student_id: attempt
-        for attempt in _latest_completed_attempts_for_test(test)
-        if getattr(attempt, "portal_student_id", None)
-    }
-    aggregate_by_student = {
-        row.portal_student_id: row
-        for row in ScholarshipStudentLeaderboard.objects.filter(
-            portal_student_id__in=[item.id for item in assigned_students]
-        )
-    }
-    missing_ids = [item.id for item in assigned_students if item.id not in aggregate_by_student]
-    for portal_student_id in missing_ids:
-        scholarship_test_service.recompute_portal_student_leaderboard(portal_student_id)
-    if missing_ids:
-        aggregate_by_student = {
-            row.portal_student_id: row
-            for row in ScholarshipStudentLeaderboard.objects.filter(
-                portal_student_id__in=[item.id for item in assigned_students]
-            )
-        }
-    entries = []
-
-    for portal_student in assigned_students:
-        attempt = latest_attempts.get(portal_student.id)
-        aggregate = aggregate_by_student.get(portal_student.id)
-        phy = int(getattr(aggregate, "phy_marks", 0) or 0)
-        chm = int(getattr(aggregate, "chm_marks", 0) or 0)
-        bio = int(getattr(aggregate, "bio_marks", 0) or 0)
-        math = int(getattr(aggregate, "math_marks", 0) or 0)
-        phy_attempted = int(getattr(aggregate, "phy_tests_count", 0) or 0) > 0
-        chm_attempted = int(getattr(aggregate, "chm_tests_count", 0) or 0) > 0
-        bio_attempted = int(getattr(aggregate, "bio_tests_count", 0) or 0) > 0
-        math_attempted = int(getattr(aggregate, "math_tests_count", 0) or 0) > 0
-        attempted_any_subject = phy_attempted or chm_attempted or bio_attempted or math_attempted
-        total_score = int(getattr(aggregate, "total_score", 0) or 0)
-        section_scores = [
-            {"name": "Physics", "sectionName": "Physics", "shortLabel": "PHY", "score": phy if phy_attempted else None, "total": phy, "percentage": 0, "meta": "Cumulative"},
-            {"name": "Chemistry", "sectionName": "Chemistry", "shortLabel": "CHM", "score": chm if chm_attempted else None, "total": chm, "percentage": 0, "meta": "Cumulative"},
-            {"name": "Biology", "sectionName": "Biology", "shortLabel": "BIO", "score": bio if bio_attempted else None, "total": bio, "percentage": 0, "meta": "Cumulative"},
-            {"name": "Math", "sectionName": "Math", "shortLabel": "MATH", "score": math if math_attempted else None, "total": math, "percentage": 0, "meta": "Cumulative"},
-        ]
-
-        entry = {
-            "attemptId": attempt.id if attempt else None,
-            "studentId": f"portal-{portal_student.id}",
-            "studentName": portal_student.student_name or portal_student.user.username,
-            "studentRef": portal_student.username or portal_student.contact,
-            "studentBatch": portal_student.batch or "",
-            "studentGrade": portal_student.grade or "",
-            "profilePhotoUrl": _student_photo_url(portal_student),
-            "score": total_score,
-            "total": total_score,
-            "totalMarks": total_score,
-            "sectionScores": section_scores,
-            "phyAttempted": phy_attempted,
-            "chmAttempted": chm_attempted,
-            "bioAttempted": bio_attempted,
-            "mathAttempted": math_attempted,
-            "phyMarks": phy if phy_attempted else None,
-            "chmMarks": chm if chm_attempted else None,
-            "bioMarks": bio if bio_attempted else None,
-            "mathMarks": math if math_attempted else None,
-            "batchRank": getattr(aggregate, "batch_rank", None),
-            "instituteRank": getattr(aggregate, "institute_rank", None),
-            "isCurrentStudent": bool(
-                current_portal_student and portal_student.id == current_portal_student.id
-            ),
-            "_attempted": bool(attempted_any_subject or attempt),
-            "_completed_at": timezone.now(),
-            "_sort_name": (portal_student.student_name or portal_student.user.username or "").casefold(),
-        }
-        entries.append(entry)
-
-    entries.sort(
-        key=lambda entry: (
-            0 if entry["_attempted"] else 1,
-            -int(entry["score"] or 0),
-            entry["_completed_at"] or timezone.now(),
-            entry["_sort_name"],
-            entry["studentId"],
-        )
+    return scholarship_test_service.get_test_attempt_leaderboard_data(
+        test,
+        current_attempt_id=current_attempt_id,
+        current_portal_student=current_portal_student,
+        limit=5,
     )
-
-    current_entry = None
-    last_score = None
-    last_rank = 0
-
-    for idx, entry in enumerate(entries, start=1):
-        if entry["_attempted"]:
-            if entry["score"] != last_score:
-                last_rank = idx
-            entry["rank"] = last_rank
-            last_score = entry["score"]
-        else:
-            entry["rank"] = "NA"
-
-        entry.pop("_attempted", None)
-        entry.pop("_completed_at", None)
-        entry.pop("_sort_name", None)
-
-        if entry["isCurrentStudent"]:
-            current_entry = entry
-
-    batch_positions = {}
-    for entry in entries:
-        batch_key = (entry.get("studentBatch") or "").strip().casefold()
-        if entry.get("rank") == "NA" or not batch_key:
-            entry["batchRank"] = "NA"
-            continue
-        batch_positions[batch_key] = batch_positions.get(batch_key, 0) + 1
-        entry["batchRank"] = batch_positions[batch_key]
-
-    return {
-        "entries": entries,
-        "topEntries": [e for e in entries if e["rank"] != "NA"][:5],
-        "currentEntry": current_entry,
-    }
 
 
 def _build_rewards_payload(completed_tests):

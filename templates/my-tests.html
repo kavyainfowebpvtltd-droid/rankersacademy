@@ -582,9 +582,9 @@
     }
 
     .my-tests-page .top-performer-card {
-      --tp-size: clamp(210px, 24vw, 270px);
-      width: var(--tp-size);
-      height: var(--tp-size);
+      --tp-size: clamp(176px, 20vw, 214px);
+      width: min(100%, var(--tp-size));
+      height: auto;
       aspect-ratio: 1 / 1;
       border-radius: 50%;
       position: relative;
@@ -607,6 +607,7 @@
       transition: transform 0.26s ease, box-shadow 0.26s ease, filter 0.26s ease;
       backdrop-filter: blur(14px) saturate(145%);
       isolation: isolate;
+      animation: top-performer-float 3.2s ease-in-out infinite alternate;
     }
 
     .my-tests-page .top-performer-card::before {
@@ -624,6 +625,22 @@
       animation: top-performer-border-spin 5.2s linear infinite;
     }
 
+    .my-tests-page .top-performer-card::after {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.98) 0%, rgba(129, 140, 248, 0.82) 38%, rgba(129, 140, 248, 0) 72%);
+      top: 10%;
+      left: 50%;
+      transform-origin: 0 calc(var(--tp-size) * 0.42);
+      animation: top-performer-orbit 4.8s linear infinite;
+      pointer-events: none;
+      filter: blur(0.2px);
+      opacity: 0.96;
+    }
+
     .my-tests-page .top-performer-card:hover {
       transform: translateY(-6px) scale(1.04);
       box-shadow:
@@ -639,6 +656,24 @@
       }
       to {
         transform: rotate(360deg);
+      }
+    }
+
+    @keyframes top-performer-orbit {
+      from {
+        transform: rotate(0deg) translateX(calc(var(--tp-size) * 0.39));
+      }
+      to {
+        transform: rotate(360deg) translateX(calc(var(--tp-size) * 0.39));
+      }
+    }
+
+    @keyframes top-performer-float {
+      from {
+        transform: translateY(0);
+      }
+      to {
+        transform: translateY(-8px);
       }
     }
 
@@ -746,6 +781,13 @@
       color: #cbd5e1 !important;
       background: rgba(148, 163, 184, 0.12);
       border-color: rgba(129, 140, 248, 0.32);
+    }
+
+    .my-tests-page .top-performers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem;
+      align-items: stretch;
     }
 
     .my-tests-page .leaderboard-table {
@@ -1038,7 +1080,7 @@
       </div>
 
       <h5 class="display fw-bold">Top Performers</h5>
-      <div id="topPerformers" class="d-flex gap-4 overflow-auto pb-2 mb-4"></div>
+      <div id="topPerformers" class="top-performers-grid pb-2 mb-4"></div>
 
       <div class="card app-card p-3 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1048,17 +1090,7 @@
         <div class="table-responsive">
           <table class="table table-sm table-striped table-hover align-middle leaderboard-table">
             <thead>
-              <tr id="leaderboardHeadRow">
-                <th>#</th>
-                <th>Student</th>
-                <th class="leaderboard-section-head">PHY</th>
-                <th class="leaderboard-section-head">CHM</th>
-                <th class="leaderboard-section-head">BIO</th>
-                <th class="leaderboard-section-head">MATH</th>
-                <th class="text-end leaderboard-total-head">TOTAL SCORE</th>
-                <th class="leaderboard-section-head">BATCH RANK</th>
-                <th class="leaderboard-section-head">INSTITUTE RANK</th>
-              </tr>
+              <tr id="leaderboardHeadRow"></tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
           </table>
@@ -1118,31 +1150,7 @@
   </template>
 
   <template id="leaderboardRowTemplate">
-    <tr>
-      <td class="mono leaderboard-rank">
-        <span class="leaderboard-rank-text"></span>
-        <span class="leaderboard-rank-medal"></span>
-      </td>
-      <td class="leaderboard-student">
-        <div class="leaderboard-student-wrap">
-          <div class="leaderboard-avatar"></div>
-          <div class="overflow-hidden">
-            <div class="fw-semibold d-flex align-items-center gap-2 flex-wrap">
-              <span class="leaderboard-name"></span>
-              <span class="leaderboard-you"></span>
-            </div>
-            <div class="small mono leaderboard-id"></div>
-          </div>
-        </div>
-      </td>
-      <td class="leaderboard-section-score mono leaderboard-phy"></td>
-      <td class="leaderboard-section-score mono leaderboard-chm"></td>
-      <td class="leaderboard-section-score mono leaderboard-bio"></td>
-      <td class="leaderboard-section-score mono leaderboard-math"></td>
-      <td class="leaderboard-total-cell"><b class="leaderboard-total mono"></b></td>
-      <td class="leaderboard-section-score mono leaderboard-batch-rank"></td>
-      <td class="leaderboard-section-score mono leaderboard-institute-rank"></td>
-    </tr>
+    <tr></tr>
   </template>
 
   <template id="topicCardTemplate">
@@ -1743,6 +1751,35 @@
     }
 
     function renderLeaderboardHeaders(test) {
+      if (!refs.leaderboardHeadRow) {
+        return test;
+      }
+
+      clearNode(refs.leaderboardHeadRow);
+      const headers = [
+        { label: "#", className: "" },
+        { label: "Student", className: "" },
+        ...sectionHeaderItems(test).map((section, index) => ({
+          label: sectionDisplayLabel(section, index),
+          title: section.name || section.sectionName || `Section ${index + 1}`,
+          className: "leaderboard-section-head",
+        })),
+        { label: "TOTAL SCORE", className: "text-end leaderboard-total-head" },
+        { label: "BATCH RANK", className: "leaderboard-section-head" },
+        { label: "INSTITUTE RANK", className: "leaderboard-section-head" },
+      ];
+
+      headers.forEach((header) => {
+        const th = document.createElement("th");
+        th.textContent = header.label;
+        if (header.className) {
+          th.className = header.className;
+        }
+        if (header.title) {
+          th.title = header.title;
+        }
+        refs.leaderboardHeadRow.appendChild(th);
+      });
       return test;
     }
 
@@ -2112,6 +2149,14 @@
         ? test.topPerformers
         : currentLeaderboard().slice(0, 5);
 
+      if (!entries.length) {
+        const empty = document.createElement("div");
+        empty.className = "card app-card p-3 text-center soft";
+        empty.textContent = "Top performers will appear once this test has attempts.";
+        refs.topPerformers.appendChild(empty);
+        return;
+      }
+
       entries.forEach((entry) => {
         const student = studentMap.get(entry.studentId) || {};
         const node = cloneTemplate("topPerformerTemplate");
@@ -2148,9 +2193,10 @@
       }
 
       const rows = leaderboardRows(ranked, currentStudentId, !state.studentLeaderboardOpen);
+      const subjectDefs = sectionHeaderItems(test);
       rows.forEach((row) => {
         const student = studentMap.get(row.studentId) || {};
-        const node = cloneTemplate("leaderboardRowTemplate");
+        const node = document.createElement("tr");
         const mine = row.studentId === currentStudentId;
         const medal = createRankMedal(row.rank);
 
@@ -2158,34 +2204,85 @@
           node.classList.add("student-highlight");
         }
 
-        node.querySelector(".leaderboard-rank-text").textContent = `#${row.rank}`;
+        const rankCell = document.createElement("td");
+        rankCell.className = "mono leaderboard-rank";
+        const rankText = document.createElement("span");
+        rankText.className = "leaderboard-rank-text";
+        rankText.textContent = Number.isInteger(Number(row.rank)) ? `#${row.rank}` : "NA";
+        rankCell.appendChild(rankText);
         if (medal) {
-          node.querySelector(".leaderboard-rank-medal").appendChild(medal);
+          const medalWrap = document.createElement("span");
+          medalWrap.className = "leaderboard-rank-medal";
+          medalWrap.appendChild(medal);
+          rankCell.appendChild(medalWrap);
         }
+        node.appendChild(rankCell);
 
-        node.querySelector(".leaderboard-avatar").appendChild(
+        const studentCell = document.createElement("td");
+        studentCell.className = "leaderboard-student";
+        const studentWrap = document.createElement("div");
+        studentWrap.className = "leaderboard-student-wrap";
+        const avatarWrap = document.createElement("div");
+        avatarWrap.className = "leaderboard-avatar";
+        avatarWrap.appendChild(
           createAvatar(
             row.studentName || student.name || row.studentId,
             28,
             row.profilePhotoUrl || student.profilePhotoUrl || "",
           ),
         );
-        node.querySelector(".leaderboard-name").textContent = row.studentName || student.name || row.studentId;
-        node.querySelector(".leaderboard-id").textContent = row.studentRef || student.studentRef || row.studentId;
-        if (mine) {
-          node.querySelector(".leaderboard-name").classList.add("is-current");
-          node.querySelector(".leaderboard-you").appendChild(createBadge("You", "text-bg-info"));
-        }
+        studentWrap.appendChild(avatarWrap);
 
-        setSubjectScoreCell(node.querySelector(".leaderboard-phy"), row.phyMarks);
-        setSubjectScoreCell(node.querySelector(".leaderboard-chm"), row.chmMarks);
-        setSubjectScoreCell(node.querySelector(".leaderboard-bio"), row.bioMarks);
-        setSubjectScoreCell(node.querySelector(".leaderboard-math"), row.mathMarks);
-        node.querySelector(".leaderboard-total").textContent = `${row.score ?? 0}`;
-        node.querySelector(".leaderboard-batch-rank").textContent =
-          Number.isInteger(row.batchRank) ? `#${row.batchRank}` : "--";
-        node.querySelector(".leaderboard-institute-rank").textContent =
-          Number.isInteger(row.instituteRank) ? `#${row.instituteRank}` : "--";
+        const textWrap = document.createElement("div");
+        const nameRow = document.createElement("div");
+        const nameNode = document.createElement("span");
+        nameNode.className = "leaderboard-name";
+        nameNode.textContent = row.studentName || student.name || row.studentId;
+        nameRow.appendChild(nameNode);
+        if (mine) {
+          nameNode.classList.add("is-current");
+          const badgeWrap = document.createElement("span");
+          badgeWrap.className = "leaderboard-you";
+          badgeWrap.appendChild(createBadge("You", "text-bg-info"));
+          nameRow.appendChild(document.createTextNode(" "));
+          nameRow.appendChild(badgeWrap);
+        }
+        textWrap.appendChild(nameRow);
+
+        const idNode = document.createElement("div");
+        idNode.className = "small mono leaderboard-id";
+        idNode.textContent = row.studentRef || student.studentRef || row.studentId;
+        textWrap.appendChild(idNode);
+
+        studentWrap.appendChild(textWrap);
+        studentCell.appendChild(studentWrap);
+        node.appendChild(studentCell);
+
+        subjectDefs.forEach((section, index) => {
+          const scoreCell = document.createElement("td");
+          scoreCell.className = "leaderboard-section-score mono";
+          const sectionData = leaderboardSectionCellData(row, section, index);
+          setSubjectScoreCell(scoreCell, sectionData?.score);
+          node.appendChild(scoreCell);
+        });
+
+        const totalCell = document.createElement("td");
+        totalCell.className = "leaderboard-total-cell";
+        const totalNode = document.createElement("b");
+        totalNode.className = "leaderboard-total mono";
+        totalNode.textContent = `${leaderboardRowTotal(row)}`;
+        totalCell.appendChild(totalNode);
+        node.appendChild(totalCell);
+
+        const batchRankCell = document.createElement("td");
+        batchRankCell.className = "leaderboard-section-score mono";
+        batchRankCell.textContent = Number.isInteger(row.batchRank) ? `#${row.batchRank}` : "NA";
+        node.appendChild(batchRankCell);
+
+        const instituteRankCell = document.createElement("td");
+        instituteRankCell.className = "leaderboard-section-score mono";
+        instituteRankCell.textContent = Number.isInteger(row.instituteRank) ? `#${row.instituteRank}` : "NA";
+        node.appendChild(instituteRankCell);
         refs.leaderboardBody.appendChild(node);
       });
 
