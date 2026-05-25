@@ -2,8 +2,9 @@ import logging
 import hashlib
 import re
 from datetime import datetime
+from functools import lru_cache
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -24,6 +25,7 @@ OPTIONAL_ATTEMPT_SECURITY_FIELDS = {
     "violation_count",
     "security_status",
 }
+OPTIONAL_ATTEMPT_COMPAT_FIELDS = OPTIONAL_ATTEMPT_SECURITY_FIELDS | {"progress_state"}
 
 
 def get_max_security_violations() -> int:
@@ -75,12 +77,47 @@ def _parse_optional_datetime(value):
     return None
 
 
+def _safe_model_field_value(instance, field_name, default=None):
+    if not instance:
+        return default
+
+    try:
+        deferred_fields = set(instance.get_deferred_fields())
+    except Exception:
+        deferred_fields = set()
+
+    if (
+        field_name in deferred_fields
+        and (
+            not hasattr(instance.__class__, "_meta")
+            or not _model_has_columns(instance.__class__, field_name)
+        )
+    ):
+        return default
+
+    values = getattr(instance, "__dict__", {})
+    if field_name in values:
+        value = values.get(field_name)
+    else:
+        try:
+            value = getattr(instance, field_name)
+        except (AttributeError, OperationalError, ProgrammingError):
+            return default
+
+    return default if value is None else value
+
+
+def _attempt_progress_state_data(attempt) -> dict:
+    raw_state = _safe_model_field_value(attempt, "progress_state", {})
+    return raw_state if isinstance(raw_state, dict) else {}
+
+
 def get_attempt_started_at_value(attempt):
     started_at = attempt.__dict__.get("started_at")
     if started_at:
         return started_at
 
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     parsed = _parse_optional_datetime(state.get("started_at"))
     if parsed is not None:
         return parsed
@@ -93,7 +130,7 @@ def get_attempt_submitted_at_value(attempt):
     if submitted_at:
         return submitted_at
 
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     parsed = _parse_optional_datetime(state.get("submitted_at"))
     if parsed is not None:
         return parsed
@@ -104,7 +141,7 @@ def get_attempt_submitted_at_value(attempt):
 def get_attempt_violation_count_value(attempt) -> int:
     raw_value = attempt.__dict__.get("violation_count")
     if raw_value is None:
-        state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+        state = _attempt_progress_state_data(attempt)
         raw_value = state.get("violation_count", 0)
     try:
         return max(0, int(raw_value or 0))
@@ -117,7 +154,7 @@ def get_attempt_security_status_value(attempt) -> str:
     if security_status:
         return str(security_status)
 
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     state_status = state.get("security_status")
     if state_status:
         return str(state_status)
@@ -352,15 +389,61 @@ def _short_section_label(name: str) -> str:
     return tokens[0][:4].upper()
 
 
+@lru_cache(maxsize=None)
+def _model_column_names(model_class):
+    try:
+        if model_class._meta.db_table not in connection.introspection.table_names():
+            return set()
+        with connection.cursor() as cursor:
+            description = connection.introspection.get_table_description(
+                cursor,
+                model_class._meta.db_table,
+            )
+        return {
+            getattr(column, "name", column[0])
+            for column in description
+        }
+    except (OperationalError, ProgrammingError) as exc:
+        logger.warning(
+            "Unable to inspect %s columns for scholarship test compatibility: %s",
+            model_class._meta.db_table,
+            exc,
+        )
+        return set()
+
+
+def _model_has_columns(model_class, *field_names):
+    available_columns = _model_column_names(model_class)
+    for field_name in field_names:
+        try:
+            column_name = model_class._meta.get_field(field_name).column
+        except Exception:
+            return False
+        if column_name not in available_columns:
+            return False
+    return True
+
+
+def _optional_attempt_fields_to_defer():
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    return tuple(
+        sorted(
+            field_name
+            for field_name in OPTIONAL_ATTEMPT_COMPAT_FIELDS
+            if not _model_has_columns(ScholarshipTestAttempt, field_name)
+        )
+    )
+
+
 def _schema_safe_attempt_queryset():
     from scholarship_test.models import ScholarshipTestAttempt
 
-    return ScholarshipTestAttempt.objects.defer(
-        "started_at",
-        "submitted_at",
-        "violation_count",
-        "security_status",
-    )
+    queryset = ScholarshipTestAttempt.objects.all()
+    missing_optional_fields = _optional_attempt_fields_to_defer()
+    if missing_optional_fields:
+        queryset = queryset.defer(*missing_optional_fields)
+    return queryset
 
 
 def get_test_total_marks(test) -> int:
@@ -374,8 +457,8 @@ def get_test_total_marks(test) -> int:
 def _infer_test_stream_values(test, portal_student=None) -> set[str]:
     stream_values = set()
     for raw_value in (
-        getattr(test, "stream", ""),
-        getattr(test, "subject", ""),
+        _safe_model_field_value(test, "stream", ""),
+        _safe_model_field_value(test, "subject", ""),
         getattr(test, "name", ""),
     ):
         stream_values.update(_split_scope_values(raw_value))
@@ -432,7 +515,7 @@ def get_test_section_definitions(test, portal_student=None):
 
 
 def _attempt_saved_answers(attempt) -> dict:
-    progress_state = getattr(attempt, "progress_state", {}) or {}
+    progress_state = _attempt_progress_state_data(attempt)
     saved_answers = progress_state.get("answers", {})
     return saved_answers if isinstance(saved_answers, dict) else {}
 
@@ -458,7 +541,7 @@ def build_attempt_section_breakdown(attempt):
     if not attempt:
         return []
 
-    manual_scores = (getattr(attempt, "progress_state", {}) or {}).get("manual_subject_scores")
+    manual_scores = _attempt_progress_state_data(attempt).get("manual_subject_scores")
     if isinstance(manual_scores, dict):
         normalized_manual_scores = {}
         for raw_subject, raw_score in manual_scores.items():
@@ -587,7 +670,7 @@ def _latest_completed_attempts_for_portal_test(test):
 
 def _assigned_portal_students_for_test(test):
     student_queryset = Student.objects.select_related("user")
-    test_batch = str(getattr(test, "batch", "") or "").strip()
+    test_batch = str(_safe_model_field_value(test, "batch", "") or "").strip()
     if test_batch:
         student_queryset = student_queryset.filter(batch__iexact=test_batch)
 
@@ -793,16 +876,17 @@ def is_test_assigned_to_portal_student(test, portal_student) -> bool:
 
 
 def get_test_scheduled_start_at(test):
-    if not test or not getattr(test, "scheduled_start_at", None):
+    scheduled_start_at = _safe_model_field_value(test, "scheduled_start_at", None)
+    if not test or not scheduled_start_at:
         return None
 
-    start_at = _academy_localtime(test.scheduled_start_at)
+    start_at = _academy_localtime(scheduled_start_at)
     test_date = getattr(test, "date", None)
     if not test_date or start_at.date() == test_date:
         return start_at
 
     # Compatibility for rows created before academy-local scheduling was enforced.
-    stored_utc_time = timezone.localtime(test.scheduled_start_at, UTC_TIMEZONE).time()
+    stored_utc_time = timezone.localtime(scheduled_start_at, UTC_TIMEZONE).time()
     corrected = datetime.combine(test_date, stored_utc_time)
     return timezone.make_aware(corrected, ACADEMY_TIMEZONE)
 
@@ -1098,8 +1182,9 @@ def get_my_tests_attempt_review_visibility_delay():
 
 def get_answer_key_base_end_time(attempt):
     runtime_test = get_runtime_test_for_attempt(attempt)
-    if runtime_test and getattr(runtime_test, 'scheduled_start_at', None):
-        return runtime_test.scheduled_start_at + timedelta(
+    scheduled_start_at = _safe_model_field_value(runtime_test, "scheduled_start_at", None)
+    if runtime_test and scheduled_start_at:
+        return scheduled_start_at + timedelta(
             minutes=get_test_duration_minutes(runtime_test)
         )
     return get_attempt_end_time(attempt)
@@ -1149,7 +1234,7 @@ def is_attempt_expired(attempt) -> bool:
 
 
 def get_saved_progress(attempt):
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     answers = state.get('answers', {})
     if not isinstance(answers, dict):
         answers = {}

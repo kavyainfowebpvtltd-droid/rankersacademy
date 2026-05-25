@@ -34,6 +34,29 @@ from sds.views import (
 )
 
 
+class ScholarshipSchemaCompatibilityTests(TestCase):
+    def test_optional_attempt_fields_to_defer_includes_progress_state_when_missing(self):
+        def has_columns(_model_class, *field_names):
+            return "progress_state" not in field_names
+
+        with patch(
+            "scholarship_test.services.test_service._model_has_columns",
+            side_effect=has_columns,
+        ):
+            fields = test_service._optional_attempt_fields_to_defer()
+
+        self.assertIn("progress_state", fields)
+
+    def test_attempt_progress_state_falls_back_to_empty_when_deferred(self):
+        class DeferredAttempt:
+            def get_deferred_fields(self):
+                return {"progress_state"}
+
+        attempt = DeferredAttempt()
+        self.assertEqual(test_service._attempt_progress_state_data(attempt), {})
+        self.assertEqual(test_service._attempt_saved_answers(attempt), {})
+
+
 class ScholarshipRuntimeTestFlowTests(TestCase):
     def setUp(self):
         self.student = ScholarshipStudent.objects.create(

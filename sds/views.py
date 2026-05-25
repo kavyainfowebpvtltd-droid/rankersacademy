@@ -35,6 +35,7 @@ from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table, Tab
 from reportlab.pdfgen import canvas
 from django.conf import settings
 from django.contrib.auth.hashers import make_password, check_password
+from functools import lru_cache
 
 import random
 import re
@@ -2717,8 +2718,16 @@ def _normalize_analysis_subject_or_none(raw_subject):
 
 def _coerce_analysis_test(test_id):
     try:
-        return ScholarshipTest.objects.prefetch_related("sections__questions").get(id=int(test_id))
-    except (TypeError, ValueError, ScholarshipTest.DoesNotExist):
+        return _schema_safe_scholarship_test_queryset().prefetch_related(
+            "sections__questions"
+        ).get(id=int(test_id))
+    except (
+        TypeError,
+        ValueError,
+        ScholarshipTest.DoesNotExist,
+        OperationalError,
+        ProgrammingError,
+    ):
         return None
 
 
@@ -4431,6 +4440,91 @@ def _analysis_model_table_available(model_class):
         return False
 
 
+@lru_cache(maxsize=None)
+def _analysis_model_column_names(model_class):
+    try:
+        if not _analysis_model_table_available(model_class):
+            return set()
+        with connection.cursor() as cursor:
+            description = connection.introspection.get_table_description(
+                cursor,
+                model_class._meta.db_table,
+            )
+        return {
+            getattr(column, "name", column[0])
+            for column in description
+        }
+    except (OperationalError, ProgrammingError) as exc:
+        logger.warning(
+            "Unable to inspect analysis columns for %s: %s",
+            model_class._meta.db_table,
+            exc,
+        )
+        return set()
+
+
+def _analysis_missing_model_fields(model_class, *field_names):
+    available_columns = _analysis_model_column_names(model_class)
+    missing_fields = []
+    for field_name in field_names:
+        try:
+            column_name = model_class._meta.get_field(field_name).column
+        except Exception:
+            missing_fields.append(field_name)
+            continue
+        if column_name not in available_columns:
+            missing_fields.append(field_name)
+    return missing_fields
+
+
+def _analysis_model_has_field_columns(model_class, *field_names):
+    return not _analysis_missing_model_fields(model_class, *field_names)
+
+
+def _schema_safe_scholarship_test_queryset():
+    queryset = ScholarshipTest.objects.all()
+    missing_optional_fields = _analysis_missing_model_fields(
+        ScholarshipTest,
+        "scheduled_start_at",
+        "batch",
+        "stream",
+        "subject",
+    )
+    if missing_optional_fields:
+        queryset = queryset.defer(*missing_optional_fields)
+    return queryset
+
+
+def _analysis_safe_model_field_value(instance, field_name, default=None):
+    if not instance:
+        return default
+
+    try:
+        deferred_fields = set(instance.get_deferred_fields())
+    except Exception:
+        deferred_fields = set()
+
+    if (
+        field_name in deferred_fields
+        and (
+            not hasattr(instance.__class__, "_meta")
+            or not _analysis_model_has_field_columns(instance.__class__, field_name)
+        )
+    ):
+        return default
+
+    values = getattr(instance, "__dict__", {})
+    if field_name in values:
+        value = values.get(field_name)
+    else:
+        try:
+            value = getattr(instance, field_name)
+        except (AttributeError, OperationalError, ProgrammingError):
+            return default
+
+    return default if value is None else value
+
+
 def _analysis_feature_unavailable_response(feature_name):
     return JsonResponse(
         {
@@ -4921,7 +5015,12 @@ def _analysis_split_batch_values(raw_value):
 def _analysis_test_batch_keys(test):
     return [
         key
-        for key in (_analysis_batch_key(value) for value in _analysis_split_batch_values(getattr(test, "batch", "")))
+        for key in (
+            _analysis_batch_key(value)
+            for value in _analysis_split_batch_values(
+                _analysis_safe_model_field_value(test, "batch", "")
+            )
+        )
         if key
     ]
 
@@ -4948,9 +5047,14 @@ def _build_test_analysis_batches_payload():
         if _analysis_batch_key(grade) in {"grade10", "grade9"}:
             add_option(grade)
 
-    for batch in ScholarshipTest.objects.values_list("batch", flat=True).distinct():
-        for value in _analysis_split_batch_values(batch):
-            add_option(value)
+    scholarship_test_has_batch = _analysis_model_has_field_columns(
+        ScholarshipTest,
+        "batch",
+    )
+    if scholarship_test_has_batch:
+        for batch in _schema_safe_scholarship_test_queryset().values_list("batch", flat=True).distinct():
+            for value in _analysis_split_batch_values(batch):
+                add_option(value)
 
     student_counts = {key: 0 for key in options}
     for batch, grade in Student.objects.values_list("batch", "grade"):
@@ -4960,11 +5064,12 @@ def _build_test_analysis_batches_payload():
                 student_counts[key] += 1
 
     test_counts = {key: 0 for key in options}
-    for batch in ScholarshipTest.objects.filter(status="published").values_list("batch", flat=True):
-        keys = {_analysis_batch_key(value) for value in _analysis_split_batch_values(batch)}
-        for key in keys:
-            if key in test_counts:
-                test_counts[key] += 1
+    if scholarship_test_has_batch:
+        for batch in _schema_safe_scholarship_test_queryset().filter(status="published").values_list("batch", flat=True):
+            keys = {_analysis_batch_key(value) for value in _analysis_split_batch_values(batch)}
+            for key in keys:
+                if key in test_counts:
+                    test_counts[key] += 1
 
     return [
         {
@@ -5188,7 +5293,10 @@ def _build_analysis_dataset_for_test(test, focus_subject=None):
 
     for entry in leaderboard["entries"]:
         section_scores = entry.get("sectionScores") or []
-        subject_scores = _analysis_subject_scores_from_breakdown(section_scores, getattr(test, "subject", ""))
+        subject_scores = _analysis_subject_scores_from_breakdown(
+            section_scores,
+            _analysis_safe_model_field_value(test, "subject", ""),
+        )
         total_score = int(entry.get("score", 0) or 0)
         if total_score <= 0 and any(subject_scores.values()):
             total_score = sum(subject_scores.values())
@@ -5238,17 +5346,19 @@ def _serialize_test_analysis_upcoming_placeholder():
 
 def _serialize_test_analysis_test_item(test, start_at):
     section_breakdown = _build_zero_section_breakdown(test)
+    test_batch = (_analysis_safe_model_field_value(test, "batch", "") or "").strip()
+    test_subject = (_analysis_safe_model_field_value(test, "subject", "") or "").strip()
     return {
         "id": f"SCH{test.id}",
         "external_id": test.id,
         "name": test.name,
-        "batch": (getattr(test, "batch", "") or "").strip(),
+        "batch": test_batch,
         "batchKeys": _analysis_test_batch_keys(test),
         "batchLabels": [
             _analysis_batch_display_label(value)
-            for value in _analysis_split_batch_values(getattr(test, "batch", ""))
+            for value in _analysis_split_batch_values(test_batch)
         ],
-        "subject": (getattr(test, "subject", "") or "").strip(),
+        "subject": test_subject,
         "date": start_at.strftime("%d %b %Y"),
         "shortDate": start_at.strftime("%b %d"),
         "time": start_at.strftime("%I:%M %p").lstrip("0"),
@@ -5267,42 +5377,62 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
     scores_by_test = {}
     focus_by_test = {}
 
-    published_tests = (
-        ScholarshipTest.objects
-        .filter(status="published", scheduled_start_at__isnull=False)
-        .order_by("scheduled_start_at", "id")
-        .prefetch_related("sections__questions")
+    missing_required_fields = _analysis_missing_model_fields(
+        ScholarshipTest,
+        "scheduled_start_at",
+        "batch",
+        "subject",
     )
-
-    for test in published_tests:
-        if not scholarship_test_service.get_runtime_questions_for_test(test):
-            continue
-
-        start_at = scholarship_test_service.get_test_scheduled_start_at(test)
-        if not start_at:
-            continue
-        end_at = start_at + timedelta(minutes=scholarship_test_service.get_test_duration_minutes(test))
-        test_item = _serialize_test_analysis_test_item(test, start_at)
-
-        if end_at > now:
-            if upcoming_test is None:
-                upcoming_test = {
-                    **test_item,
-                    "kind": "upcoming",
-                    "canLaunchNow": False,
-                    "isLive": start_at <= now < end_at,
-                }
-            continue
-
-        score_rows, students_for_test, focus_for_test = _build_analysis_dataset_for_test(
-            test,
-            focus_subject=focus_subject,
+    if missing_required_fields:
+        logger.warning(
+            "Skipping test analysis payload because scholarship test columns are unavailable: %s",
+            ", ".join(missing_required_fields),
         )
-        completed_tests.append(test_item)
-        students_by_id.update(students_for_test)
-        scores_by_test[test_item["id"]] = score_rows
-        if focus_subject:
-            focus_by_test[test_item["id"]] = focus_for_test
+    else:
+        try:
+            published_tests = (
+                _schema_safe_scholarship_test_queryset()
+                .filter(status="published", scheduled_start_at__isnull=False)
+                .order_by("scheduled_start_at", "id")
+                .prefetch_related("sections__questions")
+            )
+
+            for test in published_tests:
+                if not scholarship_test_service.get_runtime_questions_for_test(test):
+                    continue
+
+                start_at = scholarship_test_service.get_test_scheduled_start_at(test)
+                if not start_at:
+                    continue
+                end_at = start_at + timedelta(
+                    minutes=scholarship_test_service.get_test_duration_minutes(test)
+                )
+                test_item = _serialize_test_analysis_test_item(test, start_at)
+
+                if end_at > now:
+                    if upcoming_test is None:
+                        upcoming_test = {
+                            **test_item,
+                            "kind": "upcoming",
+                            "canLaunchNow": False,
+                            "isLive": start_at <= now < end_at,
+                        }
+                    continue
+
+                score_rows, students_for_test, focus_for_test = _build_analysis_dataset_for_test(
+                    test,
+                    focus_subject=focus_subject,
+                )
+                completed_tests.append(test_item)
+                students_by_id.update(students_for_test)
+                scores_by_test[test_item["id"]] = score_rows
+                if focus_subject:
+                    focus_by_test[test_item["id"]] = focus_for_test
+        except (OperationalError, ProgrammingError) as exc:
+            logger.warning(
+                "Skipping test analysis payload because scholarship test schema is incompatible: %s",
+                exc,
+            )
 
     return {
         "students": sorted(

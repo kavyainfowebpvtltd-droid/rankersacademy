@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 from django.test import Client, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -394,6 +394,39 @@ class TestAnalysisSchemaSafetyTests(TestCase):
     def test_note_payload_returns_empty_when_analysis_note_table_is_unavailable(self):
         with patch("sds.views._analysis_model_table_available", return_value=False):
             self.assertEqual(views._build_note_state_payload(None), {})
+
+    def test_base_payload_returns_placeholder_when_required_test_columns_are_unavailable(self):
+        batch_payload = [
+            {
+                "id": "alpha",
+                "label": "Alpha Batch",
+                "studentCount": 0,
+                "testCount": 0,
+            }
+        ]
+        with patch(
+            "sds.views._analysis_missing_model_fields",
+            return_value=["scheduled_start_at", "batch", "subject"],
+        ), patch(
+            "sds.views._build_test_analysis_batches_payload",
+            return_value=batch_payload,
+        ):
+            payload = views._build_test_analysis_base_payload()
+
+        self.assertEqual(payload["students"], [])
+        self.assertEqual(payload["completedTests"], [])
+        self.assertEqual(payload["scoresByTest"], {})
+        self.assertEqual(payload["focusByTest"], {})
+        self.assertEqual(payload["batches"], batch_payload)
+        self.assertEqual(payload["upcomingTest"]["kind"], "placeholder")
+
+    def test_coerce_analysis_test_returns_none_when_schema_safe_fetch_fails(self):
+        with patch("sds.views._schema_safe_scholarship_test_queryset") as mock_queryset:
+            mock_queryset.return_value.prefetch_related.return_value.get.side_effect = (
+                OperationalError("missing column")
+            )
+
+            self.assertIsNone(views._coerce_analysis_test(12))
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
