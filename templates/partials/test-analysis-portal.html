@@ -425,6 +425,7 @@
         Biology: ["Cell Biology", "Genetics", "Human Physiology", "Plant Physiology", "Ecology", "Evolution", "Biotechnology", "Diversity in Living World"],
         Maths: ["Algebra", "Trigonometry", "Coordinate Geometry", "Calculus", "Vectors", "Probability", "Matrices", "Complex Numbers"]
       };
+      const STATIC_PLACEHOLDER_MODE = {{ test_analysis_static_mode|yesno:"true,false" }};
       const ANALYSIS_PAYLOAD = JSON.parse('{{ test_analysis_payload|default:"{}"|escapejs }}');
       const IS_ADMIN_PAGE = document.body.dataset.page === "admin";
       const ADMIN_ANALYSIS = ANALYSIS_PAYLOAD.admin || null;
@@ -450,10 +451,10 @@
         { id: "T02", name: "MOTION TEST", batch: "Alpha", batchKeys: ["alpha"], date: "22 Apr 2026", shortDate: "Apr 22" },
         { id: "T03", name: "WEEKLY MOCK TEST", batch: "Star-01", batchKeys: ["star01"], date: "29 Apr 2026", shortDate: "Apr 29" }
       ];
-      const USE_BACKEND_ANALYSIS_DATA = Boolean(ACTIVE_ANALYSIS);
-      const STUDENTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.students || []) : DEMO_STUDENTS;
-      const TESTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.completedTests || []) : DEMO_TESTS;
-      const BACKEND_BATCHES = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.batches || []) : [];
+      const USE_BACKEND_ANALYSIS_DATA = !STATIC_PLACEHOLDER_MODE && Boolean(ACTIVE_ANALYSIS);
+      const STUDENTS = STATIC_PLACEHOLDER_MODE ? [] : (USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.students || []) : DEMO_STUDENTS);
+      const TESTS = STATIC_PLACEHOLDER_MODE ? [] : (USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.completedTests || []) : DEMO_TESTS);
+      const BACKEND_BATCHES = STATIC_PLACEHOLDER_MODE ? [] : (USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.batches || []) : []);
       const BATCH_TABS = [
         { id: "star01", label: "STAR 01" },
         { id: "star02", label: "STAR 02" },

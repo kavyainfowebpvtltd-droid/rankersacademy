@@ -441,6 +441,21 @@ class TestAnalysisSchemaSafetyTests(TestCase):
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
+class TestAnalysisStaticPageTests(TestCase):
+    def test_test_analysis_page_renders_without_login_in_static_mode(self):
+        response = self.client.get(reverse("test-analysis"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-page="admin"')
+        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = true;')
+
+    def test_test_analysis_login_page_redirects_to_static_test_analysis(self):
+        response = self.client.get(reverse("test-analysis-login-page"))
+
+        self.assertRedirects(response, reverse("test-analysis"))
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
 class StudentPortalFeatureVisibilityTests(TestCase):
     def setUp(self):
         self.client = Client()

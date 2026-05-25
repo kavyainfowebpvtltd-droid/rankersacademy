@@ -2686,27 +2686,51 @@ def _render_test_analysis_template(request, template_name: str):
     return render(request, template_name, context)
 
 
-@login_required
+def _render_static_test_analysis_template(request, template_name: str, session: dict):
+    context = {
+        "test_analysis_session": json.dumps(session),
+        "test_analysis_payload": json.dumps({}),
+        "test_analysis_static_mode": True,
+    }
+    return render(request, template_name, context)
+
+
+def _static_test_analysis_admin_session() -> dict:
+    return {"type": "admin"}
+
+
+def _static_test_analysis_faculty_session() -> dict:
+    return {
+        "type": "faculty",
+        "faculty": {
+            "name": "Faculty Demo",
+            "subject": "Physics",
+        },
+    }
+
+
 def test_analysis(request):
-    if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return _render_test_analysis_template(request, "test-analysis-admin.html")
-    if _is_teacher_user(request.user):
-        return _render_test_analysis_template(request, "test-analysis-faculty.html")
-    return redirect("login")
+    return _render_static_test_analysis_template(
+        request,
+        "test-analysis-admin.html",
+        _static_test_analysis_admin_session(),
+    )
 
 
-@login_required
 def test_analysis_admin_page(request):
-    if not (_is_superadmin(request.user) or _is_admin_user(request.user)):
-        return redirect("test-analysis")
-    return _render_test_analysis_template(request, "test-analysis-admin.html")
+    return _render_static_test_analysis_template(
+        request,
+        "test-analysis-admin.html",
+        _static_test_analysis_admin_session(),
+    )
 
 
-@login_required
 def test_analysis_faculty_page(request):
-    if not _is_teacher_user(request.user):
-        return redirect("test-analysis")
-    return _render_test_analysis_template(request, "test-analysis-faculty.html")
+    return _render_static_test_analysis_template(
+        request,
+        "test-analysis-faculty.html",
+        _static_test_analysis_faculty_session(),
+    )
 
 
 def _can_access_test_analysis_api(user):
@@ -3121,7 +3145,7 @@ def test_analysis_note_delete_api(request):
 
 
 def test_analysis_login_page(request):
-    return logout_view(request)
+    return redirect("test-analysis")
 
 
 
