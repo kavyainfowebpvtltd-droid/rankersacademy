@@ -428,6 +428,17 @@ class TestAnalysisSchemaSafetyTests(TestCase):
 
             self.assertIsNone(views._coerce_analysis_test(12))
 
+    def test_teacheradmin_returns_none_when_schema_safe_fetch_fails(self):
+        user = User(username="teacherx")
+        with patch("sds.views.TeacherAdmin.objects.all") as mock_all, patch(
+            "sds.views._analysis_missing_model_fields",
+            return_value=["blood_group"],
+        ):
+            mock_all.return_value.defer.return_value.get.side_effect = OperationalError(
+                "missing column"
+            )
+            self.assertIsNone(views._teacheradmin(user))
+
 
 @override_settings(ROOT_URLCONF="sds.urls")
 class StudentPortalFeatureVisibilityTests(TestCase):

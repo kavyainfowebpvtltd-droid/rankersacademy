@@ -489,14 +489,15 @@ def _normalize_login_role(role: str | None) -> str:
 
 
 def _can_login_as_teacher(user) -> bool:
-    return bool(hasattr(user, "teacheradmin"))
+    return bool(_teacheradmin(user))
 
 
 def _can_login_as_admin(user) -> bool:
     if getattr(user, "is_superuser", False):
         return True
-    if hasattr(user, "teacheradmin"):
-        return (user.teacheradmin.role or "").strip().lower() == "admin"
+    ta = _teacheradmin(user)
+    if ta:
+        return (ta.role or "").strip().lower() == "admin"
     return False
 
 
@@ -2242,11 +2243,12 @@ def student_dashboard(request):
     )
 
 def _is_admin_or_teacher(user):
-    return user.is_superuser or hasattr(user, "teacheradmin")
+    return bool(user and (user.is_superuser or _teacheradmin(user)))
 
 def _display_name(user):
-    if hasattr(user, "teacheradmin") and user.teacheradmin.name:
-        return user.teacheradmin.name
+    ta = _teacheradmin(user)
+    if ta and ta.name:
+        return ta.name
     full = user.get_full_name()
     return full if full else user.username
 
@@ -3124,7 +3126,34 @@ def test_analysis_login_page(request):
 
 
 def _teacheradmin(user):
-    return getattr(user, "teacheradmin", None)
+    if not user or not getattr(user, "is_authenticated", False):
+        return None
+
+    cached = getattr(user, "_teacheradmin_cached", None)
+    if cached is not None:
+        return cached
+    if getattr(user, "_teacheradmin_cache_set", False):
+        return None
+
+    try:
+        queryset = TeacherAdmin.objects.all()
+        missing_optional_fields = _analysis_missing_model_fields(
+            TeacherAdmin,
+            "blood_group",
+        )
+        if missing_optional_fields:
+            queryset = queryset.defer(*missing_optional_fields)
+        ta = queryset.get(user=user)
+    except TeacherAdmin.DoesNotExist:
+        ta = None
+    except (OperationalError, ProgrammingError) as exc:
+        logger.warning("Unable to load TeacherAdmin for user %s: %s", user.id, exc)
+        ta = None
+
+    setattr(user, "_teacheradmin_cache_set", True)
+    if ta is not None:
+        setattr(user, "_teacheradmin_cached", ta)
+    return ta
 
 def _is_superadmin(user):
     return bool(user and user.is_superuser)
