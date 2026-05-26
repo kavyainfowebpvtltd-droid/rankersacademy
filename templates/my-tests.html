@@ -622,13 +622,21 @@
       inset: 0;
       border-radius: 50%;
       padding: 3px;
-      background: conic-gradient(from 0deg, #22d3ee, #4f46e5, #8b5cf6, #ec4899, #22d3ee);
+      background: conic-gradient(
+        from 18deg,
+        rgba(34, 211, 238, 0.7),
+        rgba(79, 70, 229, 0.74),
+        rgba(139, 92, 246, 0.7),
+        rgba(236, 72, 153, 0.58),
+        rgba(34, 211, 238, 0.7)
+      );
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
       pointer-events: none;
-      opacity: 0.98;
-      animation: top-performer-border-spin 4.4s linear infinite;
+      opacity: 0.78;
+      filter: saturate(92%);
+      animation: top-performer-border-spin 18s linear infinite;
     }
 
     .my-tests-page .top-performer-card::after {
@@ -642,12 +650,12 @@
     }
 
     .my-tests-page .top-performer-card:hover {
-      transform: translateY(-6px) scale(1.04);
+      transform: translateY(-4px) scale(1.015);
       box-shadow:
         inset 0 1px 1px rgba(255, 255, 255, 0.26),
-        0 22px 44px rgba(3, 8, 25, 0.58),
-        0 0 34px rgba(129, 140, 248, 0.46);
-      filter: saturate(118%);
+        0 20px 38px rgba(3, 8, 25, 0.5),
+        0 0 20px rgba(129, 140, 248, 0.22);
+      filter: saturate(106%);
     }
 
     @keyframes top-performer-border-spin {
