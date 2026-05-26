@@ -199,6 +199,9 @@ MSG91_ATTENDANCE_CHECKOUT_TEMPLATE = "69e9f17cf301542d5f04c6b2"
 MSG91_ATTENDANCE_LATE_TEMPLATE = "69e9f21e60f3a90e250bd294"
 MSG91_ATTENDANCE_ABSENT_TEMPLATE = "69e9f2fd177c9eba030ce112"
 
+# Temporary kill switch for attendance-only SMS flows.
+ATTENDANCE_SMS_ENABLED = False
+
 OTP_LENGTH = 6
 
 # MSG91 OTP validity (minutes) - MUST match your template text / DLT content

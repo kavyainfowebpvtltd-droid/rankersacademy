@@ -6,7 +6,7 @@ from attendance.services import process_absent_attendance
 
 
 class Command(BaseCommand):
-    help = "Create absent attendance records and send absent SMS for students who never checked in."
+    help = "Create absent attendance records for students who never checked in; SMS sends only when enabled."
 
     def add_arguments(self, parser):
         parser.add_argument(
