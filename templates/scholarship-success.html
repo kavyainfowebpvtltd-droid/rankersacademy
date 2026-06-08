@@ -30,21 +30,75 @@
 
       .attempt-review-action {
         width: 100%;
-        max-width: 260px;
-        margin-left: auto;
+        max-width: 320px;
         text-align: center;
         white-space: nowrap;
-        padding: 0.4rem 0.95rem;
+        padding: 0.7rem 1.2rem;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.35rem;
+        gap: 0.45rem;
       }
 
-      @media (min-width: 992px) {
-        .attempt-review-action {
-          width: 25%;
+      .subject-score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.9rem;
+      }
+
+      .subject-score-card {
+        border: 1px solid rgba(14, 165, 233, 0.12);
+        border-radius: 14px;
+        padding: 0.95rem 1rem;
+        background: linear-gradient(180deg, rgba(224, 242, 254, 0.55), rgba(255, 255, 255, 0.96));
+      }
+
+      .subject-score-label {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .subject-score-value {
+        color: #0f172a;
+        font-size: 1.45rem;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .subject-score-meta {
+        color: #64748b;
+        font-size: 0.82rem;
+      }
+
+      .attempt-review-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      @media (min-width: 768px) {
+        .attempt-review-panel {
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
         }
+      }
+
+      html[data-admin-theme="dark"] .subject-score-card {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.72));
+        border-color: rgba(59, 130, 246, 0.22);
+      }
+
+      html[data-admin-theme="dark"] .subject-score-label,
+      html[data-admin-theme="dark"] .subject-score-meta {
+        color: #a8b3c7;
+      }
+
+      html[data-admin-theme="dark"] .subject-score-value {
+        color: #f8fafc;
       }
     </style>
   </head>
@@ -231,21 +285,41 @@
 
             <div class="card border-0 shadow-sm mt-4">
               <div class="card-body">
-                <div class="row g-3">
-                  <div class="col-6 col-md-3"><div class="small text-muted">PHY</div><div class="fw-bold" id="livePhyMarks">0</div></div>
-                  <div class="col-6 col-md-3"><div class="small text-muted">CHM</div><div class="fw-bold" id="liveChmMarks">0</div></div>
-                  <div class="col-6 col-md-3"><div class="small text-muted">BIO</div><div class="fw-bold" id="liveBioMarks">0</div></div>
-                  <div class="col-6 col-md-3"><div class="small text-muted">MATH</div><div class="fw-bold" id="liveMathMarks">0</div></div>
-                  <div class="col-6 col-md-4"><div class="small text-muted">TOTAL SCORE</div><div class="fw-bold text-primary" id="liveTotalScore">0</div></div>
-                  <div class="col-6 col-md-4"><div class="small text-muted">BATCH RANK</div><div class="fw-bold" id="liveBatchRank">--</div></div>
-                  <div class="col-12 col-md-4"><div class="small text-muted">INSTITUTE RANK</div><div class="fw-bold" id="liveInstituteRank">--</div></div>
+                <div class="subject-score-grid" id="liveSubjectScores">
+                  {% for section in subject_score_sections %}
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">{{ section.shortLabel|default:section.name }}</div>
+                    <div class="subject-score-value">{{ section.score }} / {{ section.total }}</div>
+                    <div class="subject-score-meta">{{ section.name }}</div>
+                  </div>
+                  {% empty %}
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Section Scores</div>
+                    <div class="subject-score-meta">Section-wise marks will appear here after the attempt is processed.</div>
+                  </div>
+                  {% endfor %}
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Total Score</div>
+                    <div class="subject-score-value text-primary" id="liveTotalScore">{{ subject_score_total }} / {{ subject_score_total_marks }}</div>
+                    <div class="subject-score-meta">Selected test total</div>
+                  </div>
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Batch Rank</div>
+                    <div class="subject-score-value" id="liveBatchRank">{% if live_batch_rank == "NA" %}--{% else %}#{{ live_batch_rank }}{% endif %}</div>
+                    <div class="subject-score-meta">Rank within your batch</div>
+                  </div>
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Institute Rank</div>
+                    <div class="subject-score-value" id="liveInstituteRank">{% if live_institute_rank == "NA" %}--{% else %}#{{ live_institute_rank }}{% endif %}</div>
+                    <div class="subject-score-meta">Rank within this test</div>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="card border-0 shadow-sm mt-4">
               <div class="card-body">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="attempt-review-panel">
                   <div>
                     <h6 class="fw-bold mb-1">
                       <i class="bi bi-file-earmark-check me-2 text-primary"></i>
@@ -326,7 +400,7 @@
             {% endif %}
 
             <a
-              href="{% url 'login' %}"
+              href="{% url 'my_tests' %}"
               class="btn btn-light w-100 mt-4 py-3 border"
               style="border-radius: 10px"
             >
@@ -361,6 +435,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+      (() => {
+        if (!window.history || !window.history.replaceState) return;
+
+        // Mark current history state so we can detect back navigation.
+        window.history.replaceState({ scholarshipSuccess: true }, "", window.location.href);
+        // Push a second state so pressing back triggers a popstate event.
+        window.history.pushState({ scholarshipSuccess: true }, "", window.location.href);
+
+        // On back navigation, redirect to a safe page (home/my_tests) instead
+        // of allowing the browser to go back to the test page.
+        window.addEventListener("popstate", () => {
+          window.location.replace("{% url 'my_tests' %}");
+        });
+      })();
+
       (() => {
         const button = document.getElementById("attemptReviewBtn");
         const message = document.getElementById("answerKeyAvailabilityText");
@@ -397,6 +486,56 @@
 
         function rankText(value) {
           return Number.isInteger(value) ? `#${value}` : "--";
+        }
+
+        function renderSubjectScoreCards(sections, totalScore, totalMarks, batchRank, instituteRank) {
+          const container = document.getElementById("liveSubjectScores");
+          if (!container) return;
+          container.innerHTML = "";
+
+          (Array.isArray(sections) ? sections : []).forEach((section) => {
+            const card = document.createElement("div");
+            card.className = "subject-score-card";
+            card.innerHTML = `
+              <div class="subject-score-label">${section.shortLabel || section.name || "Section"}</div>
+              <div class="subject-score-value">${Number(section.score || 0)} / ${Number(section.total || 0)}</div>
+              <div class="subject-score-meta">${section.name || section.sectionName || "Section score"}</div>
+            `;
+            container.appendChild(card);
+          });
+
+          [
+            {
+              label: "Total Score",
+              value: `${Number(totalScore || 0)} / ${Number(totalMarks || 0)}`,
+              meta: "Selected test total",
+              id: "liveTotalScore",
+              extraClass: " text-primary",
+            },
+            {
+              label: "Batch Rank",
+              value: rankText(batchRank),
+              meta: "Rank within your batch",
+              id: "liveBatchRank",
+              extraClass: "",
+            },
+            {
+              label: "Institute Rank",
+              value: rankText(instituteRank),
+              meta: "Rank within this test",
+              id: "liveInstituteRank",
+              extraClass: "",
+            },
+          ].forEach((item) => {
+            const card = document.createElement("div");
+            card.className = "subject-score-card";
+            card.innerHTML = `
+              <div class="subject-score-label">${item.label}</div>
+              <div class="subject-score-value${item.extraClass}" id="${item.id}">${item.value}</div>
+              <div class="subject-score-meta">${item.meta}</div>
+            `;
+            container.appendChild(card);
+          });
         }
 
         function renderLeaderboardRows(entries) {
@@ -436,13 +575,13 @@
             const currentScore = document.getElementById("liveCurrentRankScore");
             if (currentScore) currentScore.textContent = `${data.score} / ${data.total_marks}`;
 
-            document.getElementById("livePhyMarks").textContent = data.subject_scores?.phy_marks ?? 0;
-            document.getElementById("liveChmMarks").textContent = data.subject_scores?.chm_marks ?? 0;
-            document.getElementById("liveBioMarks").textContent = data.subject_scores?.bio_marks ?? 0;
-            document.getElementById("liveMathMarks").textContent = data.subject_scores?.math_marks ?? 0;
-            document.getElementById("liveTotalScore").textContent = data.total_score ?? 0;
-            document.getElementById("liveBatchRank").textContent = rankText(data.batch_rank);
-            document.getElementById("liveInstituteRank").textContent = rankText(data.institute_rank);
+            renderSubjectScoreCards(
+              data.subject_scores || [],
+              data.total_score,
+              data.total_marks,
+              data.batch_rank,
+              data.institute_rank,
+            );
             renderLeaderboardRows(data.leaderboard_top_entries || []);
           } catch (_error) {
           }

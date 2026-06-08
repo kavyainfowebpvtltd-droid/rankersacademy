@@ -10,8 +10,52 @@
     <script src="{% static 'js/admin-theme.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" />
     <style>
+      :root {
+        color-scheme: light;
+        --review-page-bg: #f3f6fb;
+        --review-surface: #ffffff;
+        --review-surface-muted: #f8fafc;
+        --review-text: #0f172a;
+        --review-text-soft: #5b6b82;
+        --review-border: #d7e0ec;
+        --review-option-bg: #ffffff;
+        --review-option-border: #dbe3ee;
+        --review-option-letter-bg: #eef2ff;
+        --review-option-letter-text: #1e40af;
+        --review-correct-bg: #ecfdf3;
+        --review-correct-border: #22c55e;
+        --review-wrong-bg: #fff1f2;
+        --review-wrong-border: #f43f5e;
+      }
+
+      html[data-admin-theme="dark"] {
+        color-scheme: dark;
+        --review-page-bg: #060b14;
+        --review-surface: #0f172a;
+        --review-surface-muted: #111c31;
+        --review-text: #e5eefb;
+        --review-text-soft: #9fb1c8;
+        --review-border: #253550;
+        --review-option-bg: #101a2d;
+        --review-option-border: #2a3a56;
+        --review-option-letter-bg: #1d4ed8;
+        --review-option-letter-text: #eff6ff;
+        --review-correct-bg: rgba(34, 197, 94, 0.18);
+        --review-correct-border: #22c55e;
+        --review-wrong-bg: rgba(244, 63, 94, 0.16);
+        --review-wrong-border: #fb7185;
+      }
+
+      body {
+        background: var(--review-page-bg);
+        color: var(--review-text);
+      }
       .review-shell { max-width: 1100px; margin: 0 auto; }
-      .question-card { border-radius: 14px; }
+      .question-card {
+        border-radius: 14px;
+        background: var(--review-surface);
+        color: var(--review-text);
+      }
       .question-body img { max-width: 100%; height: auto; }
       .answer-pill {
         display: inline-flex;
@@ -21,6 +65,83 @@
         font-weight: 700;
         font-size: 0.86rem;
       }
+      .option-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .review-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        border: 1px solid var(--review-option-border);
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        background: var(--review-option-bg);
+        color: var(--review-text);
+      }
+      .review-option.is-correct {
+        border-color: var(--review-correct-border);
+        background: var(--review-correct-bg);
+      }
+      .review-option.is-selected-wrong {
+        border-color: var(--review-wrong-border);
+        background: var(--review-wrong-bg);
+      }
+      .option-letter {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background: var(--review-option-letter-bg);
+        color: var(--review-option-letter-text);
+        font-weight: 800;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .review-option.is-correct .option-letter {
+        background: #16a34a;
+        color: #ffffff;
+      }
+      .review-option.is-selected-wrong .option-letter {
+        background: #e11d48;
+        color: #ffffff;
+      }
+      .option-text {
+        min-width: 0;
+        flex: 1;
+        color: var(--review-text);
+      }
+      .option-text img {
+        max-width: 100%;
+        height: auto;
+      }
+      .option-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.45rem;
+      }
+      .answer-block {
+        background: var(--review-surface-muted);
+        border: 1px solid var(--review-border);
+        color: var(--review-text);
+      }
+      .answer-label,
+      .review-muted {
+        color: var(--review-text-soft) !important;
+      }
+      .review-back-btn {
+        border-color: var(--review-border);
+        color: var(--review-text);
+        background: transparent;
+      }
+      .review-back-btn:hover,
+      .review-back-btn:focus {
+        background: var(--review-surface-muted);
+        color: var(--review-text);
+      }
     </style>
   </head>
   <body>
@@ -28,9 +149,9 @@
       <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
         <div>
           <h2 class="fw-bold mb-1">{{ selected_test_name }}</h2>
-          <div class="text-muted">Attempted Test Paper and Answer Key</div>
+          <div class="review-muted">Attempted Test Paper and Answer Key</div>
         </div>
-        <a href="{% url 'scholarship_test:scholarship_success' attempt.id %}" class="btn btn-outline-light">
+        <a href="{% url 'scholarship_test:scholarship_success' attempt.id %}" class="btn review-back-btn">
           <i class="bi bi-arrow-left me-2"></i>Back to Result
         </a>
       </div>
@@ -50,17 +171,42 @@
               {% endif %}
             </div>
             <div class="question-body mb-3">{{ row.question_html|safe }}</div>
+            {% if row.options %}
+            <div class="mb-3">
+              <div class="review-muted small fw-bold text-uppercase mb-2">Options</div>
+              <div class="option-list">
+                {% for option in row.options %}
+                <div class="review-option {% if option.is_correct %}is-correct{% endif %} {% if option.is_selected and not option.is_correct %}is-selected-wrong{% endif %}">
+                  <span class="option-letter">{{ option.label }}</span>
+                  <div class="option-text">
+                    <div>{{ option.text_html|safe }}</div>
+                    {% if option.is_selected or option.is_correct %}
+                    <div class="option-tags">
+                      {% if option.is_selected %}
+                      <span class="badge rounded-pill {% if option.is_correct %}text-bg-success{% else %}text-bg-danger{% endif %}">Student Answer</span>
+                      {% endif %}
+                      {% if option.is_correct %}
+                      <span class="badge rounded-pill text-bg-success">Correct Answer</span>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
             <div class="row g-3">
               <div class="col-md-6">
-                <div class="p-3 rounded border h-100">
-                  <div class="text-muted small fw-bold text-uppercase mb-1">Your Answer</div>
-                  <div>{{ row.selected_answer }}</div>
+                <div class="p-3 rounded h-100 answer-block">
+                  <div class="answer-label small fw-bold text-uppercase mb-1">Your Answer</div>
+                  <div>{{ row.selected_answer|safe }}</div>
                 </div>
               </div>
               <div class="col-md-6">
-                <div class="p-3 rounded border h-100">
-                  <div class="text-muted small fw-bold text-uppercase mb-1">Correct Answer</div>
-                  <div>{{ row.correct_answer }}</div>
+                <div class="p-3 rounded h-100 answer-block">
+                  <div class="answer-label small fw-bold text-uppercase mb-1">Correct Answer</div>
+                  <div>{{ row.correct_answer|safe }}</div>
                 </div>
               </div>
             </div>
@@ -68,7 +214,7 @@
         </div>
         {% empty %}
         <div class="card border-0 shadow-sm">
-          <div class="card-body text-center py-5 text-muted">No attempted paper details are available.</div>
+          <div class="card-body text-center py-5 review-muted">No attempted paper details are available.</div>
         </div>
         {% endfor %}
       </div>

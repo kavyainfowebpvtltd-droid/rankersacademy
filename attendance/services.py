@@ -399,6 +399,10 @@ def _attendance_sms_template(event: str) -> str:
 
 
 def send_attendance_sms(student: Student, event: str, event_date: date, event_time: time | None = None) -> bool:
+    if not getattr(settings, "ATTENDANCE_SMS_ENABLED", True):
+        logger.info("Attendance SMS disabled. Skipping %s SMS for student %s.", event, student.id)
+        return False
+
     mobile = format_mobile(student.contact)
     if not mobile:
         logger.warning("Skipping %s SMS for student %s due to invalid phone.", event, student.id)

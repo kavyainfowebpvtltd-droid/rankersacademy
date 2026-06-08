@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 from django.test import Client, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -212,7 +212,7 @@ class LoginThrottleTests(TestCase):
             REMOTE_ADDR=shared_ip,
         )
 
-        self.assertRedirects(response, reverse("student-dashboard"))
+        self.assertRedirects(response, reverse("my_tests"))
 
     def test_account_lock_still_applies_after_repeated_failures(self):
         for _ in range(5):
@@ -324,6 +324,135 @@ class AdminDashboardSearchTests(TestCase):
         self.assertContains(response, 'id="adminDashboardTableSection"')
         self.assertContains(response, "Rohit Kumar")
         self.assertNotContains(response, 'id="adminDashboardSearchForm"')
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
+class StudentLoginRedirectTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="mytests01",
+            email="mytests01@example.com",
+            password="StudentPass@2026",
+        )
+        Student.objects.create(
+            user=self.user,
+            student_name="My Tests Student",
+            username="mytests01",
+            contact="9876543299",
+            email="mytests01@example.com",
+            school="Rankers School",
+            board="CBSE",
+            grade="10th",
+            batch="B1",
+            gender="Male",
+        )
+
+    def test_password_login_redirects_student_to_my_tests(self):
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "mytests01",
+                "password": "StudentPass@2026",
+                "role": "Student",
+            },
+        )
+
+        self.assertRedirects(response, reverse("my_tests"))
+
+    @patch("sds.views._is_msg91_verified", return_value=True)
+    @patch("sds.views._msg91_verify_otp", return_value={"type": "success"})
+    def test_otp_login_redirects_student_to_my_tests(self, _mock_verify, _mock_is_verified):
+        cache.set(
+            "otp:login:9876543299",
+            {"user_id": self.user.id, "role": "Student", "attempts": 0},
+            600,
+        )
+
+        response = self.client.post(
+            reverse("verify_login_otp"),
+            {
+                "phone": "9876543299",
+                "otp": "1234",
+                "role": "Student",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content.decode("utf-8"),
+            {"ok": True, "redirect": reverse("my_tests")},
+        )
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
+class TestAnalysisSchemaSafetyTests(TestCase):
+    def test_attendance_payload_returns_empty_when_analysis_tables_are_unavailable(self):
+        with patch("sds.views._analysis_model_table_available", return_value=False):
+            self.assertEqual(views._build_attendance_state_payload(), {})
+
+    def test_note_payload_returns_empty_when_analysis_note_table_is_unavailable(self):
+        with patch("sds.views._analysis_model_table_available", return_value=False):
+            self.assertEqual(views._build_note_state_payload(None), {})
+
+    def test_base_payload_returns_placeholder_when_required_test_columns_are_unavailable(self):
+        batch_payload = [
+            {
+                "id": "alpha",
+                "label": "Alpha Batch",
+                "studentCount": 0,
+                "testCount": 0,
+            }
+        ]
+        with patch(
+            "sds.views._analysis_missing_model_fields",
+            return_value=["scheduled_start_at", "batch", "subject"],
+        ), patch(
+            "sds.views._build_test_analysis_batches_payload",
+            return_value=batch_payload,
+        ):
+            payload = views._build_test_analysis_base_payload()
+
+        self.assertEqual(payload["students"], [])
+        self.assertEqual(payload["completedTests"], [])
+        self.assertEqual(payload["scoresByTest"], {})
+        self.assertEqual(payload["focusByTest"], {})
+        self.assertEqual(payload["batches"], batch_payload)
+        self.assertEqual(payload["upcomingTest"]["kind"], "placeholder")
+
+    def test_coerce_analysis_test_returns_none_when_schema_safe_fetch_fails(self):
+        with patch("sds.views._schema_safe_scholarship_test_queryset") as mock_queryset:
+            mock_queryset.return_value.prefetch_related.return_value.get.side_effect = (
+                OperationalError("missing column")
+            )
+
+            self.assertIsNone(views._coerce_analysis_test(12))
+
+    def test_teacheradmin_returns_none_when_schema_safe_fetch_fails(self):
+        user = User(username="teacherx")
+        with patch("sds.views.TeacherAdmin.objects.all") as mock_all, patch(
+            "sds.views._analysis_missing_model_fields",
+            return_value=["blood_group"],
+        ):
+            mock_all.return_value.defer.return_value.get.side_effect = OperationalError(
+                "missing column"
+            )
+            self.assertIsNone(views._teacheradmin(user))
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
+class TestAnalysisStaticPageTests(TestCase):
+    def test_test_analysis_page_renders_without_login_in_static_mode(self):
+        response = self.client.get(reverse("test-analysis"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-page="admin"')
+        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = true;')
+
+    def test_test_analysis_login_page_redirects_to_static_test_analysis(self):
+        response = self.client.get(reverse("test-analysis-login-page"))
+
+        self.assertRedirects(response, reverse("test-analysis"))
 
 
 @override_settings(ROOT_URLCONF="sds.urls")

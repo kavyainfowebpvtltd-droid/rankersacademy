@@ -2,13 +2,15 @@ import logging
 import hashlib
 import re
 from datetime import datetime
+from functools import lru_cache
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 from zoneinfo import ZoneInfo
+from sds.models import Student
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,7 @@ OPTIONAL_ATTEMPT_SECURITY_FIELDS = {
     "violation_count",
     "security_status",
 }
+OPTIONAL_ATTEMPT_COMPAT_FIELDS = OPTIONAL_ATTEMPT_SECURITY_FIELDS | {"progress_state"}
 
 
 def get_max_security_violations() -> int:
@@ -74,12 +77,47 @@ def _parse_optional_datetime(value):
     return None
 
 
+def _safe_model_field_value(instance, field_name, default=None):
+    if not instance:
+        return default
+
+    try:
+        deferred_fields = set(instance.get_deferred_fields())
+    except Exception:
+        deferred_fields = set()
+
+    if (
+        field_name in deferred_fields
+        and (
+            not hasattr(instance.__class__, "_meta")
+            or not _model_has_columns(instance.__class__, field_name)
+        )
+    ):
+        return default
+
+    values = getattr(instance, "__dict__", {})
+    if field_name in values:
+        value = values.get(field_name)
+    else:
+        try:
+            value = getattr(instance, field_name)
+        except (AttributeError, OperationalError, ProgrammingError):
+            return default
+
+    return default if value is None else value
+
+
+def _attempt_progress_state_data(attempt) -> dict:
+    raw_state = _safe_model_field_value(attempt, "progress_state", {})
+    return raw_state if isinstance(raw_state, dict) else {}
+
+
 def get_attempt_started_at_value(attempt):
     started_at = attempt.__dict__.get("started_at")
     if started_at:
         return started_at
 
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     parsed = _parse_optional_datetime(state.get("started_at"))
     if parsed is not None:
         return parsed
@@ -92,7 +130,7 @@ def get_attempt_submitted_at_value(attempt):
     if submitted_at:
         return submitted_at
 
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     parsed = _parse_optional_datetime(state.get("submitted_at"))
     if parsed is not None:
         return parsed
@@ -103,7 +141,7 @@ def get_attempt_submitted_at_value(attempt):
 def get_attempt_violation_count_value(attempt) -> int:
     raw_value = attempt.__dict__.get("violation_count")
     if raw_value is None:
-        state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+        state = _attempt_progress_state_data(attempt)
         raw_value = state.get("violation_count", 0)
     try:
         return max(0, int(raw_value or 0))
@@ -116,7 +154,7 @@ def get_attempt_security_status_value(attempt) -> str:
     if security_status:
         return str(security_status)
 
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     state_status = state.get("security_status")
     if state_status:
         return str(state_status)
@@ -315,6 +353,480 @@ def get_portal_student_stream_values(portal_student) -> set[str]:
     return stream_values
 
 
+LEADERBOARD_SUBJECT_ORDER = ("Physics", "Chemistry", "Biology", "Maths")
+LEADERBOARD_SUBJECT_SHORT_LABELS = {
+    "Physics": "PHY",
+    "Chemistry": "CHM",
+    "Biology": "BIO",
+    "Maths": "MATH",
+}
+
+
+def _normalize_leaderboard_subject_name(name: str) -> str:
+    value = re.sub(r"[^a-z0-9]+", " ", str(name or "").strip().casefold())
+    compact = value.replace(" ", "")
+    if "physics" in compact or compact == "phy":
+        return "Physics"
+    if "chemistry" in compact or compact == "chem":
+        return "Chemistry"
+    if compact in {"biology", "bio", "botany", "zoology"} or "biology" in compact:
+        return "Biology"
+    if compact in {"maths", "math", "mathematics", "mathmatics"} or "math" in compact:
+        return "Maths"
+    return ""
+
+
+def _short_section_label(name: str) -> str:
+    normalized = _normalize_leaderboard_subject_name(name)
+    if normalized:
+        return LEADERBOARD_SUBJECT_SHORT_LABELS.get(normalized, normalized[:4].upper())
+
+    tokens = [token for token in re.findall(r"[A-Za-z0-9]+", str(name or "")) if token]
+    if not tokens:
+        return "SEC"
+    if len(tokens) >= 2:
+        return "".join(token[0] for token in tokens[:3]).upper()
+    return tokens[0][:4].upper()
+
+
+@lru_cache(maxsize=None)
+def _model_column_names(model_class):
+    try:
+        if model_class._meta.db_table not in connection.introspection.table_names():
+            return set()
+        with connection.cursor() as cursor:
+            description = connection.introspection.get_table_description(
+                cursor,
+                model_class._meta.db_table,
+            )
+        return {
+            getattr(column, "name", column[0])
+            for column in description
+        }
+    except (OperationalError, ProgrammingError) as exc:
+        logger.warning(
+            "Unable to inspect %s columns for scholarship test compatibility: %s",
+            model_class._meta.db_table,
+            exc,
+        )
+        return set()
+
+
+def _model_has_columns(model_class, *field_names):
+    available_columns = _model_column_names(model_class)
+    for field_name in field_names:
+        try:
+            column_name = model_class._meta.get_field(field_name).column
+        except Exception:
+            return False
+        if column_name not in available_columns:
+            return False
+    return True
+
+
+def _optional_attempt_fields_to_defer():
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    return tuple(
+        sorted(
+            field_name
+            for field_name in OPTIONAL_ATTEMPT_COMPAT_FIELDS
+            if not _model_has_columns(ScholarshipTestAttempt, field_name)
+        )
+    )
+
+
+def _schema_safe_attempt_queryset():
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    queryset = ScholarshipTestAttempt.objects.all()
+    missing_optional_fields = _optional_attempt_fields_to_defer()
+    if missing_optional_fields:
+        queryset = queryset.defer(*missing_optional_fields)
+    return queryset
+
+
+def get_test_total_marks(test) -> int:
+    total_marks = 0
+    for question in get_runtime_questions_for_test(test):
+        marks = int(getattr(question, "pos_marks", 0) or 0)
+        total_marks += marks if marks > 0 else 1
+    return total_marks
+
+
+def _infer_test_stream_values(test, portal_student=None) -> set[str]:
+    stream_values = set()
+    for raw_value in (
+        _safe_model_field_value(test, "stream", ""),
+        _safe_model_field_value(test, "subject", ""),
+        getattr(test, "name", ""),
+    ):
+        stream_values.update(_split_scope_values(raw_value))
+
+    stream_values.update(get_portal_student_stream_values(portal_student))
+    return stream_values
+
+
+def get_test_section_definitions(test, portal_student=None):
+    if not test:
+        return []
+
+    section_definitions = []
+    for index, section in enumerate(test.sections.all().order_by("order", "id"), start=1):
+        questions = list(section.questions.all())
+        total_marks = sum(
+            int(getattr(question, "pos_marks", 0) or 0)
+            if int(getattr(question, "pos_marks", 0) or 0) > 0
+            else 1
+            for question in questions
+        )
+        section_name = str(getattr(section, "name", "") or f"Section {index}").strip() or f"Section {index}"
+        section_definitions.append(
+            {
+                "name": section_name,
+                "sectionName": section_name,
+                "shortLabel": _short_section_label(section_name),
+                "total": total_marks,
+                "meta": getattr(section, "instructions", "") or "Section score",
+            }
+        )
+
+    if section_definitions:
+        return section_definitions
+
+    stream_values = _infer_test_stream_values(test, portal_student)
+    normalized_streams = {_fuzzy_norm(value) for value in stream_values}
+    fallback_names = []
+    if "neet" in normalized_streams and "jee" not in normalized_streams:
+        fallback_names = ["Physics", "Chemistry", "Biology"]
+    elif {"jee", "mhtcet"} & normalized_streams:
+        fallback_names = ["Physics", "Chemistry", "Maths"]
+
+    return [
+        {
+            "name": name,
+            "sectionName": name,
+            "shortLabel": _short_section_label(name),
+            "total": 0,
+            "meta": "Section score",
+        }
+        for name in fallback_names
+    ]
+
+
+def _attempt_saved_answers(attempt) -> dict:
+    progress_state = _attempt_progress_state_data(attempt)
+    saved_answers = progress_state.get("answers", {})
+    return saved_answers if isinstance(saved_answers, dict) else {}
+
+
+def _selected_answer_from_record(answer):
+    if not answer:
+        return None
+
+    selected_answer = getattr(answer, "selected_option", None)
+    if selected_answer in (None, ""):
+        selected_answer = getattr(answer, "selected_answer", None)
+
+    if hasattr(selected_answer, "order"):
+        try:
+            return str(int(selected_answer.order))
+        except (TypeError, ValueError):
+            return str(selected_answer.order)
+
+    return selected_answer
+
+
+def build_attempt_section_breakdown(attempt):
+    if not attempt:
+        return []
+
+    manual_scores = _attempt_progress_state_data(attempt).get("manual_subject_scores")
+    if isinstance(manual_scores, dict):
+        normalized_manual_scores = {}
+        for raw_subject, raw_score in manual_scores.items():
+            subject = _normalize_leaderboard_subject_name(raw_subject) or str(raw_subject or "").strip()
+            if subject:
+                normalized_manual_scores[subject] = raw_score
+
+        ordered_subjects = [
+            subject
+            for subject in LEADERBOARD_SUBJECT_ORDER
+            if subject in normalized_manual_scores
+        ]
+        ordered_subjects.extend(
+            subject
+            for subject in normalized_manual_scores
+            if subject not in ordered_subjects
+        )
+
+        return [
+            {
+                "name": subject,
+                "sectionName": subject,
+                "shortLabel": _short_section_label(subject),
+                "score": int(normalized_manual_scores.get(subject, 0) or 0),
+                "total": 100,
+                "percentage": max(0, min(100, int(normalized_manual_scores.get(subject, 0) or 0))),
+                "meta": "Manual marks entry",
+            }
+            for subject in ordered_subjects
+        ]
+
+    test = getattr(attempt, "test", None)
+    if not test:
+        return []
+
+    saved_answers = _attempt_saved_answers(attempt)
+    answers_by_question_id = {
+        answer.question_id: answer
+        for answer in attempt.answers.all()
+        if getattr(answer, "question_id", None) is not None
+    }
+    breakdown = []
+
+    for index, section in enumerate(test.sections.all().order_by("order", "id"), start=1):
+        questions = list(section.questions.all())
+        total_marks = 0
+        scored_marks = 0
+
+        for question in questions:
+            positive_marks = int(getattr(question, "pos_marks", 0) or 0)
+            positive_marks = positive_marks if positive_marks > 0 else 1
+            negative_marks = int(getattr(question, "neg_marks", 0) or 0)
+            negative_unattempted_marks = int(getattr(question, "neg_unattempted", 0) or 0)
+            total_marks += positive_marks
+
+            answer = answers_by_question_id.get(question.id)
+            selected_answer = _selected_answer_from_record(answer)
+            if selected_answer in (None, ""):
+                selected_answer = saved_answers.get(str(question.id))
+
+            if answer is not None and getattr(answer, "is_correct", None) is True:
+                scored_marks += positive_marks
+            elif is_runtime_answer_provided(question, selected_answer):
+                if answer is not None and getattr(answer, "is_correct", None) is False:
+                    scored_marks -= negative_marks
+                elif is_runtime_answer_correct(question, selected_answer):
+                    scored_marks += positive_marks
+                else:
+                    scored_marks -= negative_marks
+            else:
+                scored_marks -= negative_unattempted_marks
+
+        section_name = str(getattr(section, "name", "") or f"Section {index}").strip() or f"Section {index}"
+        percentage = round((scored_marks / total_marks) * 100, 1) if total_marks else 0
+        breakdown.append(
+            {
+                "name": section_name,
+                "sectionName": section_name,
+                "shortLabel": _short_section_label(section_name),
+                "score": scored_marks,
+                "total": total_marks,
+                "percentage": percentage,
+                "meta": getattr(section, "instructions", "") or "Section score",
+            }
+        )
+
+    return breakdown
+
+
+def build_zero_section_breakdown(test, portal_student=None):
+    return [
+        {
+            **section,
+            "score": 0,
+            "percentage": 0,
+        }
+        for section in get_test_section_definitions(test, portal_student=portal_student)
+    ]
+
+
+def _portal_student_photo_url(portal_student):
+    if not portal_student or not getattr(portal_student, "profile_photo", None):
+        return None
+    try:
+        return portal_student.profile_photo.url
+    except Exception:
+        return None
+
+
+def _latest_completed_attempts_for_portal_test(test):
+    attempts = (
+        _schema_safe_attempt_queryset()
+        .filter(test=test, status__in=["completed", "expired"])
+        .select_related("student", "portal_student")
+        .prefetch_related("answers__question__section", "test__sections__questions")
+        .order_by("test_completed_at", "test_started_at", "id")
+    )
+
+    latest_by_student_id = {}
+    for attempt in attempts:
+        portal_student_id = getattr(attempt, "portal_student_id", None)
+        if portal_student_id:
+            latest_by_student_id[portal_student_id] = attempt
+    return latest_by_student_id
+
+
+def _assigned_portal_students_for_test(test):
+    student_queryset = Student.objects.select_related("user")
+    test_batch = str(_safe_model_field_value(test, "batch", "") or "").strip()
+    if test_batch:
+        student_queryset = student_queryset.filter(batch__iexact=test_batch)
+
+    assigned_students = [
+        portal_student
+        for portal_student in student_queryset
+        if is_test_assigned_to_portal_student(test, portal_student)
+    ]
+    assigned_students.sort(
+        key=lambda portal_student: (
+            (getattr(portal_student, "student_name", "") or "").casefold(),
+            getattr(portal_student, "id", 0),
+        )
+    )
+    return assigned_students
+
+
+def _subject_score_lookup(section_scores):
+    subject_scores = {subject: None for subject in LEADERBOARD_SUBJECT_ORDER}
+    for index, section in enumerate(section_scores):
+        mapped_subject = _normalize_leaderboard_subject_name(
+            section.get("name") or section.get("sectionName")
+        )
+        if not mapped_subject and index < len(LEADERBOARD_SUBJECT_ORDER):
+            mapped_subject = LEADERBOARD_SUBJECT_ORDER[index]
+        if mapped_subject in subject_scores:
+            raw_score = section.get("score")
+            subject_scores[mapped_subject] = (
+                None if raw_score in (None, "") else int(raw_score or 0)
+            )
+    return subject_scores
+
+
+def get_test_attempt_leaderboard_data(test, current_attempt_id=None, current_portal_student=None, limit=5):
+    if not test:
+        return {
+            "entries": [],
+            "topEntries": [],
+            "currentEntry": None,
+        }
+
+    assigned_students = _assigned_portal_students_for_test(test)
+    latest_attempts = _latest_completed_attempts_for_portal_test(test)
+    total_marks = get_test_total_marks(test)
+    entries = []
+
+    for portal_student in assigned_students:
+        attempt = latest_attempts.get(portal_student.id)
+        section_scores = (
+            build_attempt_section_breakdown(attempt)
+            if attempt
+            else build_zero_section_breakdown(test, portal_student=portal_student)
+        )
+        subject_scores = _subject_score_lookup(section_scores)
+        score = int(getattr(attempt, "score", 0) or 0) if attempt else 0
+        attempt_total_marks = (
+            int(getattr(attempt, "total_marks", 0) or 0)
+            if attempt and int(getattr(attempt, "total_marks", 0) or 0) > 0
+            else total_marks
+        )
+        student_name = getattr(portal_student, "student_name", "") or getattr(portal_student.user, "username", "")
+        entry = {
+            "attemptId": attempt.id if attempt else None,
+            "studentId": f"portal-{portal_student.id}",
+            "studentName": student_name,
+            "studentRef": getattr(portal_student, "username", "") or getattr(portal_student, "contact", ""),
+            "studentBatch": getattr(portal_student, "batch", "") or "",
+            "studentGrade": getattr(portal_student, "grade", "") or "",
+            "profilePhotoUrl": _portal_student_photo_url(portal_student),
+            "score": score,
+            "total": score,
+            "totalMarks": attempt_total_marks,
+            "sectionScores": section_scores,
+            "phyMarks": subject_scores["Physics"],
+            "chmMarks": subject_scores["Chemistry"],
+            "bioMarks": subject_scores["Biology"],
+            "mathMarks": subject_scores["Maths"],
+            "batchRank": "NA",
+            "instituteRank": "NA",
+            "isCurrentStudent": bool(
+                current_portal_student and portal_student.id == current_portal_student.id
+            ),
+            "_attempted": bool(attempt),
+            "_completed_at": (
+                getattr(attempt, "test_completed_at", None)
+                or getattr(attempt, "test_started_at", None)
+                or timezone.now()
+            ),
+            "_sort_name": (student_name or "").casefold(),
+        }
+        entries.append(entry)
+
+    entries.sort(
+        key=lambda entry: (
+            0 if entry["_attempted"] else 1,
+            -int(entry["score"] or 0),
+            entry["_completed_at"] or timezone.now(),
+            entry["_sort_name"],
+            entry["studentId"],
+        )
+    )
+
+    current_entry = None
+    last_score = None
+    last_rank = 0
+    attempted_position = 0
+
+    for entry in entries:
+        if entry["_attempted"]:
+            attempted_position += 1
+            if entry["score"] != last_score:
+                last_rank = attempted_position
+            entry["rank"] = last_rank
+            entry["instituteRank"] = last_rank
+            last_score = entry["score"]
+        else:
+            entry["rank"] = "NA"
+            entry["instituteRank"] = "NA"
+
+        if entry["isCurrentStudent"] or (
+            current_attempt_id and entry.get("attemptId") == current_attempt_id
+        ):
+            current_entry = entry
+
+    batch_groups = {}
+    for entry in entries:
+        batch_key = str(entry.get("studentBatch") or "").strip().casefold()
+        if batch_key:
+            batch_groups.setdefault(batch_key, []).append(entry)
+
+    for group_entries in batch_groups.values():
+        last_score = None
+        last_rank = 0
+        attempted_position = 0
+        for entry in group_entries:
+            if entry.get("rank") == "NA":
+                entry["batchRank"] = "NA"
+                continue
+            attempted_position += 1
+            if entry["score"] != last_score:
+                last_rank = attempted_position
+            entry["batchRank"] = last_rank
+            last_score = entry["score"]
+
+    for entry in entries:
+        entry.pop("_attempted", None)
+        entry.pop("_completed_at", None)
+        entry.pop("_sort_name", None)
+
+    return {
+        "entries": entries,
+        "topEntries": [entry for entry in entries if entry["rank"] != "NA"][: max(0, int(limit or 0) or 0) or 5],
+        "currentEntry": current_entry,
+    }
+
+
 def _fuzzy_norm(value) -> str:
     """Removes all whitespace and casefolds for robust comparison."""
     return re.sub(r"\s+", "", str(value or "").strip()).casefold()
@@ -364,16 +876,17 @@ def is_test_assigned_to_portal_student(test, portal_student) -> bool:
 
 
 def get_test_scheduled_start_at(test):
-    if not test or not getattr(test, "scheduled_start_at", None):
+    scheduled_start_at = _safe_model_field_value(test, "scheduled_start_at", None)
+    if not test or not scheduled_start_at:
         return None
 
-    start_at = _academy_localtime(test.scheduled_start_at)
+    start_at = _academy_localtime(scheduled_start_at)
     test_date = getattr(test, "date", None)
     if not test_date or start_at.date() == test_date:
         return start_at
 
     # Compatibility for rows created before academy-local scheduling was enforced.
-    stored_utc_time = timezone.localtime(test.scheduled_start_at, UTC_TIMEZONE).time()
+    stored_utc_time = timezone.localtime(scheduled_start_at, UTC_TIMEZONE).time()
     corrected = datetime.combine(test_date, stored_utc_time)
     return timezone.make_aware(corrected, ACADEMY_TIMEZONE)
 
@@ -669,8 +1182,9 @@ def get_my_tests_attempt_review_visibility_delay():
 
 def get_answer_key_base_end_time(attempt):
     runtime_test = get_runtime_test_for_attempt(attempt)
-    if runtime_test and getattr(runtime_test, 'scheduled_start_at', None):
-        return runtime_test.scheduled_start_at + timedelta(
+    scheduled_start_at = _safe_model_field_value(runtime_test, "scheduled_start_at", None)
+    if runtime_test and scheduled_start_at:
+        return scheduled_start_at + timedelta(
             minutes=get_test_duration_minutes(runtime_test)
         )
     return get_attempt_end_time(attempt)
@@ -720,7 +1234,7 @@ def is_attempt_expired(attempt) -> bool:
 
 
 def get_saved_progress(attempt):
-    state = attempt.progress_state if isinstance(attempt.progress_state, dict) else {}
+    state = _attempt_progress_state_data(attempt)
     answers = state.get('answers', {})
     if not isinstance(answers, dict):
         answers = {}
@@ -1251,6 +1765,40 @@ def get_test_leaderboard(test, current_attempt=None, limit: int = 5):
         return {
             'top_entries': [],
             'current_entry': None,
+        }
+
+    current_portal_student = getattr(current_attempt, "portal_student", None) if current_attempt else None
+    if current_portal_student:
+        leaderboard = get_test_attempt_leaderboard_data(
+            test,
+            current_attempt_id=getattr(current_attempt, "id", None),
+            current_portal_student=current_portal_student,
+            limit=limit,
+        )
+        return {
+            'top_entries': [
+                {
+                    'rank': entry.get('rank'),
+                    'attempt_id': entry.get('attemptId'),
+                    'student_name': entry.get('studentName'),
+                    'score': entry.get('score'),
+                    'total_marks': entry.get('totalMarks'),
+                    'is_current_student': entry.get('isCurrentStudent', False),
+                }
+                for entry in leaderboard.get('topEntries', [])
+            ],
+            'current_entry': (
+                {
+                    'rank': leaderboard['currentEntry'].get('rank'),
+                    'attempt_id': leaderboard['currentEntry'].get('attemptId'),
+                    'student_name': leaderboard['currentEntry'].get('studentName'),
+                    'score': leaderboard['currentEntry'].get('score'),
+                    'total_marks': leaderboard['currentEntry'].get('totalMarks'),
+                    'is_current_student': leaderboard['currentEntry'].get('isCurrentStudent', False),
+                }
+                if leaderboard.get('currentEntry')
+                else None
+            ),
         }
 
     attempts = ScholarshipTestAttempt.objects.select_related('student').defer(

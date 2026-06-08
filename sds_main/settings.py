@@ -17,19 +17,19 @@ ALLOWED_HOSTS = [
     "147.93.29.224",
     "rankersonlinetest.com",
     "www.rankersonlinetest.com",
-  
 ]
 
 CSRF_TRUSTED_ORIGINS = [
 "https://rankersonlinetest.com",
 "https://www.rankersonlinetest.com"
-] 
+]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 
 # Application definition
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,6 +86,7 @@ WSGI_APPLICATION = 'sds_main.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
 DATABASES = {
    'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -95,7 +97,6 @@ DATABASES = {
         'PORT': '3306',
     }
 }
-
 
 
 # Password validation
@@ -133,9 +134,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR/'static'
+STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [
-  'sds_main/static',
+    BASE_DIR / 'sds_main' / 'static',
 ]
 
 MEDIA_URL = '/media/'
@@ -197,6 +198,9 @@ MSG91_ATTENDANCE_CHECKIN_TEMPLATE = "69e9ebdab7357117ee02be94"
 MSG91_ATTENDANCE_CHECKOUT_TEMPLATE = "69e9f17cf301542d5f04c6b2"
 MSG91_ATTENDANCE_LATE_TEMPLATE = "69e9f21e60f3a90e250bd294"
 MSG91_ATTENDANCE_ABSENT_TEMPLATE = "69e9f2fd177c9eba030ce112"
+
+# Temporary kill switch for attendance-only SMS flows.
+ATTENDANCE_SMS_ENABLED = False
 
 OTP_LENGTH = 6
 

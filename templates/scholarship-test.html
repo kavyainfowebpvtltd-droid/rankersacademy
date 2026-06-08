@@ -18,7 +18,7 @@
       rel="stylesheet"
     />
     <script src="{% static 'js/admin-theme.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'css/scholarship-test.css' %}?v=20260521-1" />
+    <link rel="stylesheet" href="{% static 'css/scholarship-test.css' %}?v=20260522-3" />
     <link rel="stylesheet" href="{% static 'css/exam_security.css' %}?v=20260521-1" />
     <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}?v=20260521-1" />
     <style>
@@ -90,6 +90,7 @@
             </div>
           </div>
           <div class="question-body">
+            <div class="subject-tabs" id="subjectTabs" aria-label="Subject filter"></div>
             <div
               id="syncStatusBanner"
               class="alert alert-warning py-2 px-3 mb-3"
@@ -339,9 +340,10 @@
         status: "{{ attempt.status }}",
         securityStatus: "{{ attempt_security_status }}",
         initialViolationCount: {{ attempt_violation_count|default:0 }},
+        subjectTabs: {{ attempt_subject_tabs_json|default:"[]"|safe }},
       };
     </script>
     <script src="{% static 'js/exam_security.js' %}?v=20260521-1"></script>
-    <script src="{% static 'js/scholarship-test.js' %}?v=20260521-1"></script>
+    <script src="{% static 'js/scholarship-test.js' %}?v=20260522-3"></script>
   </body>
 </html>

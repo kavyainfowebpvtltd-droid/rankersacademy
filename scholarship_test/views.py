@@ -31,7 +31,6 @@ from scholarship_test.models import (
     ScholarshipTestOption,
     ScholarshipTestAnswer,
     ScholarshipTestImage,
-    ScholarshipStudentLeaderboard,
 )
 from scholarship_test.forms import (
     ScholarshipRegistrationStepOneForm,
@@ -347,12 +346,11 @@ def _get_non_scholarship_stream(attempt):
     if not portal_student:
         return getattr(attempt.student, 'board', '') or '-'
 
-    interested_exams = getattr(portal_student, 'interested_exams', []) or []
-    normalized_exams = [str(exam).strip().upper() for exam in interested_exams if str(exam).strip()]
-
     matched_streams = []
-    for stream_name in ('JEE', 'NEET'):
-        if any(stream_name in exam for exam in normalized_exams):
+    stream_values = test_service.get_portal_student_stream_values(portal_student)
+    normalized_streams = {str(value or "").strip().upper() for value in stream_values if str(value or "").strip()}
+    for stream_name in ('JEE', 'NEET', 'MHTCET'):
+        if any(stream_name in value for value in normalized_streams):
             matched_streams.append(stream_name)
 
     if matched_streams:
@@ -360,6 +358,22 @@ def _get_non_scholarship_stream(attempt):
 
     board_value = getattr(portal_student, 'board', '') or getattr(attempt.student, 'board', '')
     return board_value or '-'
+
+
+def _build_attempt_subject_tabs(runtime_test, portal_student=None):
+    subject_tabs = []
+    for index, section in enumerate(
+        test_service.get_test_section_definitions(runtime_test, portal_student=portal_student)
+    ):
+        section_name = str(section.get('name') or section.get('sectionName') or f'Section {index + 1}').strip()
+        normalized = re.sub(r'[^a-z0-9]+', ' ', section_name.casefold()).strip()
+        subject_tabs.append(
+            {
+                'key': normalized.replace(' ', '-') or f'section-{index + 1}',
+                'label': section_name,
+            }
+        )
+    return subject_tabs
 
 
 def _runtime_attempt_queryset():
@@ -892,7 +906,7 @@ def scholarship_start_test(request):
 def scholarship_test(request, attempt_id):
     selected_test = _get_effective_selected_test(request)
     _finalize_expired_attempts_for_test(selected_test)
-    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+    scholarship_student, synced_portal_student = _sync_portal_student_session(request, selected_test)
 
     student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
     if not student_id:
@@ -913,7 +927,7 @@ def scholarship_test(request, attempt_id):
     request.session['scholarship_board'] = student.board
     
     try:
-        attempt = _runtime_attempt_queryset().select_related('test').get(id=attempt_id, student=student)
+        attempt = _runtime_attempt_queryset().select_related('test', 'portal_student').get(id=attempt_id, student=student)
     except ScholarshipTestAttempt.DoesNotExist:
         messages.error(request, "Test not found")
         return redirect('scholarship_test:scholarship_dashboard')
@@ -926,6 +940,7 @@ def scholarship_test(request, attempt_id):
         return redirect('scholarship_test:scholarship_success', attempt_id=attempt.id)
 
     runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+    portal_student = getattr(attempt, 'portal_student', None) or synced_portal_student
     runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
     time_limit_minutes = test_service.get_test_duration_minutes(runtime_test) if runtime_test else TEST_DURATION_MINUTES
     time_remaining_seconds = test_service.get_attempt_time_remaining_seconds(attempt)
@@ -977,6 +992,7 @@ def scholarship_test(request, attempt_id):
         'attempt_security_status': test_service.get_attempt_security_status_value(attempt),
         'attempt_violation_count': test_service.get_attempt_violation_count_value(attempt),
         'security_max_violations': max(1, int(getattr(settings, 'EXAM_SECURITY_MAX_VIOLATIONS', 3) or 3)),
+        'attempt_subject_tabs_json': json.dumps(_build_attempt_subject_tabs(runtime_test, portal_student)),
     }
     context.update(_build_test_display_context(runtime_test))
     
@@ -1203,7 +1219,10 @@ def scholarship_success(request, attempt_id):
         attempt.total_marks,
     )
     completed_at_display = (
-        timezone.localtime(attempt.test_completed_at).strftime('%d %b %Y, %I:%M %p')
+        timezone.localtime(
+            attempt.test_completed_at,
+            test_service.ACADEMY_TIMEZONE,
+        ).strftime('%d %b %Y, %I:%M %p')
         if attempt.test_completed_at
         else None
     )
@@ -1212,6 +1231,18 @@ def scholarship_success(request, attempt_id):
         student.board if is_scholarship_result else _get_non_scholarship_stream(attempt)
     )
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
+    per_test_leaderboard = (
+        test_service.get_test_attempt_leaderboard_data(
+            attempt.test,
+            current_attempt_id=attempt.id,
+            current_portal_student=attempt.portal_student,
+            limit=5,
+        )
+        if attempt.portal_student_id
+        else None
+    )
+    current_portal_entry = (per_test_leaderboard or {}).get("currentEntry") or {}
+    subject_score_sections = test_service.build_attempt_section_breakdown(attempt)
     answer_key_available_at = test_service.get_answer_key_base_end_time(attempt)
     answer_key_is_available = True
     answer_key_available_at_display = timezone.localtime(
@@ -1253,6 +1284,11 @@ def scholarship_success(request, attempt_id):
         'academic_field_value': academic_field_value,
         'leaderboard_top_entries': leaderboard['top_entries'],
         'leaderboard_current_entry': leaderboard['current_entry'],
+        'subject_score_sections': subject_score_sections,
+        'subject_score_total': int(attempt.score or 0),
+        'subject_score_total_marks': int(attempt.total_marks or 0),
+        'live_batch_rank': current_portal_entry.get('batchRank', 'NA'),
+        'live_institute_rank': current_portal_entry.get('instituteRank', 'NA'),
         'answer_key_is_available': answer_key_is_available,
         'answer_key_available_at': answer_key_available_at.isoformat(),
         'answer_key_available_at_display': answer_key_available_at_display,
@@ -1261,7 +1297,12 @@ def scholarship_success(request, attempt_id):
         'attempt_review_url': reverse('scholarship_test:scholarship_attempt_review', args=[attempt.id]),
     }
     context.update(_build_test_display_context(attempt.test))
-    return render(request, 'scholarship-success.html', context)
+    response = render(request, 'scholarship-success.html', context)
+    # Prevent the success page from being cached so back navigation won't reuse it.
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 def scholarship_success_live_state(request, attempt_id):
@@ -1274,40 +1315,28 @@ def scholarship_success_live_state(request, attempt_id):
         return JsonResponse({"success": False, "error": "Not authorized"}, status=403)
 
     leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
-    aggregate = None
-    if attempt.portal_student_id:
-        aggregate = ScholarshipStudentLeaderboard.objects.filter(portal_student_id=attempt.portal_student_id).first()
+    per_test_leaderboard = (
+        test_service.get_test_attempt_leaderboard_data(
+            attempt.test,
+            current_attempt_id=attempt.id,
+            current_portal_student=attempt.portal_student,
+            limit=5,
+        )
+        if attempt.portal_student_id
+        else None
+    )
+    current_portal_entry = (per_test_leaderboard or {}).get("currentEntry") or {}
+    section_scores = test_service.build_attempt_section_breakdown(attempt)
 
     payload = {
         "success": True,
         "attempt_id": attempt.id,
         "score": int(attempt.score or 0),
         "total_marks": int(attempt.total_marks or 0),
-        "subject_scores": {
-            "phy_marks": (
-                int(getattr(aggregate, "phy_marks", 0) or 0)
-                if int(getattr(aggregate, "phy_tests_count", 0) or 0) > 0
-                else None
-            ),
-            "chm_marks": (
-                int(getattr(aggregate, "chm_marks", 0) or 0)
-                if int(getattr(aggregate, "chm_tests_count", 0) or 0) > 0
-                else None
-            ),
-            "bio_marks": (
-                int(getattr(aggregate, "bio_marks", 0) or 0)
-                if int(getattr(aggregate, "bio_tests_count", 0) or 0) > 0
-                else None
-            ),
-            "math_marks": (
-                int(getattr(aggregate, "math_marks", 0) or 0)
-                if int(getattr(aggregate, "math_tests_count", 0) or 0) > 0
-                else None
-            ),
-        },
-        "total_score": int(getattr(aggregate, "total_score", 0) or 0),
-        "batch_rank": getattr(aggregate, "batch_rank", None),
-        "institute_rank": getattr(aggregate, "institute_rank", None),
+        "subject_scores": section_scores,
+        "total_score": int(attempt.score or 0),
+        "batch_rank": current_portal_entry.get("batchRank", "NA"),
+        "institute_rank": current_portal_entry.get("instituteRank", "NA"),
         "leaderboard_position": (leaderboard.get("current_entry") or {}).get("rank"),
         "top_performer_status": bool((leaderboard.get("current_entry") or {}).get("rank") == 1),
         "leaderboard_top_entries": leaderboard.get("top_entries", []),
@@ -1316,7 +1345,7 @@ def scholarship_success_live_state(request, attempt_id):
             [
                 str(attempt.score or 0),
                 str(attempt.total_marks or 0),
-                str(getattr(aggregate, "updated_at", "") or ""),
+                json.dumps(section_scores, sort_keys=True),
                 str((leaderboard.get("current_entry") or {}).get("rank") or ""),
             ]
         ),
@@ -1344,31 +1373,125 @@ def _student_can_view_attempt(request, attempt):
 
 
 def _runtime_answer_display(question, value):
+    normalized_value = test_service.normalize_runtime_answer(question, value)
+
     if question.question_type == 'mcq':
-        selected_values = value if isinstance(value, list) else [value]
+        selected_values = normalized_value if isinstance(normalized_value, list) else [normalized_value]
         labels = []
         for selected in selected_values:
             try:
                 option = list(question.options.all())[int(selected)]
-                labels.append(option.option_text)
+                option_label = chr(ord('A') + int(selected))
+                labels.append(f"{option_label}. {option.option_text}")
             except (TypeError, ValueError, IndexError):
                 continue
         return ', '.join(labels) if labels else '-'
 
-    return str(value or '-')
+    return str(normalized_value or '-')
 
 
 def _runtime_correct_answer_display(question):
     if question.question_type == 'mcq':
-        correct_options = [
-            option.option_text
-            for option in question.options.all()
-            if option.is_correct
-        ]
+        correct_options = []
+        for index, option in enumerate(question.options.all()):
+            if option.is_correct:
+                correct_options.append(f"{chr(ord('A') + index)}. {option.option_text}")
         return ', '.join(correct_options) if correct_options else '-'
 
     answer = question.answers.first()
     return answer.correct_answer if answer else '-'
+
+
+def _runtime_correct_answer_values(question):
+    if question.question_type == 'mcq':
+        return {
+            str(index)
+            for index, option in enumerate(question.options.all())
+            if option.is_correct
+        }
+
+    answer = question.answers.first()
+    if not answer:
+        return set()
+
+    if question.question_type == 'tf':
+        normalized = test_service.normalize_runtime_answer(question, answer.correct_answer)
+        return {normalized} if normalized else set()
+
+    return {str(answer.correct_answer)}
+
+
+def _runtime_review_options(question, selected_answer):
+    normalized_answer = test_service.normalize_runtime_answer(question, selected_answer)
+    if isinstance(normalized_answer, list):
+        selected_values = {str(value) for value in normalized_answer if value != ''}
+    elif normalized_answer not in (None, ''):
+        selected_values = {str(normalized_answer)}
+    else:
+        selected_values = set()
+
+    correct_values = _runtime_correct_answer_values(question)
+
+    if question.question_type == 'mcq':
+        return [
+            {
+                'label': chr(ord('A') + index),
+                'value': str(index),
+                'text_html': option.option_text,
+                'is_selected': str(index) in selected_values,
+                'is_correct': str(index) in correct_values,
+            }
+            for index, option in enumerate(question.options.all())
+        ]
+
+    if question.question_type == 'tf':
+        return [
+            {
+                'label': 'T',
+                'value': 'True',
+                'text_html': 'True',
+                'is_selected': 'True' in selected_values,
+                'is_correct': 'True' in correct_values,
+            },
+            {
+                'label': 'F',
+                'value': 'False',
+                'text_html': 'False',
+                'is_selected': 'False' in selected_values,
+                'is_correct': 'False' in correct_values,
+            },
+        ]
+
+    return []
+
+
+def _legacy_question_option_text(question, option_key):
+    return getattr(question, f"option_{option_key.lower()}", "") or ""
+
+
+def _legacy_answer_display(question, option_key):
+    option_key = str(option_key or "").strip().upper()
+    if option_key not in {"A", "B", "C", "D"}:
+        return "-"
+
+    option_text = _legacy_question_option_text(question, option_key)
+    return f"{option_key}. {option_text}" if option_text else option_key
+
+
+def _legacy_review_options(question, selected_answer):
+    selected_key = str(selected_answer or "").strip().upper()
+    correct_key = str(question.correct_answer or "").strip().upper()
+    return [
+        {
+            'label': option_key,
+            'value': option_key,
+            'text_html': _legacy_question_option_text(question, option_key),
+            'is_selected': selected_key == option_key,
+            'is_correct': correct_key == option_key,
+        }
+        for option_key in ["A", "B", "C", "D"]
+        if _legacy_question_option_text(question, option_key)
+    ]
 
 
 def _build_attempt_review_rows(attempt):
@@ -1388,6 +1511,7 @@ def _build_attempt_review_rows(attempt):
                 'question_html': question.question_text,
                 'selected_answer': _runtime_answer_display(question, selected_answer),
                 'correct_answer': _runtime_correct_answer_display(question),
+                'options': _runtime_review_options(question, selected_answer),
                 'is_correct': test_service.is_runtime_answer_correct(question, selected_answer),
                 'is_attempted': test_service.is_runtime_answer_provided(question, selected_answer),
             })
@@ -1410,8 +1534,9 @@ def _build_attempt_review_rows(attempt):
             'sequence': index,
             'section_name': '',
             'question_html': question.question_text,
-            'selected_answer': selected_answer or '-',
-            'correct_answer': question.correct_answer,
+            'selected_answer': _legacy_answer_display(question, selected_answer),
+            'correct_answer': _legacy_answer_display(question, question.correct_answer),
+            'options': _legacy_review_options(question, selected_answer),
             'is_correct': bool(answer and answer.is_correct),
             'is_attempted': bool(selected_answer),
         })

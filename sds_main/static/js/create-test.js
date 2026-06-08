@@ -1944,11 +1944,6 @@ window.openTestDetails = function () {
       "</div>" +
       "</div>" +
       '<div class="form-row">' +
-      '<div class="form-group"><div class="form-label">Subject</div>' +
-      buildTestDetailsSelect("td-subject", ["Physics", "Chemistry", "Maths"], S.subject || "Physics") +
-      "</div>" +
-      "</div>" +
-      '<div class="form-row">' +
       '<div class="form-group"><div class="form-label">Tags</div><input class="form-input" id="td-tags" value="' +
       e(S.tags) +
       '"></div>' +
@@ -1974,7 +1969,6 @@ window.saveTestDetails = function () {
   S.duration = normalizeDurationValue(null, durationHours, durationMinutes);
   S.batch = document.getElementById("td-batch").value.trim();
   S.stream = document.getElementById("td-stream").value.trim();
-  S.subject = document.getElementById("td-subject").value.trim();
   S.tags = document.getElementById("td-tags").value.trim();
   S.scheduledStartAt = document
     .getElementById("td-scheduled-start")
@@ -2071,7 +2065,7 @@ window.saveTestDetails = function () {
     duration_minutes: durationParts.minutes,
     batch: document.getElementById("td-batch").value.trim(),
     stream: document.getElementById("td-stream").value.trim(),
-    subject: document.getElementById("td-subject").value.trim(),
+    subject: S.subject || "",
     tags: document.getElementById("td-tags").value.trim(),
     scheduled_start_at: document
       .getElementById("td-scheduled-start")

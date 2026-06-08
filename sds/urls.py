@@ -76,6 +76,9 @@ urlpatterns = [
     path("test-analysis/admin.html", views.test_analysis_admin_page, name="test-analysis-admin-page"),
     path("test-analysis/teacher.html", views.test_analysis_faculty_page, name="test-analysis-faculty-page"),
     path("test-analysis/login.html", views.test_analysis_login_page, name="test-analysis-login-page"),
+    path("api/batches/", views.test_analysis_batches_api, name="test-analysis-batches-api"),
+    path("api/tests/", views.test_analysis_tests_api, name="test-analysis-tests-api"),
+    path("api/test-analysis/", views.test_analysis_summary_api, name="test-analysis-summary-api"),
     path(
         "test-analysis/api/attendance/status/",
         views.test_analysis_attendance_status_api,

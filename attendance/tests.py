@@ -1,6 +1,7 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -129,6 +130,33 @@ class AttendanceAbsentProcessingTests(TestCase):
         self.assertEqual(created_count, 1)
         self.assertEqual(attendance.status, "Absent")
         mocked_sms.assert_called_once()
+
+
+class AttendanceSmsToggleTests(TestCase):
+    def setUp(self):
+        student_user = User.objects.create_user(username="S0102", password="testpass123")
+        self.student = Student.objects.create(
+            user=student_user,
+            student_name="SMS Disabled Student",
+            username="S0102",
+            contact="7410545816",
+            email="sms-disabled@example.com",
+            school="Rankers Academy",
+            board="CBSE",
+            grade="10",
+            batch="Star 01",
+            gender="Male",
+        )
+
+    @patch.object(settings, "ATTENDANCE_SMS_ENABLED", False)
+    @patch("attendance.services.http.client.HTTPSConnection")
+    def test_sms_disabled_skips_msg91_request(self, mocked_connection):
+        result = record_kiosk_scan(str(self.student.id), scanned_at="2026-04-24T03:10:00Z")
+
+        attendance = Attendance.objects.get(student=self.student, date="2026-04-24")
+        self.assertEqual(result["action"], "checkin")
+        self.assertIsNone(attendance.checkin_sms_sent_at)
+        mocked_connection.assert_not_called()
 
 
 class StaffAttendanceServiceTests(TestCase):

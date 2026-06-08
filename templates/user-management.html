@@ -215,7 +215,8 @@
                  <td>{{ student.blood_group|default:"-" }}</td>
                  <td>{{ student.email }}</td>
                  <td class="text-center">
-                   <button
+                  <button
+                     type="button"
                      class="btn btn-sm btn-outline-primary"
                      data-bs-toggle="modal"
                      data-bs-target="#editStudentModal"
@@ -224,15 +225,15 @@
                      data-username="{{ student.username }}"
                      data-contact="{{ student.contact }}"
                      data-email="{{ student.email }}"
-                     data-father-name="{{ student.father_name }}"
-                     data-emergency-contact-name="{{ student.emergency_contact_name }}"
-                     data-emergency-contact="{{ student.emergency_contact }}"
-                     data-stream="{{ student.stream }}"
-                     data-board="{{ student.board }}"
-                     data-grade="{{ student.grade }}"
-                     data-blood-group="{{ student.blood_group }}"
-                     data-gender="{{ student.gender }}"
-                     data-batch="{{ student.batch }}"
+                     data-father-name="{{ student.father_name|default_if_none:'' }}"
+                     data-emergency-contact-name="{{ student.emergency_contact_name|default_if_none:'' }}"
+                     data-emergency-contact="{{ student.emergency_contact|default_if_none:'' }}"
+                     data-stream="{{ student.stream|default_if_none:'' }}"
+                     data-board="{{ student.board|default_if_none:'' }}"
+                     data-grade="{{ student.grade|default_if_none:'' }}"
+                     data-blood-group="{{ student.blood_group|default_if_none:'' }}"
+                     data-gender="{{ student.gender|default_if_none:'' }}"
+                     data-batch="{{ student.batch|default_if_none:'' }}"
                      data-profile-photo="{% if student.profile_photo %}{{ student.profile_photo.url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
@@ -317,6 +318,7 @@
                  <td>{{ teacher.blood_group|default:"--" }}</td>
                  <td class="text-center">
                    <button
+                     type="button"
                      class="btn btn-sm btn-outline-primary"
                      data-bs-toggle="modal"
                      data-bs-target="#editTeacherModal"
@@ -325,13 +327,13 @@
                      data-username="{{teacher.username}}"
                      data-contact="{{ teacher.contact }}"
                      data-email="{{teacher.email}}"
-                     data-gender="{{ teacher.gender }}"
-                     data-role="{{ teacher.role }}"
-                     data-subjects="{{ teacher.subjects }}"
-                     data-grade="{{ teacher.grade }}"
-                     data-board="{{ teacher.board }}"
-                     data-batch="{{ teacher.batch }}"
-                     data-blood-group="{{ teacher.blood_group }}"
+                     data-gender="{{ teacher.gender|default_if_none:'' }}"
+                     data-role="{{ teacher.role|default_if_none:'' }}"
+                     data-subjects="{{ teacher.subjects|default_if_none:'' }}"
+                     data-grade="{{ teacher.grade|default_if_none:'' }}"
+                     data-board="{{ teacher.board|default_if_none:'' }}"
+                     data-batch="{{ teacher.batch|default_if_none:'' }}"
+                     data-blood-group="{{ teacher.blood_group|default_if_none:'' }}"
                      data-profile-picture="{% if teacher.profile_picture %}{{ teacher.profile_picture.url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
@@ -413,6 +415,7 @@
                  <td>{{ teacher.blood_group|default:"--" }}</td>
                  <td class="text-center">
                    <button
+                     type="button"
                      class="btn btn-sm btn-outline-primary"
                      data-bs-toggle="modal"
                      data-bs-target="#editTeacherModal"
@@ -421,13 +424,13 @@
                      data-username="{{teacher.username}}"
                      data-contact="{{ teacher.contact }}"
                      data-email="{{teacher.email}}"
-                     data-gender="{{ teacher.gender }}"
-                     data-role="{{ teacher.role }}"
-                     data-subjects="{{ teacher.subjects }}"
-                     data-grade="{{ teacher.grade }}"
-                     data-board="{{ teacher.board }}"
-                     data-batch="{{ teacher.batch }}"
-                     data-blood-group="{{ teacher.blood_group }}"
+                     data-gender="{{ teacher.gender|default_if_none:'' }}"
+                     data-role="{{ teacher.role|default_if_none:'' }}"
+                     data-subjects="{{ teacher.subjects|default_if_none:'' }}"
+                     data-grade="{{ teacher.grade|default_if_none:'' }}"
+                     data-board="{{ teacher.board|default_if_none:'' }}"
+                     data-batch="{{ teacher.batch|default_if_none:'' }}"
+                     data-blood-group="{{ teacher.blood_group|default_if_none:'' }}"
                      data-profile-picture="{% if teacher.profile_picture %}{{ teacher.profile_picture.url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>

@@ -812,39 +812,140 @@ function confirmDelete(message = "Are you sure you want to delete this user?") {
   return confirm(message);
 }
 
+function getModalTriggerButton(event) {
+  const relatedTarget = event ? event.relatedTarget : null;
+  if (!relatedTarget) {
+    return null;
+  }
+  return typeof relatedTarget.closest === "function"
+    ? relatedTarget.closest("[data-id]")
+    : relatedTarget;
+}
+
+function normalizeComparableChoice(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\b(\d+)(st|nd|rd|th)\b/g, "$1");
+}
+
+function setSelectFieldValue(select, rawValue) {
+  if (!select) {
+    return;
+  }
+
+  Array.from(select.options || [])
+    .filter((option) => option.dataset.generatedOption === "true")
+    .forEach((option) => option.remove());
+
+  const nextValue = String(rawValue || "").trim();
+  if (!nextValue) {
+    select.value = "";
+    return;
+  }
+
+  const normalizedValue = normalizeComparableChoice(nextValue);
+  const matchedOption = Array.from(select.options || []).find((option) => {
+    const optionValue = String(option.value || "").trim();
+    const optionText = String(option.text || "").trim();
+    return (
+      optionValue === nextValue ||
+      optionText === nextValue ||
+      normalizeComparableChoice(optionValue) === normalizedValue ||
+      normalizeComparableChoice(optionText) === normalizedValue
+    );
+  });
+
+  if (matchedOption) {
+    select.value = matchedOption.value;
+    return;
+  }
+
+  const generatedOption = new Option(nextValue, nextValue, true, true);
+  generatedOption.dataset.generatedOption = "true";
+  select.add(generatedOption);
+  select.value = nextValue;
+}
+
+function setFieldValue(fieldId, value) {
+  const field = document.getElementById(fieldId);
+  if (!field) {
+    return;
+  }
+
+  if (field.tagName === "SELECT") {
+    setSelectFieldValue(field, value);
+    return;
+  }
+
+  field.value = value == null ? "" : String(value);
+}
+
+function setProfilePreview(containerId, imageUrl, altText) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    return;
+  }
+
+  if (imageUrl) {
+    container.innerHTML = `<img src="${imageUrl}" alt="${altText}" width="60" height="60" style="border-radius: 50%; object-fit: cover; border: 2px solid #ddd;" />`;
+    return;
+  }
+
+  container.innerHTML = `<span class="text-muted"><i class="bi bi-person-circle" style="font-size: 2rem;"></i></span>`;
+}
+
 const editStudentModal = document.getElementById("editStudentModal");
 
 if (editStudentModal) {
   editStudentModal.addEventListener("show.bs.modal", function (event) {
-    const button = event.relatedTarget;
+    const button = getModalTriggerButton(event);
+    if (!button) {
+      return;
+    }
 
     const id = button.dataset.id;
 
     const form = document.getElementById("editStudentForm");
     form.action = `/edit-student/${id}/`;
+    setFieldValue("editStudentId", id);
 
-    document.getElementById("editStudentName").value =
-      button.dataset.name || "";
-    document.getElementById("editStudentEmail").value =
-      button.dataset.email || "";
+    setFieldValue("editStudentName", button.dataset.name);
+    setFieldValue("editStudentFatherName", button.dataset.fatherName);
+    setFieldValue(
+      "editStudentEmergencyContactName",
+      button.dataset.emergencyContactName,
+    );
+    setFieldValue("editStudentEmergencyContact", button.dataset.emergencyContact);
+    setFieldValue("editStudentEmail", button.dataset.email);
+    setFieldValue("editStudentContact", button.dataset.contact);
+    setFieldValue("editStudentBoard", button.dataset.board);
+    setFieldValue("editStudentStream", button.dataset.stream);
+    setFieldValue("editStudentGrade", button.dataset.grade);
+    setFieldValue("editStudentBloodGroup", button.dataset.bloodGroup);
+    setFieldValue("editStudentGender", button.dataset.gender);
 
-    document.getElementById("editStudentContact").value =
-      button.dataset.contact || "";
+    const batchInput = document.getElementById("editStudentBatch");
+    const usernameInput = document.getElementById("editStudentUsername");
+    if (batchInput) {
+      batchInput.value = button.dataset.batch || "";
+      batchInput.dataset.originalBatch = button.dataset.batch || "";
+      batchInput.dataset.originalUsername = button.dataset.username || "";
+    }
+    if (usernameInput) {
+      usernameInput.value = button.dataset.username || "";
+    }
+    setFieldValue("editStudentPassword", "");
 
-    document.getElementById("editStudentBoard").value =
-      button.dataset.board || "";
+    setProfilePreview(
+      "currentStudentProfilePhoto",
+      button.dataset.profilePhoto,
+      "Current Student Profile",
+    );
 
-    document.getElementById("editStudentStream").value =
-      button.dataset.stream || "";
-
-    document.getElementById("editStudentGrade").value =
-      button.dataset.grade || "";
-
-    document.getElementById("editStudentGender").value =
-      button.dataset.gender || "";
-
-    document.getElementById("editStudentBatch").value =
-      button.dataset.batch || "";
+    const usernameHint = document.getElementById("editStudentUsernameHint");
+    if (usernameHint) usernameHint.style.display = "none";
   });
 }
 
@@ -882,60 +983,41 @@ if (editTeacherForm && editTeacherForm.dataset.validationBound !== "true") {
 
 if (editTeacherModal) {
   editTeacherModal.addEventListener("show.bs.modal", function (event) {
-    const button = event.relatedTarget;
+    const button = getModalTriggerButton(event);
+    if (!button) {
+      return;
+    }
 
     const id = button.dataset.id;
 
     const form = document.getElementById("editTeacherForm");
     form.action = `/edit-teacher/${id}/`;
+    setFieldValue("editTeacherId", id);
 
-    document.getElementById("editTeacherName").value =
-      button.dataset.name || "";
-
-    document.getElementById("editTeacherUsername").value =
-      button.dataset.username || "";
-
-    document.getElementById("editTeacherEmail").value =
-      button.dataset.email || "";
-
-    document.getElementById("editTeacherContact").value =
-      button.dataset.contact || "";
-
-    document.getElementById("editTeacherGender").value =
-      button.dataset.gender || "";
-
-    document.getElementById("editTeacherRole").value =
-      button.dataset.role || "";
-
-    document.getElementById("editTeacherBloodGroup").value =
-      button.dataset.bloodGroup || "";
-
-    document.getElementById("editTeacherSubjects").value =
-      button.dataset.subjects || "";
-
-    document.getElementById("editTeacherGrade").value =
-      button.dataset.grade || "";
-
-    document.getElementById("editTeacherBoard").value =
-      button.dataset.board || "";
-
-    document.getElementById("editTeacherBatch").value =
-      button.dataset.batch || "";
-    document.getElementById("editTeacherPassword").value = "";
+    setFieldValue("editTeacherName", button.dataset.name);
+    setFieldValue("editTeacherUsername", button.dataset.username);
+    setFieldValue("editTeacherEmail", button.dataset.email);
+    setFieldValue("editTeacherContact", button.dataset.contact);
+    setFieldValue("editTeacherGender", button.dataset.gender);
+    setFieldValue("editTeacherRole", button.dataset.role);
+    setFieldValue("editTeacherBloodGroup", button.dataset.bloodGroup);
+    setFieldValue("editTeacherSubjects", button.dataset.subjects);
+    setFieldValue("editTeacherGrade", button.dataset.grade);
+    setFieldValue("editTeacherBoard", button.dataset.board);
+    setFieldValue("editTeacherBatch", button.dataset.batch);
+    setFieldValue("editTeacherPassword", "");
 
     clearEditTeacherNameError();
-
-    toggleEditTeacherRoleFields();
-
-    // Set current profile picture preview
-    const currentPicDiv = document.getElementById("currentProfilePicture");
-    const profilePicUrl = button.dataset.profilePicture;
-    if (currentPicDiv) {
-      if (profilePicUrl) {
-        currentPicDiv.innerHTML = `<img src="${profilePicUrl}" alt="Current Profile" width="60" height="60" style="border-radius: 50%; object-fit: cover; border: 2px solid #ddd;" />`;
-      } else {
-        currentPicDiv.innerHTML = `<span class="text-muted"><i class="bi bi-person-circle" style="font-size: 2rem;"></i></span>`;
-      }
+    if (typeof toggleEditTeacherRoleFields === "function") {
+      toggleEditTeacherRoleFields();
+    } else if (typeof syncEditStaffDesignationFields === "function") {
+      syncEditStaffDesignationFields();
     }
+
+    setProfilePreview(
+      "currentProfilePicture",
+      button.dataset.profilePicture,
+      "Current Staff Profile",
+    );
   });
 }
