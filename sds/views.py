@@ -58,6 +58,7 @@ from .password_policy import (
     user_needs_password_change,
 )
 from .portal_features import is_student_portal_feature_enabled
+from utils.media_urls import upload_url
 
 logger = logging.getLogger(__name__)
 
@@ -4049,10 +4050,7 @@ def _student_photo_url(student):
     profile_photo = _analysis_student_field_value(student, "profile_photo", None)
     if not profile_photo:
         return None
-    try:
-        return profile_photo.url
-    except Exception:
-        return None
+    return upload_url(profile_photo, "student_profiles") or None
 
 
 def _build_attempt_section_breakdown(attempt):

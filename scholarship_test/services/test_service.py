@@ -11,6 +11,7 @@ from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 from sds.models import Student
+from utils.media_urls import upload_url
 
 logger = logging.getLogger(__name__)
 
@@ -696,10 +697,7 @@ def _portal_student_photo_url(portal_student):
     profile_photo = _safe_student_field_value(portal_student, "profile_photo", None)
     if not profile_photo:
         return None
-    try:
-        return profile_photo.url
-    except Exception:
-        return None
+    return upload_url(profile_photo, "student_profiles") or None
 
 
 def _latest_completed_attempts_for_portal_test(test):

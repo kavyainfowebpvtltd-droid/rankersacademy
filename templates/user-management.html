@@ -197,7 +197,7 @@
                  <td>{{ students_page.start_index|add:forloop.counter0 }}</td>
                  <td>
                    {% if student.profile_photo %}
-                     <img src="{{ student.profile_photo.url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
+                     <img src="{{ student.get_profile_photo_url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
                    {% else %}
                      <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
                    {% endif %}
@@ -234,7 +234,7 @@
                      data-blood-group="{{ student.blood_group|default_if_none:'' }}"
                      data-gender="{{ student.gender|default_if_none:'' }}"
                      data-batch="{{ student.batch|default_if_none:'' }}"
-                     data-profile-photo="{% if student.profile_photo %}{{ student.profile_photo.url }}{% endif %}"
+                     data-profile-photo="{% if student.profile_photo %}{{ student.get_profile_photo_url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
                   </button>
@@ -301,7 +301,7 @@
                  <td class="fw-semibold">{{ teacher.name }}</td>
                  <td>
                    {% if teacher.profile_picture %}
-                     <img src="{{ teacher.profile_picture.url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
+                     <img src="{{ teacher.get_profile_picture_url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
                    {% else %}
                      <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
                    {% endif %}
@@ -334,7 +334,7 @@
                      data-board="{{ teacher.board|default_if_none:'' }}"
                      data-batch="{{ teacher.batch|default_if_none:'' }}"
                      data-blood-group="{{ teacher.blood_group|default_if_none:'' }}"
-                     data-profile-picture="{% if teacher.profile_picture %}{{ teacher.profile_picture.url }}{% endif %}"
+                     data-profile-picture="{% if teacher.profile_picture %}{{ teacher.get_profile_picture_url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
                   </button>
@@ -398,7 +398,7 @@
                  <td class="fw-semibold">{{ teacher.name }}</td>
                  <td>
                    {% if teacher.profile_picture %}
-                     <img src="{{ teacher.profile_picture.url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
+                     <img src="{{ teacher.get_profile_picture_url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
                    {% else %}
                      <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
                    {% endif %}
@@ -431,7 +431,7 @@
                      data-board="{{ teacher.board|default_if_none:'' }}"
                      data-batch="{{ teacher.batch|default_if_none:'' }}"
                      data-blood-group="{{ teacher.blood_group|default_if_none:'' }}"
-                     data-profile-picture="{% if teacher.profile_picture %}{{ teacher.profile_picture.url }}{% endif %}"
+                     data-profile-picture="{% if teacher.profile_picture %}{{ teacher.get_profile_picture_url }}{% endif %}"
                    >
                     <i class="fa-solid fa-pen"></i>
                   </button>

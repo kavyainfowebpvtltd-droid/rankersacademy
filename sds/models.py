@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from utils.media_urls import upload_url
 
 
 # Student Model
@@ -38,6 +39,9 @@ class Student(models.Model):
     def __str__(self):
         return self.student_name
 
+    def get_profile_photo_url(self):
+        return upload_url(self.profile_photo, "student_profiles")
+
 
 
 # Staff Model
@@ -62,6 +66,9 @@ class TeacherAdmin(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.role})"
+
+    def get_profile_picture_url(self):
+        return upload_url(self.profile_picture, "teacher_profiles")
 
 
 # Subject Model

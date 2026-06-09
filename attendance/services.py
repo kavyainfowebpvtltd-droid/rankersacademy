@@ -3,7 +3,6 @@ import json
 import logging
 import re
 from datetime import date, datetime, time, timedelta
-from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -14,6 +13,7 @@ from django.utils.dateparse import parse_datetime
 
 from attendance.models import Attendance, StaffAttendance
 from sds.models import Student, TeacherAdmin
+from utils.media_urls import upload_url
 
 
 logger = logging.getLogger(__name__)
@@ -348,28 +348,14 @@ def get_student_photo_url(student: Student) -> str:
     if not getattr(student, "profile_photo", None):
         return ""
 
-    try:
-        return student.profile_photo.url
-    except Exception:
-        photo_name = getattr(student.profile_photo, "name", "") or ""
-        if not photo_name:
-            return ""
-        media_url = getattr(settings, "MEDIA_URL", "/media/")
-        return urljoin(media_url, photo_name.replace("\\", "/"))
+    return upload_url(student.profile_photo, "student_profiles")
 
 
 def get_staff_photo_url(staff: TeacherAdmin) -> str:
     if not getattr(staff, "profile_picture", None):
         return ""
 
-    try:
-        return staff.profile_picture.url
-    except Exception:
-        photo_name = getattr(staff.profile_picture, "name", "") or ""
-        if not photo_name:
-            return ""
-        media_url = getattr(settings, "MEDIA_URL", "/media/")
-        return urljoin(media_url, photo_name.replace("\\", "/"))
+    return upload_url(staff.profile_picture, "teacher_profiles")
 
 
 def _attendance_sms_template(event: str) -> str:
