@@ -670,9 +670,6 @@ def _latest_completed_attempts_for_portal_test(test):
 
 def _assigned_portal_students_for_test(test):
     student_queryset = Student.objects.select_related("user")
-    test_batch = str(_safe_model_field_value(test, "batch", "") or "").strip()
-    if test_batch:
-        student_queryset = student_queryset.filter(batch__iexact=test_batch)
 
     assigned_students = [
         portal_student

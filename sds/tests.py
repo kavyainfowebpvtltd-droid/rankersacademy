@@ -441,18 +441,59 @@ class TestAnalysisSchemaSafetyTests(TestCase):
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
-class TestAnalysisStaticPageTests(TestCase):
-    def test_test_analysis_page_renders_without_login_in_static_mode(self):
+class TestAnalysisBackendPageTests(TestCase):
+    def test_test_analysis_page_requires_login(self):
+        response = self.client.get(reverse("test-analysis"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response["Location"])
+
+    def test_test_analysis_page_renders_backend_admin_payload(self):
+        admin = User.objects.create_superuser(
+            username="analysisadmin",
+            email="analysisadmin@example.com",
+            password="adminpass123",
+        )
+        self.client.force_login(admin)
+
         response = self.client.get(reverse("test-analysis"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-page="admin"')
-        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = true;')
+        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = false;')
 
-    def test_test_analysis_login_page_redirects_to_static_test_analysis(self):
+    def test_faculty_page_renders_backend_teacher_payload(self):
+        teacher_user = User.objects.create_user(
+            username="analysisfaculty",
+            email="analysisfaculty@example.com",
+            password="teacherpass123",
+        )
+        TeacherAdmin.objects.create(
+            user=teacher_user,
+            name="Analysis Faculty",
+            username="analysisfaculty",
+            email="analysisfaculty@example.com",
+            contact="9898989801",
+            gender="Female",
+            role="Teacher",
+            subjects="Physics",
+        )
+        self.client.force_login(teacher_user)
+
+        response = self.client.get(reverse("test-analysis"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-page="teacher"')
+        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = false;')
+
+    def test_test_analysis_login_page_redirects_to_test_analysis(self):
         response = self.client.get(reverse("test-analysis-login-page"))
 
-        self.assertRedirects(response, reverse("test-analysis"))
+        self.assertRedirects(
+            response,
+            reverse("test-analysis"),
+            fetch_redirect_response=False,
+        )
 
 
 @override_settings(ROOT_URLCONF="sds.urls")

@@ -42,7 +42,7 @@ import re
 import requests
 from zoneinfo import ZoneInfo
 from urllib.parse import urlencode, urlsplit
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from .models import *
 from utils.pagination import PAGE_SIZE_OPTIONS, build_pagination_query, get_entries_per_page, get_page_range
@@ -2709,28 +2709,31 @@ def _static_test_analysis_faculty_session() -> dict:
     }
 
 
+@login_required
 def test_analysis(request):
-    return _render_static_test_analysis_template(
-        request,
-        "test-analysis-admin.html",
-        _static_test_analysis_admin_session(),
-    )
+    if _is_teacher_user(request.user):
+        return _render_test_analysis_template(request, "test-analysis-faculty.html")
+    if _is_superadmin(request.user) or _is_admin_user(request.user):
+        return _render_test_analysis_template(request, "test-analysis-admin.html")
+    return HttpResponseForbidden("Only admins and teachers can access test analysis.")
 
 
+@login_required
 def test_analysis_admin_page(request):
-    return _render_static_test_analysis_template(
-        request,
-        "test-analysis-admin.html",
-        _static_test_analysis_admin_session(),
-    )
+    if _is_teacher_user(request.user):
+        return redirect("test-analysis-faculty-page")
+    if not (_is_superadmin(request.user) or _is_admin_user(request.user)):
+        return HttpResponseForbidden("Only admins can access the admin test analysis page.")
+    return _render_test_analysis_template(request, "test-analysis-admin.html")
 
 
+@login_required
 def test_analysis_faculty_page(request):
-    return _render_static_test_analysis_template(
-        request,
-        "test-analysis-faculty.html",
-        _static_test_analysis_faculty_session(),
-    )
+    if _is_superadmin(request.user) or _is_admin_user(request.user):
+        return redirect("test-analysis-admin-page")
+    if not _is_teacher_user(request.user):
+        return HttpResponseForbidden("Only teachers can access the faculty test analysis page.")
+    return _render_test_analysis_template(request, "test-analysis-faculty.html")
 
 
 def _can_access_test_analysis_api(user):
@@ -4436,9 +4439,6 @@ def _build_zero_section_breakdown(test):
 
 def _get_assigned_portal_students_for_test(test):
     student_queryset = Student.objects.select_related("user")
-    test_batch = str(getattr(test, "batch", "") or "").strip()
-    if test_batch:
-        student_queryset = student_queryset.filter(batch__iexact=test_batch)
 
     assigned_students = [
         portal_student
@@ -5422,6 +5422,41 @@ def _serialize_test_analysis_test_item(test, start_at):
     }
 
 
+def _analysis_completed_attempt_dates_by_test():
+    attempts_by_test = {}
+    attempts = (
+        _schema_safe_scholarship_attempt_queryset()
+        .filter(test__isnull=False, status__in=["completed", "expired"])
+        .values("test_id")
+        .annotate(latest_completed_at=Max("test_completed_at"))
+    )
+    for row in attempts:
+        attempts_by_test[row["test_id"]] = row["latest_completed_at"]
+    return attempts_by_test
+
+
+def _analysis_display_start_at(test, latest_completed_at=None):
+    start_at = scholarship_test_service.get_test_scheduled_start_at(test)
+    if start_at:
+        return start_at
+
+    if latest_completed_at:
+        return timezone.localtime(latest_completed_at)
+
+    test_date = getattr(test, "date", None)
+    if test_date:
+        return timezone.make_aware(
+            datetime.combine(test_date, time.min),
+            timezone.get_current_timezone(),
+        )
+
+    created_at = _analysis_safe_model_field_value(test, "created_at", None)
+    if created_at:
+        return timezone.localtime(created_at)
+
+    return timezone.localtime()
+
+
 def _build_test_analysis_base_payload(*, focus_subject=None):
     now = timezone.localtime()
     completed_tests = []
@@ -5432,7 +5467,6 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
 
     missing_required_fields = _analysis_missing_model_fields(
         ScholarshipTest,
-        "scheduled_start_at",
         "batch",
         "subject",
     )
@@ -5443,26 +5477,45 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
         )
     else:
         try:
+            completed_attempt_dates = _analysis_completed_attempt_dates_by_test()
+            attempted_test_ids = set(completed_attempt_dates)
+            has_scheduled_start_at = _analysis_model_has_field_columns(
+                ScholarshipTest,
+                "scheduled_start_at",
+            )
+            order_fields = (
+                ["scheduled_start_at", "date", "id"]
+                if has_scheduled_start_at
+                else ["date", "id"]
+            )
             published_tests = (
                 _schema_safe_scholarship_test_queryset()
-                .filter(status="published", scheduled_start_at__isnull=False)
-                .order_by("scheduled_start_at", "id")
+                .filter(Q(status="published") | Q(id__in=attempted_test_ids))
+                .order_by(*order_fields)
                 .prefetch_related("sections__questions")
             )
 
             for test in published_tests:
-                if not scholarship_test_service.get_runtime_questions_for_test(test):
+                latest_completed_at = completed_attempt_dates.get(test.id)
+                has_completed_attempts = test.id in attempted_test_ids
+                if (
+                    not has_completed_attempts
+                    and not scholarship_test_service.get_runtime_questions_for_test(test)
+                ):
                     continue
 
                 start_at = scholarship_test_service.get_test_scheduled_start_at(test)
-                if not start_at:
-                    continue
-                end_at = start_at + timedelta(
-                    minutes=scholarship_test_service.get_test_duration_minutes(test)
+                display_start_at = _analysis_display_start_at(test, latest_completed_at)
+                end_at = (
+                    start_at + timedelta(
+                        minutes=scholarship_test_service.get_test_duration_minutes(test)
+                    )
+                    if start_at
+                    else None
                 )
-                test_item = _serialize_test_analysis_test_item(test, start_at)
+                test_item = _serialize_test_analysis_test_item(test, display_start_at)
 
-                if end_at > now:
+                if not has_completed_attempts and end_at and end_at > now:
                     if upcoming_test is None:
                         upcoming_test = {
                             **test_item,

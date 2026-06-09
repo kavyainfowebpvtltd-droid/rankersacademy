@@ -508,6 +508,7 @@
       };
       const ROUTES = {
         login: "{% url 'login' %}",
+        logout: "{% url 'logout' %}",
         student: "{% url 'login' %}",
         faculty: "{% url 'test-analysis-faculty-page' %}",
         admin: "{% url 'test-analysis-admin-page' %}"
@@ -1402,6 +1403,10 @@
         state.modal = "";
         state.studentLeaderboardOpen = false;
         clearSession();
+        if (SERVER_SESSION) {
+          window.location.href = ROUTES.logout;
+          return;
+        }
         if (state.page === "login") render();
         else window.location.href = ROUTES.login;
       }
