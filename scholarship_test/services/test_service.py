@@ -25,7 +25,11 @@ OPTIONAL_ATTEMPT_SECURITY_FIELDS = {
     "violation_count",
     "security_status",
 }
-OPTIONAL_ATTEMPT_COMPAT_FIELDS = OPTIONAL_ATTEMPT_SECURITY_FIELDS | {"progress_state"}
+OPTIONAL_ATTEMPT_COMPAT_FIELDS = OPTIONAL_ATTEMPT_SECURITY_FIELDS | {
+    "portal_student",
+    "progress_state",
+    "student_batch",
+}
 
 
 def get_max_security_violations() -> int:
@@ -652,6 +656,14 @@ def _portal_student_photo_url(portal_student):
 
 
 def _latest_completed_attempts_for_portal_test(test):
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    if not _model_has_columns(ScholarshipTestAttempt, "portal_student"):
+        logger.warning(
+            "Skipping portal attempt lookup because scholarship attempt portal_student column is unavailable."
+        )
+        return {}
+
     attempts = (
         _schema_safe_attempt_queryset()
         .filter(test=test, status__in=["completed", "expired"])
@@ -834,7 +846,7 @@ def is_test_assigned_to_portal_student(test, portal_student) -> bool:
         return False
 
     # 1. Batch Check (Fuzzy and supports multiple comma-separated values)
-    test_batch_raw = getattr(test, "batch", "")
+    test_batch_raw = _safe_model_field_value(test, "batch", "")
     student_batch_raw = getattr(portal_student, "batch", "")
 
     test_batches = _split_scope_values(test_batch_raw)
@@ -852,7 +864,7 @@ def is_test_assigned_to_portal_student(test, portal_student) -> bool:
             return False
 
     # 2. Stream Check (Fuzzy)
-    test_stream_raw = getattr(test, "stream", "")
+    test_stream_raw = _safe_model_field_value(test, "stream", "")
     test_streams = _split_scope_values(test_stream_raw)
     
     # If test has no stream restriction, anyone in the batch can see it

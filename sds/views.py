@@ -4458,10 +4458,13 @@ def _latest_completed_attempts_for_test(test):
     attempts = (
         _schema_safe_scholarship_attempt_queryset()
         .filter(test=test, status__in=["completed", "expired"])
-        .select_related("student", "portal_student")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test_completed_at", "test_started_at", "id")
     )
+    select_related_fields = ["student"]
+    if _analysis_model_has_field_columns(ScholarshipTestAttempt, "portal_student"):
+        select_related_fields.append("portal_student")
+    attempts = attempts.select_related(*select_related_fields)
 
     latest_by_student = {}
     for attempt in attempts:
@@ -4471,14 +4474,20 @@ def _latest_completed_attempts_for_test(test):
 
 
 def _schema_safe_scholarship_attempt_queryset():
-    # These exam-security fields were introduced in a later migration.
-    # Deferring them keeps reads compatible with older production schemas.
-    return ScholarshipTestAttempt.objects.defer(
+    missing_optional_fields = _analysis_missing_model_fields(
+        ScholarshipTestAttempt,
+        "portal_student",
+        "student_batch",
+        "progress_state",
         "started_at",
         "submitted_at",
         "violation_count",
         "security_status",
     )
+    queryset = ScholarshipTestAttempt.objects.all()
+    if missing_optional_fields:
+        queryset = queryset.defer(*missing_optional_fields)
+    return queryset
 
 
 def _analysis_model_table_available(model_class):
@@ -5183,14 +5192,22 @@ def _analysis_subject_scores_from_breakdown(section_breakdown, test_subject=""):
 
 
 def _analysis_attempt_student_id(attempt):
-    portal_student = getattr(attempt, "portal_student", None)
+    portal_student = (
+        getattr(attempt, "portal_student", None)
+        if _analysis_model_has_field_columns(attempt.__class__, "portal_student")
+        else None
+    )
     if portal_student:
         return f"portal-{portal_student.id}"
     return f"scholar-{attempt.student_id}"
 
 
 def _analysis_student_record_from_attempt(attempt):
-    portal_student = getattr(attempt, "portal_student", None)
+    has_portal_student = _analysis_model_has_field_columns(
+        attempt.__class__,
+        "portal_student",
+    )
+    portal_student = getattr(attempt, "portal_student", None) if has_portal_student else None
     phone = ""
     batch = ""
     student_ref = ""
@@ -5203,13 +5220,17 @@ def _analysis_student_record_from_attempt(attempt):
             or getattr(portal_student, "contact", "")
             or attempt.student.phone_number
         )
-        batch = getattr(portal_student, "batch", "") or getattr(attempt, "student_batch", "")
+        batch = getattr(portal_student, "batch", "") or _analysis_safe_model_field_value(
+            attempt,
+            "student_batch",
+            "",
+        )
         student_ref = getattr(portal_student, "username", "") or attempt.student.phone_number
         name = getattr(portal_student, "student_name", "") or attempt.student.name
         profile_photo_url = _student_photo_url(portal_student)
     else:
         phone = attempt.student.phone_number
-        batch = getattr(attempt, "student_batch", "")
+        batch = _analysis_safe_model_field_value(attempt, "student_batch", "")
         student_ref = attempt.student.phone_number
 
     return {
@@ -5335,11 +5356,13 @@ def _latest_analysis_attempts_for_test(test):
 
 def _build_analysis_dataset_for_test(test, focus_subject=None):
     leaderboard = _build_attempt_leaderboard(test)
-    latest_attempts_by_portal_student_id = {
-        attempt.portal_student_id: attempt
-        for attempt in _latest_analysis_attempts_for_test(test)
-        if getattr(attempt, "portal_student_id", None)
-    }
+    latest_attempts_by_portal_student_id = {}
+    if _analysis_model_has_field_columns(ScholarshipTestAttempt, "portal_student"):
+        latest_attempts_by_portal_student_id = {
+            attempt.portal_student_id: attempt
+            for attempt in _latest_analysis_attempts_for_test(test)
+            if getattr(attempt, "portal_student_id", None)
+        }
     scores = []
     students_by_id = {}
     focus_by_student = {}

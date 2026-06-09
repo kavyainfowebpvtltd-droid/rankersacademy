@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -11,6 +12,8 @@ from django.urls import reverse
 from sds import views
 from sds.models import Student, TeacherAdmin
 from sds.password_policy import DEFAULT_ONE_TIME_PASSWORD
+from scholarship_test.models import ScholarshipTestAttempt
+from scholarship_test.services import test_service as scholarship_test_service
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
@@ -427,6 +430,51 @@ class TestAnalysisSchemaSafetyTests(TestCase):
             )
 
             self.assertIsNone(views._coerce_analysis_test(12))
+
+    def test_attempt_queryset_defers_missing_analysis_attempt_columns(self):
+        missing_fields = [
+            "portal_student",
+            "student_batch",
+            "progress_state",
+            "started_at",
+            "submitted_at",
+            "violation_count",
+            "security_status",
+        ]
+        with patch("sds.views._analysis_missing_model_fields", return_value=missing_fields):
+            queryset = views._schema_safe_scholarship_attempt_queryset()
+
+        deferred_fields, is_deferred = queryset.query.deferred_loading
+        self.assertTrue(is_deferred)
+        self.assertEqual(set(deferred_fields), set(missing_fields))
+
+    def test_analysis_attempt_student_id_uses_legacy_student_when_portal_column_missing(self):
+        attempt = ScholarshipTestAttempt(student_id=44)
+
+        with patch("sds.views._analysis_model_has_field_columns", return_value=False):
+            self.assertEqual(views._analysis_attempt_student_id(attempt), "scholar-44")
+
+    def test_assignment_check_uses_safe_deferred_test_scope_fields(self):
+        class DeferredScopeTest:
+            def get_deferred_fields(self):
+                return {"batch", "stream"}
+
+            @property
+            def batch(self):
+                raise AssertionError("batch should not be loaded when deferred")
+
+            @property
+            def stream(self):
+                raise AssertionError("stream should not be loaded when deferred")
+
+        portal_student = SimpleNamespace(batch="STAR 01", stream="", interested_exams=[])
+
+        self.assertTrue(
+            scholarship_test_service.is_test_assigned_to_portal_student(
+                DeferredScopeTest(),
+                portal_student,
+            )
+        )
 
     def test_teacheradmin_returns_none_when_schema_safe_fetch_fails(self):
         user = User(username="teacherx")
