@@ -3,7 +3,7 @@ services:
   db:
     image: mysql:8.0
     container_name: rankers-db
-    restart: always
+    restart: unless-stopped
 
     environment:
       MYSQL_ROOT_PASSWORD: Vishal@2026
@@ -16,7 +16,7 @@ services:
       - mysql_data:/var/lib/mysql
 
     healthcheck:
-      test: ["CMD","mysqladmin","ping","-h","localhost","-uroot","-pVishal@2026"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pVishal@2026"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -25,7 +25,7 @@ services:
   web:
     build: .
     container_name: rankers-app
-    restart: always
+    restart: unless-stopped
 
     depends_on:
       db:
@@ -33,17 +33,32 @@ services:
 
     command: >
       sh -c "
-      sleep 15 &&
       python manage.py migrate &&
       python manage.py collectstatic --noinput &&
-      gunicorn sds_main.wsgi:application --bind 0.0.0.0:8000
+      gunicorn sds_main.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 4
+      --threads 2
+      --timeout 120
+      --access-logfile -
+      --error-logfile -
       "
 
     ports:
       - "8081:8000"
 
     volumes:
-      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+
+    healthcheck:
+      test: ["CMD-SHELL", "python manage.py check || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 
 volumes:
   mysql_data:
+  static_volume:
+  media_volume:
