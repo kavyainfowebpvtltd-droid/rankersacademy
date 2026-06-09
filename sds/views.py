@@ -4417,10 +4417,11 @@ def _short_section_label(name):
 
 
 def _student_photo_url(student):
-    if not student or not getattr(student, "profile_photo", None):
+    profile_photo = _analysis_student_field_value(student, "profile_photo", None)
+    if not profile_photo:
         return None
     try:
-        return student.profile_photo.url
+        return profile_photo.url
     except Exception:
         return None
 
@@ -4438,7 +4439,7 @@ def _build_zero_section_breakdown(test):
 
 
 def _get_assigned_portal_students_for_test(test):
-    student_queryset = Student.objects.select_related("user")
+    student_queryset = _schema_safe_analysis_student_queryset()
 
     assigned_students = [
         portal_student
@@ -4447,7 +4448,7 @@ def _get_assigned_portal_students_for_test(test):
     ]
     assigned_students.sort(
         key=lambda portal_student: (
-            (getattr(portal_student, "student_name", "") or "").casefold(),
+            (_analysis_student_field_value(portal_student, "student_name", "") or "").casefold(),
             getattr(portal_student, "id", 0),
         )
     )
@@ -4461,10 +4462,7 @@ def _latest_completed_attempts_for_test(test):
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test_completed_at", "test_started_at", "id")
     )
-    select_related_fields = ["student"]
-    if _analysis_model_has_field_columns(ScholarshipTestAttempt, "portal_student"):
-        select_related_fields.append("portal_student")
-    attempts = attempts.select_related(*select_related_fields)
+    attempts = attempts.select_related("student")
 
     latest_by_student = {}
     for attempt in attempts:
@@ -4488,6 +4486,26 @@ def _schema_safe_scholarship_attempt_queryset():
     if missing_optional_fields:
         queryset = queryset.defer(*missing_optional_fields)
     return queryset
+
+
+def _schema_safe_analysis_student_queryset():
+    missing_optional_fields = _analysis_missing_model_fields(
+        Student,
+        "batch",
+        "emergency_contact",
+        "interested_exams",
+        "profile_photo",
+        "stream",
+        "username",
+    )
+    queryset = Student.objects.select_related("user")
+    if missing_optional_fields:
+        queryset = queryset.defer(*missing_optional_fields)
+    return queryset
+
+
+def _analysis_student_field_value(student, field_name, default=""):
+    return _analysis_safe_model_field_value(student, field_name, default)
 
 
 def _analysis_model_table_available(model_class):
@@ -5102,12 +5120,19 @@ def _build_test_analysis_batches_payload():
     for label in PREFERRED_ANALYSIS_BATCH_LABELS:
         add_option(label, label)
 
-    for batch in Student.objects.values_list("batch", flat=True).distinct():
-        add_option(batch)
+    student_has_batch = _analysis_model_has_field_columns(Student, "batch")
+    student_has_grade = _analysis_model_has_field_columns(Student, "grade")
+    try:
+        if student_has_batch:
+            for batch in Student.objects.values_list("batch", flat=True).distinct():
+                add_option(batch)
 
-    for grade in Student.objects.values_list("grade", flat=True).distinct():
-        if _analysis_batch_key(grade) in {"grade10", "grade9"}:
-            add_option(grade)
+        if student_has_grade:
+            for grade in Student.objects.values_list("grade", flat=True).distinct():
+                if _analysis_batch_key(grade) in {"grade10", "grade9"}:
+                    add_option(grade)
+    except (OperationalError, ProgrammingError) as exc:
+        logger.warning("Skipping student batch options for test analysis: %s", exc)
 
     scholarship_test_has_batch = _analysis_model_has_field_columns(
         ScholarshipTest,
@@ -5119,11 +5144,23 @@ def _build_test_analysis_batches_payload():
                 add_option(value)
 
     student_counts = {key: 0 for key in options}
-    for batch, grade in Student.objects.values_list("batch", "grade"):
-        keys = {_analysis_batch_key(batch), _analysis_batch_key(grade)}
-        for key in keys:
-            if key in student_counts:
-                student_counts[key] += 1
+    try:
+        if student_has_batch and student_has_grade:
+            student_rows = Student.objects.values_list("batch", "grade")
+        elif student_has_batch:
+            student_rows = ((batch, "") for batch in Student.objects.values_list("batch", flat=True))
+        elif student_has_grade:
+            student_rows = (("", grade) for grade in Student.objects.values_list("grade", flat=True))
+        else:
+            student_rows = []
+
+        for batch, grade in student_rows:
+            keys = {_analysis_batch_key(batch), _analysis_batch_key(grade)}
+            for key in keys:
+                if key in student_counts:
+                    student_counts[key] += 1
+    except (OperationalError, ProgrammingError) as exc:
+        logger.warning("Skipping student counts for test analysis batches: %s", exc)
 
     test_counts = {key: 0 for key in options}
     if scholarship_test_has_batch:
@@ -5192,13 +5229,10 @@ def _analysis_subject_scores_from_breakdown(section_breakdown, test_subject=""):
 
 
 def _analysis_attempt_student_id(attempt):
-    portal_student = (
-        getattr(attempt, "portal_student", None)
-        if _analysis_model_has_field_columns(attempt.__class__, "portal_student")
-        else None
-    )
-    if portal_student:
-        return f"portal-{portal_student.id}"
+    if _analysis_model_has_field_columns(attempt.__class__, "portal_student"):
+        portal_student_id = getattr(attempt, "portal_student_id", None)
+        if portal_student_id:
+            return f"portal-{portal_student_id}"
     return f"scholar-{attempt.student_id}"
 
 
@@ -5216,17 +5250,17 @@ def _analysis_student_record_from_attempt(attempt):
 
     if portal_student:
         phone = (
-            getattr(portal_student, "emergency_contact", "")
-            or getattr(portal_student, "contact", "")
+            _analysis_student_field_value(portal_student, "emergency_contact", "")
+            or _analysis_student_field_value(portal_student, "contact", "")
             or attempt.student.phone_number
         )
-        batch = getattr(portal_student, "batch", "") or _analysis_safe_model_field_value(
+        batch = _analysis_student_field_value(portal_student, "batch", "") or _analysis_safe_model_field_value(
             attempt,
             "student_batch",
             "",
         )
-        student_ref = getattr(portal_student, "username", "") or attempt.student.phone_number
-        name = getattr(portal_student, "student_name", "") or attempt.student.name
+        student_ref = _analysis_student_field_value(portal_student, "username", "") or attempt.student.phone_number
+        name = _analysis_student_field_value(portal_student, "student_name", "") or attempt.student.name
         profile_photo_url = _student_photo_url(portal_student)
     else:
         phone = attempt.student.phone_number
@@ -5237,7 +5271,7 @@ def _analysis_student_record_from_attempt(attempt):
         "id": _analysis_attempt_student_id(attempt),
         "name": name,
         "batch": batch,
-        "grade": getattr(portal_student, "grade", "") if portal_student else "",
+        "grade": _analysis_student_field_value(portal_student, "grade", "") if portal_student else "",
         "parentPhone": phone,
         "studentRef": student_ref,
         "profilePhotoUrl": profile_photo_url,
