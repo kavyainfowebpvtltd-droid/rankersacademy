@@ -40,7 +40,7 @@ class Student(models.Model):
         return self.student_name
 
     def get_profile_photo_url(self):
-        return upload_url(self.profile_photo, "student_profiles")
+        return upload_url(self.profile_photo, ("student_profiles", "student_profile"))
 
 
 
@@ -68,7 +68,7 @@ class TeacherAdmin(models.Model):
         return f"{self.name} ({self.role})"
 
     def get_profile_picture_url(self):
-        return upload_url(self.profile_picture, "teacher_profiles")
+        return upload_url(self.profile_picture, ("teacher_profiles", "teacher_profile"))
 
 
 # Subject Model

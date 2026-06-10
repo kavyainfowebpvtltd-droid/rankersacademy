@@ -697,7 +697,7 @@ def _portal_student_photo_url(portal_student):
     profile_photo = _safe_student_field_value(portal_student, "profile_photo", None)
     if not profile_photo:
         return None
-    return upload_url(profile_photo, "student_profiles") or None
+    return upload_url(profile_photo, ("student_profiles", "student_profile")) or None
 
 
 def _latest_completed_attempts_for_portal_test(test):

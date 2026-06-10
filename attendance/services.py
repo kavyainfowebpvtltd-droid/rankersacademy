@@ -348,14 +348,14 @@ def get_student_photo_url(student: Student) -> str:
     if not getattr(student, "profile_photo", None):
         return ""
 
-    return upload_url(student.profile_photo, "student_profiles")
+    return upload_url(student.profile_photo, ("student_profiles", "student_profile"))
 
 
 def get_staff_photo_url(staff: TeacherAdmin) -> str:
     if not getattr(staff, "profile_picture", None):
         return ""
 
-    return upload_url(staff.profile_picture, "teacher_profiles")
+    return upload_url(staff.profile_picture, ("teacher_profiles", "teacher_profile"))
 
 
 def _attendance_sms_template(event: str) -> str:

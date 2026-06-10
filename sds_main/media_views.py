@@ -5,7 +5,12 @@ from django.http import Http404
 from django.views.static import serve
 
 
-PROFILE_MEDIA_DIRS = ("student_profiles", "teacher_profiles")
+PROFILE_MEDIA_DIRS = (
+    "student_profiles",
+    "student_profile",
+    "teacher_profiles",
+    "teacher_profile",
+)
 
 
 def serve_media(request, path):
@@ -18,12 +23,20 @@ def serve_media(request, path):
     except Http404:
         pass
 
-    if "/" not in normalized_path:
+    basename = PurePosixPath(normalized_path).name
+    candidates = []
+
+    if basename and basename != normalized_path:
+        candidates.append(basename)
+
+    if basename:
         for media_dir in PROFILE_MEDIA_DIRS:
-            candidate = str(PurePosixPath(media_dir) / normalized_path)
-            try:
-                return serve(request, candidate, document_root=settings.MEDIA_ROOT)
-            except Http404:
-                continue
+            candidates.append(str(PurePosixPath(media_dir) / basename))
+
+    for candidate in dict.fromkeys(candidates):
+        try:
+            return serve(request, candidate, document_root=settings.MEDIA_ROOT)
+        except Http404:
+            continue
 
     raise Http404("Media file not found")

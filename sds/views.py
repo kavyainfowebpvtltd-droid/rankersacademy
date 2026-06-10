@@ -4050,7 +4050,7 @@ def _student_photo_url(student):
     profile_photo = _analysis_student_field_value(student, "profile_photo", None)
     if not profile_photo:
         return None
-    return upload_url(profile_photo, "student_profiles") or None
+    return upload_url(profile_photo, ("student_profiles", "student_profile")) or None
 
 
 def _build_attempt_section_breakdown(attempt):
