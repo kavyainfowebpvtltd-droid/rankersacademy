@@ -49,6 +49,9 @@ from utils.pagination import PAGE_SIZE_OPTIONS, build_pagination_query, get_entr
 from scholarship_test.models import (
     ScholarshipTest,
     ScholarshipTestAttempt,
+    ScholarshipTestFacultyAttendance,
+    ScholarshipTestFacultyAttendanceSession,
+    ScholarshipTestFacultyNote,
     ScholarshipStudentLeaderboard,
 )
 from scholarship_test.services import test_service as scholarship_test_service
@@ -2655,9 +2658,10 @@ def _render_static_test_analysis_template(request, template_name: str, session: 
 
 
 def _render_demo_test_analysis_template(request, template_name: str, session: dict):
+    payload = _build_test_analysis_page_payload(session)
     context = {
         "test_analysis_session": json.dumps(session),
-        "test_analysis_payload": json.dumps({}),
+        "test_analysis_payload": json.dumps(payload),
         "test_analysis_static_mode": False,
     }
     return render(request, template_name, context)
@@ -2683,13 +2687,13 @@ def test_analysis(request):
         return _render_demo_test_analysis_template(
             request,
             "test-analysis-admin.html",
-            _static_test_analysis_admin_session(),
+            _build_test_analysis_session(request.user),
         )
     if _is_teacher_user(request.user):
         return _render_demo_test_analysis_template(
             request,
             "test-analysis-faculty.html",
-            _static_test_analysis_faculty_session(),
+            _build_test_analysis_session(request.user),
         )
     return HttpResponseForbidden("Only admins and teachers can access test analysis.")
 
@@ -2700,7 +2704,7 @@ def test_analysis_admin_page(request):
         return _render_demo_test_analysis_template(
             request,
             "test-analysis-admin.html",
-            _static_test_analysis_admin_session(),
+            _build_test_analysis_session(request.user),
         )
     if _is_teacher_user(request.user):
         return redirect("test-analysis-faculty-page")
@@ -2717,19 +2721,37 @@ def test_analysis_faculty_page(request):
     return _render_demo_test_analysis_template(
         request,
         "test-analysis-faculty.html",
-        _static_test_analysis_faculty_session(),
+        _build_test_analysis_session(request.user),
     )
 
 
 @login_required
 def test_analysis_download_pdf(request):
-    return JsonResponse(
-        {
-            "success": False,
-            "error": "PDF export is disabled while Test Analysis is running with static demo data.",
-        },
-        status=404,
-    )
+    if not (_is_superadmin(request.user) or _is_admin_user(request.user) or _is_teacher_user(request.user)):
+        return HttpResponseForbidden("Only admins and teachers can download test analysis.")
+
+    test = _coerce_analysis_test(request.GET.get("test_id"))
+    if not test:
+        raise Http404("Test not found")
+
+    batch_id = request.GET.get("batch_id") or request.GET.get("batch") or ""
+    payload = _build_test_analysis_base_payload()
+    test_key = f"SCH{test.id}"
+    scores = payload.get("scoresByTest", {}).get(test_key, [])
+    if batch_id:
+        batch_key = _normalize_analysis_batch_key(batch_id)
+        students_by_id = {student["id"]: student for student in payload.get("students", [])}
+        scores = [
+            score
+            for score in scores
+            if _student_matches_analysis_batch(students_by_id.get(score.get("studentId"), {}), batch_key)
+        ]
+
+    pdf = _generate_test_analysis_pdf(test, scores, batch_id)
+    response = HttpResponse(pdf, content_type="application/pdf")
+    safe_name = re.sub(r"[^A-Za-z0-9_-]+", "-", test.name).strip("-") or f"test-{test.id}"
+    response["Content-Disposition"] = f'attachment; filename="{safe_name}-analysis.pdf"'
+    return response
 
 
 @csrf_exempt
@@ -2737,7 +2759,27 @@ def test_analysis_download_pdf(request):
 def test_analysis_attendance_status_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "Forbidden"}, status=403)
-    return JsonResponse({"success": True, "status": "demo"})
+    if not _is_teacher_user(request.user):
+        return JsonResponse({"error": "Only teachers can mark attendance."}, status=403)
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        data = {}
+
+    test = _coerce_analysis_test(data.get("test_id"))
+    student = _coerce_analysis_student(data.get("student_id"))
+    subject = _normalize_test_analysis_subject_name(data.get("subject"))
+    status = str(data.get("status") or "").strip().lower()
+    if not test or not student or not subject or status not in {"present", "late", "absent"}:
+        return JsonResponse({"error": "Invalid attendance payload."}, status=400)
+
+    record, _ = ScholarshipTestFacultyAttendance.objects.update_or_create(
+        test=test,
+        portal_student=student,
+        subject=subject,
+        defaults={"status": status, "marked_by": request.user},
+    )
+    return JsonResponse({"success": True, "status": record.status})
 
 
 @csrf_exempt
@@ -2745,7 +2787,25 @@ def test_analysis_attendance_status_api(request):
 def test_analysis_attendance_finalize_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "Forbidden"}, status=403)
-    return JsonResponse({"success": True, "finalized": True})
+    if not _is_teacher_user(request.user):
+        return JsonResponse({"error": "Only teachers can finalize attendance."}, status=403)
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        data = {}
+
+    test = _coerce_analysis_test(data.get("test_id"))
+    subject = _normalize_test_analysis_subject_name(data.get("subject"))
+    finalized = bool(data.get("finalized", True))
+    if not test or not subject:
+        return JsonResponse({"error": "Invalid attendance payload."}, status=400)
+
+    session, _ = ScholarshipTestFacultyAttendanceSession.objects.update_or_create(
+        test=test,
+        subject=subject,
+        defaults={"finalized": finalized, "updated_by": request.user},
+    )
+    return JsonResponse({"success": True, "finalized": session.finalized})
 
 
 @csrf_exempt
@@ -2753,17 +2813,32 @@ def test_analysis_attendance_finalize_api(request):
 def test_analysis_note_create_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "Forbidden"}, status=403)
+    if not _is_teacher_user(request.user):
+        return JsonResponse({"error": "Only teachers can create notes."}, status=403)
     try:
         data = json.loads(request.body or "{}")
     except json.JSONDecodeError:
         data = {}
+    test = _coerce_analysis_test(data.get("test_id"))
+    student = _coerce_analysis_student(data.get("student_id"))
+    subject = _normalize_test_analysis_subject_name(data.get("subject"))
+    text = str(data.get("text") or "").strip()
+    if not test or not student or not subject or not text:
+        return JsonResponse({"error": "Invalid note payload."}, status=400)
+    note = ScholarshipTestFacultyNote.objects.create(
+        test=test,
+        portal_student=student,
+        subject=subject,
+        note_text=text,
+        created_by=request.user,
+    )
     return JsonResponse(
         {
             "success": True,
             "note": {
-                "id": str(int(timezone.now().timestamp() * 1000)),
-                "text": str(data.get("text") or "Demo note"),
-                "at": timezone.now().isoformat(),
+                "id": str(note.id),
+                "text": note.note_text,
+                "at": note.created_at.isoformat(),
             },
         }
     )
@@ -2774,6 +2849,16 @@ def test_analysis_note_create_api(request):
 def test_analysis_note_delete_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "Forbidden"}, status=403)
+    if not _is_teacher_user(request.user):
+        return JsonResponse({"error": "Only teachers can delete notes."}, status=403)
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        data = {}
+    note_id = _parse_int(data.get("note_id"))
+    if not note_id:
+        return JsonResponse({"error": "note_id is required."}, status=400)
+    ScholarshipTestFacultyNote.objects.filter(id=note_id).delete()
     return JsonResponse({"success": True})
 
 
@@ -4082,6 +4167,16 @@ def _get_assigned_portal_students_for_test(test):
     return assigned_students
 
 
+def _analysis_attempt_student_id(attempt):
+    if (
+        attempt
+        and _analysis_model_has_field_columns(ScholarshipTestAttempt, "portal_student")
+        and getattr(attempt, "portal_student_id", None)
+    ):
+        return f"portal-{attempt.portal_student_id}"
+    return f"scholar-{getattr(attempt, 'student_id', '')}"
+
+
 def _latest_completed_attempts_for_test(test):
     attempts = (
         _schema_safe_scholarship_attempt_queryset()
@@ -4665,6 +4760,430 @@ def _build_my_tests_live_signature(student):
     )
 
 
+def _normalize_analysis_batch_key(value):
+    normalized = re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+    aliases = {
+        "star1": "star01",
+        "star01": "star01",
+        "star2": "star02",
+        "star02": "star02",
+        "alpha": "alpha",
+        "alphabatch": "alpha",
+        "grade10": "grade10",
+        "class10": "grade10",
+        "10th": "grade10",
+        "10": "grade10",
+        "grade9": "grade9",
+        "class9": "grade9",
+        "9th": "grade9",
+        "9": "grade9",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def _analysis_batch_label(value):
+    key = _normalize_analysis_batch_key(value)
+    labels = {
+        "star01": "STAR 01",
+        "star02": "STAR 02",
+        "alpha": "Alpha Batch",
+        "grade10": "10th Grade",
+        "grade9": "9th Grade",
+    }
+    return labels.get(key) or str(value or "").strip() or "Unassigned"
+
+
+def _split_analysis_batch_values(value):
+    return [item.strip() for item in re.split(r"[,/&|]+", str(value or "")) if item.strip()]
+
+
+def _student_matches_analysis_batch(student, batch_key):
+    if not batch_key:
+        return True
+    return any(
+        _normalize_analysis_batch_key(student.get(field) if isinstance(student, dict) else _analysis_student_field_value(student, field, "")) == batch_key
+        for field in ("batch", "grade")
+    )
+
+
+def _coerce_analysis_test(test_id):
+    parsed_id = _parse_int(str(test_id or "").replace("SCH", "").replace("sch", ""))
+    if not parsed_id:
+        return None
+    try:
+        return (
+            _schema_safe_scholarship_test_queryset()
+            .prefetch_related("sections__questions")
+            .get(id=parsed_id)
+        )
+    except (ScholarshipTest.DoesNotExist, OperationalError, ProgrammingError):
+        return None
+
+
+def _coerce_analysis_student(student_id):
+    raw = str(student_id or "").strip()
+    parsed_id = _parse_int(raw.replace("portal-", ""))
+    if not parsed_id:
+        return None
+    try:
+        return _schema_safe_analysis_student_queryset().get(id=parsed_id)
+    except (Student.DoesNotExist, OperationalError, ProgrammingError):
+        return None
+
+
+def _analysis_test_date(test):
+    scheduled_at = _analysis_safe_model_field_value(test, "scheduled_start_at", None)
+    if scheduled_at:
+        return timezone.localtime(scheduled_at)
+    date_value = getattr(test, "date", None)
+    if date_value:
+        return datetime.combine(date_value, time.min, tzinfo=timezone.get_current_timezone())
+    return timezone.localtime(getattr(test, "created_at", timezone.now()))
+
+
+def _analysis_test_payload(test, assigned_students):
+    test_at = _analysis_test_date(test)
+    section_definitions = scholarship_test_service.get_test_section_definitions(test)
+    batch_values = _split_analysis_batch_values(_analysis_safe_model_field_value(test, "batch", ""))
+    batch_keys = [_normalize_analysis_batch_key(value) for value in batch_values if _normalize_analysis_batch_key(value)]
+    if not batch_keys:
+        batch_keys = sorted(
+            {
+                _normalize_analysis_batch_key(_analysis_student_field_value(student, "batch", ""))
+                for student in assigned_students
+                if _normalize_analysis_batch_key(_analysis_student_field_value(student, "batch", ""))
+            }
+        )
+    return {
+        "id": f"SCH{test.id}",
+        "external_id": test.id,
+        "name": test.name,
+        "subject": _analysis_safe_model_field_value(test, "subject", ""),
+        "batch": ", ".join(batch_values) if batch_values else "",
+        "batchKeys": batch_keys,
+        "date": test_at.strftime("%d %b %Y"),
+        "shortDate": test_at.strftime("%b %d"),
+        "sortAt": test_at.isoformat(),
+        "totalMarks": _get_test_total_marks(test),
+        "sectionBreakdown": section_definitions,
+    }
+
+
+def _analysis_student_payload(student):
+    return {
+        "id": f"portal-{student.id}",
+        "studentRef": str(_analysis_student_field_value(student, "username", "") or student.id),
+        "name": _analysis_student_field_value(student, "student_name", "") or f"Student {student.id}",
+        "batch": _analysis_student_field_value(student, "batch", ""),
+        "grade": _analysis_student_field_value(student, "grade", ""),
+        "parentPhone": _analysis_student_field_value(student, "contact", ""),
+        "profilePhotoUrl": _student_photo_url(student),
+    }
+
+
+def _analysis_score_row(test, student, attempt, rank=None, batch_rank=None):
+    section_scores = (
+        _build_attempt_section_breakdown(attempt)
+        if attempt
+        else _build_zero_section_breakdown(test)
+    )
+    total = sum(int(item.get("score", 0) or 0) for item in section_scores)
+    total_marks = (
+        int(getattr(attempt, "total_marks", 0) or 0)
+        if attempt and int(getattr(attempt, "total_marks", 0) or 0) > 0
+        else _get_test_total_marks(test)
+    )
+    score_value = int(getattr(attempt, "score", 0) or 0) if attempt else 0
+    if attempt and total:
+        score_value = total
+
+    row = {
+        "studentId": f"portal-{student.id}",
+        "testId": f"SCH{test.id}",
+        "total": score_value,
+        "totalMarks": total_marks,
+        "sectionScores": section_scores,
+        "rank": rank,
+        "batchRank": batch_rank,
+        "attempted": bool(attempt),
+    }
+    for item in section_scores:
+        subject = _normalize_test_analysis_subject_name(item.get("name") or item.get("sectionName"))
+        if subject:
+            row[subject] = int(item.get("score", 0) or 0)
+    return row
+
+
+def _build_attendance_state_payload(test=None):
+    if (
+        not _analysis_model_table_available(ScholarshipTestFacultyAttendance)
+        or not _analysis_model_table_available(ScholarshipTestFacultyAttendanceSession)
+    ):
+        return {}
+    records = ScholarshipTestFacultyAttendance.objects.select_related("portal_student")
+    sessions = ScholarshipTestFacultyAttendanceSession.objects.all()
+    if test:
+        records = records.filter(test=test)
+        sessions = sessions.filter(test=test)
+    payload = {"finalized": {}}
+    for record in records:
+        subject = _normalize_test_analysis_subject_name(record.subject)
+        payload.setdefault(subject, {})[f"portal-{record.portal_student_id}"] = record.status
+    for session in sessions:
+        subject = _normalize_test_analysis_subject_name(session.subject)
+        payload.setdefault("finalized", {})[subject] = bool(session.finalized)
+    return payload
+
+
+def _build_note_state_payload(test=None):
+    if not _analysis_model_table_available(ScholarshipTestFacultyNote):
+        return {}
+    notes = ScholarshipTestFacultyNote.objects.select_related("portal_student")
+    if test:
+        notes = notes.filter(test=test)
+    payload = {}
+    for note in notes:
+        subject = _normalize_test_analysis_subject_name(note.subject)
+        key = f"portal-{note.portal_student_id}:{subject}"
+        payload.setdefault(key, []).append(
+            {
+                "id": str(note.id),
+                "text": note.note_text,
+                "at": note.created_at.isoformat(),
+            }
+        )
+    return payload
+
+
+def _build_test_analysis_batches_payload(students=None, tests=None):
+    students = list(students or _schema_safe_analysis_student_queryset())
+    tests = list(tests or [])
+    batches = {}
+
+    def ensure(value):
+        key = _normalize_analysis_batch_key(value)
+        if key and key not in batches:
+            batches[key] = {"id": key, "label": _analysis_batch_label(value), "studentCount": 0, "testCount": 0}
+        return key
+
+    for student in students:
+        ensure(_analysis_student_field_value(student, "batch", ""))
+        ensure(_analysis_student_field_value(student, "grade", ""))
+    for test in tests:
+        for value in _split_analysis_batch_values(_analysis_safe_model_field_value(test, "batch", "")):
+            ensure(value)
+
+    for key, batch in batches.items():
+        batch["studentCount"] = sum(
+            1 for student in students
+            if _student_matches_analysis_batch(student, key)
+        )
+        batch["testCount"] = sum(
+            1 for test in tests
+            if key in [
+                _normalize_analysis_batch_key(value)
+                for value in _split_analysis_batch_values(_analysis_safe_model_field_value(test, "batch", ""))
+            ]
+        )
+
+    preferred = ["star01", "star02", "alpha", "grade10", "grade9"]
+    return sorted(
+        batches.values(),
+        key=lambda item: (
+            preferred.index(item["id"]) if item["id"] in preferred else len(preferred),
+            item["label"].casefold(),
+        ),
+    )
+
+
+def _build_test_analysis_base_payload():
+    missing_required_fields = _analysis_missing_model_fields(
+        ScholarshipTest,
+        "scheduled_start_at",
+        "batch",
+        "subject",
+    )
+    batches = _build_test_analysis_batches_payload()
+    if missing_required_fields:
+        return {
+            "students": [],
+            "batches": batches,
+            "completedTests": [],
+            "upcomingTest": {
+                "id": "",
+                "external_id": None,
+                "name": "Upcoming Test",
+                "date": "Awaiting schedule",
+                "shortDate": "Soon",
+                "sortAt": "",
+                "kind": "placeholder",
+                "canLaunchNow": False,
+                "isLive": False,
+            },
+            "scoresByTest": {},
+            "focusByTest": {},
+            "attendanceByTest": {},
+            "notesByTest": {},
+        }
+
+    now = timezone.localtime()
+    tests = list(
+        _schema_safe_scholarship_test_queryset()
+        .filter(status="published")
+        .prefetch_related("sections__questions")
+        .order_by("scheduled_start_at", "date", "created_at", "id")
+    )
+    completed_tests = []
+    upcoming_test = None
+    students_by_id = {}
+    scores_by_test = {}
+    focus_by_test = {}
+    attendance_by_test = {}
+    notes_by_test = {}
+
+    for test in tests:
+        assigned_students = _get_assigned_portal_students_for_test(test)
+        attempts = _latest_completed_attempts_for_test(test)
+        attempts_by_portal_id = {
+            getattr(attempt, "portal_student_id", None): attempt
+            for attempt in attempts
+            if getattr(attempt, "portal_student_id", None)
+        }
+        for attempt in attempts:
+            portal_student = getattr(attempt, "portal_student", None)
+            if portal_student and portal_student not in assigned_students:
+                assigned_students.append(portal_student)
+
+        test_payload = _analysis_test_payload(test, assigned_students)
+        is_completed = bool(attempts) or _analysis_test_date(test) <= now
+        if not is_completed and upcoming_test is None:
+            upcoming_test = {
+                **test_payload,
+                "kind": "upcoming",
+                "canLaunchNow": False,
+                "isLive": False,
+            }
+            continue
+        if not is_completed:
+            continue
+
+        ranked_attempts = sorted(
+            [attempt for attempt in attempts if getattr(attempt, "portal_student_id", None)],
+            key=lambda attempt: (-(int(getattr(attempt, "score", 0) or 0)), getattr(attempt, "test_completed_at", None) or timezone.now(), attempt.id),
+        )
+        rank_by_student_id = {
+            getattr(attempt, "portal_student_id", None): index + 1
+            for index, attempt in enumerate(ranked_attempts)
+        }
+        rows = []
+        for student in assigned_students:
+            students_by_id[student.id] = student
+            attempt = attempts_by_portal_id.get(student.id)
+            rows.append(
+                _analysis_score_row(
+                    test,
+                    student,
+                    attempt,
+                    rank=rank_by_student_id.get(student.id),
+                    batch_rank=rank_by_student_id.get(student.id),
+                )
+            )
+
+        completed_tests.append(test_payload)
+        scores_by_test[test_payload["id"]] = rows
+        focus_by_test[test_payload["id"]] = {}
+        for row in rows:
+            weak_sections = sorted(
+                row.get("sectionScores", []),
+                key=lambda item: item.get("percentage", 0),
+            )[:4]
+            focus_by_test[test_payload["id"]][row["studentId"]] = [
+                {"topic": item.get("name") or item.get("sectionName"), "score": item.get("percentage", 0)}
+                for item in weak_sections
+            ]
+        attendance_by_test[test_payload["id"]] = _build_attendance_state_payload(test)
+        notes_by_test[test_payload["id"]] = _build_note_state_payload(test)
+
+    all_students = list(students_by_id.values())
+    batches = _build_test_analysis_batches_payload(all_students, tests)
+    return {
+        "students": [_analysis_student_payload(student) for student in sorted(all_students, key=lambda item: (_analysis_student_field_value(item, "student_name", "").casefold(), item.id))],
+        "batches": batches,
+        "completedTests": completed_tests,
+        "upcomingTest": upcoming_test or {
+            "id": "",
+            "external_id": None,
+            "name": "Upcoming Test",
+            "date": "Awaiting schedule",
+            "shortDate": "Soon",
+            "sortAt": "",
+            "kind": "placeholder",
+            "canLaunchNow": False,
+            "isLive": False,
+        },
+        "scoresByTest": scores_by_test,
+        "focusByTest": focus_by_test,
+        "attendanceByTest": attendance_by_test,
+        "notesByTest": notes_by_test,
+    }
+
+
+def _build_test_analysis_page_payload(session):
+    base_payload = _build_test_analysis_base_payload()
+    faculty_payload = dict(base_payload)
+    faculty = (session or {}).get("faculty") or {}
+    if faculty.get("subject"):
+        faculty_payload["facultySubject"] = faculty.get("subject")
+    return {
+        "admin": base_payload,
+        "faculty": faculty_payload,
+    }
+
+
+def _generate_test_analysis_pdf(test, scores, batch_id=""):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=14 * mm, leftMargin=14 * mm, topMargin=14 * mm, bottomMargin=14 * mm)
+    styles = getSampleStyleSheet()
+    story = [
+        Paragraph("Batch-wise Test Analysis", styles["Title"]),
+        Paragraph(test.name, styles["Heading2"]),
+        Paragraph(f"Date: {_analysis_test_date(test).strftime('%d %b %Y')}", styles["Normal"]),
+    ]
+    if batch_id:
+        story.append(Paragraph(f"Batch: {_analysis_batch_label(batch_id)}", styles["Normal"]))
+    story.append(Spacer(1, 8))
+
+    attempted = [score for score in scores if score.get("attempted") is not False]
+    average = round(sum(score.get("total", 0) for score in attempted) / len(attempted), 1) if attempted else 0
+    top = sorted(attempted, key=lambda item: item.get("total", 0), reverse=True)[:1]
+    story.append(Paragraph(f"Appeared: {len(attempted)}/{len(scores)} &nbsp;&nbsp; Average: {average}", styles["Normal"]))
+    if top:
+        story.append(Paragraph(f"Highest Score: {top[0].get('total', 0)}", styles["Normal"]))
+    story.append(Spacer(1, 8))
+
+    table_data = [["Rank", "Student", "Score", "Status"]]
+    for score in sorted(scores, key=lambda item: (item.get("rank") or 999999, -item.get("total", 0))):
+        table_data.append([
+            score.get("rank") or "NA",
+            score.get("studentId", ""),
+            f"{score.get('total', 0)}/{score.get('totalMarks', 0)}",
+            "Appeared" if score.get("attempted") is not False else "Not appeared",
+        ])
+    if len(table_data) == 1:
+        table_data.append(["-", "No student records found", "-", "-"])
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1f6feb")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#d0d7de")),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"),
+    ]))
+    story.append(table)
+    doc.build(story)
+    return buffer.getvalue()
+
+
 def _static_test_analysis_batches_payload():
     return [
         {"id": "star01", "label": "STAR 01", "studentCount": 25, "testCount": 2},
@@ -4709,19 +5228,34 @@ def _static_test_analysis_summary_payload():
 @login_required
 @require_GET
 def test_analysis_batches_api(request):
-    return JsonResponse({"batches": _static_test_analysis_batches_payload()})
+    return JsonResponse({"batches": _build_test_analysis_base_payload().get("batches", [])})
 
 
 @login_required
 @require_GET
 def test_analysis_tests_api(request):
-    return JsonResponse({"batch": {"id": "", "label": ""}, "tests": _static_test_analysis_tests_payload()})
+    payload = _build_test_analysis_base_payload()
+    batch_id = request.GET.get("batch_id") or request.GET.get("batch") or ""
+    tests = payload.get("completedTests", [])
+    if batch_id:
+        batch_key = _normalize_analysis_batch_key(batch_id)
+        tests = [
+            test for test in tests
+            if batch_key in [str(item) for item in test.get("batchKeys", [])]
+        ]
+    return JsonResponse({"batch": {"id": batch_id, "label": _analysis_batch_label(batch_id)}, "tests": tests})
 
 
 @login_required
 @require_GET
 def test_analysis_summary_api(request):
-    return JsonResponse({"batch": {"id": "", "label": ""}, "analysis": _static_test_analysis_summary_payload()})
+    batch_id = request.GET.get("batch_id") or request.GET.get("batch") or ""
+    return JsonResponse(
+        {
+            "batch": {"id": batch_id, "label": _analysis_batch_label(batch_id)},
+            "analysis": _build_test_analysis_base_payload(),
+        }
+    )
 
 
 @login_required
