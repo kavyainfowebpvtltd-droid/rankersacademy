@@ -215,7 +215,7 @@ class LoginThrottleTests(TestCase):
             REMOTE_ADDR=shared_ip,
         )
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))
 
     def test_account_lock_still_applies_after_repeated_failures(self):
         for _ in range(5):
@@ -351,7 +351,7 @@ class StudentLoginRedirectTests(TestCase):
             gender="Male",
         )
 
-    def test_password_login_redirects_student_to_my_tests(self):
+    def test_password_login_redirects_student_to_dashboard(self):
         response = self.client.post(
             reverse("login"),
             {
@@ -361,11 +361,11 @@ class StudentLoginRedirectTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))
 
     @patch("sds.views._is_msg91_verified", return_value=True)
     @patch("sds.views._msg91_verify_otp", return_value={"type": "success"})
-    def test_otp_login_redirects_student_to_my_tests(self, _mock_verify, _mock_is_verified):
+    def test_otp_login_redirects_student_to_dashboard(self, _mock_verify, _mock_is_verified):
         cache.set(
             "otp:login:9876543299",
             {"user_id": self.user.id, "role": "Student", "attempts": 0},
@@ -384,7 +384,7 @@ class StudentLoginRedirectTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(
             response.content.decode("utf-8"),
-            {"ok": True, "redirect": reverse("my_tests")},
+            {"ok": True, "redirect": reverse("student-dashboard")},
         )
 
 

@@ -72,7 +72,7 @@ def _redirect_authenticated_user_home(user):
     if user_needs_password_change(user):
         return redirect("force_password_change")
     if hasattr(user, "student"):
-        return redirect("my_tests")
+        return redirect("student-dashboard")
     if _is_admin_or_teacher(user):
         return redirect("admin-dashboard")
     return redirect("login")
@@ -425,7 +425,7 @@ def login_view(request):
         if role == "Student":
             if hasattr(user, "student"):
                 logger.info("login_success user_id=%s role=%s", user.id, role)
-                return redirect("my_tests")
+                return redirect("student-dashboard")
             logger.info(
                 "login_failed reason=student_profile_missing user_id=%s role=%s ip=%s",
                 user.id,
@@ -879,7 +879,7 @@ def verify_login_otp(request):
         return JsonResponse({"ok": True, "redirect": reverse("force_password_change")})
 
     if role == "Student":
-        return JsonResponse({"ok": True, "redirect": reverse("my_tests")})
+        return JsonResponse({"ok": True, "redirect": reverse("student-dashboard")})
     return JsonResponse({"ok": True, "redirect": "/dashboard/admin-dashboard/"})
 
 
