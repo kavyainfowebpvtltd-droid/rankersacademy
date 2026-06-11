@@ -5,7 +5,6 @@ image: mysql:8.0
 container_name: rankers-db
 restart: unless-stopped
 
-```
 environment:
   MYSQL_ROOT_PASSWORD: Vishal@2026
   MYSQL_DATABASE: rankers_db
@@ -21,14 +20,12 @@ healthcheck:
   interval: 10s
   timeout: 5s
   retries: 15
-```
 
 web:
 build: .
 container_name: rankers-app
 restart: unless-stopped
 
-```
 depends_on:
   db:
     condition: service_healthy
@@ -58,7 +55,6 @@ healthcheck:
   interval: 30s
   timeout: 10s
   retries: 3
-```
 
 volumes:
 mysql_data:
