@@ -19,6 +19,7 @@ class RequestTimingMiddleware:
         started_at = time.perf_counter()
         queries = []
         response = None
+        query_start_index = len(getattr(connection, "queries", []))
 
         try:
             with connection.execute_wrapper(self._record_query_timing(queries)):
@@ -45,7 +46,7 @@ class RequestTimingMiddleware:
 
                 slow_query_ms = int(getattr(settings, "SLOW_QUERY_MS", 250))
                 for query in queries:
-                    query_ms = query["duration_ms"]
+                    query_ms = float(query.get("time", 0)) * 1000
                     if query_ms >= slow_query_ms:
                         timing_logger.warning(
                             "slow_query path=%s duration_ms=%s sql=%s",
