@@ -313,20 +313,27 @@ def _is_password_only_test_next_url(next_url: str) -> bool:
 
 
 @csrf_protect
+@never_cache
+@cache_control(no_cache=True, no_store=True, must_revalidate=True, private=True)
 def login_view(request):
     MAX_LOGIN_ATTEMPTS = getattr(settings, 'MAX_LOGIN_ATTEMPTS', 5)
     LOCKOUT_DURATION_SECONDS = getattr(settings, 'LOGIN_LOCKOUT_SECONDS', 900)
     
     if request.method == "POST":
-        identifier = request.POST.get("username")
+        identifier = _normalize_login_identifier(request.POST.get("username"))
         password = request.POST.get("password")
         role = _normalize_login_role(request.POST.get("role"))
 
         if not identifier or not password or not role:
+            logger.info(
+                "login_failed reason=missing_fields role=%s ip=%s",
+                role or "missing",
+                _request_client_ip(request),
+            )
             messages.error(request, "All fields are required")
             return redirect("login")
 
-        username_key = f"login_attempts:{identifier.lower()}"
+        username_key = f"login_attempts:{identifier.casefold()}"
         attempt_data = _cache_get(username_key)
         if attempt_data and attempt_data.get('locked', False):
             lockout_end = attempt_data.get('lockout_end', 0)
@@ -336,6 +343,13 @@ def login_view(request):
                 remaining = int(lockout_end - now)
                 minutes = remaining // 60
                 seconds = remaining % 60
+                logger.warning(
+                    "login_blocked reason=lockout identifier=%s role=%s remaining_seconds=%s ip=%s",
+                    identifier,
+                    role,
+                    remaining,
+                    _request_client_ip(request),
+                )
                 messages.error(request, f"Account temporarily locked due to too many failed attempts. Please try again in {minutes} minutes {seconds} seconds.")
                 return redirect("login")
             else:
@@ -348,6 +362,12 @@ def login_view(request):
             )
         except User.DoesNotExist:
             _increment_failed_attempts(request, identifier, username_key, attempt_data)
+            logger.info(
+                "login_failed reason=user_not_found identifier=%s role=%s ip=%s",
+                identifier,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "Invalid credentials")
             return redirect("login")
 
@@ -355,6 +375,13 @@ def login_view(request):
 
         if not user or not user.is_active:
             _increment_failed_attempts(request, identifier, username_key, attempt_data)
+            logger.info(
+                "login_failed reason=password_mismatch_or_inactive user_id=%s identifier=%s role=%s ip=%s",
+                user_obj.id,
+                identifier,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "Invalid credentials")
             return redirect("login")
 
@@ -371,39 +398,88 @@ def login_view(request):
         # If user is trying to access diagnostic test
         if next_url and _is_password_only_test_next_url(next_url):
             if not hasattr(user, 'student'):
+                logger.info(
+                    "login_failed reason=student_profile_missing user_id=%s role=%s next=%s ip=%s",
+                    user.id,
+                    role,
+                    next_url,
+                    _request_client_ip(request),
+                )
                 messages.error(request, "Student profile not found. Please contact admin.")
                 return redirect('login')
             # User should be student role
             if role == "Student":
+                logger.info("login_success user_id=%s role=%s next=%s", user.id, role, next_url)
                 return redirect(next_url)
             else:
+                logger.info(
+                    "login_failed reason=wrong_role_for_test user_id=%s role=%s next=%s ip=%s",
+                    user.id,
+                    role,
+                    next_url,
+                    _request_client_ip(request),
+                )
                 messages.error(request, "Only students can access the diagnostic test.")
                 return redirect('login')
 
         if role == "Student":
             if hasattr(user, "student"):
+                logger.info("login_success user_id=%s role=%s", user.id, role)
                 return redirect("my_tests")
+            logger.info(
+                "login_failed reason=student_profile_missing user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not registered as a student")
             return redirect("login")
 
         if role == "Teacher":
             if _can_login_as_teacher(user):
+                logger.info("login_success user_id=%s role=%s", user.id, role)
                 return redirect("admin-dashboard")
+            logger.info(
+                "login_failed reason=wrong_role user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not authorized")
             return redirect("login")
 
         if role == "Admin":
             if _can_login_as_admin(user):
+                logger.info("login_success user_id=%s role=%s", user.id, role)
                 return redirect("admin-dashboard")
+            logger.info(
+                "login_failed reason=wrong_role user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not authorized")
             return redirect("login")
 
         if role == "Teacher/Admin":
             if _can_login_as_teacher(user) or _can_login_as_admin(user):
+                logger.info("login_success user_id=%s role=%s", user.id, role)
                 return redirect("admin-dashboard")
+            logger.info(
+                "login_failed reason=wrong_role user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not authorized")
             return redirect("login")
 
+        logger.info(
+            "login_failed reason=invalid_role_selection user_id=%s role=%s ip=%s",
+            user.id,
+            role,
+            _request_client_ip(request),
+        )
         messages.error(request, "Invalid role selection")
         return redirect("login")
 
@@ -478,8 +554,26 @@ def _increment_failed_attempts(request, identifier, username_key, attempt_data):
     if username_locked:
         lockout_end = now + LOCKOUT_DURATION_SECONDS
         _cache_set(username_key, {'attempts': username_attempts, 'locked': True, 'lockout_end': lockout_end}, LOCKOUT_DURATION_SECONDS)
+        logger.warning(
+            "login_lockout identifier=%s attempts=%s lockout_seconds=%s ip=%s",
+            identifier,
+            username_attempts,
+            LOCKOUT_DURATION_SECONDS,
+            _request_client_ip(request),
+        )
     else:
         _cache_set(username_key, {'attempts': username_attempts, 'locked': False}, LOCKOUT_DURATION_SECONDS)
+
+
+def _normalize_login_identifier(identifier: str | None) -> str:
+    return (identifier or "").strip().lower()
+
+
+def _request_client_ip(request) -> str:
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "")
 
 
 def _normalize_login_role(role: str | None) -> str:

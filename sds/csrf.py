@@ -1,5 +1,9 @@
+import logging
+
 from django.contrib.auth import get_user
 from django.views.csrf import csrf_failure as default_csrf_failure
+
+logger = logging.getLogger(__name__)
 
 
 def csrf_failure(request, reason=""):
@@ -13,6 +17,17 @@ def csrf_failure(request, reason=""):
     """
     is_login_post = request.method == "POST" and request.path in {"", "/"}
     is_bad_post_token = "CSRF token from POST" in str(reason or "")
+
+    logger.warning(
+        "csrf_failure path=%s method=%s reason=%s referer=%s origin=%s secure=%s forwarded_proto=%s",
+        request.path,
+        request.method,
+        reason,
+        request.META.get("HTTP_REFERER", ""),
+        request.META.get("HTTP_ORIGIN", ""),
+        request.is_secure(),
+        request.META.get("HTTP_X_FORWARDED_PROTO", ""),
+    )
 
     if is_login_post and is_bad_post_token:
         user = get_user(request)
