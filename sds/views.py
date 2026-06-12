@@ -2716,6 +2716,10 @@ def _normalize_test_analysis_subject_name(name: str) -> str:
     return ""
 
 
+def _normalize_analysis_subject_name(name: str) -> str:
+    return _normalize_test_analysis_subject_name(name)
+
+
 def _faculty_test_analysis_subject(user) -> str:
     ta = _teacheradmin(user)
     if not ta:
@@ -5014,10 +5018,6 @@ def _analysis_test_payload(test, assigned_students):
     }
 
 
-def _serialize_test_analysis_test_item(test, assigned_students=None):
-    return _analysis_test_payload(test, assigned_students or [])
-
-
 def _serialize_test_analysis_upcoming_placeholder():
     return {
         "id": "",
@@ -5047,6 +5047,65 @@ def _serialize_test_analysis_test_item(test, start_at):
         }
     )
     return test_item
+
+
+def _build_analysis_dataset_for_test(test, *, focus_subject=None):
+    assigned_students = _get_assigned_portal_students_for_test(test)
+    attempts = _latest_completed_attempts_for_test(test)
+    attempts_by_portal_id = {
+        getattr(attempt, "portal_student_id", None): attempt
+        for attempt in attempts
+        if getattr(attempt, "portal_student_id", None)
+    }
+
+    for attempt in attempts:
+        portal_student = getattr(attempt, "portal_student", None)
+        if portal_student and portal_student not in assigned_students:
+            assigned_students.append(portal_student)
+
+    ranked_attempts = sorted(
+        [attempt for attempt in attempts if getattr(attempt, "portal_student_id", None)],
+        key=lambda attempt: (
+            -(int(getattr(attempt, "score", 0) or 0)),
+            getattr(attempt, "test_completed_at", None) or timezone.now(),
+            attempt.id,
+        ),
+    )
+    rank_by_student_id = {
+        getattr(attempt, "portal_student_id", None): index + 1
+        for index, attempt in enumerate(ranked_attempts)
+    }
+
+    rows = []
+    students_by_id = {}
+    focus_by_student = {}
+    for student in assigned_students:
+        student_key = f"portal-{student.id}"
+        students_by_id[student_key] = _analysis_student_payload(student)
+        attempt = attempts_by_portal_id.get(student.id)
+        row = _analysis_score_row(
+            test,
+            student,
+            attempt,
+            rank=rank_by_student_id.get(student.id),
+            batch_rank=rank_by_student_id.get(student.id),
+        )
+        rows.append(row)
+
+        weak_sections = sorted(
+            [
+                item for item in row.get("sectionScores", [])
+                if not focus_subject
+                or _normalize_test_analysis_subject_name(item.get("name") or item.get("sectionName")) == focus_subject
+            ],
+            key=lambda item: item.get("percentage", 0),
+        )[:4]
+        focus_by_student[row["studentId"]] = [
+            {"topic": item.get("name") or item.get("sectionName"), "score": item.get("percentage", 0)}
+            for item in weak_sections
+        ]
+
+    return rows, students_by_id, focus_by_student
 
 
 def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests=None):
@@ -5171,7 +5230,7 @@ def _analysis_score_row(test, student, attempt, rank=None, batch_rank=None):
     return row
 
 
-def _build_attendance_state_payload(test=None):
+def _build_attendance_state_payload(test=None, *, test_ids=None, subject=None):
     if (
         not _analysis_model_table_available(ScholarshipTestFacultyAttendance)
         or not _analysis_model_table_available(ScholarshipTestFacultyAttendanceSession)
@@ -5182,26 +5241,37 @@ def _build_attendance_state_payload(test=None):
     if test:
         records = records.filter(test=test)
         sessions = sessions.filter(test=test)
+    if test_ids:
+        records = records.filter(test_id__in=test_ids)
+        sessions = sessions.filter(test_id__in=test_ids)
     payload = {"finalized": {}}
     for record in records:
-        subject = _normalize_test_analysis_subject_name(record.subject)
-        payload.setdefault(subject, {})[f"portal-{record.portal_student_id}"] = record.status
+        record_subject = _normalize_test_analysis_subject_name(record.subject)
+        if subject and record_subject != subject:
+            continue
+        payload.setdefault(record_subject, {})[f"portal-{record.portal_student_id}"] = record.status
     for session in sessions:
-        subject = _normalize_test_analysis_subject_name(session.subject)
-        payload.setdefault("finalized", {})[subject] = bool(session.finalized)
+        session_subject = _normalize_test_analysis_subject_name(session.subject)
+        if subject and session_subject != subject:
+            continue
+        payload.setdefault("finalized", {})[session_subject] = bool(session.finalized)
     return payload
 
 
-def _build_note_state_payload(test=None):
+def _build_note_state_payload(test=None, *, test_ids=None, subject=None):
     if not _analysis_model_table_available(ScholarshipTestFacultyNote):
         return {}
     notes = ScholarshipTestFacultyNote.objects.select_related("portal_student")
-    if test:
+    if isinstance(test, ScholarshipTest):
         notes = notes.filter(test=test)
+    if test_ids:
+        notes = notes.filter(test_id__in=test_ids)
     payload = {}
     for note in notes:
-        subject = _normalize_test_analysis_subject_name(note.subject)
-        key = f"portal-{note.portal_student_id}:{subject}"
+        note_subject = _normalize_test_analysis_subject_name(note.subject)
+        if subject and note_subject != subject:
+            continue
+        key = f"portal-{note.portal_student_id}:{note_subject}"
         payload.setdefault(key, []).append(
             {
                 "id": str(note.id),
