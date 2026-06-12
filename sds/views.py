@@ -4869,6 +4869,10 @@ def _analysis_test_payload(test, assigned_students):
     }
 
 
+def _serialize_test_analysis_test_item(test, assigned_students=None):
+    return _analysis_test_payload(test, assigned_students or [])
+
+
 def _analysis_student_payload(student):
     return {
         "id": f"portal-{student.id}",
