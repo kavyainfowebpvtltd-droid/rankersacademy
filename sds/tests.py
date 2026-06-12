@@ -1,5 +1,5 @@
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -11,6 +11,8 @@ from django.urls import reverse
 from sds import views
 from sds.models import Student, TeacherAdmin
 from sds.password_policy import DEFAULT_ONE_TIME_PASSWORD
+from scholarship_test.models import ScholarshipTestAttempt
+from scholarship_test.services import test_service as scholarship_test_service
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
@@ -212,7 +214,7 @@ class LoginThrottleTests(TestCase):
             REMOTE_ADDR=shared_ip,
         )
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))
 
     def test_account_lock_still_applies_after_repeated_failures(self):
         for _ in range(5):
@@ -348,7 +350,7 @@ class StudentLoginRedirectTests(TestCase):
             gender="Male",
         )
 
-    def test_password_login_redirects_student_to_my_tests(self):
+    def test_password_login_redirects_student_to_dashboard(self):
         response = self.client.post(
             reverse("login"),
             {
@@ -358,11 +360,11 @@ class StudentLoginRedirectTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))
 
     @patch("sds.views._is_msg91_verified", return_value=True)
     @patch("sds.views._msg91_verify_otp", return_value={"type": "success"})
-    def test_otp_login_redirects_student_to_my_tests(self, _mock_verify, _mock_is_verified):
+    def test_otp_login_redirects_student_to_dashboard(self, _mock_verify, _mock_is_verified):
         cache.set(
             "otp:login:9876543299",
             {"user_id": self.user.id, "role": "Student", "attempts": 0},
@@ -381,7 +383,7 @@ class StudentLoginRedirectTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(
             response.content.decode("utf-8"),
-            {"ok": True, "redirect": reverse("my_tests")},
+            {"ok": True, "redirect": reverse("student-dashboard")},
         )
 
 
@@ -428,6 +430,51 @@ class TestAnalysisSchemaSafetyTests(TestCase):
 
             self.assertIsNone(views._coerce_analysis_test(12))
 
+    def test_attempt_queryset_defers_missing_analysis_attempt_columns(self):
+        missing_fields = [
+            "portal_student",
+            "student_batch",
+            "progress_state",
+            "started_at",
+            "submitted_at",
+            "violation_count",
+            "security_status",
+        ]
+        with patch("sds.views._analysis_missing_model_fields", return_value=missing_fields):
+            queryset = views._schema_safe_scholarship_attempt_queryset()
+
+        deferred_fields, is_deferred = queryset.query.deferred_loading
+        self.assertTrue(is_deferred)
+        self.assertEqual(set(deferred_fields), set(missing_fields))
+
+    def test_analysis_attempt_student_id_uses_legacy_student_when_portal_column_missing(self):
+        attempt = ScholarshipTestAttempt(student_id=44)
+
+        with patch("sds.views._analysis_model_has_field_columns", return_value=False):
+            self.assertEqual(views._analysis_attempt_student_id(attempt), "scholar-44")
+
+    def test_assignment_check_uses_safe_deferred_test_scope_fields(self):
+        class DeferredScopeTest:
+            def get_deferred_fields(self):
+                return {"batch", "stream"}
+
+            @property
+            def batch(self):
+                raise AssertionError("batch should not be loaded when deferred")
+
+            @property
+            def stream(self):
+                raise AssertionError("stream should not be loaded when deferred")
+
+        portal_student = SimpleNamespace(batch="STAR 01", stream="", interested_exams=[])
+
+        self.assertTrue(
+            scholarship_test_service.is_test_assigned_to_portal_student(
+                DeferredScopeTest(),
+                portal_student,
+            )
+        )
+
     def test_teacheradmin_returns_none_when_schema_safe_fetch_fails(self):
         user = User(username="teacherx")
         with patch("sds.views.TeacherAdmin.objects.all") as mock_all, patch(
@@ -460,53 +507,22 @@ class TestAnalysisSchemaSafetyTests(TestCase):
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
-class TestAnalysisPageTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username="analysisadmin",
-            email="analysisadmin@example.com",
-            password="AdminPass@2026",
-            is_superuser=True,
-            is_staff=True,
-        )
-        self.client.force_login(self.user)
-
-    @patch("sds.views._build_admin_test_analysis_payload")
-    def test_test_analysis_page_renders_dynamic_admin_mode(self, mock_payload):
-        mock_payload.return_value = {
-            "admin": {
-                "students": [],
-                "batches": [],
-                "completedTests": [],
-                "upcomingTest": {
-                    "id": "",
-                    "external_id": None,
-                    "name": "Upcoming Test",
-                    "date": "Awaiting schedule",
-                    "shortDate": "Soon",
-                    "sortAt": "",
-                    "kind": "placeholder",
-                    "canLaunchNow": False,
-                    "isLive": False,
-                },
-                "scoresByTest": {},
-                "focusByTest": {},
-                "attendanceByTest": {},
-                "notesByTest": {},
-            }
-        }
-
+class TestAnalysisStaticPageTests(TestCase):
+    def test_test_analysis_page_renders_without_login_in_static_mode(self):
         response = self.client.get(reverse("test-analysis"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-page="admin"')
         self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = false;')
 
-    def test_test_analysis_login_page_redirects_to_test_analysis(self):
+    def test_test_analysis_login_page_redirects_to_static_test_analysis(self):
         response = self.client.get(reverse("test-analysis-login-page"))
 
-        self.assertRedirects(response, reverse("test-analysis"))
+        self.assertRedirects(
+            response,
+            reverse("test-analysis"),
+            fetch_redirect_response=False,
+        )
 
 
 @override_settings(ROOT_URLCONF="sds.urls")

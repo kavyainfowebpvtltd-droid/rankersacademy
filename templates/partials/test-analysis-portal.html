@@ -451,10 +451,10 @@
         { id: "T02", name: "MOTION TEST", batch: "Alpha", batchKeys: ["alpha"], date: "22 Apr 2026", shortDate: "Apr 22" },
         { id: "T03", name: "WEEKLY MOCK TEST", batch: "Star-01", batchKeys: ["star01"], date: "29 Apr 2026", shortDate: "Apr 29" }
       ];
-      const USE_BACKEND_ANALYSIS_DATA = !STATIC_PLACEHOLDER_MODE && Boolean(ACTIVE_ANALYSIS);
-      const STUDENTS = STATIC_PLACEHOLDER_MODE ? [] : (USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.students || []) : DEMO_STUDENTS);
-      const TESTS = STATIC_PLACEHOLDER_MODE ? [] : (USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.completedTests || []) : DEMO_TESTS);
-      const BACKEND_BATCHES = STATIC_PLACEHOLDER_MODE ? [] : (USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.batches || []) : []);
+      const USE_BACKEND_ANALYSIS_DATA = !STATIC_PLACEHOLDER_MODE;
+      const STUDENTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS?.students || []) : [];
+      const TESTS = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS?.completedTests || []) : [];
+      const BACKEND_BATCHES = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS?.batches || []) : [];
       const BATCH_TABS = [
         { id: "star01", label: "STAR 01" },
         { id: "star02", label: "STAR 02" },
@@ -473,7 +473,7 @@
         isLive: false,
       };
       const ADMIN_UPCOMING_TEST = USE_BACKEND_ANALYSIS_DATA
-        ? (ACTIVE_ANALYSIS.upcomingTest || DEFAULT_ADMIN_UPCOMING_TEST)
+        ? (ACTIVE_ANALYSIS?.upcomingTest || DEFAULT_ADMIN_UPCOMING_TEST)
         : DEFAULT_ADMIN_UPCOMING_TEST;
       const CLUSTER_SCHEDULE = {
         Physics: { time: "4:00 - 4:30 PM", faculty: "Mr. Rajesh Kumar", room: "Conference Room A" },
@@ -508,6 +508,7 @@
       };
       const ROUTES = {
         login: "{% url 'login' %}",
+        logout: "{% url 'logout' %}",
         student: "{% url 'login' %}",
         faculty: "{% url 'test-analysis-faculty-page' %}",
         admin: "{% url 'test-analysis-admin-page' %}"
@@ -553,10 +554,10 @@
         setStore(StorageKeys.session, SERVER_SESSION);
       }
 
-      const BACKEND_SCORES_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.scoresByTest || {}) : {};
-      const BACKEND_FOCUS_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.focusByTest || {}) : {};
-      const BACKEND_ATTENDANCE_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.attendanceByTest || {}) : {};
-      const BACKEND_NOTES_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS.notesByTest || {}) : {};
+      const BACKEND_SCORES_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS?.scoresByTest || {}) : {};
+      const BACKEND_FOCUS_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS?.focusByTest || {}) : {};
+      const BACKEND_ATTENDANCE_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS?.attendanceByTest || {}) : {};
+      const BACKEND_NOTES_BY_TEST = USE_BACKEND_ANALYSIS_DATA ? (ACTIVE_ANALYSIS?.notesByTest || {}) : {};
       const allScores = USE_BACKEND_ANALYSIS_DATA
         ? Object.fromEntries(
             TESTS.map((t) => [
@@ -577,7 +578,7 @@
               })),
             ])
           )
-        : Object.fromEntries(TESTS.map((t) => [t.id, generateScores(t.id)]));
+        : {};
       const STUDENT_LOOKUP = new Map(STUDENTS.map((student) => [student.id, student]));
       const TEST_LOOKUP = new Map(
         [...TESTS, ADMIN_UPCOMING_TEST].filter(Boolean).map((test) => [test.id, test])
@@ -1402,6 +1403,10 @@
         state.modal = "";
         state.studentLeaderboardOpen = false;
         clearSession();
+        if (SERVER_SESSION) {
+          window.location.href = ROUTES.logout;
+          return;
+        }
         if (state.page === "login") render();
         else window.location.href = ROUTES.login;
       }
@@ -1501,7 +1506,7 @@
         const tests = testsForBatch();
         const current = currentTest();
         const selectedTest = tests.find((test) => test.id === current?.id) || current;
-        const canExport = Boolean(current?.id && tests.some((test) => test.id === current.id));
+        const canExport = USE_BACKEND_ANALYSIS_DATA && Boolean(current?.id && tests.some((test) => test.id === current.id));
         return `<section class="analysis-toolbar p-3 p-lg-4 mb-3">
           <div class="analysis-toolbar-stack">
             <div class="analysis-control analysis-batch-control">

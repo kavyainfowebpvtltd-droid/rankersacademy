@@ -11,6 +11,7 @@ from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 from sds.models import Student
+from utils.media_urls import upload_url
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,18 @@ OPTIONAL_ATTEMPT_SECURITY_FIELDS = {
     "violation_count",
     "security_status",
 }
-OPTIONAL_ATTEMPT_COMPAT_FIELDS = OPTIONAL_ATTEMPT_SECURITY_FIELDS | {"progress_state"}
+OPTIONAL_ATTEMPT_COMPAT_FIELDS = OPTIONAL_ATTEMPT_SECURITY_FIELDS | {
+    "portal_student",
+    "progress_state",
+    "student_batch",
+}
+STUDENT_COMPAT_FIELDS = {
+    "batch",
+    "interested_exams",
+    "profile_photo",
+    "stream",
+    "username",
+}
 
 
 def get_max_security_violations() -> int:
@@ -339,8 +351,8 @@ def get_portal_student_stream_values(portal_student) -> set[str]:
     if not portal_student:
         return set()
 
-    stream_values = _split_scope_values(getattr(portal_student, "stream", ""))
-    interested_exams = getattr(portal_student, "interested_exams", []) or []
+    stream_values = _split_scope_values(_safe_student_field_value(portal_student, "stream", ""))
+    interested_exams = _safe_student_field_value(portal_student, "interested_exams", []) or []
 
     for exam in interested_exams:
         exam_text = str(exam or "")
@@ -424,14 +436,28 @@ def _model_has_columns(model_class, *field_names):
     return True
 
 
+def _missing_concrete_field_names(model_class):
+    available_columns = _model_column_names(model_class)
+    if not available_columns:
+        return []
+    return [
+        field.name
+        for field in model_class._meta.local_concrete_fields
+        if not field.primary_key and field.column not in available_columns
+    ]
+
+
 def _optional_attempt_fields_to_defer():
     from scholarship_test.models import ScholarshipTestAttempt
 
     return tuple(
         sorted(
-            field_name
-            for field_name in OPTIONAL_ATTEMPT_COMPAT_FIELDS
-            if not _model_has_columns(ScholarshipTestAttempt, field_name)
+            set(_missing_concrete_field_names(ScholarshipTestAttempt))
+            | {
+                field_name
+                for field_name in OPTIONAL_ATTEMPT_COMPAT_FIELDS
+                if not _model_has_columns(ScholarshipTestAttempt, field_name)
+            }
         )
     )
 
@@ -444,6 +470,31 @@ def _schema_safe_attempt_queryset():
     if missing_optional_fields:
         queryset = queryset.defer(*missing_optional_fields)
     return queryset
+
+
+def _optional_student_fields_to_defer():
+    return tuple(
+        sorted(
+            set(_missing_concrete_field_names(Student))
+            | {
+                field_name
+                for field_name in STUDENT_COMPAT_FIELDS
+                if not _model_has_columns(Student, field_name)
+            }
+        )
+    )
+
+
+def _schema_safe_student_queryset():
+    queryset = Student.objects.select_related("user")
+    missing_optional_fields = _optional_student_fields_to_defer()
+    if missing_optional_fields:
+        queryset = queryset.defer(*missing_optional_fields)
+    return queryset
+
+
+def _safe_student_field_value(student, field_name, default=""):
+    return _safe_model_field_value(student, field_name, default)
 
 
 def get_test_total_marks(test) -> int:
@@ -643,19 +694,25 @@ def build_zero_section_breakdown(test, portal_student=None):
 
 
 def _portal_student_photo_url(portal_student):
-    if not portal_student or not getattr(portal_student, "profile_photo", None):
+    profile_photo = _safe_student_field_value(portal_student, "profile_photo", None)
+    if not profile_photo:
         return None
-    try:
-        return portal_student.profile_photo.url
-    except Exception:
-        return None
+    return upload_url(profile_photo, ("student_profiles", "student_profile")) or None
 
 
 def _latest_completed_attempts_for_portal_test(test):
+    from scholarship_test.models import ScholarshipTestAttempt
+
+    if not _model_has_columns(ScholarshipTestAttempt, "portal_student"):
+        logger.warning(
+            "Skipping portal attempt lookup because scholarship attempt portal_student column is unavailable."
+        )
+        return {}
+
     attempts = (
         _schema_safe_attempt_queryset()
         .filter(test=test, status__in=["completed", "expired"])
-        .select_related("student", "portal_student")
+        .select_related("student")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test_completed_at", "test_started_at", "id")
     )
@@ -669,10 +726,7 @@ def _latest_completed_attempts_for_portal_test(test):
 
 
 def _assigned_portal_students_for_test(test):
-    student_queryset = Student.objects.select_related("user")
-    test_batch = str(_safe_model_field_value(test, "batch", "") or "").strip()
-    if test_batch:
-        student_queryset = student_queryset.filter(batch__iexact=test_batch)
+    student_queryset = _schema_safe_student_queryset()
 
     assigned_students = [
         portal_student
@@ -681,7 +735,7 @@ def _assigned_portal_students_for_test(test):
     ]
     assigned_students.sort(
         key=lambda portal_student: (
-            (getattr(portal_student, "student_name", "") or "").casefold(),
+            (_safe_student_field_value(portal_student, "student_name", "") or "").casefold(),
             getattr(portal_student, "id", 0),
         )
     )
@@ -731,14 +785,14 @@ def get_test_attempt_leaderboard_data(test, current_attempt_id=None, current_por
             if attempt and int(getattr(attempt, "total_marks", 0) or 0) > 0
             else total_marks
         )
-        student_name = getattr(portal_student, "student_name", "") or getattr(portal_student.user, "username", "")
+        student_name = _safe_student_field_value(portal_student, "student_name", "") or getattr(portal_student.user, "username", "")
         entry = {
             "attemptId": attempt.id if attempt else None,
             "studentId": f"portal-{portal_student.id}",
             "studentName": student_name,
-            "studentRef": getattr(portal_student, "username", "") or getattr(portal_student, "contact", ""),
-            "studentBatch": getattr(portal_student, "batch", "") or "",
-            "studentGrade": getattr(portal_student, "grade", "") or "",
+            "studentRef": _safe_student_field_value(portal_student, "username", "") or _safe_student_field_value(portal_student, "contact", ""),
+            "studentBatch": _safe_student_field_value(portal_student, "batch", "") or "",
+            "studentGrade": _safe_student_field_value(portal_student, "grade", "") or "",
             "profilePhotoUrl": _portal_student_photo_url(portal_student),
             "score": score,
             "total": score,
@@ -837,8 +891,8 @@ def is_test_assigned_to_portal_student(test, portal_student) -> bool:
         return False
 
     # 1. Batch Check (Fuzzy and supports multiple comma-separated values)
-    test_batch_raw = getattr(test, "batch", "")
-    student_batch_raw = getattr(portal_student, "batch", "")
+    test_batch_raw = _safe_model_field_value(test, "batch", "")
+    student_batch_raw = _safe_student_field_value(portal_student, "batch", "")
 
     test_batches = _split_scope_values(test_batch_raw)
     if test_batches:
@@ -855,7 +909,7 @@ def is_test_assigned_to_portal_student(test, portal_student) -> bool:
             return False
 
     # 2. Stream Check (Fuzzy)
-    test_stream_raw = getattr(test, "stream", "")
+    test_stream_raw = _safe_model_field_value(test, "stream", "")
     test_streams = _split_scope_values(test_stream_raw)
     
     # If test has no stream restriction, anyone in the batch can see it

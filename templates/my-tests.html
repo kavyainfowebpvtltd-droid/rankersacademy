@@ -982,6 +982,11 @@
       gap: 0.35rem;
     }
 
+    .my-tests-page .attempt-review-note {
+      width: 100%;
+      text-align: right;
+    }
+
     @media (min-width: 992px) {
       .my-tests-page .attempt-review-action {
         width: 25%;
@@ -1813,6 +1818,41 @@
 
     function renderHomeActions(test) {
       clearNode(refs.homeActionRow);
+      if (!test?.attempted || !test?.attemptReviewUrl) {
+        return test;
+      }
+
+      const isAvailable = test.answerKeyAvailable !== false;
+      const availableAt = parseIsoDate(test.answerKeyAvailableAt);
+      const action = document.createElement(isAvailable ? "a" : "button");
+      action.className = `btn ${isAvailable ? "btn-brand" : "btn-outline-light"} attempt-review-action`;
+      action.type = "button";
+
+      const icon = document.createElement("i");
+      icon.className = "bi bi-key";
+      action.appendChild(icon);
+      action.appendChild(document.createTextNode(isAvailable ? "Show Answer Key" : "Answer Key Locked"));
+
+      if (isAvailable) {
+        action.href = test.attemptReviewUrl;
+      } else {
+        action.disabled = true;
+        action.setAttribute("aria-disabled", "true");
+      }
+
+      refs.homeActionRow.appendChild(action);
+
+      if (!isAvailable && availableAt) {
+        const note = document.createElement("div");
+        note.className = "small soft attempt-review-note";
+        note.textContent = `Available after ${availableAt.toLocaleString([], {
+          day: "2-digit",
+          month: "short",
+          hour: "numeric",
+          minute: "2-digit",
+        })}`;
+        refs.homeActionRow.appendChild(note);
+      }
       return test;
     }
 
