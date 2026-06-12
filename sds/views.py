@@ -4494,6 +4494,179 @@ def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_stu
     )
 
 
+ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Maths"]
+ANALYSIS_CLUSTER_SIZE = 12
+
+
+def _normalize_analysis_subject_name(name: str) -> str:
+    value = _norm(name)
+    if "physics" in value or value == "phy":
+        return "Physics"
+    if "chemistry" in value or value == "chem":
+        return "Chemistry"
+    if value in {"maths", "math", "mathematics", "mathmatics"} or "math" in value:
+        return "Maths"
+    return ""
+
+
+def _analysis_subject_scores_from_breakdown(section_breakdown):
+    scores = {subject: 0 for subject in ANALYSIS_SUBJECT_ORDER}
+
+    for index, item in enumerate(section_breakdown or []):
+        mapped = _normalize_analysis_subject_name(item.get("name", ""))
+        if not mapped and index < len(ANALYSIS_SUBJECT_ORDER):
+            mapped = ANALYSIS_SUBJECT_ORDER[index]
+        if not mapped or mapped not in scores:
+            continue
+        scores[mapped] = int(round(float(item.get("percentage") or 0)))
+
+    return scores
+
+
+def _analysis_student_record_from_leaderboard_entry(entry):
+    return {
+        "id": entry.get("studentId", ""),
+        "name": entry.get("studentName", "") or entry.get("studentId", ""),
+        "batch": "",
+        "parentPhone": "",
+        "studentRef": entry.get("studentRef", "") or entry.get("studentId", ""),
+        "profilePhotoUrl": entry.get("profilePhotoUrl"),
+    }
+
+
+def _analysis_portal_student_id(student_id):
+    value = str(student_id or "")
+    if value.startswith("portal-"):
+        try:
+            return int(value.split("-", 1)[1])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _analysis_subject_sections_for_test(test, subject):
+    sections = list(test.sections.all().order_by("order", "id"))
+    subject_sections = [
+        section
+        for section in sections
+        if _normalize_analysis_subject_name(section.name) == subject
+    ]
+    if subject_sections:
+        return subject_sections
+
+    try:
+        return [sections[ANALYSIS_SUBJECT_ORDER.index(subject)]]
+    except (ValueError, IndexError):
+        return sections[:1]
+
+
+def _analysis_focus_label_for_question(question, fallback_index):
+    tag_parts = [
+        part.strip()
+        for part in str(getattr(question, "tags", "") or "").split(",")
+        if part.strip()
+    ]
+    if tag_parts:
+        return tag_parts[0][:80]
+
+    raw_text = re.sub(r"\s+", " ", strip_tags(getattr(question, "question_text", "") or "")).strip()
+    if raw_text:
+        return raw_text[:77] + "..." if len(raw_text) > 80 else raw_text
+
+    return f"Question {fallback_index}"
+
+
+def _build_attempt_subject_focus_items(attempt, subject, limit=4):
+    test = getattr(attempt, "test", None)
+    if not test:
+        return []
+
+    answers_by_question_id = {answer.question_id: answer for answer in attempt.answers.all()}
+    items = []
+    fallback_index = 0
+
+    for section in _analysis_subject_sections_for_test(test, subject):
+        for question in section.questions.all().order_by("order", "id"):
+            fallback_index += 1
+            answer = answers_by_question_id.get(question.id)
+            score = 100 if answer and answer.is_correct else 0
+            items.append(
+                {
+                    "topic": _analysis_focus_label_for_question(question, fallback_index),
+                    "score": score,
+                }
+            )
+
+    if not items:
+        return []
+
+    focus_items = [item for item in items if item["score"] < 100]
+    return (focus_items or items)[:limit]
+
+
+def _build_subject_focus_placeholder(test, subject, limit=4):
+    items = []
+    fallback_index = 0
+    for section in _analysis_subject_sections_for_test(test, subject):
+        for question in section.questions.all().order_by("order", "id"):
+            fallback_index += 1
+            items.append(
+                {
+                    "topic": _analysis_focus_label_for_question(question, fallback_index),
+                    "score": 0,
+                }
+            )
+            if len(items) >= limit:
+                return items
+
+    if items:
+        return items
+
+    return [{"topic": f"{subject} focus pending", "score": 0}]
+
+
+def _latest_analysis_attempts_for_test(test):
+    return _latest_completed_attempts_for_test(test)
+
+
+def _build_analysis_dataset_for_test(test, focus_subject=None):
+    leaderboard = _build_attempt_leaderboard(test)
+    latest_attempts_by_portal_student_id = {
+        attempt.portal_student_id: attempt
+        for attempt in _latest_analysis_attempts_for_test(test)
+        if getattr(attempt, "portal_student_id", None)
+    }
+    scores = []
+    students_by_id = {}
+    focus_by_student = {}
+
+    for entry in leaderboard["entries"]:
+        section_scores = entry.get("sectionScores") or []
+        subject_scores = _analysis_subject_scores_from_breakdown(section_scores)
+        scores.append(
+            {
+                "studentId": entry.get("studentId"),
+                "testId": f"SCH{test.id}",
+                "Physics": subject_scores["Physics"],
+                "Chemistry": subject_scores["Chemistry"],
+                "Maths": subject_scores["Maths"],
+                "total": sum(subject_scores.values()),
+            }
+        )
+        students_by_id[entry["studentId"]] = _analysis_student_record_from_leaderboard_entry(entry)
+
+        if focus_subject:
+            portal_student_id = _analysis_portal_student_id(entry.get("studentId"))
+            attempt = latest_attempts_by_portal_student_id.get(portal_student_id)
+            focus_by_student[entry["studentId"]] = (
+                _build_attempt_subject_focus_items(attempt, focus_subject)
+                if attempt
+                else _build_subject_focus_placeholder(test, focus_subject)
+            )
+
+    return scores, students_by_id, focus_by_student
+
+
 def _build_rewards_payload(completed_tests):
     if not completed_tests:
         return {
