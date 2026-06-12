@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.core.paginator import Paginator
 from decimal import Decimal, ROUND_HALF_UP
@@ -72,7 +72,7 @@ def _redirect_authenticated_user_home(user):
     if user_needs_password_change(user):
         return redirect("force_password_change")
     if hasattr(user, "student"):
-        return redirect("my_tests")
+        return redirect("student-dashboard")
     if _is_admin_or_teacher(user):
         return redirect("admin-dashboard")
     return redirect("login")
@@ -313,20 +313,27 @@ def _is_password_only_test_next_url(next_url: str) -> bool:
 
 
 @csrf_protect
+@never_cache
+@cache_control(no_cache=True, no_store=True, must_revalidate=True, private=True)
 def login_view(request):
     MAX_LOGIN_ATTEMPTS = getattr(settings, 'MAX_LOGIN_ATTEMPTS', 5)
     LOCKOUT_DURATION_SECONDS = getattr(settings, 'LOGIN_LOCKOUT_SECONDS', 900)
     
     if request.method == "POST":
-        identifier = request.POST.get("username")
+        identifier = _normalize_login_identifier(request.POST.get("username"))
         password = request.POST.get("password")
         role = _normalize_login_role(request.POST.get("role"))
 
         if not identifier or not password or not role:
+            logger.info(
+                "login_failed reason=missing_fields role=%s ip=%s",
+                role or "missing",
+                _request_client_ip(request),
+            )
             messages.error(request, "All fields are required")
             return redirect("login")
 
-        username_key = f"login_attempts:{identifier.lower()}"
+        username_key = f"login_attempts:{identifier.casefold()}"
         attempt_data = _cache_get(username_key)
         if attempt_data and attempt_data.get('locked', False):
             lockout_end = attempt_data.get('lockout_end', 0)
@@ -336,6 +343,13 @@ def login_view(request):
                 remaining = int(lockout_end - now)
                 minutes = remaining // 60
                 seconds = remaining % 60
+                logger.warning(
+                    "login_blocked reason=lockout identifier=%s role=%s remaining_seconds=%s ip=%s",
+                    identifier,
+                    role,
+                    remaining,
+                    _request_client_ip(request),
+                )
                 messages.error(request, f"Account temporarily locked due to too many failed attempts. Please try again in {minutes} minutes {seconds} seconds.")
                 return redirect("login")
             else:
@@ -348,6 +362,12 @@ def login_view(request):
             )
         except User.DoesNotExist:
             _increment_failed_attempts(request, identifier, username_key, attempt_data)
+            logger.info(
+                "login_failed reason=user_not_found identifier=%s role=%s ip=%s",
+                identifier,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "Invalid credentials")
             return redirect("login")
 
@@ -355,6 +375,13 @@ def login_view(request):
 
         if not user or not user.is_active:
             _increment_failed_attempts(request, identifier, username_key, attempt_data)
+            logger.info(
+                "login_failed reason=password_mismatch_or_inactive user_id=%s identifier=%s role=%s ip=%s",
+                user_obj.id,
+                identifier,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "Invalid credentials")
             return redirect("login")
 
@@ -371,39 +398,88 @@ def login_view(request):
         # If user is trying to access diagnostic test
         if next_url and _is_password_only_test_next_url(next_url):
             if not hasattr(user, 'student'):
+                logger.info(
+                    "login_failed reason=student_profile_missing user_id=%s role=%s next=%s ip=%s",
+                    user.id,
+                    role,
+                    next_url,
+                    _request_client_ip(request),
+                )
                 messages.error(request, "Student profile not found. Please contact admin.")
                 return redirect('login')
             # User should be student role
             if role == "Student":
+                logger.info("login_success user_id=%s role=%s next=%s", user.id, role, next_url)
                 return redirect(next_url)
             else:
+                logger.info(
+                    "login_failed reason=wrong_role_for_test user_id=%s role=%s next=%s ip=%s",
+                    user.id,
+                    role,
+                    next_url,
+                    _request_client_ip(request),
+                )
                 messages.error(request, "Only students can access the diagnostic test.")
                 return redirect('login')
 
         if role == "Student":
             if hasattr(user, "student"):
-                return redirect("my_tests")
+                logger.info("login_success user_id=%s role=%s", user.id, role)
+                return redirect("student-dashboard")
+            logger.info(
+                "login_failed reason=student_profile_missing user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not registered as a student")
             return redirect("login")
 
         if role == "Teacher":
             if _can_login_as_teacher(user):
+                logger.info("login_success user_id=%s role=%s", user.id, role)
                 return redirect("admin-dashboard")
+            logger.info(
+                "login_failed reason=wrong_role user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not authorized")
             return redirect("login")
 
         if role == "Admin":
             if _can_login_as_admin(user):
+                logger.info("login_success user_id=%s role=%s", user.id, role)
                 return redirect("admin-dashboard")
+            logger.info(
+                "login_failed reason=wrong_role user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not authorized")
             return redirect("login")
 
         if role == "Teacher/Admin":
             if _can_login_as_teacher(user) or _can_login_as_admin(user):
+                logger.info("login_success user_id=%s role=%s", user.id, role)
                 return redirect("admin-dashboard")
+            logger.info(
+                "login_failed reason=wrong_role user_id=%s role=%s ip=%s",
+                user.id,
+                role,
+                _request_client_ip(request),
+            )
             messages.error(request, "You are not authorized")
             return redirect("login")
 
+        logger.info(
+            "login_failed reason=invalid_role_selection user_id=%s role=%s ip=%s",
+            user.id,
+            role,
+            _request_client_ip(request),
+        )
         messages.error(request, "Invalid role selection")
         return redirect("login")
 
@@ -478,8 +554,26 @@ def _increment_failed_attempts(request, identifier, username_key, attempt_data):
     if username_locked:
         lockout_end = now + LOCKOUT_DURATION_SECONDS
         _cache_set(username_key, {'attempts': username_attempts, 'locked': True, 'lockout_end': lockout_end}, LOCKOUT_DURATION_SECONDS)
+        logger.warning(
+            "login_lockout identifier=%s attempts=%s lockout_seconds=%s ip=%s",
+            identifier,
+            username_attempts,
+            LOCKOUT_DURATION_SECONDS,
+            _request_client_ip(request),
+        )
     else:
         _cache_set(username_key, {'attempts': username_attempts, 'locked': False}, LOCKOUT_DURATION_SECONDS)
+
+
+def _normalize_login_identifier(identifier: str | None) -> str:
+    return (identifier or "").strip().lower()
+
+
+def _request_client_ip(request) -> str:
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "")
 
 
 def _normalize_login_role(role: str | None) -> str:
@@ -785,7 +879,7 @@ def verify_login_otp(request):
         return JsonResponse({"ok": True, "redirect": reverse("force_password_change")})
 
     if role == "Student":
-        return JsonResponse({"ok": True, "redirect": reverse("my_tests")})
+        return JsonResponse({"ok": True, "redirect": reverse("student-dashboard")})
     return JsonResponse({"ok": True, "redirect": "/dashboard/admin-dashboard/"})
 
 
@@ -2648,81 +2742,132 @@ def _build_test_analysis_session(user) -> dict:
     }
 
 
-def _render_static_test_analysis_template(request, template_name: str, session: dict):
-    context = {
-        "test_analysis_session": json.dumps(session),
-        "test_analysis_payload": json.dumps({}),
-        "test_analysis_static_mode": True,
-    }
-    return render(request, template_name, context)
+TEST_ANALYSIS_CACHE_TTL_SECONDS = 300
+TEST_ANALYSIS_MAX_COMPLETED_TESTS = 12
 
 
-def _render_demo_test_analysis_template(request, template_name: str, session: dict):
-    payload = _build_test_analysis_page_payload(session)
+def _analysis_test_matches_subject(test, subject: str) -> bool:
+    if not subject:
+        return True
+
+    test_subject = _normalize_analysis_subject_name(
+        _analysis_safe_model_field_value(test, "subject", "")
+    )
+    if test_subject == subject:
+        return True
+
+    for section in test.sections.all().order_by("order", "id"):
+        if _normalize_analysis_subject_name(getattr(section, "name", "")) == subject:
+            return True
+
+    return False
+
+
+def _analysis_payload_cache_key(role: str, *, subject: str = "") -> str:
+    return f"test-analysis:{role}:{subject or 'all'}"
+
+
+def _analysis_cache_get(cache_key, builder):
+    cached_payload = cache.get(cache_key)
+    if cached_payload is not None:
+        return cached_payload
+
+    payload = builder()
+    cache.set(cache_key, payload, TEST_ANALYSIS_CACHE_TTL_SECONDS)
+    return payload
+
+
+def _build_faculty_test_analysis_payload(user):
+    subject = _faculty_test_analysis_subject(user)
+    cache_key = _analysis_payload_cache_key("faculty", subject=subject)
+
+    def build_payload():
+        base_payload = _build_test_analysis_base_payload(
+            focus_subject=subject,
+            max_completed_tests=TEST_ANALYSIS_MAX_COMPLETED_TESTS,
+        )
+        completed_test_ids = [test["external_id"] for test in base_payload["completedTests"]]
+        return {
+            "faculty": {
+                **base_payload,
+                "faculty": {
+                    "name": _display_name(user),
+                    "subject": subject,
+                },
+                "attendanceByTest": _build_attendance_state_payload(
+                    test_ids=completed_test_ids,
+                    subject=subject,
+                ),
+                "notesByTest": _build_note_state_payload(
+                    user,
+                    test_ids=completed_test_ids,
+                    subject=subject,
+                ),
+            }
+        }
+
+    return _analysis_cache_get(cache_key, build_payload)
+
+
+def _build_admin_test_analysis_payload():
+    cache_key = _analysis_payload_cache_key("admin")
+
+    def build_payload():
+        base_payload = _build_test_analysis_base_payload(
+            max_completed_tests=TEST_ANALYSIS_MAX_COMPLETED_TESTS,
+        )
+        return {
+            "admin": {
+                **base_payload,
+                "attendanceByTest": _build_attendance_state_payload(
+                    test_ids=[test["external_id"] for test in base_payload["completedTests"]],
+                ),
+                "notesByTest": _build_note_state_payload(
+                    None,
+                    test_ids=[test["external_id"] for test in base_payload["completedTests"]],
+                ),
+            }
+        }
+
+    return _analysis_cache_get(cache_key, build_payload)
+
+
+def _render_test_analysis_template(request, template_name: str):
+    if template_name == "test-analysis-admin.html":
+        payload = _build_admin_test_analysis_payload()
+    elif template_name == "test-analysis-faculty.html":
+        payload = _build_faculty_test_analysis_payload(request.user)
+    else:
+        payload = {}
+
     context = {
-        "test_analysis_session": json.dumps(session),
+        "test_analysis_session": json.dumps(_build_test_analysis_session(request.user)),
         "test_analysis_payload": json.dumps(payload),
-        "test_analysis_static_mode": False,
     }
     return render(request, template_name, context)
-
-
-def _static_test_analysis_admin_session() -> dict:
-    return {"type": "admin"}
-
-
-def _static_test_analysis_faculty_session() -> dict:
-    return {
-        "type": "faculty",
-        "faculty": {
-            "name": "Faculty Demo",
-            "subject": "Physics",
-        },
-    }
 
 
 @login_required
 def test_analysis(request):
     if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return _render_demo_test_analysis_template(
-            request,
-            "test-analysis-admin.html",
-            _build_test_analysis_session(request.user),
-        )
+        return _render_test_analysis_template(request, "test-analysis-admin.html")
     if _is_teacher_user(request.user):
-        return _render_demo_test_analysis_template(
-            request,
-            "test-analysis-faculty.html",
-            _build_test_analysis_session(request.user),
-        )
-    return HttpResponseForbidden("Only admins and teachers can access test analysis.")
+        return _render_test_analysis_template(request, "test-analysis-faculty.html")
+    return redirect("login")
 
 
 @login_required
 def test_analysis_admin_page(request):
-    if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return _render_demo_test_analysis_template(
-            request,
-            "test-analysis-admin.html",
-            _build_test_analysis_session(request.user),
-        )
-    if _is_teacher_user(request.user):
-        return redirect("test-analysis-faculty-page")
-    else:
-        return HttpResponseForbidden("Only admins can access the admin test analysis page.")
+    if not (_is_superadmin(request.user) or _is_admin_user(request.user)):
+        return redirect("test-analysis")
+    return _render_test_analysis_template(request, "test-analysis-admin.html")
 
 
 @login_required
 def test_analysis_faculty_page(request):
-    if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return redirect("test-analysis-admin-page")
     if not _is_teacher_user(request.user):
-        return HttpResponseForbidden("Only teachers can access the faculty test analysis page.")
-    return _render_demo_test_analysis_template(
-        request,
-        "test-analysis-faculty.html",
-        _build_test_analysis_session(request.user),
-    )
+        return redirect("test-analysis")
+    return _render_test_analysis_template(request, "test-analysis-faculty.html")
 
 
 @login_required
@@ -4873,15 +5018,123 @@ def _serialize_test_analysis_test_item(test, assigned_students=None):
     return _analysis_test_payload(test, assigned_students or [])
 
 
-def _analysis_student_payload(student):
+def _serialize_test_analysis_upcoming_placeholder():
     return {
-        "id": f"portal-{student.id}",
-        "studentRef": str(_analysis_student_field_value(student, "username", "") or student.id),
-        "name": _analysis_student_field_value(student, "student_name", "") or f"Student {student.id}",
-        "batch": _analysis_student_field_value(student, "batch", ""),
-        "grade": _analysis_student_field_value(student, "grade", ""),
-        "parentPhone": _analysis_student_field_value(student, "contact", ""),
-        "profilePhotoUrl": _student_photo_url(student),
+        "id": "",
+        "external_id": None,
+        "name": "Upcoming Test",
+        "batch": "",
+        "batchKeys": [],
+        "date": "Awaiting schedule",
+        "shortDate": "Soon",
+        "sortAt": "",
+        "totalMarks": 0,
+        "sectionBreakdown": [],
+        "kind": "placeholder",
+        "canLaunchNow": False,
+        "isLive": False,
+    }
+
+
+def _serialize_test_analysis_test_item(test, start_at):
+    test_item = _analysis_test_payload(test, [])
+    test_item.update(
+        {
+            "sortAt": start_at.isoformat(),
+            "kind": "completed",
+            "canLaunchNow": False,
+            "isLive": False,
+        }
+    )
+    return test_item
+
+
+def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests=None):
+    now = timezone.localtime()
+    completed_tests = []
+    upcoming_test = None
+    students_by_id = {}
+    scores_by_test = {}
+    focus_by_test = {}
+
+    missing_required_fields = _analysis_missing_model_fields(
+        ScholarshipTest,
+        "scheduled_start_at",
+        "batch",
+        "subject",
+    )
+    if missing_required_fields:
+        logger.warning(
+            "Skipping test analysis payload because scholarship test columns are unavailable: %s",
+            ", ".join(missing_required_fields),
+        )
+    else:
+        try:
+            published_tests = (
+                _schema_safe_scholarship_test_queryset()
+                .filter(status="published", scheduled_start_at__isnull=False)
+                .order_by("scheduled_start_at", "id")
+                .prefetch_related("sections__questions")
+            )
+
+            for test in published_tests:
+                if not scholarship_test_service.get_runtime_questions_for_test(test):
+                    continue
+                if focus_subject and not _analysis_test_matches_subject(test, focus_subject):
+                    continue
+
+                start_at = scholarship_test_service.get_test_scheduled_start_at(test)
+                if not start_at:
+                    continue
+                end_at = start_at + timedelta(
+                    minutes=scholarship_test_service.get_test_duration_minutes(test)
+                )
+                test_item = _serialize_test_analysis_test_item(test, start_at)
+
+                if end_at > now:
+                    if upcoming_test is None:
+                        upcoming_test = {
+                            **test_item,
+                            "kind": "upcoming",
+                            "canLaunchNow": False,
+                            "isLive": start_at <= now < end_at,
+                        }
+                    continue
+
+                score_rows, students_for_test, focus_for_test = _build_analysis_dataset_for_test(
+                    test,
+                    focus_subject=focus_subject,
+                )
+                completed_tests.append((start_at, test_item, score_rows, students_for_test, focus_for_test))
+        except (OperationalError, ProgrammingError) as exc:
+            logger.warning(
+                "Skipping test analysis payload because scholarship test schema is incompatible: %s",
+                exc,
+            )
+
+    completed_tests.sort(key=lambda item: item[0], reverse=True)
+    if max_completed_tests is not None:
+        completed_tests = completed_tests[: max(0, int(max_completed_tests or 0))]
+    completed_tests.reverse()
+
+    final_completed_tests = []
+    for _, test_item, score_rows, students_for_test, focus_for_test in completed_tests:
+        final_completed_tests.append(test_item)
+        students_by_id.update(students_for_test)
+        scores_by_test[test_item["id"]] = score_rows
+        if focus_subject:
+            focus_by_test[test_item["id"]] = focus_for_test
+
+    return {
+        "students": sorted(
+            students_by_id.values(),
+            key=lambda item: ((item.get("name") or "").lower(), item.get("id") or ""),
+        ),
+        "batches": _build_test_analysis_batches_payload(),
+        "completedTests": final_completed_tests,
+        "upcomingTest": upcoming_test or _serialize_test_analysis_upcoming_placeholder(),
+        "scoresByTest": scores_by_test,
+        "focusByTest": focus_by_test,
     }
 
 
@@ -4959,76 +5212,28 @@ def _build_note_state_payload(test=None):
     return payload
 
 
-def _build_test_analysis_batches_payload(students=None, tests=None):
-    students = list(students or _schema_safe_analysis_student_queryset())
-    tests = list(tests or [])
-    batches = {}
+def _build_admin_test_analysis_payload():
+    cache_key = _analysis_payload_cache_key("admin")
 
-    def ensure(value):
-        key = _normalize_analysis_batch_key(value)
-        if key and key not in batches:
-            batches[key] = {"id": key, "label": _analysis_batch_label(value), "studentCount": 0, "testCount": 0}
-        return key
-
-    for student in students:
-        ensure(_analysis_student_field_value(student, "batch", ""))
-        ensure(_analysis_student_field_value(student, "grade", ""))
-    for test in tests:
-        for value in _split_analysis_batch_values(_analysis_safe_model_field_value(test, "batch", "")):
-            ensure(value)
-
-    for key, batch in batches.items():
-        batch["studentCount"] = sum(
-            1 for student in students
-            if _student_matches_analysis_batch(student, key)
+    def build_payload():
+        base_payload = _build_test_analysis_base_payload(
+            max_completed_tests=TEST_ANALYSIS_MAX_COMPLETED_TESTS,
         )
-        batch["testCount"] = sum(
-            1 for test in tests
-            if key in [
-                _normalize_analysis_batch_key(value)
-                for value in _split_analysis_batch_values(_analysis_safe_model_field_value(test, "batch", ""))
-            ]
-        )
-
-    preferred = ["star01", "star02", "alpha", "grade10", "grade9"]
-    return sorted(
-        batches.values(),
-        key=lambda item: (
-            preferred.index(item["id"]) if item["id"] in preferred else len(preferred),
-            item["label"].casefold(),
-        ),
-    )
-
-
-def _build_test_analysis_base_payload():
-    missing_required_fields = _analysis_missing_model_fields(
-        ScholarshipTest,
-        "scheduled_start_at",
-        "batch",
-        "subject",
-    )
-    batches = _build_test_analysis_batches_payload()
-    if missing_required_fields:
+        completed_test_ids = [test["external_id"] for test in base_payload["completedTests"]]
         return {
-            "students": [],
-            "batches": batches,
-            "completedTests": [],
-            "upcomingTest": {
-                "id": "",
-                "external_id": None,
-                "name": "Upcoming Test",
-                "date": "Awaiting schedule",
-                "shortDate": "Soon",
-                "sortAt": "",
-                "kind": "placeholder",
-                "canLaunchNow": False,
-                "isLive": False,
-            },
-            "scoresByTest": {},
-            "focusByTest": {},
-            "attendanceByTest": {},
-            "notesByTest": {},
+            "admin": {
+                **base_payload,
+                "attendanceByTest": _build_attendance_state_payload(
+                    test_ids=completed_test_ids,
+                ),
+                "notesByTest": _build_note_state_payload(
+                    None,
+                    test_ids=completed_test_ids,
+                ),
+            }
         }
+
+    return _analysis_cache_get(cache_key, build_payload)
 
     now = timezone.localtime()
     tests = list(
@@ -5732,7 +5937,7 @@ def _draw_header_footer(canvas, doc):
 
     canvas.setFillColor(colors.HexColor("#9CA3AF"))
     canvas.setFont("Helvetica", 7)
-    canvas.drawCentredString(width / 2, 12 * mm, "© Ranker's Academy | Student Self Diagnostic Report")
+    canvas.drawCentredString(width / 2, 12 * mm, "Â© Ranker's Academy | Student Self Diagnostic Report")
 
 def _generate_pdf_bytes_for_student(student_obj: Student, target_user: User) -> tuple[bytes, str]:
     
@@ -6768,7 +6973,7 @@ def report(request):
             focus_recs.append({
                 "subject": c.subject.name,
                 "percent": int(round(percent)),
-                "topics": [f"{t.chapter.name} → {t.name}" for t in remaining_topics],
+                "topics": [f"{t.chapter.name} â†’ {t.name}" for t in remaining_topics],
             })
 
         if percent > 85:
@@ -6776,7 +6981,7 @@ def report(request):
             strength_recs.append({
                 "subject": c.subject.name,
                 "percent": int(round(percent)),
-                "topics": [f"{t.chapter.name} → {t.name}" for t in covered_topics],
+                "topics": [f"{t.chapter.name} â†’ {t.name}" for t in covered_topics],
             })
 
     pdf_subjects = []
@@ -6800,7 +7005,7 @@ def report(request):
                     status = "Not Attempted"
                     correct_q = 0
                     accuracy = "NA" if total_q == 0 else "0%"
-                    not_attempted_list.append(f"{t.chapter.name} → {t.name}")
+                    not_attempted_list.append(f"{t.chapter.name} â†’ {t.name}")
                 else:
                     if t.id in correct_ids:
                         status = "Strong"
@@ -6810,7 +7015,7 @@ def report(request):
                         status = "Weak"
                         correct_q = 0
                         accuracy = "0%" if total_q > 0 else "NA"
-                        weak_list.append(f"{t.chapter.name} → {t.name}")
+                        weak_list.append(f"{t.chapter.name} â†’ {t.name}")
             else:
                 if t.id in covered_ids:
                     status = "Strong"
@@ -6820,7 +7025,7 @@ def report(request):
                     status = "Not Attempted"
                     correct_q = 0
                     accuracy = "NA" if total_q == 0 else "0%"
-                    not_attempted_list.append(f"{t.chapter.name} → {t.name}")
+                    not_attempted_list.append(f"{t.chapter.name} â†’ {t.name}")
 
             if status in ("Weak", "Not Attempted"):
                 rows.append([

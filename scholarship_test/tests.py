@@ -389,6 +389,38 @@ class ScholarshipRuntimeTestFlowTests(TestCase):
         self.assertEqual(latest_attempt.test_id, selected_test.id)
         self.assertEqual(latest_attempt.student_id, self.student.id)
 
+@override_settings(ROOT_URLCONF="sds_main.urls")
+class ScholarshipManualMarksOptionsTests(TestCase):
+    def test_manual_mark_options_endpoint_returns_recent_students_and_tests(self):
+        user = User.objects.create_user(
+            username="manualstudent",
+            password="pass12345",
+        )
+        student = Student.objects.create(
+            user=user,
+            username="manualstudent",
+            student_name="Manual Student",
+            contact="9876543210",
+            board="CBSE",
+            grade="10th",
+            batch="Alpha",
+        )
+        test = ScholarshipTest.objects.create(
+            name="Manual Marks Test",
+            status="draft",
+            duration_hours=1,
+            duration_minutes=0,
+            subject="Physics",
+        )
+
+        client = Client()
+        response = client.get(reverse("scholarship_test:api_manual_mark_options"))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(any(item["id"] == test.id for item in payload["tests"]))
+        self.assertTrue(any(item["id"] == student.id for item in payload["students"]))
+
     def test_start_test_reuses_existing_in_progress_attempt(self):
         runtime_test, section = self.create_runtime_test(name='Resume Test')
         self.add_mcq_question(section)

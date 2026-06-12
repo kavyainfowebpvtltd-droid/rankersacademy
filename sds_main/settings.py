@@ -1,4 +1,19 @@
+import os
 from pathlib import Path
+
+
+def _env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_list(name, default):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -11,18 +26,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-)-#wj42wfm88kx+@@_pc2++83-7f9yls%kw2l+n8kfq6fas6u*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool("DJANGO_DEBUG", True)
 
-ALLOWED_HOSTS = [
+ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", [
     "147.93.29.224",
     "rankersonlinetest.com",
     "www.rankersonlinetest.com",
-]
+])
 
-CSRF_TRUSTED_ORIGINS = [
-"https://rankersonlinetest.com",
-"https://www.rankersonlinetest.com"
-]
+CSRF_TRUSTED_ORIGINS = _env_list("DJANGO_CSRF_TRUSTED_ORIGINS", [
+    "https://rankersonlinetest.com",
+    "https://www.rankersonlinetest.com",
+])
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -50,6 +65,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'sds.middleware.RequestTimingMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -135,13 +151,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = Path(os.getenv("DJANGO_STATIC_ROOT", str(BASE_DIR / 'static')))
 STATICFILES_DIRS = [
     BASE_DIR / 'sds_main' / 'static',
 ]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR /'media'
+MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", str(BASE_DIR / 'media')))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -153,7 +169,11 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = os.getenv(
+    "DJANGO_SESSION_ENGINE",
+    "django.contrib.sessions.backends.cache",
+)
+SESSION_CACHE_ALIAS = os.getenv("DJANGO_SESSION_CACHE_ALIAS", "default")
 
 MAX_LOGIN_ATTEMPTS = 30
 LOGIN_LOCKOUT_SECONDS = 900
@@ -163,7 +183,13 @@ LOGIN_LOCKOUT_SECONDS = 900
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/1"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": _env_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", False),
+        },
+        "KEY_PREFIX": os.getenv("DJANGO_CACHE_KEY_PREFIX", "rankers"),
     }
 }
 
@@ -212,8 +238,18 @@ MSG91_OTP_EXPIRY_MINUTES = 10
 MSG91_COUNTRY_CODE = "91"
 
 # Network settings
-MSG91_TIMEOUT_SECONDS = 60
+MSG91_TIMEOUT_SECONDS = int(os.getenv("MSG91_TIMEOUT_SECONDS", "10"))
 MSG91_REALTIME_RESPONSE = 1
+
+REQUEST_TIMING_LOG_PATHS = {
+    "/",
+    "/my-tests/",
+    "/my-tests/live-state/",
+    "/auth/send-login-otp/",
+    "/auth/verify-login-otp/",
+}
+SLOW_REQUEST_MS = int(os.getenv("SLOW_REQUEST_MS", "1000"))
+SLOW_QUERY_MS = int(os.getenv("SLOW_QUERY_MS", "250"))
 
 # Sender ID (for reference, may not be needed for OTP API)
 MSG91_OTP_SENDER = "RANKER"

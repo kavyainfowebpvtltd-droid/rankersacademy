@@ -19,6 +19,7 @@ urlpatterns = [
     
     # Test Management APIs
     path('api/tests/', views.api_get_tests, name="api_get_tests"),
+    path('api/manual-marks/options/', views.api_manual_mark_options, name="api_manual_mark_options"),
     path('api/tests/create/', views.api_create_test, name="api_create_test"),
     path('api/tests/<int:test_id>/save-question/', views.api_save_question, name="api_save_question"),
     path('api/tests/<int:test_id>/', views.api_get_test_details, name="api_get_test_details"),

@@ -4,6 +4,7 @@ let allFolders = [];
 let isInsideFolderView = false;
 let pendingDeleteFolders = [];
 let currentFolderId = null;
+let manualMarkOptionsLoaded = false;
 
 function initializeCreateTestDateTimeFields() {
   const dateInput = document.getElementById("test-date-input");
@@ -151,6 +152,126 @@ function confirmDeleteSelectedFolders() {
     });
 }
 
+function openManualMarksModal() {
+  const form = document.getElementById("manual-marks-form");
+  if (form) form.reset();
+  updateManualMarksTotal();
+  loadManualMarkOptions();
+  const modalEl = document.getElementById("manualMarksModal");
+  if (!modalEl) return;
+  new bootstrap.Modal(modalEl).show();
+}
+
+function updateManualMarksTotal() {
+  const totalEl = document.getElementById("manual-total-score");
+  if (!totalEl) return;
+
+  const fields = [
+    "manual-physics-input",
+    "manual-chemistry-input",
+    "manual-biology-input",
+  ];
+  const total = fields.reduce((sum, id) => {
+    const value = parseInt(document.getElementById(id)?.value || "0", 10);
+    return sum + (Number.isFinite(value) ? value : 0);
+  }, 0);
+  totalEl.textContent = String(total);
+}
+
+function saveManualMarks() {
+  const testInput = document.getElementById("manual-test-input");
+  const studentInput = document.getElementById("manual-student-input");
+  const saveBtn = document.getElementById("manual-marks-save-btn");
+
+  const payload = {
+    test_id: testInput?.value || "",
+    student_id: studentInput?.value || "",
+    physics: document.getElementById("manual-physics-input")?.value || "0",
+    chemistry: document.getElementById("manual-chemistry-input")?.value || "0",
+    biology: document.getElementById("manual-biology-input")?.value || "0",
+  };
+
+  if (!payload.test_id || !payload.student_id) {
+    showToast("Please select test and student");
+    return;
+  }
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+  }
+
+  fetch("/scholarship/api/manual-marks/save/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify(payload),
+  })
+    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok || !data.success) {
+        throw new Error(data.error || "Unable to save marks");
+      }
+      const modal = bootstrap.Modal.getInstance(
+        document.getElementById("manualMarksModal"),
+      );
+      if (modal) modal.hide();
+      showToast(data.message || "Manual marks saved successfully");
+    })
+    .catch((err) => {
+      console.error("Manual marks save failed:", err);
+      showToast(err.message || "Unable to save marks");
+    })
+    .finally(() => {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Marks";
+      }
+    });
+}
+
+async function loadManualMarkOptions() {
+  if (manualMarkOptionsLoaded) return;
+
+  try {
+    const response = await fetch("/scholarship/api/manual-marks/options/");
+    if (!response.ok) {
+      throw new Error("Unable to load manual mark options");
+    }
+
+    const data = await response.json();
+    populateManualMarkSelect(
+      "manual-test-input",
+      data.tests || [],
+      (item) => `${item.name || "Test"}${item.subject ? ` - ${item.subject}` : ""}${item.batch ? ` (${item.batch})` : ""}`,
+    );
+    populateManualMarkSelect(
+      "manual-student-input",
+      data.students || [],
+      (item) => `${item.username || item.id} - ${item.student_name || ""}${item.batch ? ` (${item.batch})` : ""}`,
+    );
+    document.querySelectorAll(".manual-score-input").forEach((input) => {
+      input.addEventListener("input", updateManualMarksTotal);
+    });
+    manualMarkOptionsLoaded = true;
+  } catch (err) {
+    console.error("Error loading manual mark options:", err);
+    showToast("Unable to load manual marks list");
+  }
+}
+
+function populateManualMarkSelect(selectId, items, labelBuilder) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const placeholder = selectId === "manual-test-input" ? "Select Test" : "Select Student";
+  select.innerHTML = [`<option value="">${placeholder}</option>`]
+    .concat(items.map((item) => `<option value="${item.id}">${labelBuilder(item)}</option>`))
+    .join("");
+}
+
 function showToast(message) {
   // Simple toast implementation
   const toast = document.createElement("div");
@@ -208,6 +329,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (copyModalEl) {
     copyModalEl.addEventListener("hidden.bs.modal", () => {
       document.getElementById("copy-test-form").reset();
+    });
+  }
+
+  const manualMarksModalEl = document.getElementById("manualMarksModal");
+  if (manualMarksModalEl) {
+    manualMarksModalEl.addEventListener("show.bs.modal", () => {
+      loadManualMarkOptions();
     });
   }
 });

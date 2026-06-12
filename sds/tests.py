@@ -1,5 +1,4 @@
 import json
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -215,7 +214,7 @@ class LoginThrottleTests(TestCase):
             REMOTE_ADDR=shared_ip,
         )
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))
 
     def test_account_lock_still_applies_after_repeated_failures(self):
         for _ in range(5):
@@ -351,7 +350,7 @@ class StudentLoginRedirectTests(TestCase):
             gender="Male",
         )
 
-    def test_password_login_redirects_student_to_my_tests(self):
+    def test_password_login_redirects_student_to_dashboard(self):
         response = self.client.post(
             reverse("login"),
             {
@@ -361,11 +360,11 @@ class StudentLoginRedirectTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))
 
     @patch("sds.views._is_msg91_verified", return_value=True)
     @patch("sds.views._msg91_verify_otp", return_value={"type": "success"})
-    def test_otp_login_redirects_student_to_my_tests(self, _mock_verify, _mock_is_verified):
+    def test_otp_login_redirects_student_to_dashboard(self, _mock_verify, _mock_is_verified):
         cache.set(
             "otp:login:9876543299",
             {"user_id": self.user.id, "role": "Student", "attempts": 0},
@@ -384,7 +383,7 @@ class StudentLoginRedirectTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(
             response.content.decode("utf-8"),
-            {"ok": True, "redirect": reverse("my_tests")},
+            {"ok": True, "redirect": reverse("student-dashboard")},
         )
 
 
@@ -487,54 +486,36 @@ class TestAnalysisSchemaSafetyTests(TestCase):
             )
             self.assertIsNone(views._teacheradmin(user))
 
+    def test_analysis_test_matches_subject_uses_test_subject_or_section_names(self):
+        test = Mock()
+        physics_section = Mock()
+        physics_section.name = "Physics Revision"
+        chemistry_section = Mock()
+        chemistry_section.name = "Chemistry Drill"
+        test.sections.all.return_value.order_by.return_value = [
+            physics_section,
+            chemistry_section,
+        ]
+
+        with patch(
+            "sds.views._analysis_safe_model_field_value",
+            return_value="",
+        ):
+            self.assertTrue(views._analysis_test_matches_subject(test, "Physics"))
+            self.assertTrue(views._analysis_test_matches_subject(test, "Chemistry"))
+            self.assertFalse(views._analysis_test_matches_subject(test, "Biology"))
+
 
 @override_settings(ROOT_URLCONF="sds.urls")
-class TestAnalysisBackendPageTests(TestCase):
-    def test_test_analysis_page_requires_login(self):
-        response = self.client.get(reverse("test-analysis"))
-
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse("login"), response["Location"])
-
-    def test_test_analysis_page_renders_backend_admin_payload(self):
-        admin = User.objects.create_superuser(
-            username="analysisadmin",
-            email="analysisadmin@example.com",
-            password="adminpass123",
-        )
-        self.client.force_login(admin)
-
+class TestAnalysisStaticPageTests(TestCase):
+    def test_test_analysis_page_renders_without_login_in_static_mode(self):
         response = self.client.get(reverse("test-analysis"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-page="admin"')
         self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = false;')
 
-    def test_faculty_page_renders_backend_teacher_payload(self):
-        teacher_user = User.objects.create_user(
-            username="analysisfaculty",
-            email="analysisfaculty@example.com",
-            password="teacherpass123",
-        )
-        TeacherAdmin.objects.create(
-            user=teacher_user,
-            name="Analysis Faculty",
-            username="analysisfaculty",
-            email="analysisfaculty@example.com",
-            contact="9898989801",
-            gender="Female",
-            role="Teacher",
-            subjects="Physics",
-        )
-        self.client.force_login(teacher_user)
-
-        response = self.client.get(reverse("test-analysis"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-page="teacher"')
-        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = false;')
-
-    def test_test_analysis_login_page_redirects_to_test_analysis(self):
+    def test_test_analysis_login_page_redirects_to_static_test_analysis(self):
         response = self.client.get(reverse("test-analysis-login-page"))
 
         self.assertRedirects(
