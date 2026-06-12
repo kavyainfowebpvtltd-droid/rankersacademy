@@ -2647,28 +2647,94 @@ def _build_test_analysis_session(user) -> dict:
     }
 
 
+TEST_ANALYSIS_CACHE_TTL_SECONDS = 300
+TEST_ANALYSIS_MAX_COMPLETED_TESTS = 12
+
+
+def _analysis_test_matches_subject(test, subject: str) -> bool:
+    if not subject:
+        return True
+
+    test_subject = _normalize_analysis_subject_name(
+        _analysis_safe_model_field_value(test, "subject", "")
+    )
+    if test_subject == subject:
+        return True
+
+    for section in test.sections.all().order_by("order", "id"):
+        if _normalize_analysis_subject_name(getattr(section, "name", "")) == subject:
+            return True
+
+    return False
+
+
+def _analysis_payload_cache_key(role: str, *, subject: str = "") -> str:
+    return f"test-analysis:{role}:{subject or 'all'}"
+
+
+def _analysis_cache_get(cache_key, builder):
+    cached_payload = cache.get(cache_key)
+    if cached_payload is not None:
+        return cached_payload
+
+    payload = builder()
+    cache.set(cache_key, payload, TEST_ANALYSIS_CACHE_TTL_SECONDS)
+    return payload
+
+
 def _build_faculty_test_analysis_payload(user):
     subject = _faculty_test_analysis_subject(user)
-    base_payload = _build_test_analysis_base_payload(focus_subject=subject)
-    completed_test_ids = [test["external_id"] for test in base_payload["completedTests"]]
-    return {
-        "faculty": {
-            **base_payload,
+    cache_key = _analysis_payload_cache_key("faculty", subject=subject)
+
+    def build_payload():
+        base_payload = _build_test_analysis_base_payload(
+            focus_subject=subject,
+            max_completed_tests=TEST_ANALYSIS_MAX_COMPLETED_TESTS,
+        )
+        completed_test_ids = [test["external_id"] for test in base_payload["completedTests"]]
+        return {
             "faculty": {
-                "name": _display_name(user),
-                "subject": subject,
-            },
-            "attendanceByTest": _build_attendance_state_payload(
-                test_ids=completed_test_ids,
-                subject=subject,
-            ),
-            "notesByTest": _build_note_state_payload(
-                user,
-                test_ids=completed_test_ids,
-                subject=subject,
-            ),
+                **base_payload,
+                "faculty": {
+                    "name": _display_name(user),
+                    "subject": subject,
+                },
+                "attendanceByTest": _build_attendance_state_payload(
+                    test_ids=completed_test_ids,
+                    subject=subject,
+                ),
+                "notesByTest": _build_note_state_payload(
+                    user,
+                    test_ids=completed_test_ids,
+                    subject=subject,
+                ),
+            }
         }
-    }
+
+    return _analysis_cache_get(cache_key, build_payload)
+
+
+def _build_admin_test_analysis_payload():
+    cache_key = _analysis_payload_cache_key("admin")
+
+    def build_payload():
+        base_payload = _build_test_analysis_base_payload(
+            max_completed_tests=TEST_ANALYSIS_MAX_COMPLETED_TESTS,
+        )
+        return {
+            "admin": {
+                **base_payload,
+                "attendanceByTest": _build_attendance_state_payload(
+                    test_ids=[test["external_id"] for test in base_payload["completedTests"]],
+                ),
+                "notesByTest": _build_note_state_payload(
+                    None,
+                    test_ids=[test["external_id"] for test in base_payload["completedTests"]],
+                ),
+            }
+        }
+
+    return _analysis_cache_get(cache_key, build_payload)
 
 
 def _render_test_analysis_template(request, template_name: str):
@@ -2686,51 +2752,27 @@ def _render_test_analysis_template(request, template_name: str):
     return render(request, template_name, context)
 
 
-def _render_static_test_analysis_template(request, template_name: str, session: dict):
-    context = {
-        "test_analysis_session": json.dumps(session),
-        "test_analysis_payload": json.dumps({}),
-        "test_analysis_static_mode": True,
-    }
-    return render(request, template_name, context)
-
-
-def _static_test_analysis_admin_session() -> dict:
-    return {"type": "admin"}
-
-
-def _static_test_analysis_faculty_session() -> dict:
-    return {
-        "type": "faculty",
-        "faculty": {
-            "name": "Faculty Demo",
-            "subject": "Physics",
-        },
-    }
-
-
+@login_required
 def test_analysis(request):
-    return _render_static_test_analysis_template(
-        request,
-        "test-analysis-admin.html",
-        _static_test_analysis_admin_session(),
-    )
+    if _is_superadmin(request.user) or _is_admin_user(request.user):
+        return _render_test_analysis_template(request, "test-analysis-admin.html")
+    if _is_teacher_user(request.user):
+        return _render_test_analysis_template(request, "test-analysis-faculty.html")
+    return redirect("login")
 
 
+@login_required
 def test_analysis_admin_page(request):
-    return _render_static_test_analysis_template(
-        request,
-        "test-analysis-admin.html",
-        _static_test_analysis_admin_session(),
-    )
+    if not (_is_superadmin(request.user) or _is_admin_user(request.user)):
+        return redirect("test-analysis")
+    return _render_test_analysis_template(request, "test-analysis-admin.html")
 
 
+@login_required
 def test_analysis_faculty_page(request):
-    return _render_static_test_analysis_template(
-        request,
-        "test-analysis-faculty.html",
-        _static_test_analysis_faculty_session(),
-    )
+    if not _is_teacher_user(request.user):
+        return redirect("test-analysis")
+    return _render_test_analysis_template(request, "test-analysis-faculty.html")
 
 
 def _can_access_test_analysis_api(user):
@@ -5422,7 +5464,7 @@ def _serialize_test_analysis_test_item(test, start_at):
     }
 
 
-def _build_test_analysis_base_payload(*, focus_subject=None):
+def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests=None):
     now = timezone.localtime()
     completed_tests = []
     upcoming_test = None
@@ -5453,6 +5495,8 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
             for test in published_tests:
                 if not scholarship_test_service.get_runtime_questions_for_test(test):
                     continue
+                if focus_subject and not _analysis_test_matches_subject(test, focus_subject):
+                    continue
 
                 start_at = scholarship_test_service.get_test_scheduled_start_at(test)
                 if not start_at:
@@ -5476,16 +5520,25 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
                     test,
                     focus_subject=focus_subject,
                 )
-                completed_tests.append(test_item)
-                students_by_id.update(students_for_test)
-                scores_by_test[test_item["id"]] = score_rows
-                if focus_subject:
-                    focus_by_test[test_item["id"]] = focus_for_test
+                completed_tests.append((start_at, test_item, score_rows, students_for_test, focus_for_test))
         except (OperationalError, ProgrammingError) as exc:
             logger.warning(
                 "Skipping test analysis payload because scholarship test schema is incompatible: %s",
                 exc,
             )
+
+    completed_tests.sort(key=lambda item: item[0], reverse=True)
+    if max_completed_tests is not None:
+        completed_tests = completed_tests[: max(0, int(max_completed_tests or 0))]
+    completed_tests.reverse()
+
+    final_completed_tests = []
+    for _, test_item, score_rows, students_for_test, focus_for_test in completed_tests:
+        final_completed_tests.append(test_item)
+        students_by_id.update(students_for_test)
+        scores_by_test[test_item["id"]] = score_rows
+        if focus_subject:
+            focus_by_test[test_item["id"]] = focus_for_test
 
     return {
         "students": sorted(
@@ -5493,7 +5546,7 @@ def _build_test_analysis_base_payload(*, focus_subject=None):
             key=lambda item: ((item.get("name") or "").lower(), item.get("id") or ""),
         ),
         "batches": _build_test_analysis_batches_payload(),
-        "completedTests": completed_tests,
+        "completedTests": final_completed_tests,
         "upcomingTest": upcoming_test or _serialize_test_analysis_upcoming_placeholder(),
         "scoresByTest": scores_by_test,
         "focusByTest": focus_by_test,
@@ -5582,19 +5635,27 @@ def _build_note_state_payload(user, test_ids=None, subject=None):
 
 
 def _build_admin_test_analysis_payload():
-    base_payload = _build_test_analysis_base_payload()
-    return {
-        "admin": {
-            **base_payload,
-            "attendanceByTest": _build_attendance_state_payload(
-                test_ids=[test["external_id"] for test in base_payload["completedTests"]],
-            ),
-            "notesByTest": _build_note_state_payload(
-                None,
-                test_ids=[test["external_id"] for test in base_payload["completedTests"]],
-            ),
+    cache_key = _analysis_payload_cache_key("admin")
+
+    def build_payload():
+        base_payload = _build_test_analysis_base_payload(
+            max_completed_tests=TEST_ANALYSIS_MAX_COMPLETED_TESTS,
+        )
+        completed_test_ids = [test["external_id"] for test in base_payload["completedTests"]]
+        return {
+            "admin": {
+                **base_payload,
+                "attendanceByTest": _build_attendance_state_payload(
+                    test_ids=completed_test_ids,
+                ),
+                "notesByTest": _build_note_state_payload(
+                    None,
+                    test_ids=completed_test_ids,
+                ),
+            }
         }
-    }
+
+    return _analysis_cache_get(cache_key, build_payload)
 
 
 def _analysis_client_test_id(raw_test_id):

@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -439,17 +439,71 @@ class TestAnalysisSchemaSafetyTests(TestCase):
             )
             self.assertIsNone(views._teacheradmin(user))
 
+    def test_analysis_test_matches_subject_uses_test_subject_or_section_names(self):
+        test = Mock()
+        physics_section = Mock()
+        physics_section.name = "Physics Revision"
+        chemistry_section = Mock()
+        chemistry_section.name = "Chemistry Drill"
+        test.sections.all.return_value.order_by.return_value = [
+            physics_section,
+            chemistry_section,
+        ]
+
+        with patch(
+            "sds.views._analysis_safe_model_field_value",
+            return_value="",
+        ):
+            self.assertTrue(views._analysis_test_matches_subject(test, "Physics"))
+            self.assertTrue(views._analysis_test_matches_subject(test, "Chemistry"))
+            self.assertFalse(views._analysis_test_matches_subject(test, "Biology"))
+
 
 @override_settings(ROOT_URLCONF="sds.urls")
-class TestAnalysisStaticPageTests(TestCase):
-    def test_test_analysis_page_renders_without_login_in_static_mode(self):
+class TestAnalysisPageTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="analysisadmin",
+            email="analysisadmin@example.com",
+            password="AdminPass@2026",
+            is_superuser=True,
+            is_staff=True,
+        )
+        self.client.force_login(self.user)
+
+    @patch("sds.views._build_admin_test_analysis_payload")
+    def test_test_analysis_page_renders_dynamic_admin_mode(self, mock_payload):
+        mock_payload.return_value = {
+            "admin": {
+                "students": [],
+                "batches": [],
+                "completedTests": [],
+                "upcomingTest": {
+                    "id": "",
+                    "external_id": None,
+                    "name": "Upcoming Test",
+                    "date": "Awaiting schedule",
+                    "shortDate": "Soon",
+                    "sortAt": "",
+                    "kind": "placeholder",
+                    "canLaunchNow": False,
+                    "isLive": False,
+                },
+                "scoresByTest": {},
+                "focusByTest": {},
+                "attendanceByTest": {},
+                "notesByTest": {},
+            }
+        }
+
         response = self.client.get(reverse("test-analysis"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-page="admin"')
-        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = true;')
+        self.assertContains(response, 'const STATIC_PLACEHOLDER_MODE = false;')
 
-    def test_test_analysis_login_page_redirects_to_static_test_analysis(self):
+    def test_test_analysis_login_page_redirects_to_test_analysis(self):
         response = self.client.get(reverse("test-analysis-login-page"))
 
         self.assertRedirects(response, reverse("test-analysis"))
