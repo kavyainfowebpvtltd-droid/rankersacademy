@@ -5014,6 +5014,37 @@ def _analysis_test_payload(test, assigned_students):
     }
 
 
+def _serialize_test_analysis_upcoming_placeholder():
+    return {
+        "id": "",
+        "external_id": None,
+        "name": "Upcoming Test",
+        "batch": "",
+        "batchKeys": [],
+        "date": "Awaiting schedule",
+        "shortDate": "Soon",
+        "sortAt": "",
+        "totalMarks": 0,
+        "sectionBreakdown": [],
+        "kind": "placeholder",
+        "canLaunchNow": False,
+        "isLive": False,
+    }
+
+
+def _serialize_test_analysis_test_item(test, start_at):
+    test_item = _analysis_test_payload(test, [])
+    test_item.update(
+        {
+            "sortAt": start_at.isoformat(),
+            "kind": "completed",
+            "canLaunchNow": False,
+            "isLive": False,
+        }
+    )
+    return test_item
+
+
 def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests=None):
     now = timezone.localtime()
     completed_tests = []
