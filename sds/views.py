@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.core.paginator import Paginator
 from decimal import Decimal, ROUND_HALF_UP
@@ -2742,7 +2742,6 @@ def _build_test_analysis_session(user) -> dict:
     }
 
 
-<<<<<<< HEAD
 TEST_ANALYSIS_CACHE_TTL_SECONDS = 300
 TEST_ANALYSIS_MAX_COMPLETED_TESTS = 12
 
@@ -2844,18 +2843,10 @@ def _render_test_analysis_template(request, template_name: str):
     context = {
         "test_analysis_session": json.dumps(_build_test_analysis_session(request.user)),
         "test_analysis_payload": json.dumps(payload),
-=======
-def _render_static_test_analysis_template(request, template_name: str, session: dict):
-    context = {
-        "test_analysis_session": json.dumps(session),
-        "test_analysis_payload": json.dumps({}),
-        "test_analysis_static_mode": True,
->>>>>>> 7201fc572fbcf3f83b5eca4521534cb24805ad54
     }
     return render(request, template_name, context)
 
 
-<<<<<<< HEAD
 @login_required
 def test_analysis(request):
     if _is_superadmin(request.user) or _is_admin_user(request.user):
@@ -2863,86 +2854,20 @@ def test_analysis(request):
     if _is_teacher_user(request.user):
         return _render_test_analysis_template(request, "test-analysis-faculty.html")
     return redirect("login")
-=======
-def _render_demo_test_analysis_template(request, template_name: str, session: dict):
-    payload = _build_test_analysis_page_payload(session)
-    context = {
-        "test_analysis_session": json.dumps(session),
-        "test_analysis_payload": json.dumps(payload),
-        "test_analysis_static_mode": False,
-    }
-    return render(request, template_name, context)
-
-
-def _static_test_analysis_admin_session() -> dict:
-    return {"type": "admin"}
-
-
-def _static_test_analysis_faculty_session() -> dict:
-    return {
-        "type": "faculty",
-        "faculty": {
-            "name": "Faculty Demo",
-            "subject": "Physics",
-        },
-    }
-
-
-@login_required
-def test_analysis(request):
-    if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return _render_demo_test_analysis_template(
-            request,
-            "test-analysis-admin.html",
-            _build_test_analysis_session(request.user),
-        )
-    if _is_teacher_user(request.user):
-        return _render_demo_test_analysis_template(
-            request,
-            "test-analysis-faculty.html",
-            _build_test_analysis_session(request.user),
-        )
-    return HttpResponseForbidden("Only admins and teachers can access test analysis.")
->>>>>>> 7201fc572fbcf3f83b5eca4521534cb24805ad54
 
 
 @login_required
 def test_analysis_admin_page(request):
-<<<<<<< HEAD
     if not (_is_superadmin(request.user) or _is_admin_user(request.user)):
         return redirect("test-analysis")
     return _render_test_analysis_template(request, "test-analysis-admin.html")
-=======
-    if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return _render_demo_test_analysis_template(
-            request,
-            "test-analysis-admin.html",
-            _build_test_analysis_session(request.user),
-        )
-    if _is_teacher_user(request.user):
-        return redirect("test-analysis-faculty-page")
-    else:
-        return HttpResponseForbidden("Only admins can access the admin test analysis page.")
->>>>>>> 7201fc572fbcf3f83b5eca4521534cb24805ad54
 
 
 @login_required
 def test_analysis_faculty_page(request):
-<<<<<<< HEAD
     if not _is_teacher_user(request.user):
         return redirect("test-analysis")
     return _render_test_analysis_template(request, "test-analysis-faculty.html")
-=======
-    if _is_superadmin(request.user) or _is_admin_user(request.user):
-        return redirect("test-analysis-admin-page")
-    if not _is_teacher_user(request.user):
-        return HttpResponseForbidden("Only teachers can access the faculty test analysis page.")
-    return _render_demo_test_analysis_template(
-        request,
-        "test-analysis-faculty.html",
-        _build_test_analysis_session(request.user),
-    )
->>>>>>> 7201fc572fbcf3f83b5eca4521534cb24805ad54
 
 
 @login_required
@@ -5089,7 +5014,6 @@ def _analysis_test_payload(test, assigned_students):
     }
 
 
-<<<<<<< HEAD
 def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests=None):
     now = timezone.localtime()
     completed_tests = []
@@ -5176,17 +5100,6 @@ def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests
         "upcomingTest": upcoming_test or _serialize_test_analysis_upcoming_placeholder(),
         "scoresByTest": scores_by_test,
         "focusByTest": focus_by_test,
-=======
-def _analysis_student_payload(student):
-    return {
-        "id": f"portal-{student.id}",
-        "studentRef": str(_analysis_student_field_value(student, "username", "") or student.id),
-        "name": _analysis_student_field_value(student, "student_name", "") or f"Student {student.id}",
-        "batch": _analysis_student_field_value(student, "batch", ""),
-        "grade": _analysis_student_field_value(student, "grade", ""),
-        "parentPhone": _analysis_student_field_value(student, "contact", ""),
-        "profilePhotoUrl": _student_photo_url(student),
->>>>>>> 7201fc572fbcf3f83b5eca4521534cb24805ad54
     }
 
 
@@ -5264,7 +5177,6 @@ def _build_note_state_payload(test=None):
     return payload
 
 
-<<<<<<< HEAD
 def _build_admin_test_analysis_payload():
     cache_key = _analysis_payload_cache_key("admin")
 
@@ -5287,78 +5199,6 @@ def _build_admin_test_analysis_payload():
         }
 
     return _analysis_cache_get(cache_key, build_payload)
-=======
-def _build_test_analysis_batches_payload(students=None, tests=None):
-    students = list(students or _schema_safe_analysis_student_queryset())
-    tests = list(tests or [])
-    batches = {}
-
-    def ensure(value):
-        key = _normalize_analysis_batch_key(value)
-        if key and key not in batches:
-            batches[key] = {"id": key, "label": _analysis_batch_label(value), "studentCount": 0, "testCount": 0}
-        return key
-
-    for student in students:
-        ensure(_analysis_student_field_value(student, "batch", ""))
-        ensure(_analysis_student_field_value(student, "grade", ""))
-    for test in tests:
-        for value in _split_analysis_batch_values(_analysis_safe_model_field_value(test, "batch", "")):
-            ensure(value)
-
-    for key, batch in batches.items():
-        batch["studentCount"] = sum(
-            1 for student in students
-            if _student_matches_analysis_batch(student, key)
-        )
-        batch["testCount"] = sum(
-            1 for test in tests
-            if key in [
-                _normalize_analysis_batch_key(value)
-                for value in _split_analysis_batch_values(_analysis_safe_model_field_value(test, "batch", ""))
-            ]
-        )
-
-    preferred = ["star01", "star02", "alpha", "grade10", "grade9"]
-    return sorted(
-        batches.values(),
-        key=lambda item: (
-            preferred.index(item["id"]) if item["id"] in preferred else len(preferred),
-            item["label"].casefold(),
-        ),
-    )
-
-
-def _build_test_analysis_base_payload():
-    missing_required_fields = _analysis_missing_model_fields(
-        ScholarshipTest,
-        "scheduled_start_at",
-        "batch",
-        "subject",
-    )
-    batches = _build_test_analysis_batches_payload()
-    if missing_required_fields:
-        return {
-            "students": [],
-            "batches": batches,
-            "completedTests": [],
-            "upcomingTest": {
-                "id": "",
-                "external_id": None,
-                "name": "Upcoming Test",
-                "date": "Awaiting schedule",
-                "shortDate": "Soon",
-                "sortAt": "",
-                "kind": "placeholder",
-                "canLaunchNow": False,
-                "isLive": False,
-            },
-            "scoresByTest": {},
-            "focusByTest": {},
-            "attendanceByTest": {},
-            "notesByTest": {},
-        }
->>>>>>> 7201fc572fbcf3f83b5eca4521534cb24805ad54
 
     now = timezone.localtime()
     tests = list(
@@ -6062,7 +5902,7 @@ def _draw_header_footer(canvas, doc):
 
     canvas.setFillColor(colors.HexColor("#9CA3AF"))
     canvas.setFont("Helvetica", 7)
-    canvas.drawCentredString(width / 2, 12 * mm, "© Ranker's Academy | Student Self Diagnostic Report")
+    canvas.drawCentredString(width / 2, 12 * mm, "Â© Ranker's Academy | Student Self Diagnostic Report")
 
 def _generate_pdf_bytes_for_student(student_obj: Student, target_user: User) -> tuple[bytes, str]:
     
@@ -7098,7 +6938,7 @@ def report(request):
             focus_recs.append({
                 "subject": c.subject.name,
                 "percent": int(round(percent)),
-                "topics": [f"{t.chapter.name} → {t.name}" for t in remaining_topics],
+                "topics": [f"{t.chapter.name} â†’ {t.name}" for t in remaining_topics],
             })
 
         if percent > 85:
@@ -7106,7 +6946,7 @@ def report(request):
             strength_recs.append({
                 "subject": c.subject.name,
                 "percent": int(round(percent)),
-                "topics": [f"{t.chapter.name} → {t.name}" for t in covered_topics],
+                "topics": [f"{t.chapter.name} â†’ {t.name}" for t in covered_topics],
             })
 
     pdf_subjects = []
@@ -7130,7 +6970,7 @@ def report(request):
                     status = "Not Attempted"
                     correct_q = 0
                     accuracy = "NA" if total_q == 0 else "0%"
-                    not_attempted_list.append(f"{t.chapter.name} → {t.name}")
+                    not_attempted_list.append(f"{t.chapter.name} â†’ {t.name}")
                 else:
                     if t.id in correct_ids:
                         status = "Strong"
@@ -7140,7 +6980,7 @@ def report(request):
                         status = "Weak"
                         correct_q = 0
                         accuracy = "0%" if total_q > 0 else "NA"
-                        weak_list.append(f"{t.chapter.name} → {t.name}")
+                        weak_list.append(f"{t.chapter.name} â†’ {t.name}")
             else:
                 if t.id in covered_ids:
                     status = "Strong"
@@ -7150,7 +6990,7 @@ def report(request):
                     status = "Not Attempted"
                     correct_q = 0
                     accuracy = "NA" if total_q == 0 else "0%"
-                    not_attempted_list.append(f"{t.chapter.name} → {t.name}")
+                    not_attempted_list.append(f"{t.chapter.name} â†’ {t.name}")
 
             if status in ("Weak", "Not Attempted"):
                 rows.append([

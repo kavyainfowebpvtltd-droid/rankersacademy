@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.utils import timezone
 from django.db import transaction, IntegrityError, connection
+from django.db.models import Q
 from django.db.utils import OperationalError
 from django.conf import settings
 from sds.models import Student
@@ -1593,17 +1594,7 @@ def scholarship_logout(request):
     return redirect('login.html')
 
 def scholarshiptest_management(request):
-    manual_mark_tests = ScholarshipTest.objects.all().order_by('-created_at', '-id')
-    manual_mark_students = Student.objects.select_related('user').order_by('username', 'id')
-
-    return render(
-        request,
-        "scholarshiptest-management.html",
-        {
-            "manual_mark_tests": manual_mark_tests,
-            "manual_mark_students": manual_mark_students,
-        },
-    )
+    return render(request, "scholarshiptest-management.html")
 
 def scholarship_create_test(request):
     response = render(request, "create_test.html")
@@ -1634,6 +1625,37 @@ def api_get_tests(request):
             'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
         })
     return JsonResponse({'tests': data})
+
+
+@csrf_exempt
+def api_manual_mark_options(request):
+    query = str(request.GET.get("q", "") or "").strip()
+
+    tests_qs = ScholarshipTest.objects.all().order_by("-created_at", "-id")
+    students_qs = Student.objects.select_related("user").order_by("username", "id")
+
+    if query:
+        tests_qs = tests_qs.filter(
+            Q(name__icontains=query)
+            | Q(batch__icontains=query)
+            | Q(stream__icontains=query)
+            | Q(subject__icontains=query)
+        )
+        students_qs = students_qs.filter(
+            Q(username__icontains=query)
+            | Q(student_name__icontains=query)
+            | Q(batch__icontains=query)
+            | Q(contact__icontains=query)
+        )
+
+    tests = list(
+        tests_qs.values("id", "name", "batch", "stream", "subject")[:200]
+    )
+    students = list(
+        students_qs.values("id", "username", "student_name", "batch")[:200]
+    )
+
+    return JsonResponse({"tests": tests, "students": students})
 
 
 @csrf_exempt

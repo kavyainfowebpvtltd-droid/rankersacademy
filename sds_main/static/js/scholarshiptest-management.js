@@ -4,6 +4,7 @@ let allFolders = [];
 let isInsideFolderView = false;
 let pendingDeleteFolders = [];
 let currentFolderId = null;
+let manualMarkOptionsLoaded = false;
 
 function updatePrimaryActionButton() {
   const label = document.getElementById("primary-action-label");
@@ -192,6 +193,13 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("copy-test-form").reset();
     });
   }
+
+  const manualMarksModalEl = document.getElementById("manualMarksModal");
+  if (manualMarksModalEl) {
+    manualMarksModalEl.addEventListener("show.bs.modal", () => {
+      loadManualMarkOptions();
+    });
+  }
 });
 
 function updateManualMarksTotal() {
@@ -271,6 +279,46 @@ function saveManualMarks() {
         saveBtn.textContent = "Save Marks";
       }
     });
+}
+
+async function loadManualMarkOptions() {
+  if (manualMarkOptionsLoaded) return;
+
+  try {
+    const response = await fetch("/scholarship/api/manual-marks/options/");
+    if (!response.ok) {
+      throw new Error("Unable to load manual mark options");
+    }
+
+    const data = await response.json();
+    populateManualMarkSelect(
+      "manual-test-input",
+      data.tests || [],
+      (item) => `${item.name || "Test"}${item.subject ? ` - ${item.subject}` : ""}${item.batch ? ` (${item.batch})` : ""}`,
+    );
+    populateManualMarkSelect(
+      "manual-student-input",
+      data.students || [],
+      (item) => `${item.username || item.id} - ${item.student_name || ""}${item.batch ? ` (${item.batch})` : ""}`,
+    );
+    document.querySelectorAll(".manual-score-input").forEach((input) => {
+      input.addEventListener("input", updateManualMarksTotal);
+    });
+    manualMarkOptionsLoaded = true;
+  } catch (err) {
+    console.error("Error loading manual mark options:", err);
+    showToast("Unable to load manual marks list");
+  }
+}
+
+function populateManualMarkSelect(selectId, items, labelBuilder) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const placeholder = selectId === "manual-test-input" ? "Select Test" : "Select Student";
+  select.innerHTML = [`<option value="">${placeholder}</option>`]
+    .concat(items.map((item) => `<option value="${item.id}">${labelBuilder(item)}</option>`))
+    .join("");
 }
 
 async function loadData() {

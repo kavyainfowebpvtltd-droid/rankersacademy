@@ -541,18 +541,12 @@
                   <label class="form-label">Test</label>
                   <select class="form-select" id="manual-test-input" required>
                     <option value="">Select Test</option>
-                    {% for test in manual_mark_tests %}
-                    <option value="{{ test.id }}">{{ test.name }}</option>
-                    {% endfor %}
                   </select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Student</label>
                   <select class="form-select" id="manual-student-input" required>
                     <option value="">Select Student</option>
-                    {% for student in manual_mark_students %}
-                    <option value="{{ student.id }}">{{ student.username }} - {{ student.student_name }}{% if student.batch %} ({{ student.batch }}){% endif %}</option>
-                    {% endfor %}
                   </select>
                 </div>
                 <div class="col-md-4">
