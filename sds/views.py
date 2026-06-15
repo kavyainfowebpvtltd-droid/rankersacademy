@@ -4538,6 +4538,18 @@ def _analysis_student_record_from_leaderboard_entry(entry):
     }
 
 
+def _analysis_student_payload(student):
+    return {
+        "id": f"portal-{student.id}",
+        "studentRef": str(_analysis_student_field_value(student, "username", "") or student.id),
+        "name": _analysis_student_field_value(student, "student_name", "") or f"Student {student.id}",
+        "batch": _analysis_student_field_value(student, "batch", ""),
+        "grade": _analysis_student_field_value(student, "grade", ""),
+        "parentPhone": _analysis_student_field_value(student, "contact", ""),
+        "profilePhotoUrl": _student_photo_url(student),
+    }
+
+
 def _analysis_portal_student_id(student_id):
     value = str(student_id or "")
     if value.startswith("portal-"):
