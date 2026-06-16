@@ -2295,7 +2295,7 @@ class PortalStudentScheduledTestFlowTests(TestCase):
             reverse("scholarship_test:scholarship_launch_test", args=[test.id])
         )
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))
         messages = list(response.wsgi_request._messages)
         self.assertTrue(
             any("not assigned to your batch and stream" in str(message) for message in messages)
@@ -2315,4 +2315,4 @@ class PortalStudentScheduledTestFlowTests(TestCase):
 
         response = self.client.get(reverse("scholarship_test:scholarship_start_test"))
 
-        self.assertRedirects(response, reverse("my_tests"))
+        self.assertRedirects(response, reverse("student-dashboard"))

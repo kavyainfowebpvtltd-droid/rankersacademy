@@ -291,7 +291,7 @@ def _redirect_if_portal_student_cannot_access_test(request, selected_test):
         request,
         "This test is not assigned to your batch and stream.",
     )
-    return redirect("my_tests")
+    return redirect("student-dashboard")
 
 
 def _sync_portal_student_session(request, selected_test):
@@ -507,7 +507,7 @@ def scholarship_launch_test(request, test_id):
             launch_state["message"] or "This test is not available right now.",
         )
         if getattr(request.user, "is_authenticated", False) and hasattr(request.user, "student"):
-            return redirect("my_tests")
+            return redirect("student-dashboard")
         return redirect("login")
 
     _set_selected_test(request, selected_test)
@@ -1558,7 +1558,7 @@ def scholarship_attempt_review(request, attempt_id):
         )
     except ScholarshipTestAttempt.DoesNotExist:
         messages.error(request, "Attempted test paper not found.")
-        return redirect('my_tests')
+        return redirect('student-dashboard')
 
     if not _student_can_view_attempt(request, attempt):
         return HttpResponseForbidden("You are not allowed to view this attempted paper.")
