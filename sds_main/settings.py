@@ -8,7 +8,12 @@ def _env_bool(name, default=False):
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
- 
+
+def _env_list(name, default):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
