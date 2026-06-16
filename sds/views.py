@@ -2748,6 +2748,7 @@ def _build_test_analysis_session(user) -> dict:
 
 TEST_ANALYSIS_CACHE_TTL_SECONDS = 300
 TEST_ANALYSIS_MAX_COMPLETED_TESTS = 12
+MY_TESTS_LEADERBOARD_CACHE_TTL_SECONDS = 120
 
 
 def _analysis_test_matches_subject(test, subject: str) -> bool:
@@ -4299,9 +4300,8 @@ def _build_zero_section_breakdown(test):
     return scholarship_test_service.build_zero_section_breakdown(test)
 
 
-def _get_assigned_portal_students_for_test(test):
-    student_queryset = _schema_safe_analysis_student_queryset()
-
+def _get_assigned_portal_students_for_test(test, student_pool=None):
+    student_queryset = student_pool if student_pool is not None else _schema_safe_analysis_student_queryset()
     assigned_students = [
         portal_student
         for portal_student in student_queryset
@@ -4333,7 +4333,7 @@ def _latest_completed_attempts_for_test(test):
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test_completed_at", "test_started_at", "id")
     )
-    attempts = attempts.select_related("student")
+    attempts = attempts.select_related("test")
 
     latest_by_student = {}
     for attempt in attempts:
@@ -4490,12 +4490,54 @@ def _analysis_feature_unavailable_response(feature_name):
 
 
 def _build_attempt_leaderboard(test, current_attempt_id=None, current_portal_student=None):
-    return scholarship_test_service.get_test_attempt_leaderboard_data(
-        test,
-        current_attempt_id=current_attempt_id,
-        current_portal_student=current_portal_student,
-        limit=5,
+    if not test:
+        return {"entries": [], "topEntries": [], "currentEntry": None}
+
+    latest_attempt_state = (
+        _schema_safe_scholarship_attempt_queryset()
+        .filter(test=test, status__in=["completed", "expired"])
+        .aggregate(total=Count("id"), max_completed=Max("test_completed_at"), max_started=Max("test_started_at"))
     )
+    cache_key = "my-tests:leaderboard:{test_id}:{updated}:{total}:{completed}:{started}".format(
+        test_id=test.id,
+        updated=getattr(test, "updated_at", None).isoformat() if getattr(test, "updated_at", None) else "none",
+        total=latest_attempt_state.get("total") or 0,
+        completed=latest_attempt_state.get("max_completed").isoformat() if latest_attempt_state.get("max_completed") else "none",
+        started=latest_attempt_state.get("max_started").isoformat() if latest_attempt_state.get("max_started") else "none",
+    )
+    neutral_payload = cache.get(cache_key)
+    if neutral_payload is None:
+        neutral_payload = scholarship_test_service.get_test_attempt_leaderboard_data(test, limit=5)
+        cache.set(cache_key, neutral_payload, MY_TESTS_LEADERBOARD_CACHE_TTL_SECONDS)
+
+    current_portal_student_id = getattr(current_portal_student, "id", None)
+    entries = []
+    current_entry = None
+    for source_entry in neutral_payload.get("entries", []):
+        entry = dict(source_entry)
+        is_current = bool(
+            (current_portal_student_id and entry.get("studentId") == f"portal-{current_portal_student_id}")
+            or (current_attempt_id and entry.get("attemptId") == current_attempt_id)
+        )
+        entry["isCurrentStudent"] = is_current
+        if is_current:
+            current_entry = entry
+        entries.append(entry)
+
+    entries_by_identity = {
+        (entry.get("studentId"), entry.get("attemptId")): entry
+        for entry in entries
+    }
+    top_entries = [
+        entries_by_identity.get((entry.get("studentId"), entry.get("attemptId")), dict(entry))
+        for entry in neutral_payload.get("topEntries", [])
+    ]
+
+    return {
+        "entries": entries,
+        "topEntries": top_entries,
+        "currentEntry": current_entry,
+    }
 
 
 ANALYSIS_SUBJECT_ORDER = ["Physics", "Chemistry", "Maths"]
@@ -4820,7 +4862,7 @@ def _build_my_tests_payload(student):
             status__in=["completed", "expired"],
             test__isnull=False,
         )
-        .select_related("student", "portal_student", "test")
+        .select_related("test")
         .prefetch_related("answers__question__section", "test__sections__questions")
         .order_by("test__scheduled_start_at", "test_completed_at", "id")
     )
@@ -4918,22 +4960,6 @@ def _build_my_tests_payload(student):
             }
             published_tests_by_id[test.id] = test
             break
-
-    attempt_queryset = (
-        _schema_safe_scholarship_attempt_queryset()
-        .filter(
-            portal_student=student,
-            status__in=["completed", "expired"],
-            test__isnull=False,
-        )
-        .select_related("student", "portal_student", "test")
-        .prefetch_related("answers__question__section", "test__sections__questions")
-        .order_by("test__scheduled_start_at", "test_completed_at", "id")
-    )
-
-    latest_attempt_by_test = {}
-    for attempt in attempt_queryset:
-        latest_attempt_by_test[attempt.test_id] = attempt
 
     student_completed_tests = []
     attempted_test_ids = set(latest_attempt_by_test.keys())
@@ -5203,6 +5229,78 @@ def _analysis_test_payload(test, assigned_students):
     }
 
 
+def _analysis_test_batch_keys(test):
+    if isinstance(test, dict):
+        explicit_keys = [
+            _normalize_analysis_batch_key(value)
+            for value in test.get("batchKeys", [])
+            if _normalize_analysis_batch_key(value)
+        ]
+        if explicit_keys:
+            return explicit_keys
+        batch_value = test.get("batch", "")
+    else:
+        batch_value = _analysis_safe_model_field_value(test, "batch", "")
+
+    return [
+        _normalize_analysis_batch_key(value)
+        for value in _split_analysis_batch_values(batch_value)
+        if _normalize_analysis_batch_key(value)
+    ]
+
+
+def _build_test_analysis_batches_payload(students=None, tests=None):
+    students = list(students or [])
+    tests = list(tests or [])
+    options = {
+        key: {"id": key, "label": label, "studentCount": 0, "testCount": 0}
+        for key, label in (
+            ("star01", "STAR 01"),
+            ("star02", "STAR 02"),
+            ("alpha", "Alpha Batch"),
+            ("grade10", "10th Grade"),
+            ("grade9", "9th Grade"),
+        )
+    }
+
+    for student in students:
+        for field in ("batch", "grade"):
+            value = student.get(field) if isinstance(student, dict) else _analysis_student_field_value(student, field, "")
+            key = _normalize_analysis_batch_key(value)
+            if key and key not in options:
+                options[key] = {
+                    "id": key,
+                    "label": _analysis_batch_label(value),
+                    "studentCount": 0,
+                    "testCount": 0,
+                }
+
+    for test in tests:
+        for key in _analysis_test_batch_keys(test):
+            if key and key not in options:
+                options[key] = {
+                    "id": key,
+                    "label": _analysis_batch_label(key),
+                    "studentCount": 0,
+                    "testCount": 0,
+                }
+
+    for batch in options.values():
+        batch_key = batch["id"]
+        batch["studentCount"] = sum(
+            1
+            for student in students
+            if _student_matches_analysis_batch(student, batch_key)
+        )
+        batch["testCount"] = sum(
+            1
+            for test in tests
+            if not _analysis_test_batch_keys(test) or batch_key in _analysis_test_batch_keys(test)
+        )
+
+    return list(options.values())
+
+
 def _serialize_test_analysis_upcoming_placeholder():
     return {
         "id": "",
@@ -5234,8 +5332,8 @@ def _serialize_test_analysis_test_item(test, start_at):
     return test_item
 
 
-def _build_analysis_dataset_for_test(test, *, focus_subject=None):
-    assigned_students = _get_assigned_portal_students_for_test(test)
+def _build_analysis_dataset_for_test(test, *, focus_subject=None, student_pool=None):
+    assigned_students = _get_assigned_portal_students_for_test(test, student_pool=student_pool)
     attempts = _latest_completed_attempts_for_test(test)
     attempts_by_portal_id = {
         getattr(attempt, "portal_student_id", None): attempt
@@ -5243,10 +5341,25 @@ def _build_analysis_dataset_for_test(test, *, focus_subject=None):
         if getattr(attempt, "portal_student_id", None)
     }
 
-    for attempt in attempts:
-        portal_student = getattr(attempt, "portal_student", None)
-        if portal_student and portal_student not in assigned_students:
-            assigned_students.append(portal_student)
+    assigned_student_ids = {student.id for student in assigned_students}
+    attempt_portal_student_ids = {
+        getattr(attempt, "portal_student_id", None)
+        for attempt in attempts
+        if getattr(attempt, "portal_student_id", None)
+    }
+    missing_student_ids = attempt_portal_student_ids - assigned_student_ids
+    if missing_student_ids:
+        if student_pool is not None:
+            students_by_portal_id = {student.id: student for student in student_pool}
+        else:
+            students_by_portal_id = {
+                student.id: student
+                for student in _schema_safe_analysis_student_queryset().filter(id__in=missing_student_ids)
+            }
+        for student_id in sorted(missing_student_ids):
+            portal_student = students_by_portal_id.get(student_id)
+            if portal_student:
+                assigned_students.append(portal_student)
 
     ranked_attempts = sorted(
         [attempt for attempt in attempts if getattr(attempt, "portal_student_id", None)],
@@ -5295,7 +5408,7 @@ def _build_analysis_dataset_for_test(test, *, focus_subject=None):
 
 def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests=None):
     now = timezone.localtime()
-    completed_tests = []
+    completed_test_candidates = []
     upcoming_test = None
     students_by_id = {}
     scores_by_test = {}
@@ -5345,24 +5458,29 @@ def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests
                         }
                     continue
 
-                score_rows, students_for_test, focus_for_test = _build_analysis_dataset_for_test(
-                    test,
-                    focus_subject=focus_subject,
-                )
-                completed_tests.append((start_at, test_item, score_rows, students_for_test, focus_for_test))
+                completed_test_candidates.append((start_at, test, test_item))
         except (OperationalError, ProgrammingError) as exc:
             logger.warning(
                 "Skipping test analysis payload because scholarship test schema is incompatible: %s",
                 exc,
             )
 
-    completed_tests.sort(key=lambda item: item[0], reverse=True)
+    completed_test_candidates.sort(key=lambda item: item[0], reverse=True)
     if max_completed_tests is not None:
-        completed_tests = completed_tests[: max(0, int(max_completed_tests or 0))]
-    completed_tests.reverse()
+        completed_test_candidates = completed_test_candidates[: max(0, int(max_completed_tests or 0))]
+    completed_test_candidates.reverse()
+
+    student_pool = None
+    if completed_test_candidates:
+        student_pool = list(_schema_safe_analysis_student_queryset())
 
     final_completed_tests = []
-    for _, test_item, score_rows, students_for_test, focus_for_test in completed_tests:
+    for _, test, test_item in completed_test_candidates:
+        score_rows, students_for_test, focus_for_test = _build_analysis_dataset_for_test(
+            test,
+            focus_subject=focus_subject,
+            student_pool=student_pool,
+        )
         final_completed_tests.append(test_item)
         students_by_id.update(students_for_test)
         scores_by_test[test_item["id"]] = score_rows
@@ -5374,7 +5492,10 @@ def _build_test_analysis_base_payload(*, focus_subject=None, max_completed_tests
             students_by_id.values(),
             key=lambda item: ((item.get("name") or "").lower(), item.get("id") or ""),
         ),
-        "batches": _build_test_analysis_batches_payload(),
+        "batches": _build_test_analysis_batches_payload(
+            students_by_id.values(),
+            final_completed_tests,
+        ),
         "completedTests": final_completed_tests,
         "upcomingTest": upcoming_test or _serialize_test_analysis_upcoming_placeholder(),
         "scoresByTest": scores_by_test,
@@ -5421,8 +5542,8 @@ def _build_attendance_state_payload(test=None, *, test_ids=None, subject=None):
         or not _analysis_model_table_available(ScholarshipTestFacultyAttendanceSession)
     ):
         return {}
-    records = ScholarshipTestFacultyAttendance.objects.select_related("portal_student")
-    sessions = ScholarshipTestFacultyAttendanceSession.objects.all()
+    records = ScholarshipTestFacultyAttendance.objects.order_by("test_id", "subject", "portal_student_id")
+    sessions = ScholarshipTestFacultyAttendanceSession.objects.order_by("test_id", "subject")
     if test:
         records = records.filter(test=test)
         sessions = sessions.filter(test=test)
@@ -5446,7 +5567,7 @@ def _build_attendance_state_payload(test=None, *, test_ids=None, subject=None):
 def _build_note_state_payload(test=None, *, test_ids=None, subject=None):
     if not _analysis_model_table_available(ScholarshipTestFacultyNote):
         return {}
-    notes = ScholarshipTestFacultyNote.objects.select_related("portal_student")
+    notes = ScholarshipTestFacultyNote.objects.order_by("-created_at", "-id")
     if isinstance(test, ScholarshipTest):
         notes = notes.filter(test=test)
     if test_ids:

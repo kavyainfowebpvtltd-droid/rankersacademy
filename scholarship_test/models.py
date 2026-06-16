@@ -198,6 +198,11 @@ class ScholarshipTestAttempt(models.Model):
 
     class Meta:
         ordering = ['-test_started_at']
+        indexes = [
+            models.Index(fields=['portal_student', 'status', 'test'], name='sta_portal_status_test'),
+            models.Index(fields=['test', 'status', 'test_completed_at', 'test_started_at', 'id'], name='sta_test_status_done'),
+            models.Index(fields=['status', 'test_completed_at'], name='sta_status_completed'),
+        ]
 
     def __str__(self):
         return f"Attempt {self.id} - {self.student.name} - Score: {self.score}/{self.total_questions}"
@@ -225,6 +230,9 @@ class ScholarshipStudentLeaderboard(models.Model):
 
     class Meta:
         ordering = ["-total_score", "portal_student_id"]
+        indexes = [
+            models.Index(fields=['student_batch', 'updated_at'], name='ssl_batch_updated'),
+        ]
 
     def __str__(self):
         return f"{self.portal_student_id} - {self.total_score}"
@@ -287,6 +295,9 @@ class ScholarshipTestFacultyAttendance(models.Model):
     class Meta:
         unique_together = ['test', 'portal_student', 'subject']
         ordering = ['test', 'subject', 'portal_student']
+        indexes = [
+            models.Index(fields=['test', 'subject', 'portal_student'], name='stfa_test_sub_student'),
+        ]
 
     def __str__(self):
         return f"{self.test.name} - {self.portal_student_id} - {self.subject} - {self.status}"
@@ -316,6 +327,9 @@ class ScholarshipTestFacultyNote(models.Model):
 
     class Meta:
         ordering = ['-created_at', '-id']
+        indexes = [
+            models.Index(fields=['test', '-created_at', '-id'], name='stfn_test_created'),
+        ]
 
     def __str__(self):
         return f"{self.test.name} - {self.portal_student_id} - {self.subject} note"
@@ -394,6 +408,10 @@ class ScholarshipTest(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'scheduled_start_at', 'id'], name='st_status_sched_id'),
+            models.Index(fields=['status', 'scheduled_start_at', 'created_at'], name='st_status_sched_created'),
+        ]
 
     def __str__(self):
         return self.name
