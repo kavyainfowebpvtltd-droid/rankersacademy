@@ -1119,6 +1119,18 @@
         );
   }
 
+  function clearFullscreenPrompt() {
+    document
+      .querySelectorAll('[data-fullscreen-prompt="true"]')
+      .forEach((alert) => alert.remove());
+  }
+
+  function waitForFullscreenState() {
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, 80);
+    });
+  }
+
   function retryFullscreenOnUserGesture() {
     if (state.fullscreenRetryArmed) {
       return;
@@ -1130,10 +1142,18 @@
       document.removeEventListener("keydown", retry, true);
       state.fullscreenRetryArmed = false;
       if (state.isSubmitted || isFullscreenActive()) {
+        clearFullscreenPrompt();
         return;
       }
       try {
         await security.enterFullscreen();
+        await waitForFullscreenState();
+        if (isFullscreenActive()) {
+          clearFullscreenPrompt();
+          return;
+        }
+        security.showAlert("Click anywhere on the test page to enter fullscreen mode.", "warning");
+        retryFullscreenOnUserGesture();
       } catch (_error) {
         security.showAlert("Click anywhere on the test page to enter fullscreen mode.", "warning");
         retryFullscreenOnUserGesture();
@@ -1147,11 +1167,17 @@
   async function requestFullscreenForTest(options) {
     const opts = options || {};
     if (isFullscreenActive()) {
+      clearFullscreenPrompt();
       return true;
     }
 
     try {
       await security.enterFullscreen();
+      await waitForFullscreenState();
+      if (!isFullscreenActive()) {
+        throw new Error("Fullscreen did not become active.");
+      }
+      clearFullscreenPrompt();
       return true;
     } catch (error) {
       if (!opts.silent) {

@@ -81,6 +81,7 @@
       this.violationCooldownMs = 1200;
       this.currentModalContext = null;
       this.boundHandlers = [];
+      this.fullscreenAlertMessage = "Click anywhere on the test page to enter fullscreen mode.";
       this.alertContainer = document.getElementById(this.config.alertContainerId);
       this.modalElement = document.getElementById(this.config.modalId);
       this.modalMessage = document.getElementById(this.config.modalMessageId);
@@ -195,6 +196,9 @@
 
     async enterFullscreen() {
       await requestFullscreen(document.documentElement);
+      if (this.isFullscreenActive()) {
+        this.clearFullscreenAlerts();
+      }
     }
 
     setViolationCount(nextValue) {
@@ -321,6 +325,7 @@
         return;
       }
       if (this.isFullscreenActive()) {
+        this.clearFullscreenAlerts();
         return;
       }
 
@@ -422,9 +427,19 @@
       if (!this.alertContainer || !message) {
         return;
       }
+      if (message === this.fullscreenAlertMessage && this.isFullscreenActive()) {
+        this.clearFullscreenAlerts();
+        return;
+      }
+      if (message === this.fullscreenAlertMessage) {
+        this.clearFullscreenAlerts();
+      }
 
       const alert = document.createElement("div");
       alert.className = `alert alert-${type || "warning"} alert-dismissible fade show`;
+      if (message === this.fullscreenAlertMessage) {
+        alert.dataset.fullscreenPrompt = "true";
+      }
       alert.setAttribute("role", "alert");
       alert.innerHTML = `
         <div class="d-flex align-items-center justify-content-between gap-3">
@@ -445,6 +460,15 @@
       if (delay > 0) {
         window.setTimeout(closeAlert, delay);
       }
+    }
+
+    clearFullscreenAlerts() {
+      if (!this.alertContainer) {
+        return;
+      }
+      this.alertContainer
+        .querySelectorAll('[data-fullscreen-prompt="true"]')
+        .forEach((alert) => alert.remove());
     }
   }
 

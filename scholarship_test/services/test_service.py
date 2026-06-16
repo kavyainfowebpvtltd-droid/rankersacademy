@@ -1217,7 +1217,12 @@ def get_attempt_end_time(attempt):
     start_time = get_attempt_start_time(attempt)
     if start_time is None:
         return None
-    return start_time + time_limit
+    attempt_end_time = start_time + time_limit
+    scheduled_start_at = get_test_scheduled_start_at(runtime_test)
+    if scheduled_start_at:
+        scheduled_end_time = scheduled_start_at + time_limit
+        return min(attempt_end_time, scheduled_end_time)
+    return attempt_end_time
 
 
 def get_answer_key_visibility_delay():
@@ -1438,6 +1443,12 @@ def activate_runtime_test_attempt(attempt_id: int):
     runtime_questions = get_runtime_questions_for_attempt(attempt)
     if not runtime_test or not runtime_questions:
         return False, "No configured scholarship test is available", attempt
+
+    _start_at, scheduled_end_at, _opens_at = get_test_start_window(runtime_test)
+    if scheduled_end_at and timezone.now() >= scheduled_end_at:
+        attempt.status = 'expired'
+        attempt.save(update_fields=['status'])
+        return False, "This test window has closed.", attempt
 
     now = timezone.now()
     update_fields = []

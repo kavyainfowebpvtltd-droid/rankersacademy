@@ -41,7 +41,7 @@ import random
 import re
 import requests
 from zoneinfo import ZoneInfo
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import quote, urlencode, urlsplit
 from datetime import datetime, time, timedelta
 
 from .models import *
@@ -2885,12 +2885,26 @@ def test_analysis_download_pdf(request):
         raise Http404("Test not found")
 
     batch_id = request.GET.get("batch_id") or request.GET.get("batch") or ""
-    payload = _build_test_analysis_base_payload()
+    if _is_teacher_user(request.user) and not (_is_superadmin(request.user) or _is_admin_user(request.user)):
+        payload = _build_faculty_test_analysis_payload(request.user).get("faculty", {})
+    else:
+        payload = _build_admin_test_analysis_payload().get("admin", {})
     test_key = f"SCH{test.id}"
     scores = payload.get("scoresByTest", {}).get(test_key, [])
+    if not scores:
+        scores, students_by_id, _focus_by_student = _build_analysis_dataset_for_test(
+            test,
+            focus_subject=(
+                _faculty_test_analysis_subject(request.user)
+                if _is_teacher_user(request.user) and not (_is_superadmin(request.user) or _is_admin_user(request.user))
+                else None
+            ),
+            student_pool=list(_schema_safe_analysis_student_queryset()),
+        )
+    else:
+        students_by_id = {student["id"]: student for student in payload.get("students", [])}
     if batch_id:
         batch_key = _normalize_analysis_batch_key(batch_id)
-        students_by_id = {student["id"]: student for student in payload.get("students", [])}
         scores = [
             score
             for score in scores
@@ -2899,8 +2913,11 @@ def test_analysis_download_pdf(request):
 
     pdf = _generate_test_analysis_pdf(test, scores, batch_id)
     response = HttpResponse(pdf, content_type="application/pdf")
-    safe_name = re.sub(r"[^A-Za-z0-9_-]+", "-", test.name).strip("-") or f"test-{test.id}"
-    response["Content-Disposition"] = f'attachment; filename="{safe_name}-analysis.pdf"'
+    file_name = f"{test.name or f'test-{test.id}'}.pdf"
+    safe_ascii_name = re.sub(r"[^A-Za-z0-9_. -]+", "", file_name).strip() or f"test-{test.id}.pdf"
+    response["Content-Disposition"] = (
+        f'attachment; filename="{safe_ascii_name}"; filename*=UTF-8\'\'{quote(file_name)}'
+    )
     return response
 
 

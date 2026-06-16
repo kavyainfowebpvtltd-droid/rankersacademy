@@ -1835,6 +1835,8 @@
 
       if (isAvailable) {
         action.href = test.attemptReviewUrl;
+        action.target = "_blank";
+        action.rel = "noopener noreferrer";
       } else {
         action.disabled = true;
         action.setAttribute("aria-disabled", "true");
