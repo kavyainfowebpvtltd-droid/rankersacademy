@@ -33,6 +33,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image)
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from django.conf import settings
 from django.contrib.auth.hashers import make_password, check_password
 from functools import lru_cache
@@ -2911,7 +2913,7 @@ def test_analysis_download_pdf(request):
             if _student_matches_analysis_batch(students_by_id.get(score.get("studentId"), {}), batch_key)
         ]
 
-    pdf = _generate_test_analysis_pdf(test, scores, batch_id)
+    pdf = _generate_test_analysis_pdf(test, scores, batch_id, students_by_id=students_by_id)
     response = HttpResponse(pdf, content_type="application/pdf")
     file_name = f"{test.name or f'test-{test.id}'}.pdf"
     safe_ascii_name = re.sub(r"[^A-Za-z0-9_. -]+", "", file_name).strip() or f"test-{test.id}.pdf"
@@ -5742,47 +5744,371 @@ def _build_test_analysis_page_payload(session):
     }
 
 
-def _generate_test_analysis_pdf(test, scores, batch_id=""):
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=14 * mm, leftMargin=14 * mm, topMargin=14 * mm, bottomMargin=14 * mm)
-    styles = getSampleStyleSheet()
-    story = [
-        Paragraph("Batch-wise Test Analysis", styles["Title"]),
-        Paragraph(test.name, styles["Heading2"]),
-        Paragraph(f"Date: {_analysis_test_date(test).strftime('%d %b %Y')}", styles["Normal"]),
-    ]
+def _analysis_pdf_number(value, decimals=1):
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        number = 0
+    if number.is_integer():
+        return str(int(number))
+    return f"{number:.{decimals}f}"
+
+
+def _analysis_pdf_grade(percentage):
+    try:
+        value = float(percentage or 0)
+    except (TypeError, ValueError):
+        value = 0
+    if value >= 90:
+        return "A+"
+    if value >= 80:
+        return "A"
+    if value >= 70:
+        return "B+"
+    if value >= 60:
+        return "B"
+    if value >= 50:
+        return "C"
+    if value >= 40:
+        return "D"
+    return "F"
+
+
+def _analysis_pdf_subject(test):
+    subject = _analysis_safe_model_field_value(test, "subject", "")
+    if subject:
+        return str(subject).strip().upper()
+    prefetched_sections = getattr(test, "_prefetched_objects_cache", {}).get("sections")
+    if prefetched_sections is not None and len(prefetched_sections) == 1:
+        return str(getattr(prefetched_sections[0], "name", "") or "").strip().upper()
+    return "ALL SUBJECTS"
+
+
+def _analysis_pdf_test_title(test, subject):
+    name = str(getattr(test, "name", "") or "").strip()
+    match = re.search(r"\btest\s*0*(\d+)\b", name, re.IGNORECASE)
+    if match:
+        return f"TEST {int(match.group(1)):02d} | {subject}"
+    return f"{name.upper()} | {subject}" if subject and subject not in name.upper() else name.upper()
+
+
+def _analysis_pdf_batch_label(test, batch_id=""):
     if batch_id:
-        story.append(Paragraph(f"Batch: {_analysis_batch_label(batch_id)}", styles["Normal"]))
-    story.append(Spacer(1, 8))
+        label = _analysis_batch_label(batch_id)
+    else:
+        label = _analysis_safe_model_field_value(test, "batch", "") or "Batch"
+    normalized = _normalize_analysis_batch_key(label)
+    if normalized in {"grade9", "grade10"}:
+        grade = "9th" if normalized == "grade9" else "10th"
+        return f"{grade} Batch"
+    return label
 
+
+def _analysis_pdf_wrap_text(pdf, text, max_width, font_name="Helvetica", font_size=9):
+    words = str(text or "").split()
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if pdf.stringWidth(candidate, font_name, font_size) <= max_width:
+            current = candidate
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines or [""]
+
+
+def _analysis_pdf_student_lookup(students_by_id):
+    return {
+        str(student.get("id")): student
+        for student in (students_by_id or {}).values()
+        if isinstance(student, dict)
+    }
+
+
+@lru_cache(maxsize=1)
+def _analysis_pdf_fonts():
+    font_paths = {
+        "regular": [
+            r"C:\Windows\Fonts\arial.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        ],
+        "bold": [
+            r"C:\Windows\Fonts\arialbd.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ],
+        "italic": [
+            r"C:\Windows\Fonts\ariali.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
+        ],
+    }
+    registered = {}
+    for key, paths in font_paths.items():
+        name = f"RankersPDF-{key}"
+        for path in paths:
+            try:
+                if os.path.exists(path):
+                    pdfmetrics.registerFont(TTFont(name, path))
+                    registered[key] = name
+                    break
+            except Exception:
+                logger.warning("Unable to register PDF font %s", path, exc_info=True)
+    return {
+        "regular": registered.get("regular", "Helvetica"),
+        "bold": registered.get("bold", "Helvetica-Bold"),
+        "italic": registered.get("italic", "Helvetica-Oblique"),
+    }
+
+
+def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    margin = 40
+    fonts = _analysis_pdf_fonts()
+    regular_font = fonts["regular"]
+    bold_font = fonts["bold"]
+    italic_font = fonts["italic"]
+    navy = colors.HexColor("#0d1b5e")
+    gold_text = colors.HexColor("#b8860b")
+    gold = colors.HexColor("#d4af37")
+    pale_gold = colors.HexColor("#fff7da")
+    silver = colors.HexColor("#e8e8e8")
+    bronze = colors.HexColor("#f0d9b5")
+    light_blue = colors.HexColor("#f4f6fc")
+    absent_gray = colors.HexColor("#f0f0f0")
+    border = colors.HexColor("#c8ccd8")
+    text_dark = colors.HexColor("#07103d")
+    muted = colors.HexColor("#30364d")
+
+    student_lookup = _analysis_pdf_student_lookup(students_by_id)
+    subject = _analysis_pdf_subject(test)
+    test_title = _analysis_pdf_test_title(test, subject)
+    total_marks = max(1, int(scores[0].get("totalMarks", 0) if scores else _get_test_total_marks(test)) or 1)
     attempted = [score for score in scores if score.get("attempted") is not False]
-    average = round(sum(score.get("total", 0) for score in attempted) / len(attempted), 1) if attempted else 0
-    top = sorted(attempted, key=lambda item: item.get("total", 0), reverse=True)[:1]
-    story.append(Paragraph(f"Appeared: {len(attempted)}/{len(scores)} &nbsp;&nbsp; Average: {average}", styles["Normal"]))
-    if top:
-        story.append(Paragraph(f"Highest Score: {top[0].get('total', 0)}", styles["Normal"]))
-    story.append(Spacer(1, 8))
+    highest = max((float(score.get("total", 0) or 0) for score in attempted), default=0)
+    average = sum(float(score.get("total", 0) or 0) for score in attempted) / len(attempted) if attempted else 0
+    class_average_percentage = (average / total_marks) * 100 if total_marks else 0
+    pass_count = sum(
+        1 for score in attempted
+        if total_marks and (float(score.get("total", 0) or 0) / total_marks) * 100 >= 40
+    )
+    pass_rate = round((pass_count / len(attempted)) * 100) if attempted else 0
 
-    table_data = [["Rank", "Student", "Score", "Status"]]
-    for score in sorted(scores, key=lambda item: (item.get("rank") or 999999, -item.get("total", 0))):
-        table_data.append([
-            score.get("rank") or "NA",
-            score.get("studentId", ""),
-            f"{score.get('total', 0)}/{score.get('totalMarks', 0)}",
-            "Appeared" if score.get("attempted") is not False else "Not appeared",
-        ])
-    if len(table_data) == 1:
-        table_data.append(["-", "No student records found", "-", "-"])
-    table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1f6feb")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#d0d7de")),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("ALIGN", (0, 0), (0, -1), "CENTER"),
-    ]))
-    story.append(table)
-    doc.build(story)
+    rows = []
+    for score in scores:
+        student = student_lookup.get(str(score.get("studentId")), {})
+        marks = float(score.get("total", 0) or 0)
+        percentage = (marks / total_marks) * 100 if total_marks else 0
+        attempted_row = score.get("attempted") is not False
+        rows.append({
+            "rank": score.get("rank") if attempted_row else None,
+            "roll": student.get("studentRef") or str(score.get("studentId", "")).replace("portal-", ""),
+            "name": student.get("name") or score.get("studentName") or score.get("studentId", ""),
+            "marks": marks,
+            "percentage": percentage,
+            "grade": _analysis_pdf_grade(percentage),
+            "attempted": attempted_row,
+        })
+    rows.sort(key=lambda item: (
+        1 if not item["attempted"] else 0,
+        item["rank"] or 999999,
+        -item["marks"],
+        item["name"].casefold(),
+    ))
+    last_marks = None
+    last_rank = 0
+    attempted_position = 0
+    for row in rows:
+        if not row["attempted"]:
+            row["rank"] = None
+            continue
+        attempted_position += 1
+        if last_marks is None or row["marks"] != last_marks:
+            last_rank = attempted_position
+        row["rank"] = last_rank
+        last_marks = row["marks"]
+    toppers = [row for row in rows if row["attempted"]][:3]
+
+    def draw_center(text, x, y, font=None, size=9, color=text_dark):
+        pdf.setFillColor(color)
+        pdf.setFont(font or regular_font, size)
+        pdf.drawCentredString(x, y, str(text))
+
+    def draw_left(text, x, y, font=None, size=9, color=text_dark):
+        pdf.setFillColor(color)
+        pdf.setFont(font or regular_font, size)
+        pdf.drawString(x, y, str(text))
+
+    def draw_right(text, x, y, font=None, size=9, color=text_dark):
+        pdf.setFillColor(color)
+        pdf.setFont(font or regular_font, size)
+        pdf.drawRightString(x, y, str(text))
+
+    def draw_header():
+        pdf.setFillColor(navy)
+        pdf.rect(0, height - 17, width, 17, fill=1, stroke=0)
+        draw_center(
+            "THE RANKERS ACADEMY  •  Plot No. 10, Buty Layout, RPTS Road, Laxmi Nagar, Nagpur  •  Mob: 8329100890",
+            width / 2,
+            height - 12,
+            regular_font,
+            7.5,
+            colors.white,
+        )
+        pdf.setFillColor(gold)
+        pdf.rect(0, 0, width, 8.5, fill=1, stroke=0)
+        draw_center("THE RANKERS ACADEMY", width / 2, height - 56, bold_font, 22, navy)
+        draw_center(
+            "NEET / JEE (Main & Advance) / MHTCET / 11th + 12th (CBSE/STATE) / Foundation",
+            width / 2,
+            height - 69,
+            regular_font,
+            9,
+            text_dark,
+        )
+        batch_label = _analysis_pdf_batch_label(test, batch_id)
+        draw_center(f"★ {str(batch_label).upper()} • CLASS TEST RESULT ★", width / 2, height - 91, bold_font, 14, gold_text)
+        draw_center(test_title, width / 2, height - 108, bold_font, 12, navy)
+        draw_center(f"Date of Test: {_analysis_test_date(test).strftime('%d-%m-%Y')}", width / 2, height - 121, italic_font, 10, text_dark)
+
+    def draw_stat_cards(y):
+        stats = [
+            (f"{len(attempted)}/{len(scores)}", "APPEARED"),
+            (f"{_analysis_pdf_number(highest)} / {total_marks}", "HIGHEST"),
+            (f"{_analysis_pdf_number(average)} / {total_marks}", "AVERAGE"),
+            (f"{class_average_percentage:.1f}%", "CLASS AVG %"),
+            (f"{pass_rate}%", "PASS RATE"),
+        ]
+        box_x = 34
+        box_width = width - 68
+        box_height = 45
+        pdf.setFillColor(light_blue)
+        pdf.rect(box_x, y, box_width, box_height, fill=1, stroke=0)
+        pdf.setStrokeColor(border)
+        pdf.setLineWidth(0.6)
+        pdf.rect(box_x, y, box_width, box_height, fill=0, stroke=1)
+        card_width = box_width / 5
+        for index, (value, label) in enumerate(stats):
+            x = box_x + (index * card_width)
+            if index:
+                pdf.line(x, y, x, y + box_height)
+            draw_center(value, x + card_width / 2, y + 25, bold_font, 15, navy)
+            draw_center(label, x + card_width / 2, y + 11, bold_font, 7.5, text_dark)
+
+    def draw_table_header(y):
+        pdf.setFillColor(navy)
+        pdf.roundRect(margin, y - 21, width - (2 * margin), 21, 5, fill=1, stroke=0)
+        headers = [("RANK", 29), ("ROLL NO.", 83), ("STUDENT NAME", 196), (f"MARKS\n(out of {total_marks})", 367), ("PERCENT", 438), ("GRADE", 513)]
+        for label, x in headers:
+            lines = label.split("\n")
+            draw_center(lines[0], margin + x, y - 9, bold_font, 9, colors.white)
+            if len(lines) > 1:
+                draw_center(lines[1], margin + x, y - 18, regular_font, 7, colors.white)
+
+    def start_new_page():
+        pdf.showPage()
+        draw_header()
+        draw_table_header(height - 150)
+        return height - 174
+
+    draw_header()
+    draw_stat_cards(height - 177)
+    y = height - 191
+    draw_table_header(y)
+    y -= 39
+    row_height = 22
+    for index, row in enumerate(rows):
+        if y < 34:
+            y = start_new_page()
+        if row["attempted"] and index == 0:
+            row_fill = pale_gold
+        elif row["attempted"] and index == 1:
+            row_fill = silver
+        elif row["attempted"] and index == 2:
+            row_fill = bronze
+        elif not row["attempted"]:
+            row_fill = absent_gray
+        else:
+            row_fill = colors.white
+        pdf.setFillColor(row_fill)
+        pdf.setStrokeColor(border)
+        pdf.rect(margin, y - 5, width - (2 * margin), row_height, fill=1, stroke=1)
+        rank_text = f"★ {row['rank']}" if row["attempted"] and row["rank"] in (1, 2, 3) else (row["rank"] or "—")
+        marks_text = _analysis_pdf_number(row["marks"]) if row["attempted"] else "ABSENT"
+        percent_text = f"{row['percentage']:.1f}%" if row["attempted"] else "—"
+        grade_text = row["grade"] if row["attempted"] else "—"
+        draw_center(rank_text, margin + 29, y, bold_font, 10, navy)
+        draw_center(row["roll"], margin + 83, y, regular_font, 10, text_dark)
+        draw_left(row["name"][:34], margin + 116, y, bold_font if index < 3 and row["attempted"] else regular_font, 10, text_dark)
+        draw_center(marks_text, margin + 367, y, bold_font, 10, text_dark)
+        draw_center(percent_text, margin + 438, y, regular_font, 10, text_dark)
+        draw_center(grade_text, margin + 513, y, bold_font, 10, text_dark)
+        y -= row_height
+
+    if y < 245:
+        pdf.showPage()
+        draw_header()
+        y = height - 150
+    else:
+        y -= 16
+
+    pdf.setFillColor(navy)
+    pdf.roundRect(margin, y - 17, width - (2 * margin), 22, 7, fill=1, stroke=0)
+    draw_center("★ A SPECIAL APPRECIATION FOR OUR TOPPERS ★", width / 2, y - 10, bold_font, 11.5, colors.white)
+    y -= 33
+    draw_center(f"The shining stars of {subject}", width / 2, y, regular_font, 9.3, muted)
+    y -= 14
+
+    card_gap = 8
+    card_width = (width - (2 * margin) - (card_gap * 2)) / 3
+    appreciation_lines = [
+        "Champion of the class! Your discipline showed up on paper.",
+        "Brilliant performance — a whisker away from the top. Push on!",
+        "Well done! Third position is a launchpad, not a destination.",
+    ]
+    for index in range(3):
+        x = margin + index * (card_width + card_gap)
+        topper = toppers[index] if index < len(toppers) else None
+        pdf.setFillColor(pale_gold if index == 0 else colors.HexColor("#f8fbff"))
+        pdf.setStrokeColor(gold if index == 0 else border)
+        pdf.roundRect(x, y - 76, card_width, 72, 8, fill=1, stroke=1)
+        draw_center(f"★ {index + 1}{'ST' if index == 0 else 'ND' if index == 1 else 'RD'} POSITION ★", x + card_width / 2, y - 17, bold_font, 8.5, navy)
+        draw_center(topper["name"] if topper else "—", x + card_width / 2, y - 34, bold_font, 10.5, text_dark)
+        marks_line = f"{_analysis_pdf_number(topper['marks'])} / {total_marks} ({topper['percentage']:.1f}%)" if topper else "—"
+        draw_center(marks_line, x + card_width / 2, y - 49, bold_font, 8.8, navy)
+        for offset, line in enumerate(_analysis_pdf_wrap_text(pdf, appreciation_lines[index], card_width - 14, regular_font, 7.8)[:2]):
+            draw_center(line, x + card_width / 2, y - 62 - (offset * 9), regular_font, 7.8, muted)
+
+    y -= 96
+    pdf.setStrokeColor(border)
+    pdf.setFillColor(colors.HexColor("#ffffff"))
+    message_height = 86
+    pdf.roundRect(margin, y - message_height, width - (2 * margin), message_height, 8, fill=1, stroke=1)
+    draw_center("✦ A MESSAGE FOR EVERY STUDENT ✦", width / 2, y - 15, bold_font, 9.5, navy)
+    default_message = (
+        "“The difference between a successful person and others is not a lack of strength, not a lack of "
+        "knowledge, but rather a lack of will. — Shiv Khera”\n"
+        f"{subject.title()} isn't just about facts — it's about how the world fits together. If your marks dropped, "
+        "don't blame your memory — sharpen your reading. Pick up the chapter tonight and read it aloud, slowly, "
+        "asking yourself \"Could I explain this to a younger student?\" When the answer becomes yes, the marks will follow."
+    )
+    message = getattr(settings, "TEST_ANALYSIS_PDF_MOTIVATIONAL_MESSAGE", default_message) or default_message
+    text_y = y - 32
+    for paragraph in str(message).split("\n"):
+        for line in _analysis_pdf_wrap_text(pdf, paragraph, width - (2 * margin) - 22, regular_font, 8.1):
+            draw_center(line, width / 2, text_y, regular_font, 8.1, text_dark)
+            text_y -= 10
+            if text_y < y - message_height + 12:
+                break
+
+    signature = getattr(settings, "TEST_ANALYSIS_PDF_FACULTY_SIGNATURE", "— Santosh Sir, The Rankers Academy")
+    draw_right(signature, width - margin - 8, y - message_height + 12, bold_font, 8.5, navy)
+
+    pdf.save()
     return buffer.getvalue()
 
 
