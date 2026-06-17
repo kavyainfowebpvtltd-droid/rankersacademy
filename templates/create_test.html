@@ -6,14 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Builder</title>
     <script>
-      localStorage.setItem("rankersAdminTheme", "light");
+      if (!localStorage.getItem("rankersAdminTheme")) {
+        localStorage.setItem("rankersAdminTheme", "light");
+      }
     </script>
     <script src="{% static 'js/admin-theme.js' %}"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link />
     <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
     <link rel="stylesheet" href="{% static 'css/create-test.css' %}?v={% now 'U' %}" />
   </head>

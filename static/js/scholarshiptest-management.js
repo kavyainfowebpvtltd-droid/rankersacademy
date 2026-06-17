@@ -26,11 +26,7 @@ function updatePrimaryActionButton() {
   const label = document.getElementById("primary-action-label");
   if (!label) return;
   label.textContent = isInsideFolderView ? "New Test" : "New Folder";
-  const newFolderBtn = document.getElementById("new-folder-btn");
   const manualMarksBtn = document.getElementById("manual-marks-btn");
-  if (newFolderBtn) {
-    newFolderBtn.style.display = isInsideFolderView ? "inline-flex" : "none";
-  }
   if (manualMarksBtn) {
     manualMarksBtn.style.display = isInsideFolderView ? "inline-flex" : "none";
   }

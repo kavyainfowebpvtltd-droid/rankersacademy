@@ -12,13 +12,16 @@
       rel="stylesheet"
     />
     <script>
-      localStorage.setItem("rankersAdminTheme", "light");
+      if (!localStorage.getItem("rankersAdminTheme")) {
+        localStorage.setItem("rankersAdminTheme", "light");
+      }
     </script>
     <script src="{% static 'js/admin-theme.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}" />
     <link rel="stylesheet" href="{% static 'css/system-management.css' %}" />
     <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
     <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link />
     <!-- Bootstrap Icons -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"

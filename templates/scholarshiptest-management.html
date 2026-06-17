@@ -6,9 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Diagnostic Dashboard</title>
     <link rel="icon" href="{% static 'img/logo.webp' %}" type="image/webp" />
-    <script>
-      localStorage.setItem("rankersAdminTheme", "light");
-    </script>
     <script src="{% static 'js/admin-theme.js' %}"></script>
 
     <link
@@ -24,7 +21,7 @@
       rel="stylesheet"
       href="{% static 'css/scholarshiptest-management.css' %}?v={% now 'U' %}"
     />
-    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link />
     <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
   </head>
 
@@ -48,16 +45,6 @@
           >
             <i data-lucide="clipboard-pen-line"></i>
             <span>Manual Marks</span>
-          </button>
-          <button
-            id="new-folder-btn"
-            class="btn btn-new d-flex align-items-center gap-2"
-            type="button"
-            style="display: none"
-            onclick="openCreateFolderModal()"
-          >
-            <i data-lucide="plus"></i>
-            <span>New Folder</span>
           </button>
           <button
             id="primary-action-btn"

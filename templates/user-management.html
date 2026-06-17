@@ -6,7 +6,9 @@
     <link rel="icon" href="{% static 'img/logo.webp' %}" />
     <title>User Management</title>
     <script>
-      localStorage.setItem("rankersAdminTheme", "light");
+      if (!localStorage.getItem("rankersAdminTheme")) {
+        localStorage.setItem("rankersAdminTheme", "light");
+      }
     </script>
     <script src="{% static 'js/admin-theme.js' %}"></script>
 
@@ -25,7 +27,7 @@
 
     <link rel="stylesheet" href="{% static 'css/user-management.css' %}?v=20260514-2" />
     <link rel="stylesheet" href="{% static 'css/pagination-controls.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link />
     <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
     <style>
       .user-type-tabs {

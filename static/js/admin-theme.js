@@ -2,7 +2,8 @@
   const STORAGE_KEY = "rankersAdminTheme";
 
   function getTheme() {
-    return "light";
+    const savedTheme = localStorage.getItem(STORAGE_KEY);
+    return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
   }
 
   function setThemeAttribute(doc, theme) {
@@ -65,8 +66,9 @@
   }
 
   function saveAndApplyTheme(theme) {
-    localStorage.setItem(STORAGE_KEY, "light");
-    applyTheme("light");
+    const nextTheme = theme === "dark" ? "dark" : "light";
+    localStorage.setItem(STORAGE_KEY, nextTheme);
+    applyTheme(nextTheme);
   }
 
   function watchForThemeLinks() {
@@ -74,7 +76,9 @@
     observer.observe(document.head || document.documentElement, { childList: true, subtree: true });
   }
 
-  localStorage.setItem(STORAGE_KEY, "light");
+  if (!localStorage.getItem(STORAGE_KEY)) {
+    localStorage.setItem(STORAGE_KEY, "light");
+  }
   const initialTheme = getTheme();
   setThemeAttribute(document, initialTheme);
   syncThemeLinks(document, initialTheme);
@@ -84,7 +88,7 @@
     get: getTheme,
     set: saveAndApplyTheme,
     toggle() {
-      saveAndApplyTheme("light");
+      saveAndApplyTheme(getTheme() === "dark" ? "light" : "dark");
     },
     apply: applyTheme,
   };
@@ -104,7 +108,7 @@
 
   window.addEventListener("storage", (event) => {
     if (event.key === STORAGE_KEY) {
-      applyTheme(getTheme());
+      applyTheme(event.newValue === "dark" ? "dark" : "light");
     }
   });
 })();

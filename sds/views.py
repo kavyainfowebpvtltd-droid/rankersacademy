@@ -5809,6 +5809,22 @@ def _analysis_pdf_wrap_text(pdf, text, max_width, font_name="Helvetica", font_si
     lines = []
     current = ""
     for word in words:
+        if pdf.stringWidth(word, font_name, font_size) > max_width:
+            if current:
+                lines.append(current)
+                current = ""
+            chunk = ""
+            for char in word:
+                candidate = f"{chunk}{char}"
+                if pdf.stringWidth(candidate, font_name, font_size) <= max_width:
+                    chunk = candidate
+                else:
+                    if chunk:
+                        lines.append(chunk)
+                    chunk = char
+            if chunk:
+                current = chunk
+            continue
         candidate = f"{current} {word}".strip()
         if pdf.stringWidth(candidate, font_name, font_size) <= max_width:
             current = candidate
@@ -5819,6 +5835,19 @@ def _analysis_pdf_wrap_text(pdf, text, max_width, font_name="Helvetica", font_si
     if current:
         lines.append(current)
     return lines or [""]
+
+
+def _analysis_pdf_truncate_text(pdf, text, max_width, font_name="Helvetica", font_size=9):
+    value = str(text or "")
+    if pdf.stringWidth(value, font_name, font_size) <= max_width:
+        return value
+    ellipsis = "…"
+    if pdf.stringWidth(ellipsis, font_name, font_size) > max_width:
+        return ""
+    trimmed = value
+    while trimmed and pdf.stringWidth(f"{trimmed}{ellipsis}", font_name, font_size) > max_width:
+        trimmed = trimmed[:-1]
+    return f"{trimmed.rstrip()}{ellipsis}" if trimmed else ellipsis
 
 
 def _analysis_pdf_student_lookup(students_by_id):
@@ -5867,11 +5896,21 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
-    margin = 40
+    margin = 24
+    content_x = margin
+    content_width = width - (2 * margin)
+    bottom_safe_y = 24
     fonts = _analysis_pdf_fonts()
     regular_font = fonts["regular"]
     bold_font = fonts["bold"]
     italic_font = fonts["italic"]
+    type_scale = {
+        "title": 22,
+        "subtitle": 12,
+        "heading": 11.5,
+        "body": 10,
+        "caption": 7.8,
+    }
     navy = colors.HexColor("#0d1b5e")
     gold_text = colors.HexColor("#b8860b")
     gold = colors.HexColor("#d4af37")
@@ -5948,31 +5987,41 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
         pdf.setFont(font or regular_font, size)
         pdf.drawRightString(x, y, str(text))
 
+    def draw_center_fit(text, x, y, max_width, font=None, size=9, color=text_dark):
+        font_name = font or regular_font
+        draw_center(_analysis_pdf_truncate_text(pdf, text, max_width, font_name, size), x, y, font_name, size, color)
+
+    def draw_left_fit(text, x, y, max_width, font=None, size=9, color=text_dark):
+        font_name = font or regular_font
+        draw_left(_analysis_pdf_truncate_text(pdf, text, max_width, font_name, size), x, y, font_name, size, color)
+
     def draw_header():
         pdf.setFillColor(navy)
         pdf.rect(0, height - 17, width, 17, fill=1, stroke=0)
-        draw_center(
+        draw_center_fit(
             "THE RANKERS ACADEMY  •  Plot No. 10, Buty Layout, RPTS Road, Laxmi Nagar, Nagpur  •  Mob: 8329100890",
             width / 2,
             height - 12,
+            content_width,
             regular_font,
             7.5,
             colors.white,
         )
         pdf.setFillColor(gold)
         pdf.rect(0, 0, width, 8.5, fill=1, stroke=0)
-        draw_center("THE RANKERS ACADEMY", width / 2, height - 56, bold_font, 22, navy)
-        draw_center(
+        draw_center("THE RANKERS ACADEMY", width / 2, height - 56, bold_font, type_scale["title"], navy)
+        draw_center_fit(
             "NEET / JEE (Main & Advance) / MHTCET / 11th + 12th (CBSE/STATE) / Foundation",
             width / 2,
             height - 69,
+            content_width,
             regular_font,
             9,
             text_dark,
         )
         batch_label = _analysis_pdf_batch_label(test, batch_id)
-        draw_center(f"★ {str(batch_label).upper()} • CLASS TEST RESULT ★", width / 2, height - 91, bold_font, 14, gold_text)
-        draw_center(test_title, width / 2, height - 108, bold_font, 12, navy)
+        draw_center_fit(f"★ {str(batch_label).upper()} • CLASS TEST RESULT ★", width / 2, height - 91, content_width, bold_font, 14, gold_text)
+        draw_center_fit(test_title, width / 2, height - 108, content_width, bold_font, type_scale["subtitle"], navy)
         draw_center(f"Date of Test: {_analysis_test_date(test).strftime('%d-%m-%Y')}", width / 2, height - 121, italic_font, 10, text_dark)
 
     def draw_stat_cards(y):
@@ -5983,8 +6032,8 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
             (f"{class_average_percentage:.1f}%", "CLASS AVG %"),
             (f"{pass_rate}%", "PASS RATE"),
         ]
-        box_x = 34
-        box_width = width - 68
+        box_x = content_x
+        box_width = content_width
         box_height = 45
         pdf.setFillColor(light_blue)
         pdf.rect(box_x, y, box_width, box_height, fill=1, stroke=0)
@@ -5996,18 +6045,32 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
             x = box_x + (index * card_width)
             if index:
                 pdf.line(x, y, x, y + box_height)
-            draw_center(value, x + card_width / 2, y + 25, bold_font, 15, navy)
+            draw_center_fit(value, x + card_width / 2, y + 25, card_width - 12, bold_font, 15, navy)
             draw_center(label, x + card_width / 2, y + 11, bold_font, 7.5, text_dark)
+
+    table_columns = [
+        {"key": "rank", "label": "RANK", "width": 50, "align": "center"},
+        {"key": "roll", "label": "ROLL NO.", "width": 86, "align": "center"},
+        {"key": "name", "label": "STUDENT NAME", "width": content_width - 50 - 86 - 78 - 78 - 58, "align": "left"},
+        {"key": "marks", "label": f"MARKS\n(out of {total_marks})", "width": 78, "align": "center"},
+        {"key": "percent", "label": "PERCENT", "width": 78, "align": "center"},
+        {"key": "grade", "label": "GRADE", "width": 58, "align": "center"},
+    ]
+    table_x_positions = []
+    cursor_x = content_x
+    for column in table_columns:
+        table_x_positions.append(cursor_x)
+        cursor_x += column["width"]
 
     def draw_table_header(y):
         pdf.setFillColor(navy)
-        pdf.roundRect(margin, y - 21, width - (2 * margin), 21, 5, fill=1, stroke=0)
-        headers = [("RANK", 29), ("ROLL NO.", 83), ("STUDENT NAME", 196), (f"MARKS\n(out of {total_marks})", 367), ("PERCENT", 438), ("GRADE", 513)]
-        for label, x in headers:
-            lines = label.split("\n")
-            draw_center(lines[0], margin + x, y - 9, bold_font, 9, colors.white)
+        pdf.roundRect(content_x, y - 21, content_width, 21, 5, fill=1, stroke=0)
+        for column, x in zip(table_columns, table_x_positions):
+            lines = column["label"].split("\n")
+            center_x = x + (column["width"] / 2)
+            draw_center(lines[0], center_x, y - 9, bold_font, 9, colors.white)
             if len(lines) > 1:
-                draw_center(lines[1], margin + x, y - 18, regular_font, 7, colors.white)
+                draw_center(lines[1], center_x, y - 18, regular_font, 7, colors.white)
 
     def start_new_page():
         pdf.showPage()
@@ -6021,9 +6084,9 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
     draw_table_header(y)
     y -= 39
     row_height = 22
-    for index, row in enumerate(rows):
-        if y < 34:
-            y = start_new_page()
+    row_padding_x = 8
+
+    def draw_result_row(row, index, baseline_y):
         if row["attempted"] and index == 0:
             row_fill = pale_gold
         elif row["attempted"] and index == 1:
@@ -6034,19 +6097,39 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
             row_fill = absent_gray
         else:
             row_fill = colors.white
+
         pdf.setFillColor(row_fill)
         pdf.setStrokeColor(border)
-        pdf.rect(margin, y - 5, width - (2 * margin), row_height, fill=1, stroke=1)
+        pdf.rect(content_x, baseline_y - 5, content_width, row_height, fill=1, stroke=1)
+
         rank_text = f"★ {row['rank']}" if row["attempted"] and row["rank"] in (1, 2, 3) else (row["rank"] or "—")
         marks_text = _analysis_pdf_number(row["marks"]) if row["attempted"] else "ABSENT"
         percent_text = f"{row['percentage']:.1f}%" if row["attempted"] else "—"
-        grade_text = row["grade"] if row["attempted"] else "—"
-        draw_center(rank_text, margin + 29, y, bold_font, 10, navy)
-        draw_center(row["roll"], margin + 83, y, regular_font, 10, text_dark)
-        draw_left(row["name"][:34], margin + 116, y, bold_font if index < 3 and row["attempted"] else regular_font, 10, text_dark)
-        draw_center(marks_text, margin + 367, y, bold_font, 10, text_dark)
-        draw_center(percent_text, margin + 438, y, regular_font, 10, text_dark)
-        draw_center(grade_text, margin + 513, y, bold_font, 10, text_dark)
+        grade_text = row.get("grade") if row["attempted"] else "—"
+        grade_text = grade_text or "—"
+        values = {
+            "rank": rank_text,
+            "roll": row.get("roll") or "—",
+            "name": row.get("name") or "—",
+            "marks": marks_text,
+            "percent": percent_text,
+            "grade": grade_text,
+        }
+
+        for column, x in zip(table_columns, table_x_positions):
+            usable_width = max(4, column["width"] - (2 * row_padding_x))
+            value = values[column["key"]]
+            if column["align"] == "left":
+                font = bold_font if index < 3 and row["attempted"] else regular_font
+                draw_left_fit(value, x + row_padding_x, baseline_y, usable_width, font, type_scale["body"], text_dark)
+            else:
+                font = bold_font if column["key"] in {"rank", "marks", "grade"} else regular_font
+                draw_center_fit(value, x + (column["width"] / 2), baseline_y, usable_width, font, type_scale["body"], navy if column["key"] == "rank" else text_dark)
+
+    for index, row in enumerate(rows):
+        if y - 5 < bottom_safe_y:
+            y = start_new_page()
+        draw_result_row(row, index, y)
         y -= row_height
 
     if y < 245:
@@ -6057,37 +6140,41 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
         y -= 16
 
     pdf.setFillColor(navy)
-    pdf.roundRect(margin, y - 17, width - (2 * margin), 22, 7, fill=1, stroke=0)
+    pdf.roundRect(content_x, y - 17, content_width, 22, 7, fill=1, stroke=0)
     draw_center("★ A SPECIAL APPRECIATION FOR OUR TOPPERS ★", width / 2, y - 10, bold_font, 11.5, colors.white)
     y -= 33
-    draw_center(f"The shining stars of {subject}", width / 2, y, regular_font, 9.3, muted)
+    draw_center_fit(f"The shining stars of {subject}", width / 2, y, content_width, regular_font, 9.3, muted)
     y -= 14
 
     card_gap = 8
-    card_width = (width - (2 * margin) - (card_gap * 2)) / 3
+    card_width = (content_width - (card_gap * 2)) / 3
     appreciation_lines = [
         "Champion of the class! Your discipline showed up on paper.",
         "Brilliant performance — a whisker away from the top. Push on!",
         "Well done! Third position is a launchpad, not a destination.",
     ]
     for index in range(3):
-        x = margin + index * (card_width + card_gap)
+        x = content_x + index * (card_width + card_gap)
         topper = toppers[index] if index < len(toppers) else None
         pdf.setFillColor(pale_gold if index == 0 else colors.HexColor("#f8fbff"))
         pdf.setStrokeColor(gold if index == 0 else border)
         pdf.roundRect(x, y - 76, card_width, 72, 8, fill=1, stroke=1)
         draw_center(f"★ {index + 1}{'ST' if index == 0 else 'ND' if index == 1 else 'RD'} POSITION ★", x + card_width / 2, y - 17, bold_font, 8.5, navy)
-        draw_center(topper["name"] if topper else "—", x + card_width / 2, y - 34, bold_font, 10.5, text_dark)
+        draw_center_fit(topper["name"] if topper else "—", x + card_width / 2, y - 34, card_width - 16, bold_font, 10.5, text_dark)
         marks_line = f"{_analysis_pdf_number(topper['marks'])} / {total_marks} ({topper['percentage']:.1f}%)" if topper else "—"
-        draw_center(marks_line, x + card_width / 2, y - 49, bold_font, 8.8, navy)
-        for offset, line in enumerate(_analysis_pdf_wrap_text(pdf, appreciation_lines[index], card_width - 14, regular_font, 7.8)[:2]):
+        draw_center_fit(marks_line, x + card_width / 2, y - 49, card_width - 16, bold_font, 8.8, navy)
+        for offset, line in enumerate(_analysis_pdf_wrap_text(pdf, appreciation_lines[index], card_width - 16, regular_font, type_scale["caption"])[:2]):
             draw_center(line, x + card_width / 2, y - 62 - (offset * 9), regular_font, 7.8, muted)
 
     y -= 96
+    if y - 86 < bottom_safe_y:
+        pdf.showPage()
+        draw_header()
+        y = height - 150
     pdf.setStrokeColor(border)
     pdf.setFillColor(colors.HexColor("#ffffff"))
     message_height = 86
-    pdf.roundRect(margin, y - message_height, width - (2 * margin), message_height, 8, fill=1, stroke=1)
+    pdf.roundRect(content_x, y - message_height, content_width, message_height, 8, fill=1, stroke=1)
     draw_center("✦ A MESSAGE FOR EVERY STUDENT ✦", width / 2, y - 15, bold_font, 9.5, navy)
     default_message = (
         "“The difference between a successful person and others is not a lack of strength, not a lack of "
@@ -6098,15 +6185,26 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
     )
     message = getattr(settings, "TEST_ANALYSIS_PDF_MOTIVATIONAL_MESSAGE", default_message) or default_message
     text_y = y - 32
+    min_message_y = y - message_height + 24
     for paragraph in str(message).split("\n"):
-        for line in _analysis_pdf_wrap_text(pdf, paragraph, width - (2 * margin) - 22, regular_font, 8.1):
+        for line in _analysis_pdf_wrap_text(pdf, paragraph, content_width - 22, regular_font, 8.1):
             draw_center(line, width / 2, text_y, regular_font, 8.1, text_dark)
             text_y -= 10
-            if text_y < y - message_height + 12:
+            if text_y < min_message_y:
                 break
+        text_y -= 2
+        if text_y < min_message_y:
+            break
 
     signature = getattr(settings, "TEST_ANALYSIS_PDF_FACULTY_SIGNATURE", "— Santosh Sir, The Rankers Academy")
-    draw_right(signature, width - margin - 8, y - message_height + 12, bold_font, 8.5, navy)
+    draw_right(
+        _analysis_pdf_truncate_text(pdf, signature, content_width - 16, bold_font, 8.5),
+        content_x + content_width - 8,
+        y - message_height + 12,
+        bold_font,
+        8.5,
+        navy,
+    )
 
     pdf.save()
     return buffer.getvalue()
