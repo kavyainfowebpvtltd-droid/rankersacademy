@@ -1462,91 +1462,13 @@ def register_student(request):
 @login_required
 def user_management(request):
     
-    if not (
-        request.user.is_superuser
-        or (hasattr(request.user, "teacheradmin") and request.user.teacheradmin.role == "Admin")
-    ):
+    if not _can_access_user_management(request.user):
         return HttpResponseForbidden("Only admins can access user management.")
     
-    all_students = Student.objects.select_related("user").order_by(Lower("username"), "id")
+    all_students = _user_management_students_queryset()
 
-    student_search = (request.GET.get("student_search") or "").strip()
-    student_batch_filter = (request.GET.get("student_batch") or "").strip()
-    student_stream_filter = (request.GET.get("student_stream") or "").strip()
-    student_board_filter = (request.GET.get("student_board") or "").strip()
-    student_grade_filter = (request.GET.get("student_grade") or "").strip()
-
-    fixed_stream_options = ["JEE", "NEET", "MHTCET"]
-    fixed_board_options = ["State", "CBSE"]
-    fixed_grade_options = ["9th", "10th", "11th", "12th"]
-
-    preferred_batch_labels = ["Star 01", "Star 02"]
-    preferred_batch_map = {label.lower(): label for label in preferred_batch_labels}
-
-    raw_batch_values = [
-        batch.strip()
-        for batch in all_students.values_list("batch", flat=True).distinct()
-        if (batch or "").strip()
-    ]
-    batch_seen = set()
-    student_batch_options = []
-    for raw_batch in preferred_batch_labels + raw_batch_values:
-        normalized_batch = raw_batch.strip()
-        if not normalized_batch:
-            continue
-        normalized_key = normalized_batch.lower()
-        if normalized_key in batch_seen:
-            continue
-        batch_seen.add(normalized_key)
-        student_batch_options.append(
-            preferred_batch_map.get(normalized_key, normalized_batch)
-        )
-
-    if student_batch_filter:
-        student_batch_filter = preferred_batch_map.get(
-            student_batch_filter.lower(),
-            student_batch_filter,
-        )
-    if student_stream_filter:
-        stream_map = {value.lower(): value for value in fixed_stream_options}
-        student_stream_filter = stream_map.get(
-            student_stream_filter.lower(),
-            student_stream_filter,
-        )
-    if student_board_filter:
-        board_map = {value.lower(): value for value in fixed_board_options}
-        student_board_filter = board_map.get(
-            student_board_filter.lower(),
-            student_board_filter,
-        )
-    if student_grade_filter:
-        grade_map = {value.lower(): value for value in fixed_grade_options}
-        student_grade_filter = grade_map.get(
-            student_grade_filter.lower(),
-            student_grade_filter,
-        )
-
-    students = all_students
-    if student_search:
-        students = students.filter(
-            Q(student_name__icontains=student_search)
-            | Q(username__icontains=student_search)
-            | Q(contact__icontains=student_search)
-            | Q(email__icontains=student_search)
-            | Q(father_name__icontains=student_search)
-            | Q(batch__icontains=student_search)
-            | Q(stream__icontains=student_search)
-            | Q(board__icontains=student_search)
-            | Q(grade__icontains=student_search)
-        )
-    if student_batch_filter:
-        students = students.filter(batch__iexact=student_batch_filter)
-    if student_stream_filter:
-        students = students.filter(stream__iexact=student_stream_filter)
-    if student_board_filter:
-        students = students.filter(board__iexact=student_board_filter)
-    if student_grade_filter:
-        students = students.filter(grade__iexact=student_grade_filter)
+    student_filter_state = _build_user_management_student_filter_state(request, all_students)
+    students = _apply_user_management_student_filters(all_students, student_filter_state)
 
     grouped = {}
     for s in all_students:
@@ -1563,13 +1485,9 @@ def user_management(request):
             if (student.username or "").strip()
         ]
 
-    teachers = TeacherAdmin.objects.select_related("user").order_by(Lower("username"), "id")
+    teachers = _user_management_teachers_queryset()
     teaching_staff = teachers.filter(role__iexact="Teacher").order_by(Lower("username"), "id")
     non_teaching_staff = teachers.exclude(role__iexact="Teacher").order_by(Lower("username"), "id")
-
-    student_stream_options = fixed_stream_options
-    student_board_options = fixed_board_options
-    student_grade_options = fixed_grade_options
 
     student_items_per_page = get_entries_per_page(request, "student_entries")
     teacher_items_per_page = get_entries_per_page(request, "teacher_entries")
@@ -1604,15 +1522,15 @@ def user_management(request):
             "total_non_teaching_staff": non_teaching_staff.count(),
             "batch_counts_json": json.dumps(batch_counts),
             "batch_usernames_json": json.dumps(batch_usernames),
-            "student_search": student_search,
-            "student_batch_filter": student_batch_filter,
-            "student_stream_filter": student_stream_filter,
-            "student_board_filter": student_board_filter,
-            "student_grade_filter": student_grade_filter,
-            "student_batch_options": student_batch_options,
-            "student_stream_options": student_stream_options,
-            "student_board_options": student_board_options,
-            "student_grade_options": student_grade_options,
+            "student_search": student_filter_state["search"],
+            "student_batch_filter": student_filter_state["batch"],
+            "student_stream_filter": student_filter_state["stream"],
+            "student_board_filter": student_filter_state["board"],
+            "student_grade_filter": student_filter_state["grade"],
+            "student_batch_options": student_filter_state["batch_options"],
+            "student_stream_options": USER_MANAGEMENT_STREAM_OPTIONS,
+            "student_board_options": USER_MANAGEMENT_BOARD_OPTIONS,
+            "student_grade_options": USER_MANAGEMENT_GRADE_OPTIONS,
             "student_pagination_query": student_pagination_query,
             "teacher_pagination_query": teacher_pagination_query,
             "entry_options": PAGE_SIZE_OPTIONS,
@@ -1621,6 +1539,280 @@ def user_management(request):
             "student_page_range": get_page_range(student_paginator, students_page.number),
             "teacher_page_range": get_page_range(teacher_paginator, teachers_page.number),
         },
+    )
+
+
+USER_MANAGEMENT_STREAM_OPTIONS = ["JEE", "NEET", "MHTCET"]
+USER_MANAGEMENT_BOARD_OPTIONS = ["State", "CBSE"]
+USER_MANAGEMENT_GRADE_OPTIONS = ["9th", "10th", "11th", "12th"]
+USER_MANAGEMENT_PREFERRED_BATCH_LABELS = ["Star 01", "Star 02"]
+
+
+def _can_access_user_management(user):
+    return bool(
+        user
+        and user.is_authenticated
+        and (
+            user.is_superuser
+            or (
+                hasattr(user, "teacheradmin")
+                and user.teacheradmin.role == "Admin"
+            )
+        )
+    )
+
+
+def _user_management_students_queryset():
+    return Student.objects.select_related("user").order_by(Lower("username"), "id")
+
+
+def _user_management_teachers_queryset():
+    return TeacherAdmin.objects.select_related("user").order_by(Lower("username"), "id")
+
+
+def _build_user_management_student_filter_state(request, all_students=None):
+    if all_students is None:
+        all_students = _user_management_students_queryset()
+
+    preferred_batch_map = {
+        label.lower(): label for label in USER_MANAGEMENT_PREFERRED_BATCH_LABELS
+    }
+    raw_batch_values = [
+        batch.strip()
+        for batch in all_students.values_list("batch", flat=True).distinct()
+        if (batch or "").strip()
+    ]
+    batch_seen = set()
+    batch_options = []
+    for raw_batch in USER_MANAGEMENT_PREFERRED_BATCH_LABELS + raw_batch_values:
+        normalized_batch = raw_batch.strip()
+        if not normalized_batch:
+            continue
+        normalized_key = normalized_batch.lower()
+        if normalized_key in batch_seen:
+            continue
+        batch_seen.add(normalized_key)
+        batch_options.append(preferred_batch_map.get(normalized_key, normalized_batch))
+
+    def normalize_filter(raw_value, options):
+        value = (raw_value or "").strip()
+        if not value:
+            return ""
+        option_map = {option.lower(): option for option in options}
+        return option_map.get(value.lower(), value)
+
+    return {
+        "search": (request.GET.get("student_search") or "").strip(),
+        "batch": normalize_filter(
+            request.GET.get("student_batch"),
+            USER_MANAGEMENT_PREFERRED_BATCH_LABELS,
+        ),
+        "stream": normalize_filter(
+            request.GET.get("student_stream"),
+            USER_MANAGEMENT_STREAM_OPTIONS,
+        ),
+        "board": normalize_filter(
+            request.GET.get("student_board"),
+            USER_MANAGEMENT_BOARD_OPTIONS,
+        ),
+        "grade": normalize_filter(
+            request.GET.get("student_grade"),
+            USER_MANAGEMENT_GRADE_OPTIONS,
+        ),
+        "batch_options": batch_options,
+    }
+
+
+def _apply_user_management_student_filters(students, filter_state):
+    student_search = filter_state.get("search", "")
+    if student_search:
+        students = students.filter(
+            Q(student_name__icontains=student_search)
+            | Q(username__icontains=student_search)
+            | Q(contact__icontains=student_search)
+            | Q(email__icontains=student_search)
+            | Q(father_name__icontains=student_search)
+            | Q(batch__icontains=student_search)
+            | Q(stream__icontains=student_search)
+            | Q(board__icontains=student_search)
+            | Q(grade__icontains=student_search)
+        )
+    if filter_state.get("batch"):
+        students = students.filter(batch__iexact=filter_state["batch"])
+    if filter_state.get("stream"):
+        students = students.filter(stream__iexact=filter_state["stream"])
+    if filter_state.get("board"):
+        students = students.filter(board__iexact=filter_state["board"])
+    if filter_state.get("grade"):
+        students = students.filter(grade__iexact=filter_state["grade"])
+    return students
+
+
+def _safe_excel_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return timezone.localtime(value).strftime("%Y-%m-%d %H:%M")
+    if isinstance(value, str) and value[:1] in {"=", "+", "-", "@"}:
+        return f"'{value}"
+    return value
+
+
+def _build_xlsx_response(filename, sheet_title, headers, row_iterable):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    workbook = Workbook(write_only=False)
+    worksheet = workbook.active
+    worksheet.title = sheet_title[:31] or "Export"
+    worksheet.append(headers)
+    for cell in worksheet[1]:
+        cell.font = Font(bold=True)
+
+    for row in row_iterable:
+        worksheet.append([_safe_excel_value(value) for value in row])
+
+    worksheet.freeze_panes = "A2"
+    for column_cells in worksheet.columns:
+        max_length = 0
+        column_letter = column_cells[0].column_letter
+        for cell in column_cells:
+            max_length = max(max_length, len(str(cell.value or "")))
+        worksheet.column_dimensions[column_letter].width = min(max(max_length + 2, 12), 42)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+def _student_export_filename(filter_state):
+    batch = (filter_state.get("batch") or "").strip()
+    if not batch:
+        return "students_all.xlsx"
+    normalized = re.sub(r"[^A-Za-z0-9]+", "_", batch).strip("_").lower()
+    return f"students_{normalized or 'selected_batch'}.xlsx"
+
+
+@login_required
+def export_user_management_students(request):
+    if not _can_access_user_management(request.user):
+        return HttpResponseForbidden("Only admins can export user management data.")
+
+    all_students = _user_management_students_queryset()
+    filter_state = _build_user_management_student_filter_state(request, all_students)
+    students = _apply_user_management_student_filters(all_students, filter_state)
+    headers = [
+        "User ID",
+        "Name",
+        "Email",
+        "Mobile",
+        "Batch",
+        "Admission Number",
+        "Board",
+        "Grade",
+        "Stream",
+        "Status",
+        "Created Date",
+    ]
+
+    rows = (
+        [
+            student.user_id,
+            student.student_name,
+            student.email,
+            student.contact,
+            student.batch,
+            student.username or getattr(student.user, "username", ""),
+            student.board,
+            student.grade,
+            student.stream,
+            "Active" if student.user.is_active else "Inactive",
+            student.user.date_joined,
+        ]
+        for student in students.iterator(chunk_size=500)
+    )
+    return _build_xlsx_response(
+        _student_export_filename(filter_state),
+        "Students",
+        headers,
+        rows,
+    )
+
+
+def _staff_export_rows(staff_queryset):
+    for staff in staff_queryset.iterator(chunk_size=500):
+        yield [
+            staff.user_id,
+            staff.username or getattr(staff.user, "username", ""),
+            staff.name,
+            staff.email,
+            staff.contact,
+            staff.role,
+            staff.subjects,
+            staff.board,
+            staff.grade,
+            staff.batch,
+            "Active" if staff.user.is_active else "Inactive",
+        ]
+
+
+@login_required
+def export_user_management_teaching_staff(request):
+    if not _can_access_user_management(request.user):
+        return HttpResponseForbidden("Only admins can export user management data.")
+
+    staff = _user_management_teachers_queryset().filter(role__iexact="Teacher")
+    headers = [
+        "User ID",
+        "Username",
+        "Name",
+        "Email",
+        "Mobile",
+        "Designation",
+        "Subject",
+        "Board",
+        "Grade",
+        "Batch",
+        "Status",
+    ]
+    return _build_xlsx_response(
+        "teaching_staff.xlsx",
+        "Teaching Staff",
+        headers,
+        _staff_export_rows(staff),
+    )
+
+
+@login_required
+def export_user_management_non_teaching_staff(request):
+    if not _can_access_user_management(request.user):
+        return HttpResponseForbidden("Only admins can export user management data.")
+
+    staff = _user_management_teachers_queryset().exclude(role__iexact="Teacher")
+    headers = [
+        "User ID",
+        "Username",
+        "Name",
+        "Email",
+        "Mobile",
+        "Designation",
+        "Subject",
+        "Board",
+        "Grade",
+        "Batch",
+        "Status",
+    ]
+    return _build_xlsx_response(
+        "non_teaching_staff.xlsx",
+        "Non Teaching Staff",
+        headers,
+        _staff_export_rows(staff),
     )
 
 @csrf_protect

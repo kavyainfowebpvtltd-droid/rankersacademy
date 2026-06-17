@@ -41,6 +41,9 @@ urlpatterns = [
     # User Management
 
     path("user-management/", views.user_management, name="user-management"),
+    path("user-management/export/students/", views.export_user_management_students, name="export_user_management_students"),
+    path("user-management/export/teaching-staff/", views.export_user_management_teaching_staff, name="export_user_management_teaching_staff"),
+    path("user-management/export/non-teaching-staff/", views.export_user_management_non_teaching_staff, name="export_user_management_non_teaching_staff"),
     path("add-user/", views.add_user, name="add_user"),
 
     path("edit-student/<int:id>/", views.edit_student, name="edit_student"),
