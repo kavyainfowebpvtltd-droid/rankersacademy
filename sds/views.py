@@ -1708,12 +1708,12 @@ def export_user_management_students(request):
     filter_state = _build_user_management_student_filter_state(request, all_students)
     students = _apply_user_management_student_filters(all_students, filter_state)
     headers = [
-        "User ID",
+        "Sr. No.",
         "Name",
         "Email",
         "Mobile",
         "Batch",
-        "Admission Number",
+        "User Name",
         "Board",
         "Grade",
         "Stream",
@@ -1723,7 +1723,7 @@ def export_user_management_students(request):
 
     rows = (
         [
-            student.user_id,
+            index,
             student.student_name,
             student.email,
             student.contact,
@@ -1735,7 +1735,7 @@ def export_user_management_students(request):
             "Active" if student.user.is_active else "Inactive",
             student.user.date_joined,
         ]
-        for student in students.iterator(chunk_size=500)
+        for index, student in enumerate(students.iterator(chunk_size=500), start=1)
     )
     return _build_xlsx_response(
         _student_export_filename(filter_state),
@@ -6187,7 +6187,11 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
         font_name = font or regular_font
         draw_left(_analysis_pdf_truncate_text(pdf, text, max_width, font_name, size), x, y, font_name, size, color)
 
-    def draw_header():
+    first_page_table_header_y = height - 191
+    continuation_table_header_y = height - 48
+    continuation_first_row_y = continuation_table_header_y - 39
+
+    def render_first_page_header():
         pdf.setFillColor(navy)
         pdf.rect(0, height - 17, width, 17, fill=1, stroke=0)
         draw_center_fit(
@@ -6215,6 +6219,10 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
         draw_center_fit(f"★ {str(batch_label).upper()} • CLASS TEST RESULT ★", width / 2, height - 91, content_width, bold_font, 14, gold_text)
         draw_center_fit(test_title, width / 2, height - 108, content_width, bold_font, type_scale["subtitle"], navy)
         draw_center(f"Date of Test: {_analysis_test_date(test).strftime('%d-%m-%Y')}", width / 2, height - 121, italic_font, 10, text_dark)
+
+    def render_continuation_page():
+        draw_table_header(continuation_table_header_y)
+        return continuation_first_row_y
 
     def draw_stat_cards(y):
         stats = [
@@ -6266,13 +6274,11 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
 
     def start_new_page():
         pdf.showPage()
-        draw_header()
-        draw_table_header(height - 150)
-        return height - 174
+        return render_continuation_page()
 
-    draw_header()
+    render_first_page_header()
     draw_stat_cards(height - 177)
-    y = height - 191
+    y = first_page_table_header_y
     draw_table_header(y)
     y -= 39
     row_height = 22
@@ -6326,8 +6332,7 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
 
     if y < 245:
         pdf.showPage()
-        draw_header()
-        y = height - 150
+        y = render_continuation_page()
     else:
         y -= 16
 
@@ -6361,8 +6366,7 @@ def _generate_test_analysis_pdf(test, scores, batch_id="", students_by_id=None):
     y -= 96
     if y - 86 < bottom_safe_y:
         pdf.showPage()
-        draw_header()
-        y = height - 150
+        y = render_continuation_page()
     pdf.setStrokeColor(border)
     pdf.setFillColor(colors.HexColor("#ffffff"))
     message_height = 86
