@@ -1,0 +1,3437 @@
+{% load static %}
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      NEET 2026 AIR Predictor & College Matcher | The Rankers Academy
+    </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root{
+        --bg:#060B12;
+        --bg-2:#0C1522;
+        --panel:#111E30;
+        --panel-2:#17263A;
+        --line:#26415E;
+        --line-soft:#1A3048;
+        --orange:#51ACE3;
+        --orange-2:#2E8DCD;
+        --orange-soft:#9CD8FF;
+        --gold:#FFC928;
+        --green:#30A46C;
+        --red:#E5484D;
+        --blue:#7FD5FF;
+        --purple:#90B9FF;
+        --white:#F5F7FA;
+        --grey:#95A7BE;
+        --grey-2:#617791;
+      }
+
+      *{box-sizing:border-box;margin:0;padding:0}
+      html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'Space Grotesk',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+      /* â”€â”€â”€ Backdrop noise + grid â”€â”€â”€ */
+      body::before{
+      content:"";position:fixed;inset:0;
+      background-image:
+      radial-gradient(circle at 15% 20%, rgba(255,122,26,.10) 0%, transparent 35%),
+      radial-gradient(circle at 85% 70%, rgba(242,201,76,.06) 0%, transparent 40%),
+      linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+      background-size: auto, auto, 60px 60px, 60px 60px;
+      pointer-events:none;z-index:0;
+      }
+      body::after{
+      content:"";position:fixed;inset:0;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' /></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+      opacity:.035;pointer-events:none;z-index:1;mix-blend-mode:overlay;
+      }
+
+      /* â”€â”€â”€ Top accent bar â”€â”€â”€ */
+      .topbar{
+      position:fixed;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg, var(--orange-2), var(--orange), var(--gold), var(--orange));
+      z-index:1000;
+      }
+
+      .shell{position:relative;z-index:2;max-width:1320px;margin:0 auto;padding:38px 24px 96px}
+
+      /* â”€â”€â”€ HEADER â”€â”€â”€ */
+      header.brand{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:20px 24px;
+      min-height:96px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(28,37,50,.7), rgba(16,22,32,.5));
+      backdrop-filter:blur(8px);
+      border-radius:14px;
+      margin-bottom:36px;
+      }
+      .logo{display:flex;align-items:center;gap:16px}
+      .logo-mark{
+      width:68px;height:68px;border-radius:18px;
+      background:linear-gradient(180deg, rgba(81,172,227,.12), rgba(81,172,227,.04));
+      border:1px solid rgba(127,213,255,.24);
+      display:grid;place-items:center;padding:8px;
+      box-shadow: 0 10px 26px rgba(81,172,227,.18), inset 0 1px 0 rgba(255,255,255,.08);
+      }
+      .logo-mark img{
+      width:100%;height:100%;object-fit:contain;display:block;
+      }
+      .logo-txt{display:flex;flex-direction:column;line-height:1}
+      .logo-txt b{font-family:'Bebas Neue';letter-spacing:2.8px;font-size:36px;color:var(--gold)}
+      .logo-txt span{font-size:12px;color:var(--orange);letter-spacing:1.5px;margin-top:5px;text-transform:uppercase}
+      .brand-meta{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--grey);letter-spacing:1.1px;text-transform:uppercase}
+      .brand-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+      .brand-contact{
+      display:inline-flex;align-items:center;gap:10px;
+      text-transform:none;
+      }
+      .brand-contact-text{
+      display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.05;
+      }
+      .brand-contact-number{
+      color:#f85808;font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:700;letter-spacing:.6px;
+      }
+      .brand-contact-label{
+      font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
+      color:#ffb36c;
+      }
+      .brand-contact svg{
+      width:16px;height:16px;color:#f85808;flex-shrink:0;
+      }
+
+      /* â”€â”€â”€ HERO â”€â”€â”€ */
+      @media (max-width:680px){
+      header.brand{flex-direction:column;align-items:flex-start;gap:12px}
+      .brand-meta{flex-wrap:wrap;gap:10px}
+      }
+      .hero{
+      position:relative;
+      border:1px solid var(--line);
+      background:
+      radial-gradient(circle at 15% 15%, rgba(79,163,255,.14) 0%, transparent 28%),
+      radial-gradient(circle at 80% 30%, rgba(255,122,26,.18) 0%, transparent 55%),
+      linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+      border-radius:22px;
+      padding:48px 40px 44px;
+      margin-bottom:32px;
+      overflow:hidden;
+      box-shadow:0 28px 70px rgba(0,0,0,.35);
+      }
+      .hero::before{
+      content:"";position:absolute;inset:0;
+      background-image:
+      linear-gradient(rgba(255,122,26,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,122,26,.04) 1px, transparent 1px);
+      background-size:40px 40px;
+      mask-image:radial-gradient(circle at 50% 50%, black 30%, transparent 80%);
+      pointer-events:none;
+      }
+      .hero::after{
+      content:"";position:absolute;right:-120px;top:-120px;width:320px;height:320px;border-radius:50%;
+      background:radial-gradient(circle, rgba(242,201,76,.18) 0%, rgba(242,201,76,0) 70%);
+      filter:blur(10px);pointer-events:none;
+      }
+      .hero-tag{
+      display:inline-flex;align-items:center;gap:8px;
+      font-family:'JetBrains Mono';font-size:11px;letter-spacing:2px;
+      color:var(--gold);background:rgba(242,201,76,.08);
+      border:1px solid rgba(242,201,76,.25);border-radius:30px;
+      padding:6px 14px;text-transform:uppercase;margin-bottom:18px;
+      position:relative;z-index:2;
+      }
+      .hero-tag .pulse{
+      width:6px;height:6px;border-radius:50%;background:var(--gold);
+      animation:pulse 1.6s ease-in-out infinite;
+      }
+      @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1;box-shadow:0 0 12px var(--gold)}}
+      .hero h1{
+      font-family:'Bebas Neue';font-size:clamp(44px, 7vw, 86px);line-height:.92;
+      letter-spacing:1px;margin-bottom:14px;position:relative;z-index:2;
+      }
+      .hero h1 .a{color:var(--white)}
+      .hero h1 .b{color:var(--orange);display:block}
+      .hero h1 .c{color:var(--gold)}
+      .hero p.sub{
+      font-size:16px;color:var(--grey);max-width:720px;line-height:1.6;
+      position:relative;z-index:2;margin-bottom:22px;
+      }
+      .hero-stats{
+      display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;
+      position:relative;z-index:2;margin-top:8px;
+      }
+      .hero-stat{
+      border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+      background:linear-gradient(180deg, rgba(10,13,18,.72), rgba(10,13,18,.42));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+      }
+      .hero-stat .v{font-family:'Bebas Neue';font-size:30px;color:var(--orange);letter-spacing:1px;line-height:1}
+      .hero-stat .l{font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:1.6px;margin-top:6px}
+      @media (max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}.hero{padding:32px 22px}}
+
+      /* â”€â”€â”€ SECTION HEADERS â”€â”€â”€ */
+      .section-head{display:flex;align-items:baseline;gap:14px;margin:36px 0 18px}
+      .section-head .num{
+      font-family:'Bebas Neue';font-size:34px;color:var(--orange);letter-spacing:2px;line-height:1;
+      }
+      .section-head .ttl{
+      font-family:'Bebas Neue';font-size:24px;color:var(--white);letter-spacing:1.5px;
+      }
+      .section-head .line{
+      flex:1;height:1px;background:linear-gradient(90deg, var(--line) 0%, transparent 100%);
+      }
+      .section-head .meta{font-family:'JetBrains Mono';font-size:11px;color:var(--grey-2);letter-spacing:1.4px}
+
+      /* â”€â”€â”€ INPUT CARD â”€â”€â”€ */
+      .input-card{
+      border:1px solid var(--line);border-radius:18px;
+      background:linear-gradient(180deg, var(--panel), var(--bg-2));
+      padding:32px 32px 28px;position:relative;overflow:hidden;
+      box-shadow:0 24px 60px rgba(0,0,0,.24);
+      }
+      .input-card::before{
+      content:"";position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg, var(--orange) 0%, var(--gold) 50%, var(--orange) 100%);
+      }
+      .input-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:24px;align-items:start}
+      @media (max-width:900px){.input-grid{grid-template-columns:1fr}}
+
+      .field-label{
+      display:block;font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.8px;
+      color:var(--orange-soft);text-transform:uppercase;margin-bottom:12px;
+      }
+      .field-label .req{color:var(--red);margin-left:3px}
+
+      /* â€” Marks slider â€” */
+      .marks-row{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+      .marks-input{
+      font-family:'Bebas Neue';font-size:54px;color:var(--orange);
+      background:transparent;border:none;width:120px;text-align:center;
+      letter-spacing:2px;outline:none;caret-color:var(--orange);
+      }
+      .marks-input::-webkit-outer-spin-button,.marks-input::-webkit-inner-spin-button{display:none}
+      .marks-input[type=number]{-moz-appearance:textfield}
+      .marks-of{font-family:'Bebas Neue';font-size:32px;color:var(--grey-2);letter-spacing:2px}
+      .marks-bar{
+      height:36px;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;
+      position:relative;overflow:hidden;
+      }
+      .marks-bar-fill{
+      position:absolute;left:0;top:0;bottom:0;
+      background:linear-gradient(90deg, #2E8DCD 0%, var(--orange) 42%, var(--gold) 78%, #8AD9FF 100%);
+      width:0%;transition:width .4s cubic-bezier(.34,1.56,.64,1);
+      box-shadow:0 0 18px rgba(81,172,227,.45);
+      }
+      .marks-bar-zones{
+      position:absolute;inset:0;display:grid;
+      grid-template-columns:repeat(8,1fr);
+      pointer-events:none;
+      }
+      .marks-bar-zones span{
+      border-right:1px dashed rgba(255,255,255,.05);
+      }
+      .marks-bar-zones span:last-child{border:none}
+      .marks-slider{
+      width:100%;-webkit-appearance:none;background:transparent;height:24px;margin-top:8px;cursor:pointer;
+      }
+      .marks-slider::-webkit-slider-runnable-track{height:4px;background:var(--line);border-radius:2px}
+      .marks-slider::-moz-range-track{height:4px;background:var(--line);border-radius:2px}
+      .marks-slider::-webkit-slider-thumb{
+      -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+      background:var(--orange);border:3px solid var(--white);
+      margin-top:-9px;cursor:grab;box-shadow:0 4px 14px rgba(255,122,26,.6);
+      }
+      .marks-slider::-moz-range-thumb{
+      width:22px;height:22px;border-radius:50%;background:var(--orange);
+      border:3px solid var(--white);cursor:grab;box-shadow:0 4px 14px rgba(255,122,26,.6);
+      }
+
+      /* â€” Quick chips â€” */
+      .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+      .chip{
+      font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:1px;
+      padding:6px 12px;border-radius:20px;cursor:pointer;
+      background:var(--bg-2);border:1px solid var(--line);color:var(--grey);
+      transition:all .2s;
+      }
+      .chip:hover{color:var(--white);border-color:var(--orange);transform:translateY(-1px)}
+      .chip.active{color:var(--white);border-color:rgba(255,122,26,.7);background:rgba(255,122,26,.12);box-shadow:0 10px 24px rgba(255,122,26,.12)}
+
+      /* â€” Segmented controls â€” */
+      .seg{
+      display:flex;background:var(--bg-2);border:1px solid var(--line);
+      border-radius:10px;padding:4px;gap:2px;
+      }
+      .seg button{
+      flex:1;font-family:'Space Grotesk';font-weight:600;font-size:12.5px;
+      background:transparent;border:none;color:var(--grey);
+      padding:9px 6px;border-radius:7px;cursor:pointer;letter-spacing:.5px;
+      transition:all .2s;
+      }
+      .seg button:hover{color:var(--white)}
+      .seg button.active{
+      background:linear-gradient(180deg, var(--orange), var(--orange-2));
+      color:#0A0D12;box-shadow:0 4px 12px rgba(255,122,26,.4);
+      }
+
+      .seg-vertical{flex-direction:column}
+      .seg-vertical button{padding:11px 12px;text-align:left}
+
+      /* â€” Toggle â€” */
+      .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+      .toggle-row.disabled{opacity:.48}
+      .toggle-row.disabled .toggle{cursor:not-allowed}
+      .toggle{
+      position:relative;width:46px;height:24px;background:var(--bg-2);
+      border:1px solid var(--line);border-radius:30px;cursor:pointer;flex-shrink:0;
+      }
+      .toggle::after{
+      content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;
+      background:var(--grey);border-radius:50%;transition:all .25s;
+      }
+      .toggle.on{background:rgba(255,122,26,.2);border-color:var(--orange)}
+      .toggle.on::after{left:24px;background:var(--orange);box-shadow:0 0 10px var(--orange)}
+
+      .input-hint{
+      margin-top:12px;font-size:12.5px;color:var(--grey);line-height:1.55;
+      }
+      .live-preview{
+      margin-top:24px;padding:18px;
+      border:1px solid rgba(255,255,255,.06);border-radius:16px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+      }
+      .preview-card{
+      padding:16px;border-radius:14px;
+      background:rgba(10,13,18,.52);border:1px solid rgba(255,255,255,.05);
+      }
+      .preview-card .k{
+      font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.5px;color:var(--grey-2);text-transform:uppercase;margin-bottom:10px;
+      }
+      .preview-card .v{
+      font-family:'Bebas Neue';font-size:30px;letter-spacing:1px;line-height:1;color:var(--white);
+      }
+      .preview-card .sub{
+      margin-top:8px;font-size:12px;color:var(--grey);line-height:1.45;
+      }
+      @media (max-width:900px){.live-preview{grid-template-columns:repeat(2,1fr)}}
+      @media (max-width:560px){.live-preview{grid-template-columns:1fr}}
+
+      /* â”€â”€â”€ PREDICT BUTTON â”€â”€â”€ */
+      .predict-row{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-top:32px;padding-top:24px;border-top:1px dashed var(--line);
+      gap:18px;flex-wrap:wrap;
+      }
+      .predict-info{font-family:'JetBrains Mono';font-size:11px;color:var(--grey-2);letter-spacing:1.2px}
+      .predict-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+      .btn-secondary{
+      font-family:'JetBrains Mono';font-size:12px;letter-spacing:1px;
+      padding:14px 18px;border-radius:12px;border:1px solid var(--line);
+      background:rgba(255,255,255,.02);color:var(--white);cursor:pointer;
+      transition:all .2s;
+      }
+      .btn-secondary:hover{transform:translateY(-1px);border-color:var(--orange);color:var(--orange-soft)}
+      .btn-secondary:disabled{opacity:.65;cursor:not-allowed;transform:none}
+      .btn-predict{
+      font-family:'Bebas Neue';font-size:18px;letter-spacing:2.5px;
+      padding:16px 36px;border-radius:12px;
+      background:linear-gradient(135deg, var(--orange) 0%, var(--orange-2) 100%);
+      color:#0A0D12;border:none;cursor:pointer;
+      box-shadow:0 8px 28px rgba(255,90,0,.4), inset 0 1px 0 rgba(255,255,255,.3);
+      transition:all .2s;display:flex;align-items:center;gap:10px;
+      }
+      .btn-predict:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(255,90,0,.55)}
+      .btn-predict:active{transform:translateY(0)}
+      .btn-predict svg{width:18px;height:18px}
+      .report-download-row{display:flex;justify-content:flex-end;align-items:center;margin-top:18px}
+      .btn-download{
+      min-width:220px;justify-content:center;display:inline-flex;align-items:center;gap:10px;
+      background:linear-gradient(135deg, #FFC928 0%, #F2A900 100%);
+      border-color:#FFD76A;color:#0A0D12;font-weight:700;
+      box-shadow:0 10px 26px rgba(242,169,0,.28), inset 0 1px 0 rgba(255,255,255,.35);
+      }
+      .btn-download:hover{border-color:#FFE7A6;color:#0A0D12;box-shadow:0 14px 34px rgba(242,169,0,.38)}
+      .btn-download svg{width:16px;height:16px}
+
+      /* â”€â”€â”€ RESULTS â”€â”€â”€ */
+      .results{margin-top:36px;display:none}
+      .results.show{display:block;animation:fadeUp .6s ease}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+      /* â€” Big rank panel â€” */
+      .rank-panel{
+      border:1px solid var(--line);border-radius:22px;overflow:hidden;
+      background:linear-gradient(135deg, var(--panel-2) 0%, var(--bg-2) 100%);
+      margin-bottom:28px;
+      box-shadow:0 24px 56px rgba(0,0,0,.24);
+      }
+      .rank-top{
+      padding:36px 36px 20px;
+      background:
+      radial-gradient(circle at 90% 50%, rgba(255,122,26,.12), transparent 60%),
+      linear-gradient(135deg, rgba(242,201,76,.05), transparent);
+      display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center;
+      }
+      @media (max-width:760px){.rank-top{grid-template-columns:1fr}}
+
+      .rank-label{
+      font-family:'JetBrains Mono';font-size:11px;letter-spacing:2.5px;
+      color:var(--orange);text-transform:uppercase;margin-bottom:8px;
+      }
+      .rank-big{
+      font-family:'Bebas Neue';font-size:clamp(56px, 9vw, 110px);
+      letter-spacing:1.5px;line-height:.9;color:var(--white);
+      }
+      .rank-big .pre{color:var(--grey-2);font-size:.45em;vertical-align:top;margin-right:12px;letter-spacing:3px}
+      .rank-range{
+      font-family:'JetBrains Mono';font-size:13px;color:var(--grey);
+      margin-top:14px;letter-spacing:1px;
+      }
+      .rank-range b{color:var(--gold)}
+
+      .rank-side{
+      border-left:1px solid var(--line);padding-left:24px;
+      }
+      @media (max-width:760px){.rank-side{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:20px}}
+
+      .rank-zone-tag{
+      display:inline-flex;align-items:center;gap:8px;
+      font-family:'Bebas Neue';font-size:18px;letter-spacing:2.5px;
+      padding:10px 18px;border-radius:30px;margin-bottom:14px;
+      }
+      .rank-zone-tag.green{background:rgba(48,164,108,.15);color:var(--green);border:1px solid var(--green)}
+      .rank-zone-tag.gold{background:rgba(242,201,76,.15);color:var(--gold);border:1px solid var(--gold)}
+      .rank-zone-tag.orange{background:rgba(255,122,26,.15);color:var(--orange);border:1px solid var(--orange)}
+      .rank-zone-tag.red{background:rgba(229,72,77,.12);color:var(--red);border:1px solid var(--red)}
+      .rank-zone-msg{font-size:14px;color:var(--white);line-height:1.5;letter-spacing:.2px}
+
+      .rank-meters{
+      background:var(--bg);padding:24px 36px;
+      display:grid;grid-template-columns:repeat(4, 1fr);gap:20px;
+      border-top:1px solid var(--line);
+      }
+      @media (max-width:760px){.rank-meters{grid-template-columns:repeat(2,1fr);padding:20px}}
+      .meter{}
+      .meter .l{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.6px;color:var(--grey-2);text-transform:uppercase;margin-bottom:8px}
+      .meter .v{font-family:'Bebas Neue';font-size:30px;color:var(--white);letter-spacing:1.2px;line-height:1}
+      .meter .v.orange{color:var(--orange)}
+      .meter .v.gold{color:var(--gold)}
+      .meter .v.green{color:var(--green)}
+      .meter .s{font-family:'JetBrains Mono';font-size:10.5px;color:var(--grey);margin-top:4px;letter-spacing:.5px}
+
+      /* â”€â”€â”€ BREAKDOWN â”€â”€â”€ */
+      .breakdown{
+      border:1px solid var(--line);border-radius:18px;
+      background:var(--panel);padding:28px 28px;margin-bottom:28px;
+      box-shadow:0 20px 50px rgba(0,0,0,.2);
+      }
+      .breakdown h3{
+      font-family:'Bebas Neue';font-size:22px;letter-spacing:1.8px;color:var(--orange);
+      margin-bottom:18px;display:flex;align-items:center;gap:10px;
+      }
+      .breakdown h3::before{content:"";width:4px;height:22px;background:var(--orange);border-radius:3px}
+      .calc-table{width:100%;border-collapse:collapse}
+      .calc-table tr{border-bottom:1px dashed var(--line-soft)}
+      .calc-table tr:last-child{border-bottom:2px solid var(--orange);background:rgba(255,122,26,.06)}
+      .calc-table td{padding:11px 4px;font-size:13.5px;font-family:'JetBrains Mono'}
+      .calc-table td:first-child{color:var(--grey)}
+      .calc-table td:last-child{color:var(--white);text-align:right;font-weight:700}
+      .calc-table tr:last-child td{color:var(--orange);font-size:16px}
+
+      /* â”€â”€â”€ COLLEGE TABLE â”€â”€â”€ */
+      .coll-wrap{
+      border:1px solid var(--line);border-radius:18px;
+      background:var(--panel);padding:28px;
+      box-shadow:0 20px 50px rgba(0,0,0,.2);
+      }
+      .coll-head{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:18px;flex-wrap:wrap;gap:14px;
+      }
+      .coll-head h3{
+      font-family:'Bebas Neue';font-size:22px;letter-spacing:1.8px;color:var(--orange);
+      display:flex;align-items:center;gap:10px;
+      }
+      .coll-head h3::before{content:"";width:4px;height:22px;background:var(--orange);border-radius:3px}
+      .coll-filters{display:flex;gap:8px;flex-wrap:wrap}
+      .coll-toolbar{
+      display:grid;grid-template-columns:minmax(260px,1.4fr) minmax(200px,.9fr) auto;gap:12px;
+      align-items:end;margin-bottom:16px;
+      }
+      .search-box,.sort-box{
+      display:flex;flex-direction:column;gap:8px;
+      font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.2px;color:var(--grey-2);text-transform:uppercase;
+      }
+      .search-box input,.sort-box select{
+      width:100%;border:1px solid var(--line);border-radius:12px;background:var(--bg-2);color:var(--white);
+      padding:13px 14px;font-family:'Space Grotesk',sans-serif;font-size:14px;outline:none;
+      }
+      .search-box input:focus,.sort-box select:focus{
+      border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,122,26,.14);
+      }
+      .coll-count{
+      height:48px;display:flex;align-items:center;justify-content:center;
+      padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.03);font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.2px;color:var(--grey);
+      white-space:nowrap;
+      }
+      .spotlight{
+      margin-bottom:18px;padding:18px 20px;border-radius:16px;
+      border:1px solid rgba(81,172,227,.22);
+      background:
+      radial-gradient(circle at right top, rgba(81,172,227,.16), transparent 35%),
+      linear-gradient(180deg, rgba(81,172,227,.08), rgba(255,255,255,.02));
+      }
+      .spotlight-label{
+      font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.5px;color:var(--orange-soft);text-transform:uppercase;margin-bottom:8px;
+      }
+      .spotlight-name{
+      font-family:'Bebas Neue';font-size:34px;letter-spacing:1.2px;color:var(--white);line-height:1;
+      }
+      .spotlight-meta{
+      margin-top:8px;font-size:13px;color:var(--grey);line-height:1.6;
+      }
+      .fchip{
+      font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1px;
+      padding:6px 11px;border-radius:14px;cursor:pointer;
+      background:var(--bg-2);border:1px solid var(--line);color:var(--grey);
+      transition:all .15s;text-transform:uppercase;
+      }
+      .fchip:hover{color:var(--white)}
+      .fchip.active{background:var(--orange);color:#0A0D12;border-color:var(--orange);font-weight:700}
+
+      .coll-table{width:100%;border-collapse:collapse;font-size:13px}
+      .coll-table thead tr{
+      background:linear-gradient(180deg, rgba(255,145,64,.98), rgba(230,106,0,.98));
+      }
+      .coll-table th{
+      font-family:'JetBrains Mono';font-size:12px;letter-spacing:1.7px;
+      color:var(--white);text-transform:uppercase;font-weight:700;
+      text-align:left;padding:14px 12px;border-bottom:1px solid rgba(127,213,255,.24);
+      border-right:1px solid rgba(255,255,255,.06);
+      text-shadow:0 1px 0 rgba(0,0,0,.25);
+      }
+      .coll-table th:last-child{border-right:none}
+      .coll-table td{padding:14px 12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+      .coll-table tr:hover td{background:rgba(255,122,26,.03)}
+      .coll-name{font-weight:600;color:var(--white);font-size:13.5px}
+      .coll-loc{font-size:11px;color:var(--grey-2);margin-top:2px;font-family:'JetBrains Mono';letter-spacing:.6px}
+      .coll-rank{font-family:'JetBrains Mono';color:var(--gold);font-weight:700}
+      .coll-marks{font-family:'JetBrains Mono';color:var(--white)}
+      .coll-tier{
+      display:inline-block;font-family:'JetBrains Mono';font-size:9.5px;
+      padding:3px 8px;border-radius:10px;letter-spacing:1px;font-weight:700;
+      }
+      .tier-elite{background:rgba(167,139,250,.12);color:var(--purple);border:1px solid var(--purple)}
+      .tier-top{background:rgba(79,163,255,.12);color:var(--blue);border:1px solid var(--blue)}
+      .tier-good{background:rgba(48,164,108,.12);color:var(--green);border:1px solid var(--green)}
+      .tier-mid{background:rgba(242,201,76,.12);color:var(--gold);border:1px solid var(--gold)}
+      .tier-low{background:rgba(255,122,26,.12);color:var(--orange);border:1px solid var(--orange)}
+
+      .chance-cell{display:flex;align-items:center;gap:10px}
+      .chance-bar{
+      flex:1;height:6px;background:var(--bg-2);border-radius:3px;overflow:hidden;
+      max-width:120px;
+      }
+      .chance-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+      .chance-fill.high{background:linear-gradient(90deg, var(--green), #4FE0A0);box-shadow:0 0 8px rgba(48,164,108,.5)}
+      .chance-fill.med{background:linear-gradient(90deg, var(--gold), #FFD978)}
+      .chance-fill.low{background:linear-gradient(90deg, var(--orange), var(--red))}
+      .chance-fill.none{background:var(--grey-2);opacity:.4}
+      .chance-label{font-family:'JetBrains Mono';font-size:11px;font-weight:700;min-width:60px}
+      .chance-label.high{color:var(--green)}
+      .chance-label.med{color:var(--gold)}
+      .chance-label.low{color:var(--orange)}
+      .chance-label.none{color:var(--grey-2)}
+
+      @media (max-width:780px){
+      .coll-toolbar{grid-template-columns:1fr}
+      .coll-table thead{display:none}
+      .coll-table tr{display:block;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:12px}
+      .coll-table td{display:flex;justify-content:space-between;border:none;padding:6px 0}
+      .coll-table td::before{content:attr(data-l);font-family:'JetBrains Mono';font-size:10.5px;color:var(--grey-2);text-transform:uppercase;letter-spacing:1.2px}
+      .coll-name{text-align:right}
+      }
+
+      /* â”€â”€â”€ EMPTY STATE â”€â”€â”€ */
+      .empty{
+      border:1px dashed var(--line);border-radius:18px;
+      padding:60px 30px;text-align:center;
+      background:linear-gradient(180deg, var(--panel), var(--bg-2));
+      box-shadow:0 20px 50px rgba(0,0,0,.18);
+      }
+      .empty .ic{
+      width:62px;height:62px;border-radius:50%;
+      background:rgba(255,122,26,.08);border:1px solid var(--orange);
+      display:grid;place-items:center;margin:0 auto 18px;font-size:28px;
+      }
+      .empty h4{font-family:'Bebas Neue';font-size:24px;letter-spacing:1.5px;color:var(--white);margin-bottom:8px}
+      .empty p{font-size:13.5px;color:var(--grey);max-width:400px;margin:0 auto;line-height:1.5}
+
+      /* â”€â”€â”€ METHODOLOGY ACCORDION â”€â”€â”€ */
+      .method{
+      border:1px solid var(--line);border-radius:22px;
+      background:
+      radial-gradient(circle at top right, rgba(81,172,227,.16), transparent 28%),
+      linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+      overflow:hidden;
+      box-shadow:0 24px 56px rgba(0,0,0,.22);
+      }
+      .method-h{
+      padding:24px 28px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+      font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;color:var(--orange);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+      border-bottom:1px solid rgba(127,213,255,.14);
+      }
+      .method-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:12px 22px;border-radius:999px;border:1px solid rgba(255,201,40,.55);
+      background:linear-gradient(135deg, rgba(255,201,40,.96), rgba(248,88,8,.98));
+      color:#2a1200;
+      font-family:'JetBrains Mono';font-size:12px;font-weight:800;letter-spacing:1.5px;
+      text-transform:uppercase;
+      box-shadow:0 14px 34px rgba(248,88,8,.34), 0 0 0 4px rgba(255,201,40,.10), inset 0 1px 0 rgba(255,255,255,.35);
+      position:relative;isolation:isolate;transform:translateY(-2px);
+      }
+      .method-badge::before{
+      content:"";position:absolute;inset:1px;border-radius:999px;
+      background:linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+      z-index:-1;
+      }
+      .promo-chip{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:8px 14px;border-radius:999px;border:1px solid rgba(255,201,40,.28);
+      background:rgba(255,201,40,.08);color:var(--gold);
+      font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.2px;
+      }
+      .method-body{
+      padding:24px 28px 30px;
+      }
+      .promo-intro{
+      font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:18px;
+      }
+      .promo-media{
+      border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;
+      background:rgba(255,255,255,.02);box-shadow:0 18px 40px rgba(0,0,0,.22);
+      }
+      .promo-image{
+      display:block;width:100%;height:auto;
+      }
+      .promo-note{
+      margin-top:16px;font-size:13px;color:var(--grey);line-height:1.6;
+      }
+      .promo-contact-row{
+      margin-top:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
+      }
+      .promo-contact-card{
+      padding:16px 18px;border-radius:16px;border:1px solid rgba(81,172,227,.16);
+      background:linear-gradient(180deg, rgba(81,172,227,.08), rgba(255,255,255,.02));
+      }
+      .promo-contact-card span{
+      display:block;font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.4px;color:var(--orange-soft);text-transform:uppercase;margin-bottom:8px;
+      }
+      .promo-contact-card b{
+      font-family:'Bebas Neue';font-size:28px;letter-spacing:1.4px;color:var(--white);font-weight:400;
+      }
+      @media (max-width:760px){
+      .promo-contact-row{grid-template-columns:1fr}
+      .method-h{font-size:20px}
+      }
+
+      /* â”€â”€â”€ FOOTER â”€â”€â”€ */
+      footer.foot{
+      margin-top:48px;padding:24px 0;border-top:1px solid var(--line);
+      display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;
+      font-family:'JetBrains Mono';font-size:11px;color:var(--grey-2);letter-spacing:1.2px;
+      }
+      footer.foot b{color:var(--orange)}
+
+      .gated-hidden{display:none !important}
+
+      .otp-modal{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+      padding:24px;background:rgba(10,13,18,.78);backdrop-filter:blur(8px);z-index:1200;
+      }
+      .otp-modal.open{display:flex}
+      .otp-modal-card{
+      width:min(100%, 460px);border:1px solid var(--line);border-radius:22px;
+      background:linear-gradient(180deg, var(--panel), var(--bg-2));
+      box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden;
+      }
+      .otp-modal-top{
+      padding:24px 24px 18px;border-bottom:1px solid var(--line);
+      background:
+      radial-gradient(circle at top right, rgba(255,122,26,.18), transparent 34%),
+      linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+      }
+      .otp-modal-kicker{
+      font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.8px;color:var(--orange-soft);text-transform:uppercase;
+      }
+      .otp-modal-title{
+      margin-top:8px;font-family:'Bebas Neue';font-size:34px;letter-spacing:1.4px;color:var(--white);line-height:.95;
+      }
+      .otp-modal-sub{
+      margin-top:10px;font-size:13px;color:var(--grey);line-height:1.6;
+      }
+      .otp-modal-body{padding:22px 24px 24px}
+      .otp-field{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+      .otp-field span{
+      font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.5px;color:var(--grey-2);text-transform:uppercase;
+      }
+      .otp-field input{
+      width:100%;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--white);
+      padding:14px 15px;font-family:'Space Grotesk',sans-serif;font-size:15px;outline:none;
+      }
+      .otp-field input:focus{
+      border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,122,26,.12);
+      }
+      .otp-status{
+      min-height:20px;margin:-4px 0 14px;font-size:12.5px;color:var(--grey);line-height:1.45;
+      }
+      .otp-status.error{color:var(--red)}
+      .otp-status.success{color:var(--green)}
+      .otp-actions{display:flex;gap:10px;flex-wrap:wrap}
+      .otp-btn{
+      border:none;border-radius:12px;padding:13px 18px;cursor:pointer;
+      font-family:'JetBrains Mono';font-size:12px;letter-spacing:1px;transition:all .2s;
+      }
+      .otp-btn-primary{
+      background:linear-gradient(135deg, var(--orange), var(--orange-2));color:#0A0D12;font-weight:700;
+      box-shadow:0 8px 22px rgba(255,90,0,.28);
+      }
+      .otp-btn-secondary{
+      background:rgba(255,255,255,.03);color:var(--white);border:1px solid var(--line);
+      }
+      .otp-btn:hover{transform:translateY(-1px)}
+      .otp-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+      .otp-verify-row{display:none}
+      .otp-verify-row.show{display:block}
+    </style>
+  </head>
+  <body>
+    <div class="topbar"></div>
+
+    <div class="shell">
+      <!-- â”€â”€â”€ HEADER â”€â”€â”€ -->
+
+      <header class="brand">
+        <div class="logo">
+          <div class="logo-mark">
+            <img src="{% static 'img/logo-crop.png' %}" alt="The Rankers Academy logo" />
+          </div>
+          <div class="logo-txt">
+            <b>THE RANKERS ACADEMY</b>
+            <span>NAGPUR | JEE | NEET | MHT-CET</span>
+          </div>
+        </div>
+        <div class="brand-meta">
+          <span class="brand-contact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.23a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span class="brand-contact-text">
+              <span class="brand-contact-number">8329100890</span>
+              <span class="brand-contact-label">Call For Free Counselling</span>
+            </span>
+          </span>
+        </div>
+      </header>
+
+      
+
+      <section class="hero">
+        <span class="hero-tag"
+          ><span class="pulse"></span> NEET 2026 | POWERED BY THE RANKERS ACADEMY</span
+        >
+        <h1>
+          <span class="a">PREDICT YOUR</span>
+          <span class="b">ALL INDIA RANK</span>
+          <span class="a">+ MAP YOUR</span>
+          <span class="c">DREAM COLLEGE</span>
+        </h1>
+        <p class="sub" style="color: #ff7504;">
+          Get your rank range, college
+          list, and admission probability in one click.
+        </p>
+      </section>
+
+      <!--  INPUT  -->
+
+      <div class="section-head">
+        <div class="num" style="color: #ff7504;">01</div>
+        <div class="ttl" style="color: #ff7504;">YOUR INPUTS (Submit Details)</div>
+        <div class="line"></div>
+      </div>
+
+      <div class="input-card">
+        <div class="input-grid">
+          <!-- MARKS -->
+          <div>
+            <label class="field-label"
+              >Expected Marks <span class="req">*</span></label
+            >
+            <div class="marks-row">
+              <input
+                type="number"
+                class="marks-input"
+                id="marksInput"
+                min="0"
+                max="720"
+                value="600"
+              />
+              <span class="marks-of">/ 720</span>
+            </div>
+            <div class="marks-bar">
+              <div class="marks-bar-fill" id="marksBar"></div>
+              <div class="marks-bar-zones">
+                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <input
+              type="range"
+              class="marks-slider"
+              id="marksSlider"
+              min="0"
+              max="720"
+              value="600"
+            />
+          </div>
+
+          <!-- CATEGORY -->
+          <div>
+            <label class="field-label"
+              >Category <span class="req">*</span></label
+            >
+            <div class="seg seg-vertical" id="catSeg">
+              <button class="active" data-cat="UR">General / UR</button>
+              <button data-cat="EWS">EWS</button>
+              <button data-cat="OBC">OBC-NCL</button>
+              <button data-cat="SC">SC</button>
+              <button data-cat="ST">ST</button>
+            </div>
+          </div>
+
+          <!-- QUOTA + DIFFICULTY -->
+          <div>
+            <label class="field-label">Counselling Quota</label>
+            <div class="seg" id="quotaSeg" style="margin-bottom: 18px">
+              <button class="active" data-quota="AIQ">AIQ (15%)</button>
+              <button data-quota="STATE">State (85%)</button>
+            </div>
+
+            <div class="toggle-row" id="mhRow">
+              <span style="font-size: 12.5px; color: var(--grey)"
+                >Maharashtra Resident</span
+              >
+              <div class="toggle" id="mhToggle"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="predict-row">
+          <div class="predict-actions">
+            <button class="btn-secondary" id="btnReset" type="button">
+              RESET
+            </button>
+            <button class="btn-predict" id="btnPredict" type="button">
+              PREDICT MY RANK
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+              >
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!--  EMPTY  -->
+
+      <div class="empty gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="emptyState" style="margin-top: 32px">
+        <div class="ic">!</div>
+        <h4>YOUR PREDICTION WILL APPEAR HERE</h4>
+        <p>
+          Enter your expected marks, choose your category and quota, and hit
+          <b style="color: var(--orange)">Predict My Rank</b>. The tool runs the
+          full 2025-to-2026 model in your browser - nothing is sent to any
+          server.
+        </p>
+      </div>
+
+      <!--  RESULTS  -->
+
+      <div class="results gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="results">
+        <!-- RANK PANEL -->
+        <div class="section-head">
+          <div class="num" style="color: #ff7504;">02</div>
+          <div class="ttl" style="color: #ff7504;">YOUR PREDICTED RANK</div>
+          <div class="line"></div>
+        </div>
+
+        <div class="rank-panel">
+          <div class="rank-top">
+            <div>
+              <div class="rank-label">EXPECTED ALL INDIA RANK | NEET 2026</div>
+              <div class="rank-big">
+                <span class="pre">AIR</span>
+                <span id="rankMid">-</span>
+              </div>
+              <div class="rank-range">
+                Range: <b id="rankLow">-</b> -> <b id="rankHigh">-</b>
+                <span style="margin-left: 14px; color: var(--grey-2)">|</span>
+                <span
+                  id="catRankBlock"
+                  style="color: var(--orange-soft); margin-left: 8px"
+                ></span>
+              </div>
+            </div>
+            <div class="rank-side">
+              <div class="rank-zone-tag" id="zoneTag">-</div>
+              <div class="rank-zone-msg" id="zoneMsg">
+                Run the predictor to see your zone analysis.
+              </div>
+            </div>
+          </div>
+          <div class="rank-meters">
+            <div class="meter">
+              <div class="l">Percentile</div>
+              <div class="v gold" id="percentile">-</div>
+              <div class="s" id="percentileS"></div>
+            </div>
+            <div class="meter">
+              <div class="l">Beats</div>
+              <div class="v orange" id="beats">-</div>
+              <div class="s">candidates</div>
+            </div>
+            <div class="meter">
+              <div class="l">Govt MBBS odds</div>
+              <div class="v green" id="govtOdds">-</div>
+              <div class="s" id="govtOddsS">-</div>
+            </div>
+            <div class="meter">
+              <div class="l">Suggested action</div>
+              <div
+                class="v"
+                style="font-size: 18px; letter-spacing: 1.4px"
+                id="action"
+              >
+                -
+              </div>
+              <div class="s" id="actionS"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLLEGES -->
+        <div class="section-head">
+          <div class="num" style="color: #ff7504;">03</div>
+          <div class="ttl" style="color: #ff7504;">COLLEGES YOU CAN TARGET</div>
+          <div class="line"></div>
+          <div class="meta" id="collMeta">- colleges matched</div>
+        </div>
+
+        <div class="coll-wrap">
+          <div class="coll-head">
+            <h3>YOUR COLLEGE LIST | MBBS | NEET 2026 PROJECTED</h3>
+            <div class="coll-filters" id="collFilters">
+              <div class="fchip active" data-f="all">ALL</div>
+              <div class="fchip" data-f="high">HIGH CHANCE</div>
+              <div class="fchip" data-f="med">MEDIUM</div>
+              <div class="fchip" data-f="low">REACH</div>
+            </div>
+          </div>
+          <div class="coll-toolbar">
+            <label class="search-box">
+              <span>Search Colleges</span>
+              <input
+                id="collegeSearch"
+                type="search"
+                placeholder="Search by college or state"
+              />
+            </label>
+            <label class="sort-box">
+              <span>Sort By</span>
+              <select id="collegeSort">
+                <option value="closing">2025 closing rank</option>
+                <option value="chance">best chance</option>
+                <option value="name">college name</option>
+              </select>
+            </label>
+            <div class="coll-count" id="visibleCount">0 shown</div>
+          </div>
+          <div class="spotlight" id="collegeSpotlight">
+            <div class="spotlight-label">Best Current Fit</div>
+            <div class="spotlight-name" id="spotlightName">Run the predictor</div>
+            <div class="spotlight-meta" id="spotlightMeta">
+              Your most realistic recommendation will surface here after calculation.
+            </div>
+          </div>
+          <table class="coll-table">
+            <thead>
+              <tr>
+                <th>COLLEGE</th>
+                <th>TIER</th>
+                <th>2025 CLOSING</th>
+                <th>2026 EST. RANK</th>
+                <th>YOUR CHANCE</th>
+              </tr>
+            </thead>
+            <tbody id="collBody"></tbody>
+          </table>
+        </div>
+        <div class="report-download-row">
+          <button class="btn-secondary btn-download" id="btnDownloadReport" type="button">
+            Download Report
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M12 3v12"/>
+              <path d="m7 10 5 5 5-5"/>
+              <path d="M5 20h14"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!--  METHOD  -->
+
+      <div class="section-head gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="methodSectionHead" style="margin-top: 48px">
+        <div class="num" style="color: #ff7504;">04</div>
+        <div class="ttl" style="color: #ff7504;">THE RANKERS ACADEMY | NEET REPEATERS 2026-27 (Admissions Open)</div>
+        <div class="line"></div>
+      </div>
+      <div class="method gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="method">
+        <div class="method-h" id="methodH">
+          <span class="method-badge">TAKE ADVANTAGE OF HUGE EARLY BIRD DISCOUNT...</span>
+          <span class="promo-chip">ONLY 30 SEATS</span>
+        </div>
+        
+        <div class="method-body">
+          <p class="promo-intro">
+            If you want structured mentorship after using this predictor, here is
+            the current admission offer for our NEET Repeaters 2026 program at
+            The Rankers Academy.
+          </p>
+          <div class="promo-media">
+            <img
+              class="promo-image"
+              src="{% static 'img/neet-repeaters-2026-admission-open.png' %}"
+              alt="The Rankers Academy NEET Repeaters 2026 admission open poster with early-bird discount tiers and free engagement options"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <p class="promo-note">
+            Visit the campus, talk to the faculty, and lock the best available
+            discount tier early if you are planning a dedicated repeaters year.
+          </p>
+          <div class="promo-contact-row">
+            <div class="promo-contact-card">
+              <span>Call For Free Counselling</span>
+              <b style="color: #f85808;">8329100890</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="foot gated-section{% if not rank_predictor_unlocked %} gated-hidden{% endif %}" id="pageFooter">
+        <div>
+          The Rankers Academy, Plot No. 10, RPTS Rd, Buty Layout, Laxminagar,
+          Nagpur, Maharashtra 440022
+        </div>
+      </footer>
+    </div>
+
+    <div class="otp-modal" id="otpModal" aria-hidden="true">
+      <div class="otp-modal-card">
+        <div class="otp-modal-top">
+          <div class="otp-modal-kicker">Verification Required</div>
+          <div class="otp-modal-title">VERIFY MOBILE TO UNLOCK RESULTS</div>
+          <div class="otp-modal-sub">
+            Enter your mobile number, verify the OTP, and the full rank prediction
+            with college matches will appear instantly.
+          </div>
+        </div>
+        <div class="otp-modal-body">
+          <div class="otp-field">
+            <span>Mobile Number</span>
+            <input
+              id="otpPhoneInput"
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              placeholder="Enter 10-digit mobile number"
+            />
+          </div>
+          <div class="otp-status" id="otpStatus"></div>
+          <div class="otp-actions">
+            <button class="otp-btn otp-btn-primary" id="sendOtpBtn" type="button">
+              Send OTP
+            </button>
+            <button class="otp-btn otp-btn-secondary" id="closeOtpBtn" type="button">
+              Close
+            </button>
+          </div>
+          <div class="otp-verify-row" id="otpVerifyRow" style="margin-top: 18px">
+            <div class="otp-field" style="margin-bottom: 14px">
+              <span>OTP</span>
+              <input
+                id="otpCodeInput"
+                type="tel"
+                inputmode="numeric"
+                maxlength="4"
+                placeholder="Enter 4-digit OTP"
+              />
+            </div>
+            <div class="otp-actions">
+              <button class="otp-btn otp-btn-primary" id="verifyOtpBtn" type="button">
+                Verify OTP
+              </button>
+              <button class="otp-btn otp-btn-secondary" id="resendOtpBtn" type="button">
+                Resend OTP
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <script>
+      /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   NEET 2026 AIR PREDICTOR â€” RANKERS ACADEMY
+   Logic anchored on NTA NEET 2025 official marks-vs-rank data
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+      // â”€â”€ 2025 marks â†’ AIR baseline (mid of published NTA bands) â”€â”€
+      // â”€â”€ 2025 marks â†’ AIR baseline (mid of published NTA bands) â”€â”€
+      // Source: NTA NEET 2025 result PDF cumulative distribution
+      const BASE_2025 = [
+        { m: 720, r: 1 },
+        { m: 710, r: 5 },
+        { m: 700, r: 25 },
+        { m: 690, r: 80 },
+        { m: 686, r: 100 }, // 2025 topper score
+        { m: 680, r: 280 },
+        { m: 670, r: 700 },
+        { m: 660, r: 1500 },
+        { m: 650, r: 2900 },
+        { m: 640, r: 4800 },
+        { m: 630, r: 7500 },
+        { m: 620, r: 11500 },
+        { m: 610, r: 16500 },
+        { m: 600, r: 23500 },
+        { m: 590, r: 32500 },
+        { m: 580, r: 43500 },
+        { m: 570, r: 57000 },
+        { m: 560, r: 73000 },
+        { m: 550, r: 92000 },
+        { m: 540, r: 114000 },
+        { m: 530, r: 139000 },
+        { m: 520, r: 166000 },
+        { m: 510, r: 196000 },
+        { m: 500, r: 228000 },
+        { m: 480, r: 300000 },
+        { m: 460, r: 380000 },
+        { m: 440, r: 465000 },
+        { m: 420, r: 555000 },
+        { m: 400, r: 650000 },
+        { m: 380, r: 750000 },
+        { m: 350, r: 900000 },
+        { m: 300, r: 1200000 },
+        { m: 250, r: 1500000 },
+        { m: 200, r: 1800000 },
+        { m: 150, r: 2050000 },
+        { m: 0, r: 2200000 },
+      ];
+      const TOTAL_2025 = 2209318;
+      const TOTAL_2026 = 2600000;
+      const INFLATION = TOTAL_2026 / TOTAL_2025; // 1.177
+
+      const CAT_MULT = { UR: 1, EWS: 1.1, OBC: 3.5, SC: 5.0, ST: 6.5 };
+      const DIFF = { easy: 1.1, medium: 1.0, similar: 1.0, hard: 0.92 };
+
+      // â”€â”€ COLLEGE DATABASE â”€â”€
+      // 2025 R-1 closing rank (AIQ General) + tier + state
+      const COLLEGES = [
+        // â”€â”€â”€ ELITE â”€â”€â”€
+        {
+          n: "AIIMS Delhi",
+          loc: "Delhi",
+          s: "DL",
+          t: "elite",
+          c2025: 55,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Jodhpur",
+          loc: "Rajasthan",
+          s: "RJ",
+          t: "elite",
+          c2025: 480,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Bhubaneswar",
+          loc: "Odisha",
+          s: "OR",
+          t: "elite",
+          c2025: 660,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Bhopal",
+          loc: "MP",
+          s: "MP",
+          t: "elite",
+          c2025: 780,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Rishikesh",
+          loc: "Uttarakhand",
+          s: "UK",
+          t: "elite",
+          c2025: 850,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Patna",
+          loc: "Bihar",
+          s: "BR",
+          t: "elite",
+          c2025: 1100,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Raipur",
+          loc: "Chhattisgarh",
+          s: "CG",
+          t: "elite",
+          c2025: 1350,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Nagpur",
+          loc: "Maharashtra",
+          s: "MH",
+          t: "elite",
+          c2025: 1450,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Mangalagiri",
+          loc: "AP",
+          s: "AP",
+          t: "elite",
+          c2025: 1700,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Bibinagar",
+          loc: "Telangana",
+          s: "TG",
+          t: "elite",
+          c2025: 1900,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Rajkot",
+          loc: "Gujarat",
+          s: "GJ",
+          t: "elite",
+          c2025: 2200,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Bilaspur",
+          loc: "HP",
+          s: "HP",
+          t: "elite",
+          c2025: 2400,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Deoghar",
+          loc: "Jharkhand",
+          s: "JH",
+          t: "elite",
+          c2025: 2700,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Kalyani",
+          loc: "WB",
+          s: "WB",
+          t: "elite",
+          c2025: 2850,
+          aiq: true,
+        },
+        {
+          n: "AIIMS Gorakhpur",
+          loc: "UP",
+          s: "UP",
+          t: "elite",
+          c2025: 3100,
+          aiq: true,
+        },
+        {
+          n: "JIPMER Puducherry",
+          loc: "Puducherry",
+          s: "PY",
+          t: "elite",
+          c2025: 280,
+          aiq: true,
+        },
+        {
+          n: "CMC Vellore (AIQ Christian)",
+          loc: "Tamil Nadu",
+          s: "TN",
+          t: "elite",
+          c2025: 1800,
+          aiq: true,
+        },
+
+        // â”€â”€â”€ TOP DELHI / MUMBAI / KOLKATA â”€â”€â”€
+        {
+          n: "Maulana Azad Medical College",
+          loc: "Delhi",
+          s: "DL",
+          t: "top",
+          c2025: 280,
+          aiq: true,
+        },
+        {
+          n: "VMMC & Safdarjung Hospital",
+          loc: "Delhi",
+          s: "DL",
+          t: "top",
+          c2025: 920,
+          aiq: true,
+        },
+        {
+          n: "Lady Hardinge MC (Delhi)",
+          loc: "Delhi",
+          s: "DL",
+          t: "top",
+          c2025: 2150,
+          aiq: true,
+        },
+        {
+          n: "UCMS Delhi",
+          loc: "Delhi",
+          s: "DL",
+          t: "top",
+          c2025: 2700,
+          aiq: true,
+        },
+        {
+          n: "AFMC Pune",
+          loc: "Maharashtra",
+          s: "MH",
+          t: "top",
+          c2025: 780,
+          aiq: true,
+        },
+        {
+          n: "Grant Medical College",
+          loc: "Mumbai, MH",
+          s: "MH",
+          t: "top",
+          c2025: 4200,
+          aiq: true,
+        },
+        {
+          n: "Seth GS Medical College (KEM)",
+          loc: "Mumbai, MH",
+          s: "MH",
+          t: "top",
+          c2025: 4800,
+          aiq: true,
+        },
+        {
+          n: "BJ Medical College",
+          loc: "Pune, MH",
+          s: "MH",
+          t: "top",
+          c2025: 6500,
+          aiq: true,
+        },
+        {
+          n: "Topiwala National MC (Nair)",
+          loc: "Mumbai, MH",
+          s: "MH",
+          t: "top",
+          c2025: 7800,
+          aiq: true,
+        },
+        {
+          n: "GMC Nagpur",
+          loc: "Nagpur, MH",
+          s: "MH",
+          t: "top",
+          c2025: 9200,
+          aiq: true,
+        },
+        {
+          n: "Calcutta Medical College",
+          loc: "Kolkata, WB",
+          s: "WB",
+          t: "top",
+          c2025: 5500,
+          aiq: true,
+        },
+        {
+          n: "NRS Medical College",
+          loc: "Kolkata, WB",
+          s: "WB",
+          t: "top",
+          c2025: 6800,
+          aiq: true,
+        },
+        {
+          n: "R.G. Kar Medical College",
+          loc: "Kolkata, WB",
+          s: "WB",
+          t: "top",
+          c2025: 8200,
+          aiq: true,
+        },
+        {
+          n: "Madras Medical College",
+          loc: "Chennai, TN",
+          s: "TN",
+          t: "top",
+          c2025: 3800,
+          aiq: true,
+        },
+        {
+          n: "Stanley Medical College",
+          loc: "Chennai, TN",
+          s: "TN",
+          t: "top",
+          c2025: 6200,
+          aiq: true,
+        },
+        {
+          n: "Bangalore Medical College",
+          loc: "Bengaluru, KA",
+          s: "KA",
+          t: "top",
+          c2025: 4500,
+          aiq: true,
+        },
+        {
+          n: "Mysore Medical College",
+          loc: "Mysuru, KA",
+          s: "KA",
+          t: "top",
+          c2025: 7500,
+          aiq: true,
+        },
+        {
+          n: "KGMU Lucknow",
+          loc: "Lucknow, UP",
+          s: "UP",
+          t: "top",
+          c2025: 5800,
+          aiq: true,
+        },
+        {
+          n: "BHU IMS Varanasi",
+          loc: "Varanasi, UP",
+          s: "UP",
+          t: "top",
+          c2025: 1800,
+          aiq: true,
+        },
+        {
+          n: "GMC Trivandrum",
+          loc: "Kerala",
+          s: "KL",
+          t: "top",
+          c2025: 5200,
+          aiq: true,
+        },
+        {
+          n: "GMC Kozhikode",
+          loc: "Kerala",
+          s: "KL",
+          t: "top",
+          c2025: 7800,
+          aiq: true,
+        },
+        {
+          n: "Osmania Medical College",
+          loc: "Hyderabad, TG",
+          s: "TG",
+          t: "top",
+          c2025: 4200,
+          aiq: true,
+        },
+        {
+          n: "Gandhi Medical College Hyderabad",
+          loc: "Hyderabad, TG",
+          s: "TG",
+          t: "top",
+          c2025: 6200,
+          aiq: true,
+        },
+        {
+          n: "Andhra MC Visakhapatnam",
+          loc: "AP",
+          s: "AP",
+          t: "top",
+          c2025: 5800,
+          aiq: true,
+        },
+        {
+          n: "PGIMER Chandigarh",
+          loc: "Chandigarh",
+          s: "CH",
+          t: "top",
+          c2025: 1100,
+          aiq: true,
+        },
+        {
+          n: "GMC Chandigarh",
+          loc: "Chandigarh",
+          s: "CH",
+          t: "top",
+          c2025: 3200,
+          aiq: true,
+        },
+
+        // â”€â”€â”€ GOOD â”€â”€â”€
+        {
+          n: "GMC Aurangabad",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 13500,
+          aiq: true,
+        },
+        {
+          n: "GMC Akola",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 18500,
+          aiq: true,
+        },
+        {
+          n: "GMC Yavatmal",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 21000,
+          aiq: true,
+        },
+        {
+          n: "GMC Latur",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 19500,
+          aiq: true,
+        },
+        {
+          n: "GMC Solapur",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 18000,
+          aiq: true,
+        },
+        {
+          n: "GMC Miraj",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 17500,
+          aiq: true,
+        },
+        {
+          n: "GMC Dhule",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 22000,
+          aiq: true,
+        },
+        {
+          n: "SRTR GMC Ambajogai",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 24000,
+          aiq: true,
+        },
+        {
+          n: "GMC Chandrapur",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 25500,
+          aiq: true,
+        },
+        {
+          n: "GMC Gondia",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 27000,
+          aiq: true,
+        },
+        {
+          n: "GMC Jalgaon",
+          loc: "MH",
+          s: "MH",
+          t: "good",
+          c2025: 23500,
+          aiq: true,
+        },
+        {
+          n: "GMC Surat",
+          loc: "GJ",
+          s: "GJ",
+          t: "good",
+          c2025: 11500,
+          aiq: true,
+        },
+        {
+          n: "BJ Medical College Ahmedabad",
+          loc: "GJ",
+          s: "GJ",
+          t: "good",
+          c2025: 9800,
+          aiq: true,
+        },
+        {
+          n: "GMC Vadodara",
+          loc: "GJ",
+          s: "GJ",
+          t: "good",
+          c2025: 13800,
+          aiq: true,
+        },
+        {
+          n: "GMC Rajkot",
+          loc: "GJ",
+          s: "GJ",
+          t: "good",
+          c2025: 16500,
+          aiq: true,
+        },
+        {
+          n: "PGIMS Rohtak",
+          loc: "Haryana",
+          s: "HR",
+          t: "good",
+          c2025: 9500,
+          aiq: true,
+        },
+        {
+          n: "GMC Patiala",
+          loc: "Punjab",
+          s: "PB",
+          t: "good",
+          c2025: 11200,
+          aiq: true,
+        },
+        {
+          n: "GMC Amritsar",
+          loc: "Punjab",
+          s: "PB",
+          t: "good",
+          c2025: 12500,
+          aiq: true,
+        },
+        {
+          n: "GMC Jammu",
+          loc: "J&K",
+          s: "JK",
+          t: "good",
+          c2025: 14500,
+          aiq: true,
+        },
+        {
+          n: "GMC Srinagar",
+          loc: "J&K",
+          s: "JK",
+          t: "good",
+          c2025: 15800,
+          aiq: true,
+        },
+        {
+          n: "SMS Jaipur",
+          loc: "Rajasthan",
+          s: "RJ",
+          t: "good",
+          c2025: 6800,
+          aiq: true,
+        },
+        {
+          n: "GMC Kota",
+          loc: "Rajasthan",
+          s: "RJ",
+          t: "good",
+          c2025: 14000,
+          aiq: true,
+        },
+        {
+          n: "RNT MC Udaipur",
+          loc: "Rajasthan",
+          s: "RJ",
+          t: "good",
+          c2025: 13200,
+          aiq: true,
+        },
+        {
+          n: "GMC Jodhpur (Dr SN)",
+          loc: "Rajasthan",
+          s: "RJ",
+          t: "good",
+          c2025: 11800,
+          aiq: true,
+        },
+        {
+          n: "GSVM Medical College Kanpur",
+          loc: "UP",
+          s: "UP",
+          t: "good",
+          c2025: 14000,
+          aiq: true,
+        },
+        {
+          n: "MLN MC Allahabad",
+          loc: "UP",
+          s: "UP",
+          t: "good",
+          c2025: 18500,
+          aiq: true,
+        },
+        {
+          n: "GMC Agra (SN)",
+          loc: "UP",
+          s: "UP",
+          t: "good",
+          c2025: 17000,
+          aiq: true,
+        },
+        {
+          n: "GMC Meerut (LLRM)",
+          loc: "UP",
+          s: "UP",
+          t: "good",
+          c2025: 16500,
+          aiq: true,
+        },
+        {
+          n: "BPS GMC for Women, Sonepat",
+          loc: "HR",
+          s: "HR",
+          t: "good",
+          c2025: 18500,
+          aiq: true,
+        },
+
+        // â”€â”€â”€ MID â”€â”€â”€
+        {
+          n: "GMC Akola (vacant rounds)",
+          loc: "MH",
+          s: "MH",
+          t: "mid",
+          c2025: 32000,
+          aiq: true,
+        },
+        {
+          n: "GMC Jalna",
+          loc: "MH",
+          s: "MH",
+          t: "mid",
+          c2025: 38000,
+          aiq: true,
+        },
+        {
+          n: "GMC Satara",
+          loc: "MH",
+          s: "MH",
+          t: "mid",
+          c2025: 34000,
+          aiq: true,
+        },
+        {
+          n: "GMC Sindhudurg",
+          loc: "MH",
+          s: "MH",
+          t: "mid",
+          c2025: 42000,
+          aiq: true,
+        },
+        {
+          n: "GMC Alibag",
+          loc: "MH",
+          s: "MH",
+          t: "mid",
+          c2025: 46000,
+          aiq: true,
+        },
+        {
+          n: "GMC Osmanabad",
+          loc: "MH",
+          s: "MH",
+          t: "mid",
+          c2025: 40000,
+          aiq: true,
+        },
+        {
+          n: "GMC Nandurbar",
+          loc: "MH",
+          s: "MH",
+          t: "mid",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "GMC Patan",
+          loc: "GJ",
+          s: "GJ",
+          t: "mid",
+          c2025: 31000,
+          aiq: true,
+        },
+        {
+          n: "GMC Bhavnagar",
+          loc: "GJ",
+          s: "GJ",
+          t: "mid",
+          c2025: 28500,
+          aiq: true,
+        },
+        {
+          n: "GMC Saharanpur",
+          loc: "UP",
+          s: "UP",
+          t: "mid",
+          c2025: 33000,
+          aiq: true,
+        },
+        {
+          n: "GMC Banda",
+          loc: "UP",
+          s: "UP",
+          t: "mid",
+          c2025: 42000,
+          aiq: true,
+        },
+        {
+          n: "GMC Badaun",
+          loc: "UP",
+          s: "UP",
+          t: "mid",
+          c2025: 46000,
+          aiq: true,
+        },
+        {
+          n: "GMC Basti",
+          loc: "UP",
+          s: "UP",
+          t: "mid",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "NSCB MC Jabalpur",
+          loc: "MP",
+          s: "MP",
+          t: "mid",
+          c2025: 21000,
+          aiq: true,
+        },
+        {
+          n: "GMC Bhopal (Gandhi)",
+          loc: "MP",
+          s: "MP",
+          t: "mid",
+          c2025: 24000,
+          aiq: true,
+        },
+        {
+          n: "GMC Indore (MGM)",
+          loc: "MP",
+          s: "MP",
+          t: "mid",
+          c2025: 18000,
+          aiq: true,
+        },
+        {
+          n: "GMC Rewa (SS)",
+          loc: "MP",
+          s: "MP",
+          t: "mid",
+          c2025: 35000,
+          aiq: true,
+        },
+        {
+          n: "GMC Ratlam",
+          loc: "MP",
+          s: "MP",
+          t: "mid",
+          c2025: 42000,
+          aiq: true,
+        },
+        {
+          n: "GMC Khandwa",
+          loc: "MP",
+          s: "MP",
+          t: "mid",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "GMC Datia",
+          loc: "MP",
+          s: "MP",
+          t: "mid",
+          c2025: 55000,
+          aiq: true,
+        },
+        {
+          n: "GMC Patna (PMCH)",
+          loc: "BR",
+          s: "BR",
+          t: "mid",
+          c2025: 14500,
+          aiq: true,
+        },
+        {
+          n: "GMC Darbhanga (DMCH)",
+          loc: "BR",
+          s: "BR",
+          t: "mid",
+          c2025: 24000,
+          aiq: true,
+        },
+        {
+          n: "GMC Bhagalpur (JLNMCH)",
+          loc: "BR",
+          s: "BR",
+          t: "mid",
+          c2025: 30000,
+          aiq: true,
+        },
+        {
+          n: "GMC Madhepura",
+          loc: "BR",
+          s: "BR",
+          t: "mid",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "GMC Bettiah",
+          loc: "BR",
+          s: "BR",
+          t: "mid",
+          c2025: 52000,
+          aiq: true,
+        },
+        {
+          n: "GMC Pawapuri",
+          loc: "BR",
+          s: "BR",
+          t: "mid",
+          c2025: 54000,
+          aiq: true,
+        },
+        {
+          n: "GMC Raipur (Pt JNM)",
+          loc: "CG",
+          s: "CG",
+          t: "mid",
+          c2025: 18500,
+          aiq: true,
+        },
+        {
+          n: "GMC Bilaspur (Chhattisgarh)",
+          loc: "CG",
+          s: "CG",
+          t: "mid",
+          c2025: 32000,
+          aiq: true,
+        },
+        {
+          n: "GMC Jagdalpur",
+          loc: "CG",
+          s: "CG",
+          t: "mid",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "GMC Cuttack (SCB)",
+          loc: "OR",
+          s: "OR",
+          t: "mid",
+          c2025: 14800,
+          aiq: true,
+        },
+        {
+          n: "GMC Berhampur (MKCG)",
+          loc: "OR",
+          s: "OR",
+          t: "mid",
+          c2025: 28000,
+          aiq: true,
+        },
+        {
+          n: "GMC Burla (VIMSAR)",
+          loc: "OR",
+          s: "OR",
+          t: "mid",
+          c2025: 35000,
+          aiq: true,
+        },
+        {
+          n: "GMC Balasore",
+          loc: "OR",
+          s: "OR",
+          t: "mid",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "GMC Koraput",
+          loc: "OR",
+          s: "OR",
+          t: "mid",
+          c2025: 55000,
+          aiq: true,
+        },
+        {
+          n: "Gauhati MC",
+          loc: "Assam",
+          s: "AS",
+          t: "mid",
+          c2025: 18000,
+          aiq: true,
+        },
+        {
+          n: "Silchar MC",
+          loc: "Assam",
+          s: "AS",
+          t: "mid",
+          c2025: 35000,
+          aiq: true,
+        },
+        {
+          n: "Jorhat MC",
+          loc: "Assam",
+          s: "AS",
+          t: "mid",
+          c2025: 42000,
+          aiq: true,
+        },
+        {
+          n: "GMC Tezpur",
+          loc: "Assam",
+          s: "AS",
+          t: "mid",
+          c2025: 54000,
+          aiq: true,
+        },
+
+        // â”€â”€â”€ LOWER (still government MBBS) â”€â”€â”€
+        {
+          n: "RIMS Imphal",
+          loc: "Manipur",
+          s: "MN",
+          t: "low",
+          c2025: 42000,
+          aiq: true,
+        },
+        {
+          n: "RIMS Ranchi",
+          loc: "JH",
+          s: "JH",
+          t: "low",
+          c2025: 25000,
+          aiq: true,
+        },
+        {
+          n: "PMCH Dhanbad",
+          loc: "JH",
+          s: "JH",
+          t: "low",
+          c2025: 38000,
+          aiq: true,
+        },
+        {
+          n: "MGM Jamshedpur",
+          loc: "JH",
+          s: "JH",
+          t: "low",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "GMC Hamirpur",
+          loc: "HP",
+          s: "HP",
+          t: "low",
+          c2025: 24000,
+          aiq: true,
+        },
+        {
+          n: "GMC Chamba",
+          loc: "HP",
+          s: "HP",
+          t: "low",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "GMC Nahan",
+          loc: "HP",
+          s: "HP",
+          t: "low",
+          c2025: 55000,
+          aiq: true,
+        },
+        {
+          n: "GMC Haldwani",
+          loc: "UK",
+          s: "UK",
+          t: "low",
+          c2025: 21500,
+          aiq: true,
+        },
+        {
+          n: "GMC Srinagar Garhwal",
+          loc: "UK",
+          s: "UK",
+          t: "low",
+          c2025: 38000,
+          aiq: true,
+        },
+        {
+          n: "NEIGRIHMS Shillong",
+          loc: "Meghalaya",
+          s: "ML",
+          t: "low",
+          c2025: 35000,
+          aiq: true,
+        },
+        {
+          n: "GMC Aizawl",
+          loc: "Mizoram",
+          s: "MZ",
+          t: "low",
+          c2025: 65000,
+          aiq: true,
+        },
+        {
+          n: "GMC Agartala",
+          loc: "Tripura",
+          s: "TR",
+          t: "low",
+          c2025: 48000,
+          aiq: true,
+        },
+
+        // â”€â”€â”€ BDS (lower cutoffs, still good) â”€â”€â”€
+        {
+          n: "Govt Dental College, Mumbai",
+          loc: "MH (BDS)",
+          s: "MH",
+          t: "low",
+          c2025: 48000,
+          aiq: true,
+        },
+        {
+          n: "Govt Dental College, Nagpur",
+          loc: "MH (BDS)",
+          s: "MH",
+          t: "low",
+          c2025: 62000,
+          aiq: true,
+        },
+        {
+          n: "Maulana Azad Dental College",
+          loc: "Delhi (BDS)",
+          s: "DL",
+          t: "low",
+          c2025: 32000,
+          aiq: true,
+        },
+        {
+          n: "Govt Dental College, Bangalore",
+          loc: "KA (BDS)",
+          s: "KA",
+          t: "low",
+          c2025: 55000,
+          aiq: true,
+        },
+        {
+          n: "Govt Dental College, Hyderabad",
+          loc: "TG (BDS)",
+          s: "TG",
+          t: "low",
+          c2025: 58000,
+          aiq: true,
+        },
+        {
+          n: "Govt Dental College, Ahmedabad",
+          loc: "GJ (BDS)",
+          s: "GJ",
+          t: "low",
+          c2025: 78000,
+          aiq: true,
+        },
+      ];
+
+      // â”€â”€ STATE FACTOR (state quota gives ~30-40% better effective rank for home state) â”€â”€
+      const STATE_FACTOR = 0.65; // multiply closing rank by this for home-state state quota
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ HELPER: marks â†’ AIR via interpolation â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      function marksToBaseAIR(marks) {
+        marks = Math.max(0, Math.min(720, marks));
+        for (let i = 0; i < BASE_2025.length - 1; i++) {
+          const a = BASE_2025[i],
+            b = BASE_2025[i + 1];
+          if (marks <= a.m && marks >= b.m) {
+            const t = (a.m - marks) / (a.m - b.m);
+            // log-interpolation since rank grows non-linearly
+            const lr = Math.log(a.r) + t * (Math.log(b.r) - Math.log(a.r));
+            return Math.round(Math.exp(lr));
+          }
+        }
+        return BASE_2025[BASE_2025.length - 1].r;
+      }
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      const DEFAULT_STATE = {
+        marks: 600,
+        cat: "UR",
+        quota: "AIQ",
+        diff: "{{ rank_predictor_default_difficulty|default:'similar'|escapejs }}",
+        mh: false,
+      };
+      const rankPredictor = {
+        unlocked: {{ rank_predictor_unlocked|yesno:"true,false" }},
+        phone: "{{ rank_predictor_phone|default:''|escapejs }}",
+        pendingScroll: true,
+      };
+      const state = { ...DEFAULT_STATE };
+      let currentCollegeFilter = "all";
+      let lastList = [];
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ INPUT WIRING â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      const $ = (id) => document.getElementById(id);
+      const fmt = (n) =>
+        Number.isFinite(Number(n)) ? Number(n).toLocaleString("en-IN") : "-";
+
+      function normalizeDifficulty(value) {
+        const key = String(value || "").toLowerCase().trim();
+        return Object.prototype.hasOwnProperty.call(DIFF, key) ? key : "similar";
+      }
+
+      state.diff = normalizeDifficulty(state.diff);
+
+      const marksInput = $("marksInput"),
+        marksSlider = $("marksSlider"),
+        marksBar = $("marksBar"),
+        collegeSearch = $("collegeSearch"),
+        collegeSort = $("collegeSort");
+      const otpModal = $("otpModal"),
+        otpPhoneInput = $("otpPhoneInput"),
+        otpCodeInput = $("otpCodeInput"),
+        otpStatus = $("otpStatus"),
+        otpVerifyRow = $("otpVerifyRow"),
+        sendOtpBtn = $("sendOtpBtn"),
+        verifyOtpBtn = $("verifyOtpBtn"),
+        resendOtpBtn = $("resendOtpBtn");
+
+      function setOtpStatus(message, type = "") {
+        otpStatus.textContent = message || "";
+        otpStatus.className = "otp-status" + (type ? " " + type : "");
+      }
+
+      function setGatedVisibility(unlocked) {
+        document.querySelectorAll(".gated-section").forEach((node) => {
+          node.classList.toggle("gated-hidden", !unlocked);
+        });
+      }
+
+      function openOtpModal() {
+        otpModal.classList.add("open");
+        otpModal.setAttribute("aria-hidden", "false");
+        otpPhoneInput.value = rankPredictor.phone || "";
+        setOtpStatus("");
+        otpCodeInput.value = "";
+        otpVerifyRow.classList.toggle("show", !!rankPredictor.phone);
+        setTimeout(() => {
+          if (rankPredictor.phone) {
+            otpCodeInput.focus();
+          } else {
+            otpPhoneInput.focus();
+          }
+        }, 50);
+      }
+
+      function closeOtpModal() {
+        otpModal.classList.remove("open");
+        otpModal.setAttribute("aria-hidden", "true");
+      }
+
+      function normalizePhone(value) {
+        return String(value || "").replace(/\D/g, "").slice(-10);
+      }
+
+      async function postOtp(url, data) {
+        const formData = new FormData();
+        Object.entries(data).forEach(([key, value]) => formData.append(key, value));
+        const response = await fetch(url, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin",
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error || "Something went wrong. Please try again.");
+        }
+        return payload;
+      }
+
+      async function sendOtpRequest() {
+        const phone = normalizePhone(otpPhoneInput.value);
+        otpPhoneInput.value = phone;
+
+        if (phone.length !== 10) {
+          setOtpStatus("Please enter a valid 10-digit mobile number.", "error");
+          otpPhoneInput.focus();
+          return;
+        }
+
+        sendOtpBtn.disabled = true;
+        resendOtpBtn.disabled = true;
+        setOtpStatus("Sending OTP...", "");
+
+        try {
+          await postOtp("{% url 'scholarship_test:rank_predictor_send_otp' %}", {
+            phone_number: phone,
+          });
+          rankPredictor.phone = phone;
+          otpVerifyRow.classList.add("show");
+          setOtpStatus("OTP sent successfully. Enter the 4-digit OTP to continue.", "success");
+          otpCodeInput.focus();
+        } catch (error) {
+          setOtpStatus(error.message, "error");
+        } finally {
+          sendOtpBtn.disabled = false;
+          resendOtpBtn.disabled = false;
+        }
+      }
+
+      async function verifyOtpRequest() {
+        const phone = normalizePhone(otpPhoneInput.value || rankPredictor.phone);
+        const otp = String(otpCodeInput.value || "").replace(/\D/g, "").slice(0, 4);
+        otpPhoneInput.value = phone;
+        otpCodeInput.value = otp;
+
+        if (phone.length !== 10) {
+          setOtpStatus("Please enter a valid 10-digit mobile number.", "error");
+          otpPhoneInput.focus();
+          return;
+        }
+
+        if (otp.length !== 4) {
+          setOtpStatus("Please enter a valid 4-digit OTP.", "error");
+          otpCodeInput.focus();
+          return;
+        }
+
+        verifyOtpBtn.disabled = true;
+        setOtpStatus("Verifying OTP...", "");
+
+        try {
+          await postOtp("{% url 'scholarship_test:rank_predictor_verify_otp' %}", {
+            phone_number: phone,
+            otp_code: otp,
+          });
+          rankPredictor.phone = phone;
+          rankPredictor.unlocked = true;
+          setGatedVisibility(true);
+          closeOtpModal();
+          predict({
+            scroll: rankPredictor.pendingScroll,
+            skipUnlockCheck: true,
+          });
+        } catch (error) {
+          setOtpStatus(error.message, "error");
+        } finally {
+          verifyOtpBtn.disabled = false;
+        }
+      }
+
+      function getScoreBand(marks) {
+        if (marks >= 680)
+          return {
+            title: "AIR HUNT",
+            detail: "You are in an ultra-compressed top-rank band.",
+            hint: "A 5-10 mark swing can move your rank dramatically at the top.",
+          };
+        if (marks >= 630)
+          return {
+            title: "TOP GOVT",
+            detail: "Strong range for premium government MBBS targets.",
+            hint: "This is the zone where shortlist quality matters as much as raw marks.",
+          };
+        if (marks >= 580)
+          return {
+            title: "STRONG CORE",
+            detail: "State quota and solid AIQ options stay very relevant.",
+            hint: "A 15-25 mark gain here can meaningfully lift college quality.",
+          };
+        if (marks >= 520)
+          return {
+            title: "COMPETITIVE",
+            detail: "Use quota, category, and counselling strategy carefully.",
+            hint: "This band benefits the most from a smart preference list.",
+          };
+        return {
+          title: "BACKUP LADDER",
+          detail: "Backup planning becomes important alongside MBBS targets.",
+          hint: "Keep BDS, AYUSH, and private options visible while you compare outcomes.",
+        };
+      }
+
+      function updateActiveChip(value) {
+        document.querySelectorAll(".chip").forEach((chip) => {
+          chip.classList.toggle("active", Number(chip.dataset.marks) === value);
+        });
+      }
+
+      function updateResidencyState() {
+        const isStateQuota = state.quota === "STATE";
+        $("mhRow").classList.toggle("disabled", !isStateQuota);
+        if (!isStateQuota) {
+          state.mh = false;
+          $("mhToggle").classList.remove("on");
+        }
+      }
+
+      function updateLivePreview() {}
+
+      function autoPredict() {
+        if (!rankPredictor.unlocked) return;
+        predict({ scroll: false, skipUnlockCheck: true });
+      }
+
+      function syncMarks(v) {
+        v = Math.max(0, Math.min(720, +v || 0));
+        state.marks = v;
+        marksInput.value = v;
+        marksSlider.value = v;
+        marksBar.style.width = (v / 720) * 100 + "%";
+        updateActiveChip(v);
+        updateLivePreview();
+      }
+      marksInput.addEventListener("input", (e) => {
+        syncMarks(e.target.value);
+        autoPredict();
+      });
+      marksSlider.addEventListener("input", (e) => {
+        syncMarks(e.target.value);
+        autoPredict();
+      });
+      syncMarks(DEFAULT_STATE.marks);
+
+      document.querySelectorAll(".chip").forEach((c) =>
+        c.addEventListener("click", () => {
+          syncMarks(c.dataset.marks);
+          autoPredict();
+        }),
+      );
+      document.querySelectorAll("#catSeg button").forEach((b) =>
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll("#catSeg button")
+            .forEach((x) => x.classList.remove("active"));
+          b.classList.add("active");
+          state.cat = b.dataset.cat;
+          updateLivePreview();
+          autoPredict();
+        }),
+      );
+      document.querySelectorAll("#quotaSeg button").forEach((b) =>
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll("#quotaSeg button")
+            .forEach((x) => x.classList.remove("active"));
+          b.classList.add("active");
+          state.quota = b.dataset.quota;
+          updateResidencyState();
+          updateLivePreview();
+          autoPredict();
+        }),
+      );
+      document.querySelectorAll("#diffSeg button").forEach((b) =>
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll("#diffSeg button")
+            .forEach((x) => x.classList.remove("active"));
+          b.classList.add("active");
+          state.diff = normalizeDifficulty(b.dataset.diff);
+          updateLivePreview();
+          autoPredict();
+        }),
+      );
+      $("mhToggle").addEventListener("click", (e) => {
+        if (state.quota !== "STATE") return;
+        state.mh = !state.mh;
+        e.currentTarget.classList.toggle("on", state.mh);
+        updateLivePreview();
+        autoPredict();
+      });
+
+      function resetTool() {
+        Object.assign(state, DEFAULT_STATE);
+        syncMarks(DEFAULT_STATE.marks);
+        document.querySelectorAll("#catSeg button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.cat === state.cat);
+        });
+        document.querySelectorAll("#quotaSeg button").forEach((button) => {
+          button.classList.toggle(
+            "active",
+            button.dataset.quota === state.quota,
+          );
+        });
+        document.querySelectorAll("#diffSeg button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.diff === state.diff);
+        });
+        document.querySelectorAll(".fchip").forEach((chip) => {
+          chip.classList.toggle("active", chip.dataset.f === "all");
+        });
+        currentCollegeFilter = "all";
+        if (collegeSearch) collegeSearch.value = "";
+        if (collegeSort) collegeSort.value = "closing";
+        $("mhToggle").classList.remove("on");
+        updateResidencyState();
+        updateLivePreview();
+        if (rankPredictor.unlocked) {
+          predict({ scroll: false, skipUnlockCheck: true });
+        }
+      }
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ ZONE LOGIC â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      function getZone(rank, cat) {
+        // thresholds are AIR for UR; for reserved, we adjust via category rank
+        if (cat === "UR" || cat === "EWS") {
+          if (rank <= 1500)
+            return {
+              tag: "ELITE ZONE",
+              cls: "green",
+              msg: "AIIMS / JIPMER / top central institutes are in your reach. Plan AIIMS Delhi specifically with strategic course choice.",
+            };
+          if (rank <= 8000)
+            return {
+              tag: "SAFE ZONE",
+              cls: "green",
+              msg: "Top government MBBS colleges across India through AIQ. You can be selective with college and city.",
+            };
+          if (rank <= 25000)
+            return {
+              tag: "GOLD ZONE",
+              cls: "gold",
+              msg: "Solid government MBBS via state quota + mid-tier AIQ. Use state domicile to maximise college tier.",
+            };
+          if (rank <= 60000)
+            return {
+              tag: "STRETCH ZONE",
+              cls: "orange",
+              msg: "Government MBBS through state quota + lower-tier AIQ + private deemed. Good BDS too. Build a smart preference list.",
+            };
+          if (rank <= 150000)
+            return {
+              tag: "BACKUP ZONE",
+              cls: "orange",
+              msg: "BDS/BAMS/AYUSH government + private MBBS realistic. Consider a re-attempt only after exhausting counselling rounds.",
+            };
+          return {
+            tag: "RECONSIDER",
+            cls: "red",
+            msg: "Below private MBBS cutoffs in most cases. Strongly consider a focused 2027 re-attempt with structured prep.",
+          };
+        }
+        // For SC/ST/OBC, the category rank thresholds are roughly 1/4 to 1/6 of UR
+        const div =
+          cat === "OBC" ? 3.5 : cat === "SC" ? 5.0 : cat === "ST" ? 6.5 : 1;
+        const eff = rank / div;
+        if (eff <= 2000)
+          return {
+            tag: "ELITE ZONE",
+            cls: "green",
+            msg: "AIIMS and central institutes within reach via reservation. Aim for AIIMS Delhi/Jodhpur.",
+          };
+        if (eff <= 8000)
+          return {
+            tag: "SAFE ZONE",
+            cls: "green",
+            msg: "Top government MBBS colleges via AIQ category quota. Excellent positioning.",
+          };
+        if (eff <= 22000)
+          return {
+            tag: "GOLD ZONE",
+            cls: "gold",
+            msg: "State + AIQ category seats give strong government MBBS outcomes.",
+          };
+        if (eff <= 50000)
+          return {
+            tag: "STRETCH ZONE",
+            cls: "orange",
+            msg: "Government MBBS achievable via state quota. Build a strong preference list.",
+          };
+        return {
+          tag: "BACKUP ZONE",
+          cls: "red",
+          msg: "BDS/AYUSH likely; MBBS via private. Consider a re-attempt strategy.",
+        };
+      }
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ CHANCE LOGIC â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      function chance(myRank, closingRank) {
+        // Buffer: closing in 2026 = closing 2025 x inflation
+        const closing2026 = closingRank * INFLATION;
+        if (myRank <= closing2026 * 0.65)
+          return { l: "VERY HIGH", cls: "high", pct: 95 };
+        if (myRank <= closing2026 * 0.85)
+          return { l: "HIGH", cls: "high", pct: 80 };
+        if (myRank <= closing2026 * 1.0)
+          return { l: "GOOD", cls: "med", pct: 65 };
+        if (myRank <= closing2026 * 1.2)
+          return { l: "MEDIUM", cls: "med", pct: 45 };
+        if (myRank <= closing2026 * 1.5)
+          return { l: "LOW", cls: "low", pct: 25 };
+        if (myRank <= closing2026 * 2.0)
+          return { l: "REACH", cls: "low", pct: 10 };
+        return { l: "OUT OF RANGE", cls: "none", pct: 0 };
+      }
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ PREDICT â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      function getPredictionSnapshot() {
+        const baseAIR = marksToBaseAIR(state.marks);
+        const diffFactor = DIFF[normalizeDifficulty(state.diff)] || DIFF.similar;
+        const mid = Math.max(1, Math.round(baseAIR * INFLATION * diffFactor));
+        const low = Math.max(1, Math.round(mid * 0.88));
+        const high = Math.min(TOTAL_2026, Math.round(mid * 1.12));
+        const catMult = CAT_MULT[state.cat] || 1;
+        const catRankMid = Math.max(1, Math.round(mid / catMult));
+        const percentile = Math.max(
+          0,
+          Math.min(99.999, (1 - mid / TOTAL_2026) * 100),
+        );
+        const zone = getZone(mid, state.cat);
+        const effectiveRank =
+          state.cat === "UR" || state.cat === "EWS" ? mid : catRankMid;
+
+        let govtOdds;
+        let govtOddsSummary;
+        const seatsAvail = 110000;
+        if (effectiveRank < seatsAvail * 0.4) {
+          govtOdds = "VERY HIGH";
+          govtOddsSummary = "Top govt MBBS";
+        } else if (effectiveRank < seatsAvail * 0.85) {
+          govtOdds = "HIGH";
+          govtOddsSummary = "Govt MBBS likely";
+        } else if (effectiveRank < seatsAvail * 1.2) {
+          govtOdds = "MEDIUM";
+          govtOddsSummary = "State quota helps";
+        } else if (effectiveRank < seatsAvail * 2) {
+          govtOdds = "LOW";
+          govtOddsSummary = "BDS/AYUSH realistic";
+        } else {
+          govtOdds = "UNLIKELY";
+          govtOddsSummary = "Re-attempt advised";
+        }
+
+        let action;
+        let actionSummary;
+        if (mid < 1500) {
+          action = "DO NOT STOP";
+          actionSummary = "Push for AIIMS Delhi";
+        } else if (mid < 8000) {
+          action = "LOCK IT";
+          actionSummary = "Top govt MBBS in reach";
+        } else if (mid < 25000) {
+          action = "MAINTAIN";
+          actionSummary = "Be smart with prefs";
+        } else if (mid < 60000) {
+          action = "LEVEL UP";
+          actionSummary = "20-30 marks more = big jump";
+        } else if (mid < 150000) {
+          action = "PUSH HARD";
+          actionSummary = "Aim for 100+ extra marks";
+        } else {
+          action = "REVAMP STRATEGY";
+          actionSummary = "Rebuild fundamentals";
+        }
+
+        return {
+          mid,
+          low,
+          high,
+          catMult,
+          catRankMid,
+          percentile,
+          zone,
+          govtOdds,
+          govtOddsSummary,
+          action,
+          actionSummary,
+        };
+      }
+
+      function predict({ scroll = true, skipUnlockCheck = false } = {}) {
+        if (!skipUnlockCheck && !rankPredictor.unlocked) {
+          rankPredictor.pendingScroll = scroll;
+          openOtpModal();
+          return;
+        }
+        const snapshot = getPredictionSnapshot();
+        const {
+          mid,
+          low,
+          high,
+          catMult,
+          catRankMid,
+          percentile,
+          zone,
+          govtOdds,
+          govtOddsSummary,
+          action,
+          actionSummary,
+        } = snapshot;
+
+        // â”€â”€ Render rank panel â”€â”€
+        $("rankMid").textContent = fmt(mid);
+        $("rankLow").textContent = fmt(low);
+        $("rankHigh").textContent = fmt(high);
+        $("catRankBlock").innerHTML =
+          state.cat !== "UR"
+            ? `${state.cat} category rank approx <b style="color:var(--gold)">${fmt(catRankMid)}</b>`
+            : "";
+
+        // Zone
+        const zt = $("zoneTag");
+        zt.textContent = zone.tag;
+        zt.className = "rank-zone-tag " + zone.cls;
+        $("zoneMsg").textContent = zone.msg;
+
+        // Meters
+        $("percentile").textContent = percentile.toFixed(3);
+        $("percentileS").textContent =
+          percentile >= 99 ? "Top " + (100 - percentile).toFixed(2) + "%" : "";
+        $("beats").textContent = fmt(Math.max(0, TOTAL_2026 - mid));
+        $("govtOdds").textContent = govtOdds;
+        $("govtOddsS").textContent = govtOddsSummary;
+        $("action").textContent = action;
+        $("actionS").textContent = actionSummary;
+
+        // â”€â”€ Breakdown â”€â”€
+
+        // â”€â”€ College list â”€â”€
+        renderColleges(mid, catMult);
+
+        // Show
+        $("emptyState").style.display = "none";
+        $("results").classList.add("show");
+        if (scroll) {
+          $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ COLLEGES RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      function renderColleges(myRank, catMult) {
+        const tbody = $("collBody");
+        tbody.innerHTML = "";
+
+        // Build candidate list
+        const list = COLLEGES.map((c) => {
+          let effClosing = c.c2025;
+          // Maharashtra resident + state quota â†’ significantly easier for MH colleges
+          if (state.quota === "STATE" && state.mh && c.s === "MH") {
+            effClosing = Math.round(effClosing * STATE_FACTOR);
+          }
+          // Category adjustment (UR base; reserved categories see closing ranks effectively higher = relaxed)
+          const myEff =
+            state.cat === "UR" || state.cat === "EWS"
+              ? myRank
+              : Math.round(myRank / catMult);
+          const ch = chance(myEff, effClosing);
+          return { ...c, effClosing, ch, myEff };
+        })
+          .filter((c) => c.ch.pct > 0) // must have some chance
+          .sort((a, b) => a.effClosing - b.effClosing);
+
+        lastList = list;
+        applyCollegeFilter(currentCollegeFilter);
+
+        $("collMeta").textContent =
+          list.length + " colleges matched | projected for 2026";
+      }
+
+      function updateSpotlight(college) {
+        if (!college) {
+          $("spotlightName").textContent = "No match in this view";
+          $("spotlightMeta").textContent =
+            "Try a different filter, search term, or marks range.";
+          return;
+        }
+        const projectedClosing = Math.round(college.effClosing * INFLATION);
+        const stateBoost =
+          college.effClosing !== college.c2025 ? " | state quota advantage applied" : "";
+        $("spotlightName").textContent = college.n;
+        $("spotlightMeta").textContent =
+          college.loc +
+          " | " +
+          college.ch.l +
+          " chance | 2026 est. closing AIR ~" +
+          fmt(projectedClosing) +
+          stateBoost;
+      }
+
+      function getFilteredColleges(f = currentCollegeFilter) {
+        const query = (collegeSearch?.value || "").trim().toLowerCase();
+        const sortBy = collegeSort?.value || "closing";
+        return lastList
+          .filter((c) => {
+            if (f === "all") return true;
+            if (f === "high") return c.ch.cls === "high";
+            if (f === "med") return c.ch.cls === "med";
+            if (f === "low") return c.ch.cls === "low";
+            return true;
+          })
+          .filter((c) => {
+            if (!query) return true;
+            return [c.n, c.loc, c.s].some((field) =>
+              field.toLowerCase().includes(query),
+            );
+          })
+          .sort((a, b) => {
+            if (sortBy === "chance") {
+              return b.ch.pct - a.ch.pct || a.effClosing - b.effClosing;
+            }
+            if (sortBy === "name") {
+              return a.n.localeCompare(b.n);
+            }
+            return a.effClosing - b.effClosing;
+          });
+      }
+
+      function applyCollegeFilter(f = currentCollegeFilter) {
+        currentCollegeFilter = f;
+        const tbody = $("collBody");
+        tbody.innerHTML = "";
+        const filtered = getFilteredColleges(f);
+
+        const shownCount = Math.min(filtered.length, 80);
+        $("visibleCount").textContent =
+          filtered.length > 80
+            ? "Showing 80 of " + fmt(filtered.length)
+            : fmt(shownCount) + " shown";
+        updateSpotlight(filtered[0]);
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--grey);padding:30px">No colleges match this filter and search.</td></tr>`;
+          return;
+        }
+
+        filtered.slice(0, 80).forEach((c) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+      <td data-l="College">
+        <div class="coll-name">${c.n}</div>
+        <div class="coll-loc">${c.loc}</div>
+      </td>
+      <td data-l="Tier"><span class="coll-tier tier-${c.t}">${c.t.toUpperCase()}</span></td>
+      <td data-l="2025 Closing" class="coll-rank">AIR ${fmt(c.c2025)}</td>
+      <td data-l="2026 Estimated" class="coll-marks">~${fmt(Math.round(c.effClosing * INFLATION))}</td>
+      <td data-l="Chance">
+        <div class="chance-cell">
+          <div class="chance-bar"><div class="chance-fill ${c.ch.cls}" style="width:${c.ch.pct}%"></div></div>
+          <div class="chance-label ${c.ch.cls}">${c.ch.l}</div>
+        </div>
+      </td>
+    `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function setDownloadButtonState(isLoading) {
+        const button = $("btnDownloadReport");
+        if (!button) return;
+        button.disabled = isLoading;
+        button.innerHTML = isLoading
+          ? "Preparing PDF..."
+          : `Download Report
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M12 3v12"></path>
+              <path d="m7 10 5 5 5-5"></path>
+              <path d="M5 20h14"></path>
+            </svg>`;
+      }
+
+      function imageTypeFromDataUrl(dataUrl) {
+        if (!dataUrl) return "PNG";
+        if (dataUrl.startsWith("data:image/jpeg")) return "JPEG";
+        if (dataUrl.startsWith("data:image/webp")) return "WEBP";
+        return "PNG";
+      }
+
+      function getImageDataUrl(imgEl) {
+        return new Promise((resolve) => {
+          if (!imgEl || !imgEl.src) {
+            resolve(null);
+            return;
+          }
+
+          function renderImage() {
+            try {
+              const canvas = document.createElement("canvas");
+              const width = imgEl.naturalWidth || imgEl.width;
+              const height = imgEl.naturalHeight || imgEl.height;
+              if (!width || !height) {
+                resolve(null);
+                return;
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(imgEl, 0, 0, width, height);
+              const format =
+                (imgEl.currentSrc || imgEl.src || "").toLowerCase().includes(".jpg") ||
+                (imgEl.currentSrc || imgEl.src || "").toLowerCase().includes(".jpeg")
+                  ? "image/jpeg"
+                  : "image/png";
+              resolve(canvas.toDataURL(format));
+            } catch (error) {
+              console.warn("Unable to capture image for PDF export:", error);
+              resolve(null);
+            }
+          }
+
+          if (imgEl.complete && (imgEl.naturalWidth || imgEl.width)) {
+            renderImage();
+            return;
+          }
+
+          const onLoad = () => {
+            imgEl.removeEventListener("load", onLoad);
+            imgEl.removeEventListener("error", onError);
+            renderImage();
+          };
+          const onError = () => {
+            imgEl.removeEventListener("load", onLoad);
+            imgEl.removeEventListener("error", onError);
+            resolve(null);
+          };
+          imgEl.addEventListener("load", onLoad, { once: true });
+          imgEl.addEventListener("error", onError, { once: true });
+        });
+      }
+
+      async function downloadPredictionReport() {
+        if (!rankPredictor.unlocked) {
+          rankPredictor.pendingScroll = false;
+          openOtpModal();
+          return;
+        }
+        if (!$("results").classList.contains("show")) {
+          alert("Generate a prediction first, then download the report.");
+          return;
+        }
+        if (typeof window.jspdf === "undefined") {
+          alert("PDF library not loaded. Please refresh and try again.");
+          return;
+        }
+
+        setDownloadButtonState(true);
+
+        try {
+          const snapshot = getPredictionSnapshot();
+          const filteredColleges = getFilteredColleges();
+          const visibleColleges = filteredColleges.slice(0, 80);
+          const logoImage = document.querySelector(".logo-mark img");
+          const promoImage = document.querySelector(".promo-image");
+          const logoDataUrl = await getImageDataUrl(logoImage);
+          const promoDataUrl = await getImageDataUrl(promoImage);
+          const methodHeading =
+            $("methodSectionHead")?.querySelector(".ttl")?.textContent?.trim() ||
+            "The Rankers Academy | NEET Repeaters 2026-27 (Admissions Open)";
+          const methodBadge =
+            $("method")?.querySelector(".method-badge")?.textContent?.trim() || "";
+          const promoChip =
+            $("method")?.querySelector(".promo-chip")?.textContent?.trim() || "";
+          const promoIntro =
+            $("method")?.querySelector(".promo-intro")?.textContent?.trim() || "";
+          const promoNote =
+            $("method")?.querySelector(".promo-note")?.textContent?.trim() || "";
+          const footerAddress = $("pageFooter")?.textContent?.trim() || "";
+          const contactNumber =
+            document.querySelector(".brand-contact-number")?.textContent?.trim() ||
+            "";
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+          });
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+          const margin = 14;
+          const contentWidth = pageWidth - margin * 2;
+          let currentY = margin;
+          const quotaLabel = state.quota === "STATE" ? "State (85%)" : "AIQ (15%)";
+          const filterLabelMap = {
+            all: "All",
+            high: "High Chance",
+            med: "Medium",
+            low: "Reach",
+          };
+
+          function ensureSpace(heightNeeded) {
+            if (currentY + heightNeeded <= pageHeight - margin) return;
+            doc.addPage();
+            currentY = margin;
+          }
+
+          function addPageFooter(pageNumber, totalPages) {
+            doc.setDrawColor(200, 212, 228);
+            doc.setLineWidth(0.3);
+            doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(97, 119, 145);
+            doc.text("The Rankers Academy", margin, pageHeight - 8);
+            if (contactNumber) {
+              doc.text("Call: " + contactNumber, pageWidth / 2, pageHeight - 8, {
+                align: "center",
+              });
+            }
+            doc.text(
+              "Page " + pageNumber + " of " + totalPages,
+              pageWidth - margin,
+              pageHeight - 8,
+              { align: "right" },
+            );
+          }
+
+          function drawSectionTitle(title) {
+            ensureSpace(10);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.setTextColor(17, 30, 48);
+            const titleLines = doc.splitTextToSize(title, contentWidth);
+            doc.text(titleLines, margin, currentY);
+            currentY += titleLines.length * 5 - 3;
+            doc.setDrawColor(81, 172, 227);
+            doc.setLineWidth(0.6);
+            doc.line(margin, currentY + 2, margin + contentWidth, currentY + 2);
+            currentY += 8;
+          }
+
+          doc.setFillColor(17, 30, 48);
+          doc.rect(0, 0, pageWidth, 34, "F");
+          if (logoDataUrl) {
+            doc.addImage(
+              logoDataUrl,
+              imageTypeFromDataUrl(logoDataUrl),
+              margin,
+              6,
+              16,
+              16,
+            );
+          }
+          doc.setTextColor(245, 247, 250);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(18);
+          doc.text("THE RANKERS ACADEMY", logoDataUrl ? margin + 21 : margin, 13);
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "normal");
+          doc.text(
+            "NEET 2026 Rank Predictor Report",
+            logoDataUrl ? margin + 21 : margin,
+            21,
+          );
+          doc.setFontSize(8.5);
+          doc.setTextColor(156, 216, 255);
+          doc.text(
+            "Nagpur | JEE | NEET | MHT-CET",
+            logoDataUrl ? margin + 21 : margin,
+            27,
+          );
+          doc.setTextColor(245, 247, 250);
+          doc.setFontSize(11);
+          doc.text(
+            "Generated on " + new Date().toLocaleDateString("en-IN"),
+            pageWidth - margin,
+            20,
+            { align: "right" },
+          );
+          currentY = 42;
+
+          drawSectionTitle("Student Inputs");
+          doc.autoTable({
+            startY: currentY,
+            margin: { left: margin, right: margin },
+            theme: "grid",
+            head: [["Field", "Value"]],
+            body: [
+              ["Expected Marks", String(state.marks) + " / 720"],
+              ["Category", state.cat],
+              ["Counselling Quota", quotaLabel],
+              [
+                "Maharashtra Resident",
+                state.quota === "STATE" ? (state.mh ? "Yes" : "No") : "Not applicable",
+              ],
+            ],
+            headStyles: {
+              fillColor: [46, 141, 205],
+              textColor: [255, 255, 255],
+            },
+            styles: {
+              font: "helvetica",
+              fontSize: 10,
+              cellPadding: 3,
+            },
+            columnStyles: {
+              0: { fontStyle: "bold", cellWidth: 60 },
+            },
+          });
+          currentY = doc.lastAutoTable.finalY + 10;
+
+          drawSectionTitle("Predicted Rank Summary");
+          doc.autoTable({
+            startY: currentY,
+            margin: { left: margin, right: margin },
+            theme: "striped",
+            head: [["Metric", "Value", "Detail"]],
+            body: [
+              ["Expected AIR", fmt(snapshot.mid), "Projected NEET 2026 AIR"],
+              ["Rank Range", fmt(snapshot.low) + " - " + fmt(snapshot.high), "Likely band around your prediction"],
+              ["Category Rank", state.cat === "UR" ? "Not applicable" : fmt(snapshot.catRankMid), "Approximate category rank"],
+              ["Zone", snapshot.zone.tag, snapshot.zone.msg],
+              [
+                "Percentile",
+                snapshot.percentile.toFixed(3),
+                snapshot.percentile >= 99
+                  ? "Top " + (100 - snapshot.percentile).toFixed(2) + "%"
+                  : "Competitive national percentile",
+              ],
+              ["Govt MBBS Odds", snapshot.govtOdds, snapshot.govtOddsSummary],
+              ["Suggested Action", snapshot.action, snapshot.actionSummary],
+            ],
+            headStyles: {
+              fillColor: [46, 141, 205],
+              textColor: [255, 255, 255],
+            },
+            styles: {
+              font: "helvetica",
+              fontSize: 9.5,
+              cellPadding: 3,
+              valign: "top",
+            },
+            columnStyles: {
+              0: { fontStyle: "bold", cellWidth: 38 },
+              1: { cellWidth: 36 },
+            },
+          });
+          currentY = doc.lastAutoTable.finalY + 10;
+
+          drawSectionTitle("Colleges You Can Target");
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(97, 119, 145);
+          doc.text(
+            "Current view: " +
+              (filterLabelMap[currentCollegeFilter] || "All") +
+              " | Sort: " +
+              (collegeSort?.value || "closing") +
+              " | Search: " +
+              ((collegeSearch?.value || "").trim() || "None"),
+            margin,
+            currentY,
+          );
+          currentY += 6;
+
+          if (visibleColleges.length) {
+            doc.autoTable({
+              startY: currentY,
+              margin: { left: margin, right: margin },
+              theme: "grid",
+              head: [["College", "Tier", "2025 Closing", "2026 Est.", "Chance"]],
+              body: visibleColleges.map((college) => [
+                college.n + " (" + college.loc + ")",
+                String(college.t || "").toUpperCase(),
+                "AIR " + fmt(college.c2025),
+                "~" + fmt(Math.round(college.effClosing * INFLATION)),
+                college.ch.l,
+              ]),
+              headStyles: {
+                fillColor: [46, 141, 205],
+                textColor: [255, 255, 255],
+              },
+              styles: {
+                font: "helvetica",
+                fontSize: 8.5,
+                cellPadding: 2.6,
+                valign: "top",
+              },
+              columnStyles: {
+                0: { cellWidth: 78 },
+                1: { cellWidth: 20, halign: "center" },
+                2: { cellWidth: 28, halign: "center" },
+                3: { cellWidth: 26, halign: "center" },
+                4: { halign: "center" },
+              },
+            });
+            currentY = doc.lastAutoTable.finalY + 6;
+            doc.setFontSize(8);
+            doc.setTextColor(97, 119, 145);
+            doc.text(
+              filteredColleges.length > visibleColleges.length
+                ? "Showing first " +
+                    visibleColleges.length +
+                    " of " +
+                    fmt(filteredColleges.length) +
+                    " currently matched colleges."
+                : "Showing all currently matched colleges.",
+              margin,
+              currentY,
+            );
+          } else {
+            doc.setFontSize(10);
+            doc.setTextColor(97, 119, 145);
+            doc.text(
+              "No colleges match the current filter and search selection.",
+              margin,
+              currentY,
+            );
+          }
+
+          currentY += 12;
+          drawSectionTitle(methodHeading);
+          const textBlockWidth = Math.max(110, contentWidth - 20);
+          const textBlockX = margin + (contentWidth - textBlockWidth) / 2;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.setTextColor(46, 141, 205);
+          if (methodBadge) {
+            const badgeLines = doc.splitTextToSize(methodBadge, textBlockWidth);
+            doc.text(badgeLines, pageWidth / 2, currentY, { align: "center" });
+            currentY += badgeLines.length * 5 + 1;
+          }
+          if (promoChip) {
+            doc.setFontSize(9);
+            doc.setTextColor(255, 201, 40);
+            doc.text(promoChip, pageWidth / 2, currentY, { align: "center" });
+            currentY += 7;
+          }
+          if (promoIntro) {
+            ensureSpace(28);
+            doc.setDrawColor(215, 226, 240);
+            doc.setFillColor(250, 252, 255);
+            const introLines = doc.splitTextToSize(promoIntro, textBlockWidth - 10);
+            const introBoxHeight = introLines.length * 4.5 + 10;
+            doc.roundedRect(
+              textBlockX,
+              currentY - 4,
+              textBlockWidth,
+              introBoxHeight,
+              2,
+              2,
+              "FD",
+            );
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9.5);
+            doc.setTextColor(17, 30, 48);
+            doc.text(introLines, textBlockX + 5, currentY + 2);
+            currentY += introBoxHeight + 4;
+          }
+          if (promoDataUrl) {
+            const posterProps = doc.getImageProperties(promoDataUrl);
+            const posterWidth = contentWidth;
+            const posterHeight =
+              (posterProps.height * posterWidth) / posterProps.width;
+            ensureSpace(posterHeight + 10);
+            doc.addImage(
+              promoDataUrl,
+              imageTypeFromDataUrl(promoDataUrl),
+              margin,
+              currentY,
+              posterWidth,
+              posterHeight,
+            );
+            currentY += posterHeight + 6;
+          }
+          if (promoNote) {
+            ensureSpace(32);
+            const noteLines = doc.splitTextToSize(promoNote, textBlockWidth - 10);
+            const noteBoxHeight = noteLines.length * 4.2 + 14;
+            doc.setDrawColor(200, 212, 228);
+            doc.setFillColor(245, 247, 250);
+            doc.roundedRect(
+              textBlockX,
+              currentY - 3,
+              textBlockWidth,
+              noteBoxHeight,
+              2,
+              2,
+              "FD",
+            );
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.setTextColor(46, 141, 205);
+            doc.text("Counselling Note", textBlockX + 5, currentY + 2);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(97, 119, 145);
+            doc.text(noteLines, textBlockX + 5, currentY + 8);
+            currentY += noteBoxHeight + 4;
+          }
+          if (contactNumber || footerAddress) {
+            ensureSpace(28);
+            doc.setDrawColor(200, 212, 228);
+            doc.setFillColor(245, 247, 250);
+            const addressLines = footerAddress
+              ? doc.splitTextToSize(footerAddress, contentWidth - 8)
+              : [];
+            const boxHeight = Math.max(
+              12,
+              (contactNumber ? 8 : 2) + addressLines.length * 4.2 + 6,
+            );
+            doc.roundedRect(margin, currentY, contentWidth, boxHeight, 2, 2, "FD");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(17, 30, 48);
+            if (contactNumber) {
+              doc.text("Call for Free Counselling: " + contactNumber, margin + 4, currentY + 7);
+            }
+            if (footerAddress) {
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(8.5);
+              doc.text(addressLines, margin + 4, currentY + (contactNumber ? 13 : 7));
+            }
+          }
+
+          const safeCategory = String(state.cat || "UR").replace(/[^a-z0-9]+/gi, "-");
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let page = 1; page <= totalPages; page += 1) {
+            doc.setPage(page);
+            addPageFooter(page, totalPages);
+          }
+          doc.save(
+            "neet-rank-prediction-report-" +
+              safeCategory.toLowerCase() +
+              "-" +
+              String(state.marks) +
+              ".pdf",
+          );
+        } catch (error) {
+          console.error("Failed to generate predictor PDF:", error);
+          alert("Unable to generate the PDF right now. Please try again.");
+        } finally {
+          setDownloadButtonState(false);
+        }
+      }
+
+      document.querySelectorAll(".fchip").forEach((c) =>
+        c.addEventListener("click", () => {
+          document
+            .querySelectorAll(".fchip")
+            .forEach((x) => x.classList.remove("active"));
+          c.classList.add("active");
+          applyCollegeFilter(c.dataset.f);
+        }),
+      );
+      if (collegeSearch) {
+        collegeSearch.addEventListener("input", () =>
+          applyCollegeFilter(currentCollegeFilter),
+        );
+      }
+      if (collegeSort) {
+        collegeSort.addEventListener("change", () =>
+          applyCollegeFilter(currentCollegeFilter),
+        );
+      }
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ METHOD ACCORDION â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+      /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ FIRE â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+      $("btnPredict").addEventListener("click", predict);
+      $("btnReset").addEventListener("click", resetTool);
+      $("btnDownloadReport").addEventListener("click", downloadPredictionReport);
+      $("closeOtpBtn").addEventListener("click", closeOtpModal);
+      sendOtpBtn.addEventListener("click", sendOtpRequest);
+      verifyOtpBtn.addEventListener("click", verifyOtpRequest);
+      resendOtpBtn.addEventListener("click", sendOtpRequest);
+      otpModal.addEventListener("click", (e) => {
+        if (e.target === otpModal) closeOtpModal();
+      });
+      otpPhoneInput.addEventListener("input", () => {
+        otpPhoneInput.value = normalizePhone(otpPhoneInput.value);
+      });
+      otpCodeInput.addEventListener("input", () => {
+        otpCodeInput.value = String(otpCodeInput.value || "")
+          .replace(/\D/g, "")
+          .slice(0, 4);
+      });
+      otpPhoneInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendOtpRequest();
+      });
+      otpCodeInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") verifyOtpRequest();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && otpModal.classList.contains("open")) {
+          closeOtpModal();
+        }
+      });
+
+      // Allow Enter on marks input
+      marksInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") predict();
+      });
+
+      // Auto-run with default 600 marks on load (so the page never feels empty)
+      window.addEventListener("DOMContentLoaded", () => {
+        updateResidencyState();
+        updateLivePreview();
+        setGatedVisibility(rankPredictor.unlocked);
+        if (rankPredictor.phone) {
+          otpPhoneInput.value = rankPredictor.phone;
+          otpVerifyRow.classList.add("show");
+        }
+        if (rankPredictor.unlocked) {
+          setTimeout(() => predict({ scroll: false, skipUnlockCheck: true }), 200);
+        }
+      });
+    </script>
+  </body>
+</html>
+

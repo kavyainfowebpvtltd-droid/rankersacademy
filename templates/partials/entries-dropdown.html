@@ -1,0 +1,16 @@
+<div class="entries-control {{ wrapper_class|default:'' }}">
+  {% if not hide_label %}
+    <label class="form-label mb-1" for="{{ select_id }}">{{ label|default:'No. of Entries' }}</label>
+  {% endif %}
+  <select
+    class="form-select entries-per-page-select {{ select_class|default:'' }}"
+    id="{{ select_id }}"
+    name="{{ entries_name }}"
+    {% if form_id %}form="{{ form_id }}"{% endif %}
+    {% if change_handler %}onchange="{{ change_handler }}"{% endif %}
+  >
+    {% for option in entry_options %}
+      <option value="{{ option }}" {% if current_entries == option %}selected{% endif %}>{{ option }}</option>
+    {% endfor %}
+  </select>
+</div>

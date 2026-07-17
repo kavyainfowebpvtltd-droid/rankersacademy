@@ -1,0 +1,388 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Staff Attendance - Student Diagnostic System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{% static 'img/logo.webp' %}">
+  <script src="{% static 'js/admin-theme.js' %}"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link>
+  <link rel="stylesheet" href="{% static 'css/pagination-controls.css' %}">
+  <style>
+    body { font-family: 'DM Sans', sans-serif; background: #f8fafc; color: #0f172a; }
+    .page-shell { max-width: 95%; margin: 1.5rem auto; }
+    .hero-card {
+      background: linear-gradient(135deg, #0f172a 0%, #0f4c81 54%, #0891b2 100%);
+      color: white;
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
+    }
+    .hero-sub { color: rgba(255,255,255,.78); }
+    .info-card, .summary-card, .panel-card {
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+    }
+    .info-card { padding: 18px 20px; }
+    .summary-card { padding: 20px; height: 100%; }
+    .summary-number { font-size: 32px; font-weight: 800; line-height: 1; }
+    .summary-label { color: #64748b; font-size: 14px; font-weight: 600; margin-top: 8px; }
+    .toolbar-input, .toolbar-select {
+      border-radius: 12px;
+      border: 1px solid #dbe2ea;
+      padding: 10px 14px;
+      font-weight: 500;
+    }
+    .attendance-table th {
+      background: #f8fafc;
+      color: #334155;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .attendance-table th, .attendance-table td {
+      padding: 14px 12px;
+      vertical-align: middle;
+    }
+    .staff-name { font-weight: 700; color: #0f172a; }
+    .status-badge, .time-pill, .metric-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .status-present { background: #dcfce7; color: #166534; }
+    .status-late { background: #fef3c7; color: #b45309; }
+    .status-absent { background: #fee2e2; color: #b91c1c; }
+    .status-empty { background: #e2e8f0; color: #475569; }
+    .metric-present { background: #dcfce7; color: #166534; }
+    .metric-late { background: #fef3c7; color: #b45309; }
+    .metric-absent { background: #fee2e2; color: #b91c1c; }
+    .time-pill { min-width: 90px; background: #eff6ff; color: #1d4ed8; }
+    .time-pill-muted { background: #f1f5f9; color: #64748b; }
+    .percent-pill {
+      min-width: 72px;
+      text-align: center;
+      border-radius: 999px;
+      font-weight: 700;
+      padding: 8px 12px;
+      display: inline-block;
+    }
+    .percent-high { background: #dcfce7; color: #166534; }
+    .percent-medium { background: #fef3c7; color: #b45309; }
+    .percent-low { background: #fee2e2; color: #b91c1c; }
+    .table-empty { padding: 52px 24px; text-align: center; color: #64748b; }
+  </style>
+  <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link>
+</head>
+<body>
+<div class="page-shell">
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} mb-2">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="hero-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-person-badge me-2"></i>Staff Attendance</h3>
+      </div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <form method="post" action="{% url 'export_staff_attendance_email' %}" class="mb-0">
+          {% csrf_token %}
+          <input type="hidden" name="month" value="{{ month }}">
+          <button type="submit" class="btn btn-light fw-bold">
+            <i class="bi bi-envelope-paper me-2"></i>Export Data
+          </button>
+        </form>
+        <form method="get" class="mb-0">
+          <input type="month" class="form-control" name="month" value="{{ month }}" onchange="this.form.submit()">
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="summary-card">
+        <div class="summary-number" id="summaryTotal">{{ summary_total }}</div>
+        <div class="summary-label">Total Staff</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-card">
+        <div class="summary-number text-success" id="summaryPresent">{{ summary_present }}</div>
+        <div class="summary-label">Present + Late Days</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-card">
+        <div class="summary-number text-warning" id="summaryRecorded">{{ summary_recorded }}</div>
+        <div class="summary-label">Total Recorded Days</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-card">
+        <div class="summary-number text-primary" id="summaryAverage">{{ summary_avg }}%</div>
+        <div class="summary-label">Average Attendance</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <div class="p-3 border-bottom">
+      <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div class="flex-grow-1">
+          <input type="text" id="staffSearch" class="form-control toolbar-input w-100" placeholder="Search by name, phone, email, or role">
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-primary active filter-btn" id="btnTeachingStaff" onclick="filterByStaffType('Teaching', this)">
+            Teaching Staff
+          </button>
+          <button type="button" class="btn btn-outline-primary filter-btn" id="btnNonTeachingStaff" onclick="filterByStaffType('Non-Teaching', this)">
+            Non-teaching Staff
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive" id="standardStaffTableContainer" style="display: none;">
+      <table class="table table-hover attendance-table align-middle mb-0" id="staffAttendanceTable">
+        <thead>
+          <tr>
+            <th>Sr. No.</th>
+            <th>Staff Member</th>
+            <th>Role</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Present</th>
+            <th>Late</th>
+            <th>Absent</th>
+            <th>Total</th>
+            <th>Attendance %</th>
+            <th>Today Status</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBodyStandard">
+          {% for row in attendance_rows %}
+            {% if row.role|lower != 'teacher' %}
+            <tr
+              data-search="{{ row.staff_name|lower }} {{ row.contact|lower }} {{ row.email|lower }} {{ row.role|lower }}"
+              data-status="{{ row.today_status }}"
+              data-role="{{ row.role|lower }}"
+              data-present="{{ row.present_days|add:row.late_days }}"
+              data-total="{{ row.total_days }}"
+            >
+              <td class="serial-col">{{ forloop.counter }}</td>
+              <td class="staff-name">
+                <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
+                  {{ row.staff_name }}
+                </a>
+              </td>
+              <td>{{ row.role }}</td>
+              <td>{{ row.contact }}</td>
+              <td>{{ row.email }}</td>
+              <td>
+                <span class="metric-badge metric-present">{{ row.present_days }}</span>
+              </td>
+              <td><span class="metric-badge metric-late">{{ row.late_days }}</span></td>
+              <td><span class="metric-badge metric-absent">{{ row.absent_days }}</span></td>
+              <td>{{ row.total_days }}</td>
+              <td>
+                <span class="percent-pill {% if row.attendance_percent >= 75 %}percent-high{% elif row.attendance_percent >= 50 %}percent-medium{% else %}percent-low{% endif %}">
+                  {{ row.attendance_percent }}%
+                </span>
+              </td>
+              <td>
+                <span class="status-badge {% if row.today_status == 'Present' %}status-present{% elif row.today_status == 'Late' %}status-late{% elif row.today_status == 'Absent' %}status-absent{% else %}status-empty{% endif %}">
+                  {{ row.today_status }}
+                </span>
+              </td>
+              <td><span class="time-pill {% if row.today_check_in == '-' %}time-pill-muted{% endif %}">{{ row.today_check_in }}</span></td>
+              <td><span class="time-pill {% if row.today_check_out == '-' %}time-pill-muted{% endif %}">{{ row.today_check_out }}</span></td>
+            </tr>
+            {% endif %}
+          {% empty %}
+            <tr>
+              <td colspan="13">
+                <div class="table-empty">
+                  <i class="bi bi-person-x fs-1 d-block mb-3"></i>
+                  No staff members found.
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-responsive" id="teachingStaffTableContainer">
+      <table class="table table-hover attendance-table align-middle mb-0" id="teachingStaffTable">
+        <thead>
+          <tr>
+            <th rowspan="2">Sr. No.</th>
+            <th rowspan="2">Name</th>
+            <th rowspan="2">Subject</th>
+            <th colspan="2" class="text-center">L1</th>
+            <th colspan="2" class="text-center">L2</th>
+            <th colspan="2" class="text-center">L3</th>
+            <th colspan="2" class="text-center">L4</th>
+            <th rowspan="2">Lectures Total Duration</th>
+          </tr>
+          <tr>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+            <th class="text-center small">Check In</th>
+            <th class="text-center small">Check Out</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBodyTeaching">
+          {% for row in attendance_rows %}
+            {% if row.role|lower == 'teacher' %}
+            <tr
+              data-search="{{ row.staff_name|lower }} {{ row.contact|lower }} {{ row.email|lower }} {{ row.role|lower }}"
+              data-status="{{ row.today_status }}"
+              data-role="{{ row.role|lower }}"
+              data-present="{{ row.present_days|add:row.late_days }}"
+              data-total="{{ row.total_days }}"
+            >
+              <td class="serial-col">{{ forloop.counter }}</td>
+              <td class="staff-name">
+                <a href="{% url 'view_staff_attendance' row.staff.id %}?month={{ month }}" class="text-decoration-none text-reset">
+                  {{ row.staff_name }}
+                </a>
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ row.subjects|default:"-" }}</span></td>
+              
+              {% for lecture in row.lectures %}
+                <td class="text-center"><span class="time-pill {% if lecture.in == '-' %}time-pill-muted{% endif %}">{{ lecture.in }}</span></td>
+                <td class="text-center"><span class="time-pill {% if lecture.out == '-' %}time-pill-muted{% endif %}">{{ lecture.out }}</span></td>
+              {% endfor %}
+              
+              <td class="text-center fw-bold">{{ row.total_duration }}</td>
+            </tr>
+            {% endif %}
+          {% empty %}
+            <tr>
+              <td colspan="12">
+                <div class="table-empty">
+                  <i class="bi bi-person-x fs-1 d-block mb-3"></i>
+                  No teaching staff found.
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% comment %}
+    {% include "partials/pagination.html" with page_obj=page_obj page_range=page_range pagination_query=pagination_query page_param="page" aria_label="Staff attendance pagination" wrapper_class="border-top pt-3" %}
+    {% endcomment %}
+  </div>
+</div>
+
+<script>
+  const standardRows = Array.from(document.querySelectorAll("#recordsBodyStandard tr[data-search]"));
+  const teachingRows = Array.from(document.querySelectorAll("#recordsBodyTeaching tr[data-search]"));
+  let currentStaffType = 'Teaching';
+
+  function updateSummary() {
+    const visibleRows = (currentStaffType === 'Teaching' ? teachingRows : standardRows).filter((row) => row.style.display !== "none");
+    const totalStaff = visibleRows.length;
+    const totalPresent = visibleRows.reduce((sum, row) => sum + parseInt(row.dataset.present || "0", 10), 0);
+    const totalRecorded = visibleRows.reduce((sum, row) => sum + parseInt(row.dataset.total || "0", 10), 0);
+    const avgAttendance = totalRecorded > 0 ? Math.round((totalPresent / totalRecorded) * 100) : 0;
+
+    document.getElementById("summaryTotal").textContent = totalStaff;
+    document.getElementById("summaryPresent").textContent = totalPresent;
+    document.getElementById("summaryRecorded").textContent = totalRecorded;
+    document.getElementById("summaryAverage").textContent = `${avgAttendance}%`;
+  }
+
+  function filterByStaffType(type, btn) {
+    currentStaffType = type;
+    
+    // Update active button state
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('active');
+      b.classList.add('btn-outline-primary');
+      b.classList.remove('btn-primary');
+    });
+    btn.classList.add('active');
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add('btn-primary');
+
+    // Toggle table containers
+    const teachingContainer = document.getElementById('teachingStaffTableContainer');
+    const standardContainer = document.getElementById('standardStaffTableContainer');
+    
+    if (type === 'Teaching') {
+      teachingContainer.style.display = 'block';
+      standardContainer.style.display = 'none';
+    } else {
+      teachingContainer.style.display = 'none';
+      standardContainer.style.display = 'block';
+    }
+    
+    filterRows();
+  }
+
+  function filterRows() {
+    const search = (document.getElementById("staffSearch").value || "").trim().toLowerCase();
+    const rowsToFilter = (currentStaffType === 'Teaching' ? teachingRows : standardRows);
+    const otherRows = (currentStaffType === 'Teaching' ? standardRows : teachingRows);
+
+    // Hide rows in the other table
+    otherRows.forEach(row => row.style.display = 'none');
+
+    let visibleIndex = 1;
+    rowsToFilter.forEach((row) => {
+      const matchesSearch = (row.dataset.search || "").includes(search);
+      const role = (row.dataset.role || "").toLowerCase();
+      
+      let matchesType = true;
+      if (currentStaffType === 'Teaching') {
+        matchesType = (role === 'teacher');
+      } else if (currentStaffType === 'Non-Teaching') {
+        matchesType = (role !== 'teacher');
+      }
+
+      const isVisible = matchesSearch && matchesType;
+      row.style.display = isVisible ? "" : "none";
+      
+      const serialCell = row.querySelector('.serial-col');
+      if (serialCell) {
+        if (isVisible) {
+          serialCell.textContent = visibleIndex++;
+        }
+      }
+    });
+
+    updateSummary();
+  }
+
+  document.getElementById("staffSearch").addEventListener("input", filterRows);
+  filterRows();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

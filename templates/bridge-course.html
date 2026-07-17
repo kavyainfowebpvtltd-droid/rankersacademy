@@ -1,0 +1,163 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bridge Course | Student Diagnostic System</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="stylesheet" href="{% static 'css/bridge-course.css' %}" />
+  </head>
+  <body>
+    <header class="system-header">
+      <div class="container-fluid px-4">
+        <div class="d-flex justify-content-between align-items-center py-2">
+          <div class="d-flex align-items-center">
+            <div>
+              <img
+                src="{% static 'img/logo.webp' %}"
+                alt="Ranker's Academy Logo"
+                class="me-2"
+                style="height: 60px; width: auto; object-fit: contain"
+              />
+            </div>
+            <div>
+              <h6 class="mb-0 fw-bold header-title">The Rankers Academy</h6>
+              <small class="text-muted">Bridge Course</small>
+            </div>
+          </div>
+          <div class="d-flex align-items-center">
+            <div class="text-end me-3">
+              <div class="fw-bold small user-name">
+                {{ user_data.name|default:"John Smith" }}
+              </div>
+              <div class="text-muted extra-small" id="studentMeta">
+                Grade {{ user_data.grade|default:"10th" }}
+                <span class="ms-2">|</span>
+                <span class="ms-2"
+                  >{{ user_data.board|default:"State Board" }}</span
+                >
+              </div>
+            </div>
+            <a href="{% url 'logout' %}" class="ms-3" title="Logout">
+              <i class="bi bi-box-arrow-right text-dark logout-icon"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container-fluid px-4 py-4">
+      <div class="module-banner mb-4">
+        <div class="px-4 py-4 text-white">
+          <h3 class="fw-bold mb-1">Bridge Course</h3>
+
+          <p class="mb-0 opacity-75">
+            Strengthen your foundations for the current academic year.
+          </p>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-end mb-3">
+        <h5 class="fw-bold mb-0">Subject-wise Progress</h5>
+      </div>
+
+      <div class="tabs-scroll-container mb-4">
+        <ul class="nav nav-pills" id="subjectTabs"></ul>  
+      </div>
+
+      <div class="card table-card border-0 shadow-sm">
+        <div
+          class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center"
+        >
+          <h6 class="fw-bold mb-0" id="currentSubjectLabel">Lectures</h6>
+          <span class="badge bg-soft-primary text-primary" id="lessonCount"
+            >0 Lessons</span
+          >
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-4">Day No.</th>
+                <th>Topic Name</th>
+                <th>Lecture No.</th>
+                <th>Watch Now</th>
+                <th class="text-end pe-4">Download Notes</th>
+              </tr>
+            </thead>
+            <tbody id="lectureTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <div class="modal fade" id="videoModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered video-modal-half">
+        <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg">
+          <div class="modal-header border-0 bg-light">
+            <h6 class="modal-title fw-bold" id="videoTitle">Lecture Player</h6>
+            <div class="video-controls">
+              <button
+                type="button"
+                class="btn btn-minimize"
+                id="btnMinimize"
+                title="Minimize"
+              >
+                <i class="bi bi-dash-lg"></i>
+              </button>
+              <button
+                type="button"
+                class="btn btn-maximize"
+                id="btnMaximize"
+                title="Maximize"
+              >
+                <i class="bi bi-fullscreen"></i>
+              </button>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+          </div>
+          <div class="modal-body p-0 bg-black">
+            <div class="ratio ratio-16x9">
+              <iframe
+                id="videoFrame"
+                src=""
+                allow="autoplay; fullscreen"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.bridgeCourseUser = {
+        name: "{{ user_data.name|default:'John Smith'|escapejs }}",
+        grade: "{{ user_data.grade|default:'10th'|escapejs }}",
+        section: "{{ user_data.section|default:'A'|escapejs }}",
+        board: "{{ user_data.board|default:'State Board'|escapejs }}",
+        phone: "{{ user_data.phone|default:''|escapejs }}",
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/bridge-course.js' %}"></script>
+  </body>
+</html>

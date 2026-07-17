@@ -1,0 +1,457 @@
+:root {
+  --admin-bg: #05050a;
+  --admin-panel: #0b0c12;
+  --admin-panel-soft: #10131b;
+  --admin-border: #262a35;
+  --admin-text: #f4f5fb;
+  --admin-muted: #aeb4c2;
+  --admin-orange: #ff8a1f;
+  --admin-purple: #8b35ff;
+  --admin-blue: #7ad7ff;
+  --admin-green: #33d6a6;
+  --admin-red: #ff6b6b;
+  --admin-gradient: linear-gradient(135deg, var(--admin-orange), var(--admin-purple));
+}
+
+html,
+body {
+  background: var(--admin-bg) !important;
+  color: var(--admin-text) !important;
+}
+
+.container,
+.container-fluid,
+.page-shell,
+.scholarship-page,
+.layout-stack {
+  background: transparent !important;
+}
+
+.page-title,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.fw-bold,
+.font-bold,
+.subject-name,
+.chapter-name,
+.test-title,
+.folder-name,
+.staff-name,
+.summary-number,
+.summary-value,
+.panel-title,
+.top-bar h1,
+.header h1,
+.modal-title,
+.card-title {
+  color: var(--admin-text) !important;
+}
+
+p,
+small,
+label,
+.text-muted,
+.summary-label,
+.summary-meta,
+.section-title,
+.table-subtext,
+.soft,
+.top-bar p,
+.header p,
+.form-text {
+  color: var(--admin-muted) !important;
+}
+
+.card,
+.card-box,
+.subject-card,
+.chapter-card,
+.topic-card,
+.topic-item,
+.folder-card,
+.test-item,
+.panel-card,
+.summary-card,
+.info-card,
+.container:not(.container-fluid),
+.modal-content,
+.dropdown-menu,
+.empty-state,
+.question-editor-box,
+.topbar,
+.sidebar,
+.system-header,
+.main-navbar {
+  background: var(--admin-panel) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34) !important;
+}
+
+.card-header,
+.modal-header,
+.modal-footer,
+.folder-icon-area,
+.section-students thead,
+.section-teachers thead,
+.table thead th,
+thead,
+th {
+  background: #14171c !important;
+  border-color: var(--admin-border) !important;
+  color: #c9ceda !important;
+}
+
+.card-body,
+td,
+.table td,
+.dropdown-item,
+.modal-body {
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+.table,
+table {
+  --bs-table-bg: var(--admin-panel);
+  --bs-table-color: var(--admin-text);
+  --bs-table-hover-bg: #141721;
+  --bs-table-hover-color: #ffffff;
+  color: var(--admin-text) !important;
+  border-color: var(--admin-border) !important;
+}
+
+tbody tr,
+tr,
+td {
+  border-color: var(--admin-border) !important;
+}
+
+.subject-card:hover,
+.chapter-card:hover,
+.topic-card:hover,
+.folder-card:hover,
+.test-item:hover,
+.card:hover {
+  background: var(--admin-panel-soft) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+.btn-primary,
+.btn-new,
+.btn-brand,
+.nav-btn.active,
+.sub-menu .btn-primary,
+.card .btn-primary,
+.page-header,
+.attendance-header,
+.hero-card,
+.btn-success {
+  background: var(--admin-gradient) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(139, 53, 255, 0.22) !important;
+}
+
+.btn-primary:hover,
+.btn-new:hover,
+.btn-success:hover {
+  filter: brightness(1.08);
+}
+
+.scholarship-page .page-header {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.btn-light,
+.btn-outline,
+.view-all-btn,
+.back-btn,
+.folder-action-btn,
+.btn-icon,
+.test-actions-btn,
+.page-link {
+  background: #0f1118 !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+.btn-light:hover,
+.btn-outline:hover,
+.view-all-btn:hover,
+.back-btn:hover,
+.folder-action-btn:hover,
+.btn-icon:hover,
+.test-actions-btn:hover,
+.page-link:hover {
+  border-color: #ffb15f !important;
+  color: #ffb15f !important;
+}
+
+.page-item.active .page-link,
+.table-pagination .page-item.active .page-link {
+  background: var(--admin-gradient) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(139, 53, 255, 0.24) !important;
+}
+
+input,
+select,
+textarea,
+.form-control,
+.form-select,
+.search-box,
+.filter-select,
+.month-select,
+.batch-select,
+.toolbar-input,
+.toolbar-select,
+.input-group-text {
+  background: #0f1118 !important;
+  border-color: #2b2f3b !important;
+  color: var(--admin-text) !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder {
+  color: #8f94a3 !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--admin-orange) !important;
+  box-shadow: 0 0 0 3px rgba(255, 138, 31, 0.16) !important;
+}
+
+.badge,
+.badge-draft,
+.status-empty,
+.time-pill-muted {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--admin-muted) !important;
+}
+
+.badge.blue,
+.badge-published,
+.badge-cbse,
+.badge-teacher,
+.badge-subject,
+.time-pill,
+.status-published {
+  background: rgba(122, 215, 255, 0.16) !important;
+  color: var(--admin-blue) !important;
+}
+
+.status-present,
+.metric-present,
+.percent-high {
+  background: rgba(51, 214, 166, 0.16) !important;
+  color: var(--admin-green) !important;
+}
+
+.status-late,
+.metric-late,
+.percent-medium {
+  background: rgba(255, 138, 31, 0.18) !important;
+  color: #ffb15f !important;
+}
+
+.status-absent,
+.metric-absent,
+.percent-low,
+.badge-admin,
+.badge-danger,
+.badge.bg-danger-subtle {
+  background: rgba(255, 107, 107, 0.16) !important;
+  color: var(--admin-red) !important;
+}
+
+.icon-box.blue,
+.icon-box.purple,
+.logo-icon,
+.reward-icon,
+.outcome-rank,
+.summary-icon,
+.folder-icon,
+.sb-icon {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.scholarship-page .folder-icon {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.text-primary,
+.hover-actions a,
+a {
+  color: #ffb15f;
+}
+
+.text-success,
+.icon-green,
+.edit-btn {
+  color: var(--admin-green) !important;
+}
+
+.text-danger,
+.icon-red,
+.delete-btn,
+.btn-delete {
+  color: var(--admin-red) !important;
+}
+
+.modal-overlay {
+  background-color: rgba(5, 5, 10, 0.72) !important;
+}
+
+.btn-close {
+  filter: invert(1) grayscale(1);
+}
+
+.dropdown-item:hover {
+  background: var(--admin-panel-soft) !important;
+  color: #ffb15f !important;
+}
+
+.summary-stat {
+  background: var(--admin-panel-soft) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28) !important;
+}
+
+.stat-number {
+  color: var(--admin-blue) !important;
+}
+
+.stat-label {
+  color: var(--admin-muted) !important;
+}
+
+.view-toggle {
+  background: #0f1118 !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+.view-toggle button {
+  color: var(--admin-muted) !important;
+}
+
+.view-toggle button.active {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(139, 53, 255, 0.24) !important;
+}
+
+.calendar-view > .text-center {
+  color: var(--admin-muted) !important;
+}
+
+.calendar-day {
+  background: #0f1118 !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+.calendar-day.today {
+  background: rgba(122, 215, 255, 0.12) !important;
+  border-color: rgba(122, 215, 255, 0.45) !important;
+}
+
+.calendar-day.has-event {
+  background: rgba(139, 53, 255, 0.14) !important;
+  border-color: rgba(139, 53, 255, 0.38) !important;
+}
+
+.calendar-day.today.has-event {
+  background: linear-gradient(135deg, rgba(255, 138, 31, 0.18), rgba(139, 53, 255, 0.18)) !important;
+  border-color: rgba(255, 177, 95, 0.5) !important;
+}
+
+.calendar-date {
+  color: var(--admin-text) !important;
+}
+
+.calendar-event {
+  background: var(--admin-gradient) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+}
+
+.topic-name,
+.topic-info,
+.topic-info *,
+.chapter-info,
+.chapter-info *,
+.subject-info,
+.subject-info * {
+  color: var(--admin-text) !important;
+}
+
+.topic-card,
+.topic-item {
+  background: #0f1118 !important;
+  border-color: var(--admin-border) !important;
+}
+
+.modal {
+  background: var(--admin-panel) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55) !important;
+}
+
+.modal-title {
+  color: var(--admin-text) !important;
+}
+
+.modal-subtitle,
+.form-hint {
+  color: var(--admin-muted) !important;
+}
+
+.form-label {
+  color: #c9ceda !important;
+}
+
+.form-input,
+.form-select {
+  background-color: #0f1118 !important;
+  border-color: #2b2f3b !important;
+  color: var(--admin-text) !important;
+}
+
+.form-input::placeholder {
+  color: #9aa1b1 !important;
+}
+
+.modal-close {
+  color: var(--admin-muted) !important;
+}
+
+.modal-close:hover {
+  color: #ffffff !important;
+}
+
+.btn-secondary {
+  background: #1f232c !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}

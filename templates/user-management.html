@@ -1,0 +1,1337 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="{% static 'img/logo.webp' %}" />
+    <title>User Management</title>
+    <script>
+      if (!localStorage.getItem("rankersAdminTheme")) {
+        localStorage.setItem("rankersAdminTheme", "light");
+      }
+    </script>
+    <script src="{% static 'js/admin-theme.js' %}"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/user-management.css' %}?v=20260514-2" />
+    <link rel="stylesheet" href="{% static 'css/pagination-controls.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link />
+    <link rel="stylesheet" href="{% static 'css/admin-light-overrides.css' %}" data-theme-light-link />
+    <style>
+      .user-type-tabs {
+        display: inline-flex !important;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        padding: 0.4rem;
+        margin-top: 1rem;
+        margin-bottom: 1.5rem !important;
+        border: 1px solid #dbe4f0;
+        border-radius: 0.75rem;
+        background: #f8fbff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      .user-type-tabs .user-type-tab {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        min-height: 2.7rem;
+        padding: 0.65rem 1.05rem;
+        border: 1px solid transparent !important;
+        border-radius: 0.55rem;
+        background: transparent !important;
+        color: #334155 !important;
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+        box-shadow: none;
+        cursor: pointer;
+      }
+
+      .user-type-tabs .user-type-tab:hover {
+        background: #eef6ff !important;
+        color: #1d4ed8 !important;
+        opacity: 1;
+      }
+
+      .user-type-tabs .user-type-tab.active,
+      .user-type-tabs .user-type-tab[aria-selected="true"] {
+        border-color: #1d4ed8 !important;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+        color: #ffffff !important;
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+        opacity: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid p-4">
+      <!-- HEADER -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 class="fw-bold">User Management</h3>
+          <p class="text-muted">
+            {{ total_students }} Students &middot; {{ total_teaching_staff }} Teaching Staff &middot; {{ total_non_teaching_staff }} Non Teaching Staff
+          </p>
+        </div>
+
+        <button class="btn btn-primary" onclick="openAddUserModal()">
+          <i class="bi bi-plus-circle"></i> Add User
+        </button>
+      </div>
+
+      <div class="user-type-tabs mb-4" role="tablist" aria-label="User type">
+        <button type="button" class="user-type-tab active" data-user-section="students" aria-pressed="true" aria-selected="true">
+          <i class="bi bi-mortarboard"></i>
+          Students
+        </button>
+        <button type="button" class="user-type-tab" data-user-section="teaching" aria-pressed="false" aria-selected="false">
+          <i class="bi bi-person-workspace"></i>
+          Teaching Staff
+        </button>
+        <button type="button" class="user-type-tab" data-user-section="non-teaching" aria-pressed="false" aria-selected="false">
+          <i class="bi bi-person-badge"></i>
+          Non Teaching Staff
+        </button>
+      </div>
+
+      <!-- STUDENTS TABLE -->
+      <div class="card mb-5 user-section-panel" id="studentTableCard" data-user-panel="students">
+        <div class="card-header user-table-card-header">
+          <h5 class="mb-0 fw-bold">Students</h5>
+          <div class="d-flex align-items-end gap-2 flex-wrap">
+            <button
+              type="submit"
+              class="btn btn-outline-success btn-sm"
+              form="studentFilterForm"
+              formaction="{% url 'export_user_management_students' %}"
+              formmethod="get"
+            >
+              <i class="bi bi-file-earmark-excel"></i> Download Excel
+            </button>
+            {% include "partials/entries-dropdown.html" with select_id="studentEntriesSelect" entries_name="student_entries" current_entries=student_items_per_page entry_options=entry_options form_id="studentFilterForm" select_class="student-filter-select" %}
+          </div>
+        </div>
+        <div class="card-body table-responsive">
+          <form method="get" class="row g-2 align-items-end mb-3 student-filter-form" id="studentFilterForm">
+            <input type="hidden" name="teacher_entries" value="{{ teacher_items_per_page }}" />
+            <div class="col-lg-3 col-md-4">
+              <label class="form-label mb-1">Search</label>
+              <input
+                type="text"
+                class="form-control"
+                id="studentSearchInput"
+                name="student_search"
+                value="{{ student_search }}"
+                placeholder="Name, username, contact..."
+              />
+            </div>
+            <div class="col-lg-2 col-md-4">
+              <label class="form-label mb-1">Batch</label>
+              <select class="form-select student-filter-select" name="student_batch">
+                <option value="">All</option>
+                {% for batch in student_batch_options %}
+                <option value="{{ batch }}" {% if student_batch_filter == batch %}selected{% endif %}>{{ batch }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+              <label class="form-label mb-1">Stream</label>
+              <select class="form-select student-filter-select" name="student_stream">
+                <option value="">All</option>
+                {% for stream in student_stream_options %}
+                <option value="{{ stream }}" {% if student_stream_filter == stream %}selected{% endif %}>{{ stream }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+              <label class="form-label mb-1">Board</label>
+              <select class="form-select student-filter-select" name="student_board">
+                <option value="">All</option>
+                {% for board in student_board_options %}
+                <option value="{{ board }}" {% if student_board_filter == board %}selected{% endif %}>{{ board }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-1 col-md-4">
+              <label class="form-label mb-1">Grade</label>
+              <select class="form-select student-filter-select" name="student_grade">
+                <option value="">All</option>
+                {% for grade in student_grade_options %}
+                <option value="{{ grade }}" {% if student_grade_filter == grade %}selected{% endif %}>{{ grade }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-1 col-md-4 d-flex gap-2">
+              <a href="{% url 'user-management' %}" class="btn btn-outline-secondary w-100">
+                Reset
+              </a>
+            </div>
+          </form>
+          <table class="table table-hover align-middle student-table-nowrap">
+            <thead>
+               <tr>
+                 <th>Sr.No.</th>
+                 <th>Photo</th>
+                 <th>Name</th>
+                 <th>Father's Name</th>
+                 <th>Board</th>
+                 <th>Username</th>
+                 <th>Batch</th>
+                 <th>Contact</th>
+                 <th>Emergency Contact Name</th>
+                 <th>Emergency Contact</th>
+                 <th>Stream</th>
+                 <th>Grade</th>
+                 <th>Blood Group</th>
+                 <th>Email</th>
+                 <th class="text-center">Actions</th>
+               </tr>
+            </thead>
+
+            <tbody>
+              {% for student in students %}
+               <tr>
+                 <td>{{ students_page.start_index|add:forloop.counter0 }}</td>
+                 <td>
+                   {% if student.profile_photo %}
+                     <img src="{{ student.get_profile_photo_url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
+                   {% else %}
+                     <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
+                   {% endif %}
+                 </td>
+                 <td class="fw-semibold">{{ student.student_name }}</td>
+                 <td>{{ student.father_name|default:"-" }}</td>
+                 <td><span class="badge bg-info">{{ student.board }}</span></td>
+                 <td>{{ student.username }}</td>
+                 <td>{{ student.batch }}</td>
+                 <td>{{ student.contact }}</td>
+                 <td>{{ student.emergency_contact_name|default:"-" }}</td>
+                 <td>{{ student.emergency_contact|default:"-" }}</td>
+                 <td>{{ student.stream|default:"-" }}</td>
+                 <td>{{ student.grade|default:"-" }}</td>
+                 <td>{{ student.blood_group|default:"-" }}</td>
+                 <td>{{ student.email }}</td>
+                 <td class="text-center">
+                  <button
+                     type="button"
+                     class="btn btn-sm btn-outline-primary"
+                     data-bs-toggle="modal"
+                     data-bs-target="#editStudentModal"
+                     data-id="{{ student.id }}"
+                     data-name="{{ student.student_name }}"
+                     data-username="{{ student.username }}"
+                     data-contact="{{ student.contact }}"
+                     data-email="{{ student.email }}"
+                     data-father-name="{{ student.father_name|default_if_none:'' }}"
+                     data-emergency-contact-name="{{ student.emergency_contact_name|default_if_none:'' }}"
+                     data-emergency-contact="{{ student.emergency_contact|default_if_none:'' }}"
+                     data-stream="{{ student.stream|default_if_none:'' }}"
+                     data-board="{{ student.board|default_if_none:'' }}"
+                     data-grade="{{ student.grade|default_if_none:'' }}"
+                     data-blood-group="{{ student.blood_group|default_if_none:'' }}"
+                     data-gender="{{ student.gender|default_if_none:'' }}"
+                     data-batch="{{ student.batch|default_if_none:'' }}"
+                     data-profile-photo="{% if student.profile_photo %}{{ student.get_profile_photo_url }}{% endif %}"
+                   >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+
+                  <form
+                    action="{% url 'delete_student' student.id %}"
+                    method="post"
+                    style="display: inline"
+                  >
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('Delete this student?');"
+                    >
+                      <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+               <tr>
+                 <td colspan="15" class="text-center text-muted">
+                   No students found!
+                 </td>
+               </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Students Pagination -->
+        {% include "partials/pagination.html" with page_obj=students_page page_range=student_page_range pagination_query=student_pagination_query page_param="student_page" aria_label="Students pagination" wrapper_class="border-top pt-3" %}
+      </div>
+
+      <!-- TEACHING STAFF TABLE  -->
+      <div class="card mb-5 user-section-panel d-none" data-user-panel="teaching">
+        <div class="card-header user-table-card-header">
+          <h5 class="mb-0 fw-bold">Teaching Staff</h5>
+          <a href="{% url 'export_user_management_teaching_staff' %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel"></i> Download Excel
+          </a>
+        </div>
+        <div class="card-body table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+               <tr>
+                 <th>Sr.No.</th>
+                 <th>Name</th>
+                 <th>Photo</th>
+                 <th>Username</th>
+                 <th>Contact</th>
+                 <th>Email</th>
+                 <th>Gender</th>
+                 <th>Designation</th>
+                 <th>Subject</th>
+                 <th>Batch</th>
+                 <th>Blood Group</th>
+                 <th class="text-center">Actions</th>
+               </tr>
+            </thead>
+
+            <tbody>
+              {% for teacher in teaching_staff %}
+               <tr>
+                 <td>{{ forloop.counter }}</td>
+                 <td class="fw-semibold">{{ teacher.name }}</td>
+                 <td>
+                   {% if teacher.profile_picture %}
+                     <img src="{{ teacher.get_profile_picture_url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
+                   {% else %}
+                     <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
+                   {% endif %}
+                 </td>
+                 <td>{{ teacher.username }}</td>
+                 <td>{{ teacher.contact }}</td>
+                 <td>{{ teacher.email }}</td>
+                 <td>{{ teacher.gender|default:"--" }}</td>
+                 <td>
+                   <span class="badge bg-warning">{{ teacher.role }}</span>
+                 </td>
+                 <td>{{ teacher.subjects|default:"--" }}</td>
+                 <td>{{ teacher.batch|default:"--" }}</td>
+                 <td>{{ teacher.blood_group|default:"--" }}</td>
+                 <td class="text-center">
+                   <button
+                     type="button"
+                     class="btn btn-sm btn-outline-primary"
+                     data-bs-toggle="modal"
+                     data-bs-target="#editTeacherModal"
+                     data-id="{{ teacher.id }}"
+                     data-name="{{ teacher.name }}"
+                     data-username="{{teacher.username}}"
+                     data-contact="{{ teacher.contact }}"
+                     data-email="{{teacher.email}}"
+                     data-gender="{{ teacher.gender|default_if_none:'' }}"
+                     data-role="{{ teacher.role|default_if_none:'' }}"
+                     data-subjects="{{ teacher.subjects|default_if_none:'' }}"
+                     data-grade="{{ teacher.grade|default_if_none:'' }}"
+                     data-board="{{ teacher.board|default_if_none:'' }}"
+                     data-batch="{{ teacher.batch|default_if_none:'' }}"
+                     data-blood-group="{{ teacher.blood_group|default_if_none:'' }}"
+                     data-profile-picture="{% if teacher.profile_picture %}{{ teacher.get_profile_picture_url }}{% endif %}"
+                   >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+
+                  <form
+                    action="{% url 'delete_teacher' teacher.id %}"
+                    method="post"
+                    style="display: inline"
+                  >
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('Delete this user?');"
+                    >
+                      <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="12" class="text-center text-muted">
+                  No teaching staff found!
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NON TEACHING STAFF TABLE  -->
+      <div class="card user-section-panel d-none" data-user-panel="non-teaching">
+        <div class="card-header user-table-card-header">
+          <h5 class="mb-0 fw-bold">Non Teaching Staff</h5>
+          <a href="{% url 'export_user_management_non_teaching_staff' %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel"></i> Download Excel
+          </a>
+        </div>
+        <div class="card-body table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+               <tr>
+                 <th>Sr.No.</th>
+                 <th>Name</th>
+                 <th>Photo</th>
+                 <th>Username</th>
+                 <th>Contact</th>
+                 <th>Email</th>
+                 <th>Gender</th>
+                 <th>Designation</th>
+                 <th>Subject</th>
+                 <th>Batch</th>
+                 <th>Blood Group</th>
+                 <th class="text-center">Actions</th>
+               </tr>
+            </thead>
+
+            <tbody>
+              {% for teacher in non_teaching_staff %}
+               <tr>
+                 <td>{{ forloop.counter }}</td>
+                 <td class="fw-semibold">{{ teacher.name }}</td>
+                 <td>
+                   {% if teacher.profile_picture %}
+                     <img src="{{ teacher.get_profile_picture_url }}" alt="Profile" width="40" height="40" style="border-radius: 50%; object-fit: cover;" />
+                   {% else %}
+                     <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
+                   {% endif %}
+                 </td>
+                 <td>{{ teacher.username }}</td>
+                 <td>{{ teacher.contact }}</td>
+                 <td>{{ teacher.email }}</td>
+                 <td>{{ teacher.gender|default:"--" }}</td>
+                 <td>
+                   <span class="badge bg-warning">{{ teacher.role }}</span>
+                 </td>
+                 <td>{{ teacher.subjects|default:"--" }}</td>
+                 <td>{{ teacher.batch|default:"--" }}</td>
+                 <td>{{ teacher.blood_group|default:"--" }}</td>
+                 <td class="text-center">
+                   <button
+                     type="button"
+                     class="btn btn-sm btn-outline-primary"
+                     data-bs-toggle="modal"
+                     data-bs-target="#editTeacherModal"
+                     data-id="{{ teacher.id }}"
+                     data-name="{{ teacher.name }}"
+                     data-username="{{teacher.username}}"
+                     data-contact="{{ teacher.contact }}"
+                     data-email="{{teacher.email}}"
+                     data-gender="{{ teacher.gender|default_if_none:'' }}"
+                     data-role="{{ teacher.role|default_if_none:'' }}"
+                     data-subjects="{{ teacher.subjects|default_if_none:'' }}"
+                     data-grade="{{ teacher.grade|default_if_none:'' }}"
+                     data-board="{{ teacher.board|default_if_none:'' }}"
+                     data-batch="{{ teacher.batch|default_if_none:'' }}"
+                     data-blood-group="{{ teacher.blood_group|default_if_none:'' }}"
+                     data-profile-picture="{% if teacher.profile_picture %}{{ teacher.get_profile_picture_url }}{% endif %}"
+                   >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+
+                  <form
+                    action="{% url 'delete_teacher' teacher.id %}"
+                    method="post"
+                    style="display: inline"
+                  >
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('Delete this user?');"
+                    >
+                      <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="12" class="text-center text-muted">
+                  No non teaching staff found!
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!--  ADD USER MODAL  -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+       <div class="modal-dialog modal-lg">
+         <form method="post" action="{% url 'add_user' %}" class="modal-content" enctype="multipart/form-data">
+           {% csrf_token %}
+           <div class="modal-header">
+            <h5 class="modal-title">Add User</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">User Type</label>
+              <select
+                class="form-select"
+                id="userTypeSelect"
+                onchange="toggleFields()"
+              >
+                <option value="student">Student</option>
+                <option value="teacher">Teacher / Admin</option>
+              </select>
+              <input
+                type="hidden"
+                name="user_type"
+                id="userTypeHidden"
+                value="student"
+              />
+            </div>
+
+            <div id="studentFields" class="row g-3 mt-2">
+              <div class="col-md-6">
+                <input
+                  class="form-control alpha-only"
+                  id="studentNameInput"
+                  name="name"
+                  placeholder="Full Name"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="studentNameError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Profile Photo</label>
+                <input
+                  class="form-control"
+                  type="file"
+                  id="studentProfilePhotoInput"
+                  name="profile_photo"
+                  accept="image/*"
+                />
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control alpha-only"
+                  id="studentFatherNameInput"
+                  name="father_name"
+                  placeholder="Father's Name"
+                  maxlength="100"
+                />
+              </div>
+              <div class="col-md-6">
+                <select class="form-select" id="studentBoardInput" name="board" required>
+                  <option value="">Board</option>
+                  <option value="State">State</option>
+                  <option value="CBSE">CBSE</option>
+                </select>
+                <div class="invalid-feedback" id="studentBoardError"></div>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control readonly-bg"
+                  name="username"
+                  id="commonUsername"
+                  placeholder="Username"
+                  required
+                  maxlength="50"
+                  readonly
+                />
+                <div class="invalid-feedback" id="studentUsernameError"></div>
+                <small class="text-muted" id="usernameHint" style="display:none;">Auto-generated from batch</small>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  name="batch"
+                  id="batchInputCommon"
+                  placeholder="Batch (ex: B1, B2)"
+                  oninput="generateUsernameFromBatch(this)"
+                  onchange="generateUsernameFromBatch(this)"
+                  onblur="generateUsernameFromBatch(this)"
+                />
+                <div class="invalid-feedback" id="batchError"></div>
+              </div>
+              <div class="col-md-6">
+                <input
+                  type="tel"
+                  class="form-control number-only"
+                  id="studentContactInput"
+                  name="contact"
+                  placeholder="Contact (10-digit number)"
+                  required
+                  maxlength="10"
+                  minlength="10"
+                />
+                <div class="invalid-feedback" id="studentContactError"></div>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control alpha-only"
+                  id="studentEmergencyContactNameInput"
+                  name="emergency_contact_name"
+                  placeholder="Emergency Contact Name"
+                  maxlength="100"
+                />
+              </div>
+              <div class="col-md-6">
+                <input
+                  type="tel"
+                  class="form-control number-only"
+                  id="studentEmergencyContactInput"
+                  name="emergency_contact"
+                  placeholder="Emergency Contact"
+                  maxlength="10"
+                  minlength="10"
+                />
+                <div class="invalid-feedback" id="studentEmergencyContactError"></div>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group password-toggle-group">
+                  <input
+                    class="form-control"
+                    name="password"
+                    id="addUserPassword"
+                    type="password"
+                    placeholder="Password"
+                    value="Tra@2026"
+                    required
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle"
+                    type="button"
+                    data-target="addUserPassword"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select" id="studentStreamInput" name="stream" required>
+                  <option value="">Stream</option>
+                  <option value="Foundation">Foundation</option>
+                  <option value="JEE">JEE</option>
+                  <option value="NEET">NEET</option>
+                  <option value="MHTCET">MHTCET</option>
+                </select>
+                <div class="invalid-feedback" id="studentStreamError"></div>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select" id="studentGradeInput" name="grade">
+                  <option value="">Grade</option>
+                  <option value="8th">8th</option>
+                  <option value="9th">9th</option>
+                  <option value="10th">10th</option>
+                  <option value="11th">11th</option>
+                  <option value="12th">12th</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  id="studentBloodGroupInput"
+                  name="blood_group"
+                  placeholder="Blood Group"
+                  maxlength="10"
+                />
+              </div>
+              <div class="col-md-6">
+                <input
+                  class="form-control"
+                  id="studentEmailInput"
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="studentEmailError"></div>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select" id="studentGenderInput" name="gender" required>
+                  <option value="">Gender</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2" id="teacherCommonFieldsRow" style="display: none">
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherNameInput">Full Name</label>
+                <input
+                  class="form-control"
+                  id="teacherNameInput"
+                  name="name"
+                  placeholder="Full Name"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="teacherNameError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherProfilePictureInput">Profile Photo</label>
+                <input
+                  class="form-control"
+                  type="file"
+                  name="profile_picture"
+                  id="teacherProfilePictureInput"
+                  accept="image/*"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherUsernameInput">Username</label>
+                <input
+                  class="form-control"
+                  name="username"
+                  id="teacherUsernameInput"
+                  placeholder="Username"
+                  required
+                  maxlength="50"
+                />
+                <div class="invalid-feedback" id="teacherUsernameError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherContactInput">Contact</label>
+                <input
+                  type="tel"
+                  class="form-control number-only"
+                  id="teacherContactInput"
+                  name="contact"
+                  placeholder="Contact (10-digit number)"
+                  required
+                  maxlength="10"
+                  minlength="10"
+                />
+                <div class="invalid-feedback" id="teacherContactError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherEmailInput">Email</label>
+                <input
+                  class="form-control"
+                  id="teacherEmailInput"
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="teacherEmailError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherGenderInput">Gender</label>
+                <select class="form-select" id="teacherGenderInput" name="gender" required>
+                  <option value="">Gender</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherAddUserPassword">Password</label>
+                <div class="input-group password-toggle-group">
+                  <input
+                    class="form-control"
+                    name="password"
+                    id="teacherAddUserPassword"
+                    type="password"
+                    placeholder="Password"
+                    value="Tra@2026"
+                    required
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle"
+                    type="button"
+                    data-target="teacherAddUserPassword"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="teacherRoleInput">Designation</label>
+                <input
+                  class="form-control"
+                  name="role"
+                  id="teacherRoleInput"
+                  placeholder="Designation (e.g. Teacher, Admin, Counselor)"
+                  maxlength="80"
+                  oninput="syncAddStaffDesignationFields()"
+                  onchange="syncAddStaffDesignationFields()"
+                  onblur="syncAddStaffDesignationFields()"
+                  required
+                />
+                <div class="invalid-feedback" id="teacherRoleError"></div>
+                <small class="text-muted">Type <strong>Teacher</strong> to enable Subject and Batch.</small>
+              </div>
+            </div>
+
+            <div id="teacherFields" style="display: none">
+              <div class="row g-3 mt-2" id="teacherTeacherFieldsRow" style="display: none">
+                <div class="col-md-6">
+                  <label class="form-label add-user-label" for="teacherSubjectsInput">Subject</label>
+                  <input
+                    class="form-control"
+                    name="subjects"
+                    id="teacherSubjectsInput"
+                    placeholder="Subject"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label add-user-label" for="teacherBatchInput">Batch</label>
+                  <input
+                    class="form-control"
+                    name="batch"
+                    id="teacherBatchInput"
+                    placeholder="Batch (ex: B1, B2)"
+                  />
+                </div>
+              </div>
+              <div class="row g-3 mt-2" id="teacherBloodGroupRow">
+                <div class="col-12">
+                  <label class="form-label add-user-label" for="teacherBloodGroupInput">Blood Group</label>
+                  <input
+                    class="form-control"
+                    name="blood_group"
+                    id="teacherBloodGroupInput"
+                    placeholder="Blood Group"
+                    maxlength="10"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="validateAndSubmitAddUser()"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!--  EDIT STUDENT MODAL  -->
+    <div class="modal fade" id="editStudentModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <form method="post" id="editStudentForm" class="modal-content" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Student</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body row g-3">
+            <input type="hidden" id="editStudentId" />
+
+            <div class="col-md-6">
+              <input
+                class="form-control alpha-only"
+                name="name"
+                id="editStudentName"
+                required
+              />
+              <div class="invalid-feedback" id="editStudentNameError"></div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Profile Photo</label>
+              <input
+                class="form-control"
+                type="file"
+                name="profile_photo"
+                id="editStudentProfilePhoto"
+                accept="image/*"
+              />
+              <div id="currentStudentProfilePhoto" style="margin-top: 0.5rem;"></div>
+            </div>
+
+            <div class="col-md-6">
+              <input
+                class="form-control alpha-only"
+                name="father_name"
+                id="editStudentFatherName"
+                placeholder="Father's Name"
+                maxlength="100"
+              />
+            </div>
+            <div class="col-md-6">
+              <select class="form-select" name="board" id="editStudentBoard">
+                <option value="">Board</option>
+                <option value="State">State</option>
+                <option value="CBSE">CBSE</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <input
+                class="form-control readonly-bg"
+                name="username"
+                id="editStudentUsername"
+                placeholder="Username"
+                required
+                maxlength="50"
+                readonly
+              />
+              <div class="invalid-feedback" id="editStudentUsernameError"></div>
+              <small class="text-muted" id="editStudentUsernameHint" style="display:none;">Auto-generated from batch</small>
+            </div>
+            <div class="col-md-6">
+              <input
+                class="form-control"
+                name="batch"
+                id="editStudentBatch"
+                placeholder="Batch (ex: B1, B2)"
+                oninput="generateEditStudentUsernameFromBatch(this)"
+                onchange="generateEditStudentUsernameFromBatch(this)"
+                onblur="generateEditStudentUsernameFromBatch(this)"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="tel"
+                class="form-control number-only"
+                name="contact"
+                id="editStudentContact"
+                maxlength="10"
+                minlength="10"
+                placeholder="Contact (10-digit number)"
+              />
+              <div class="invalid-feedback" id="editStudentContactError"></div>
+            </div>
+
+            <div class="col-md-6">
+              <input
+                class="form-control alpha-only"
+                name="emergency_contact_name"
+                id="editStudentEmergencyContactName"
+                placeholder="Emergency Contact Name"
+                maxlength="100"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="tel"
+                class="form-control number-only"
+                name="emergency_contact"
+                id="editStudentEmergencyContact"
+                maxlength="10"
+                minlength="10"
+                placeholder="Emergency Contact"
+              />
+              <div class="invalid-feedback" id="editStudentEmergencyContactError"></div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-group password-toggle-group">
+                <input
+                  class="form-control"
+                  name="password"
+                  id="editStudentPassword"
+                  type="password"
+                  placeholder="Password (leave blank to keep current)"
+                />
+                <button
+                  class="btn btn-outline-secondary password-toggle"
+                  type="button"
+                  data-target="editStudentPassword"
+                  aria-label="Show password"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <select class="form-select" name="stream" id="editStudentStream">
+                <option value="">Stream</option>
+                <option value="Foundation">Foundation</option>
+                <option value="JEE">JEE</option>
+                <option value="NEET">NEET</option>
+                <option value="MHTCET">MHTCET</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <select class="form-select" name="grade" id="editStudentGrade">
+                <option value="">Grade</option>
+                <option value="8th">8th</option>
+                <option value="9th">9th</option>
+                <option value="10th">10th</option>
+                <option value="11th">11th</option>
+                <option value="12th">12th</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <input
+                class="form-control"
+                name="blood_group"
+                id="editStudentBloodGroup"
+                placeholder="Blood Group"
+                maxlength="10"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <input
+                class="form-control"
+                name="email"
+                id="editStudentEmail"
+                required
+                placeholder="Email"
+              />
+              <div class="invalid-feedback" id="editStudentEmailError"></div>
+            </div>
+            <div class="col-md-6">
+              <select class="form-select" name="gender" id="editStudentGender">
+                <option value="">Gender</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+     <div class="modal fade" id="editTeacherModal" tabindex="-1">
+       <div class="modal-dialog modal-lg">
+         <form method="post" id="editTeacherForm" class="modal-content" enctype="multipart/form-data">
+           {% csrf_token %}
+           <div class="modal-header">
+            <h5 class="modal-title">Edit Staff</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <input type="hidden" id="editTeacherId" />
+
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherName">Full Name</label>
+                <input
+                  class="form-control"
+                  name="name"
+                  id="editTeacherName"
+                  placeholder="Full Name"
+                  required
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="editTeacherNameError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherProfilePicture">Profile Photo</label>
+                <input
+                  class="form-control"
+                  type="file"
+                  name="profile_picture"
+                  id="editTeacherProfilePicture"
+                  accept="image/*"
+                />
+                <div id="currentProfilePicture" style="margin-top: 0.5rem;"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherUsername">Username</label>
+                <input
+                  class="form-control"
+                  name="username"
+                  id="editTeacherUsername"
+                  placeholder="Username"
+                  required
+                  maxlength="50"
+                />
+                <div class="invalid-feedback" id="editTeacherUsernameError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherContact">Contact</label>
+                <input
+                  class="form-control number-only"
+                  type="tel"
+                  name="contact"
+                  id="editTeacherContact"
+                  maxlength="10"
+                  minlength="10"
+                  placeholder="Contact (10-digit number)"
+                />
+                <div class="invalid-feedback" id="editTeacherContactError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherEmail">Email</label>
+                <input
+                  class="form-control"
+                  name="email"
+                  id="editTeacherEmail"
+                  type="email"
+                  required
+                  placeholder="Email"
+                  maxlength="100"
+                />
+                <div class="invalid-feedback" id="editTeacherEmailError"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherGender">Gender</label>
+                <select class="form-select" name="gender" id="editTeacherGender">
+                  <option value="">Gender</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherPassword">Password</label>
+                <div class="input-group password-toggle-group">
+                  <input
+                    class="form-control"
+                    name="password"
+                    id="editTeacherPassword"
+                    type="password"
+                    placeholder="Password (leave blank to keep current)"
+                  />
+                  <button
+                    class="btn btn-outline-secondary password-toggle"
+                    type="button"
+                    data-target="editTeacherPassword"
+                    aria-label="Show password"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherRole">Designation</label>
+                <input
+                  class="form-control"
+                  name="role"
+                  id="editTeacherRole"
+                  placeholder="Designation (e.g. Teacher, Admin, Counselor)"
+                  maxlength="80"
+                  oninput="syncEditStaffDesignationFields()"
+                  onchange="syncEditStaffDesignationFields()"
+                  onblur="syncEditStaffDesignationFields()"
+                  required
+                />
+                <small class="text-muted">Type <strong>Teacher</strong> to enable Subject and Batch.</small>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2" id="editTeacherFields">
+              <div class="col-md-6" id="editTeacherSubjectsCol">
+                <label class="form-label add-user-label" for="editTeacherSubjects">Subject</label>
+                <input
+                  class="form-control"
+                  name="subjects"
+                  id="editTeacherSubjects"
+                  placeholder="Subject"
+                />
+              </div>
+              <div class="col-md-6" id="editTeacherBatchCol">
+                <label class="form-label add-user-label" for="editTeacherBatch">Batch</label>
+                <input
+                  class="form-control"
+                  name="batch"
+                  id="editTeacherBatch"
+                  placeholder="Batch (ex: B1, B2)"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherBoard">Board</label>
+                <select class="form-select" name="board" id="editTeacherBoard">
+                  <option value="">Select Board / Exam</option>
+                  <option value="State">State</option>
+                  <option value="CBSE">CBSE</option>
+                  <option value="MHTCET">MHTCET</option>
+                  <option value="JEE">JEE</option>
+                  <option value="NEET">NEET</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label add-user-label" for="editTeacherGrade">Grade</label>
+                <select class="form-select" name="grade" id="editTeacherGrade">
+                  <option value="">Grade</option>
+                  <option value="8th">8th</option>
+                  <option value="9th">9th</option>
+                  <option value="10th">10th</option>
+                  <option value="11th">11th</option>
+                  <option value="12th">12th</option>
+                </select>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label add-user-label" for="editTeacherBloodGroup">Blood Group</label>
+                <input
+                  class="form-control"
+                  name="blood_group"
+                  id="editTeacherBloodGroup"
+                  placeholder="Blood Group"
+                  maxlength="10"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <style>
+      #addUserModal .modal-body .row {
+        --bs-gutter-y: 1rem;
+      }
+
+      .add-user-label {
+        margin-bottom: 0.4rem;
+        font-size: 0.92rem;
+        font-weight: 600;
+      }
+    </style>
+
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+     <script>
+       // Batch data from server for auto-generated student usernames.
+       const batchCounts = {{ batch_counts_json|safe }};
+       const batchUsernames = {{ batch_usernames_json|safe }};
+
+       function isTeacherDesignationText(value) {
+         return String(value || "").trim().toLowerCase() === "teacher";
+       }
+
+       function syncAddStaffDesignationFields() {
+         const roleInput = document.getElementById("teacherRoleInput");
+         const teacherFields = document.getElementById("teacherFields");
+         const teacherOnlyRow = document.getElementById("teacherTeacherFieldsRow");
+         const teacherOnlyInputs = teacherOnlyRow
+           ? teacherOnlyRow.querySelectorAll("input, select, textarea")
+           : [];
+         const isTeacher = isTeacherDesignationText(roleInput ? roleInput.value : "");
+
+         if (teacherFields) {
+           teacherFields.style.display = "block";
+           teacherFields.hidden = false;
+         }
+
+         if (teacherOnlyRow) {
+           teacherOnlyRow.style.display = isTeacher ? "flex" : "none";
+           teacherOnlyRow.hidden = !isTeacher;
+           teacherOnlyRow.classList.toggle("d-none", !isTeacher);
+         }
+
+         teacherOnlyInputs.forEach((input) => {
+           input.disabled = !isTeacher;
+         });
+       }
+
+       function syncEditStaffDesignationFields() {
+         const roleInput = document.getElementById("editTeacherRole");
+         const subjectsCol = document.getElementById("editTeacherSubjectsCol");
+         const batchCol = document.getElementById("editTeacherBatchCol");
+         const subjectsInput = document.getElementById("editTeacherSubjects");
+         const batchInput = document.getElementById("editTeacherBatch");
+         const isTeacher = isTeacherDesignationText(roleInput ? roleInput.value : "");
+
+         if (subjectsCol) {
+           subjectsCol.style.display = isTeacher ? "" : "none";
+           subjectsCol.hidden = !isTeacher;
+           subjectsCol.classList.toggle("d-none", !isTeacher);
+         }
+
+         if (batchCol) {
+           batchCol.style.display = isTeacher ? "" : "none";
+           batchCol.hidden = !isTeacher;
+           batchCol.classList.toggle("d-none", !isTeacher);
+         }
+
+         if (subjectsInput) {
+           subjectsInput.disabled = !isTeacher;
+         }
+
+         if (batchInput) {
+           batchInput.disabled = !isTeacher;
+         }
+       }
+
+       function showUserManagementSection(section) {
+         const selectedSection = section || "students";
+         document.querySelectorAll(".user-type-tab").forEach((tab) => {
+           const isActive = tab.dataset.userSection === selectedSection;
+           tab.classList.toggle("active", isActive);
+           tab.setAttribute("aria-pressed", isActive ? "true" : "false");
+           tab.setAttribute("aria-selected", isActive ? "true" : "false");
+         });
+
+         document.querySelectorAll(".user-section-panel").forEach((panel) => {
+           const isActive = panel.dataset.userPanel === selectedSection;
+           panel.classList.toggle("d-none", !isActive);
+           panel.hidden = !isActive;
+           panel.style.display = isActive ? "" : "none";
+         });
+       }
+
+       document.addEventListener("DOMContentLoaded", function () {
+         document.querySelectorAll(".user-type-tab").forEach((tab) => {
+           tab.addEventListener("click", function () {
+             showUserManagementSection(tab.dataset.userSection || "students");
+           });
+         });
+         showUserManagementSection("students");
+       });
+     </script>
+     <script src="{% static 'js/user-management.js' %}?v=20260514-2"></script>
+   </body>
+ </html>

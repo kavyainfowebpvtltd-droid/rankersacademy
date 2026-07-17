@@ -1,0 +1,573 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+:root {
+  color-scheme: dark;
+  --student-bg-primary: #05050a;
+  --student-bg-secondary: #07070d;
+  --student-card: #0b0c12;
+  --student-panel-soft: #10131b;
+  --student-border: #262a35;
+  --student-border-strong: #343846;
+  --student-heading: #f8f9ff;
+  --student-text: #f4f5fb;
+  --student-muted: #aeb4c2;
+  --student-deep-muted: #8f94a3;
+  --student-success: #33d6a6;
+  --student-warning: #ffb15f;
+  --student-danger: #ff6b6b;
+  --student-blue: #7ad7ff;
+  --student-orange: #ff8a1f;
+  --student-purple: #8b35ff;
+  --student-g1: linear-gradient(90deg, #ff8a1f 0%, #8b35ff 100%);
+  --student-g2: linear-gradient(135deg, #ff8a1f 0%, #8b35ff 100%);
+  --student-g3: linear-gradient(90deg, #ff8a1f 0%, #8b35ff 100%);
+  --student-shadow: 0 18px 40px rgba(139, 53, 255, 0.2);
+  --student-shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+* {
+  scrollbar-color: #8b35ff #07070d;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--student-bg-secondary);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--student-g1);
+}
+
+html,
+body {
+  background: var(--student-bg-primary) !important;
+}
+
+body {
+  color: var(--student-text) !important;
+  font-family: "Inter", "DM Sans", system-ui, sans-serif !important;
+  background: #05050a !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.fw-bold,
+.fw-semibold,
+.display,
+.page-title,
+.priority-title,
+.matrix-header h4,
+.chapter-title,
+.subject-name {
+  color: var(--student-heading) !important;
+}
+
+p,
+td,
+li,
+.small,
+.soft,
+.summary-label,
+.summary-card-extra,
+.home-score-meta,
+.chapter-line,
+.sub-topics,
+.matrix-header p,
+.text-muted,
+small {
+  color: var(--student-muted) !important;
+}
+
+a {
+  color: #ffb15f;
+}
+
+a:hover {
+  color: #ffffff;
+}
+
+.navbar {
+  background: #080812 !important;
+  border-bottom-color: var(--student-border) !important;
+  box-shadow: var(--student-shadow-soft);
+}
+
+.navbar .btn-light {
+  background: #0f1118 !important;
+  border-color: var(--student-border) !important;
+  box-shadow: none;
+}
+
+.navbar .brand-icon {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  min-width: 74px;
+  height: 62px;
+  padding: 0;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+.navbar .brand-icon img {
+  height: 60px !important;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(122, 215, 255, 0.18));
+}
+
+.navbar .text-dark,
+.navbar .fw-bold,
+.navbar h5 {
+  color: var(--student-heading) !important;
+}
+
+.navbar .btn-light,
+.navbar .btn-light i {
+  color: var(--student-text) !important;
+}
+
+.tabs {
+  background: #07070d !important;
+  border-bottom-color: var(--student-border) !important;
+}
+
+.tabs-left a {
+  color: var(--student-muted) !important;
+  border-color: transparent;
+}
+
+.tabs-left a i {
+  color: var(--student-muted) !important;
+}
+
+.tabs-left a:hover,
+.tabs-left a.active {
+  color: var(--student-heading) !important;
+  background: #0f1118 !important;
+  border-color: var(--student-border-strong);
+  box-shadow: none;
+}
+
+.tabs-left a:hover i,
+.tabs-left a.active i {
+  color: var(--student-heading) !important;
+}
+
+.tabs-left a.active::after {
+  background: var(--student-g1) !important;
+  box-shadow: none;
+}
+
+.download-btn,
+.btn-brand,
+.btn-primary,
+.start-btn,
+.show-more-btn,
+.hover-popup button,
+.subject-btn.active,
+.student-switch-btn.active,
+.test-slot-btn.active {
+  background: var(--student-g1) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(139, 53, 255, 0.22) !important;
+}
+
+.btn,
+button,
+.subject-btn,
+.student-switch-btn,
+.test-slot-btn,
+.hover-card,
+.app-card,
+.app-card-soft,
+.summary-card,
+.chapter-card,
+.stat-card,
+.focus-card {
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.card,
+.app-card,
+.app-card-soft,
+.home-score-card,
+.home-score-chip,
+.summary-card,
+.chapter-card,
+.topic-row,
+.stat-card,
+.matrix-card,
+.focus-card,
+.priority-wrapper,
+.student-info-card,
+.attendance-table,
+.personalized-recommendations,
+.inner-card,
+.test-banner,
+.my-attendance-header {
+  background: #0b0c12 !important;
+  border-color: var(--student-border) !important;
+  box-shadow: var(--student-shadow-soft);
+  color: var(--student-text) !important;
+}
+
+.hover-card:hover,
+.app-card:hover,
+.app-card-soft:hover,
+.summary-card:hover,
+.chapter-card:hover,
+.stat-card:hover,
+.focus-card:hover,
+.student-info-card:hover {
+  background: var(--student-panel-soft) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: var(--student-shadow-soft) !important;
+}
+
+.brand-gradient,
+.brand-text,
+.banner-content h3,
+.page-title,
+.priority-title {
+  background: var(--student-g1) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+.test-banner,
+.my-attendance-header,
+.priority-wrapper,
+.personalized-recommendations {
+  background:
+    linear-gradient(135deg, rgba(255, 138, 31, 0.12), rgba(139, 53, 255, 0.14)),
+    #0b0c12 !important;
+}
+
+.icon-box,
+.icon-circle,
+.icon-square,
+.subject-icon,
+.topic-subject-icon,
+.reward-icon,
+.cluster-icon,
+.top-performer-avatar,
+.leaderboard-avatar {
+  background: var(--student-g2) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+.summary-card h2,
+.summary-number,
+.stat-number,
+.rank-hero-number,
+.home-score-value,
+.summary-card-value,
+.subject-score,
+.home-score-chip-value,
+.home-score-outof,
+.home-score-chip-name {
+  color: var(--student-heading) !important;
+}
+
+.summary-card .title,
+.stat-content h6,
+.summary-card-title,
+.home-score-label {
+  color: var(--student-muted) !important;
+}
+
+.student-switch,
+.test-slot-btn,
+.subject-btn,
+.level-pill,
+.streak-pill,
+.rank-shift-pill,
+.focus-tag,
+.focus-badge,
+.badge,
+.status-badge,
+.pill-green,
+.pill-red,
+.status-excellent,
+.status-good,
+.status-work {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: var(--student-border-strong) !important;
+  color: var(--student-text) !important;
+}
+
+.progress,
+.progress-bar-custom {
+  background: #171a22 !important;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.28);
+}
+
+.progress-bar,
+.progress-bar-fill,
+.subject-progress-fill,
+.topic-progress-fill {
+  background: var(--student-g1) !important;
+  box-shadow: none;
+}
+
+.table,
+.table-dark {
+  --bs-table-bg: transparent !important;
+  --bs-table-color: var(--student-text) !important;
+  --bs-table-border-color: var(--student-border) !important;
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.035) !important;
+  --bs-table-striped-color: var(--student-text) !important;
+  --bs-table-hover-bg: #141721 !important;
+  --bs-table-hover-color: #ffffff !important;
+  color: var(--student-text) !important;
+}
+
+.table thead th,
+.attendance-table thead {
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: var(--student-muted) !important;
+  border-color: var(--student-border) !important;
+}
+
+.table tbody td,
+.attendance-table td,
+.attendance-table th {
+  background: transparent !important;
+  color: var(--student-text) !important;
+  border-color: var(--student-border) !important;
+}
+
+.table tbody tr:hover,
+.attendance-table tbody tr:hover,
+.attendance-table tbody tr.current-date {
+  background: #141721 !important;
+}
+
+.form-control,
+.form-select,
+.month-selector,
+input,
+select {
+  background: rgba(5, 8, 22, 0.72) !important;
+  color: var(--student-text) !important;
+  border-color: var(--student-border-strong) !important;
+  box-shadow: inset 0 1px 14px rgba(0, 0, 0, 0.2);
+}
+
+.form-control:focus,
+.form-select:focus,
+.month-selector:focus,
+input:focus,
+select:focus {
+  border-color: rgba(255, 138, 31, 0.62) !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 138, 31, 0.16) !important;
+}
+
+.circular-progress,
+.overall-progress-circle {
+  background: conic-gradient(#ff8a1f calc(var(--p, 75) * 1%), #171a22 0deg) !important;
+  box-shadow: none;
+}
+
+.inner-circle,
+.overall-progress-circle::before {
+  background: #0b0c12 !important;
+  border-color: var(--student-border) !important;
+}
+
+.inner-circle,
+.overall-progress-circle span {
+  color: #ffffff !important;
+}
+
+.my-tests-page {
+  --brand-a: #ff8a1f !important;
+  --brand-b: #ff8a1f !important;
+  --brand-c: #8b35ff !important;
+  --muted: var(--student-muted) !important;
+  --panel: #0b0c12 !important;
+  --panel-soft: #10131b !important;
+  --panel-border: var(--student-border) !important;
+  background: transparent !important;
+  color: var(--student-text) !important;
+}
+
+.rank-medal,
+.student-highlight {
+  background: rgba(139, 53, 255, 0.14) !important;
+  box-shadow: inset 0 0 0 1px rgba(139, 53, 255, 0.28) !important;
+}
+
+.chapter-header:hover,
+.topic-row:hover {
+  background: #141721 !important;
+}
+
+.arrow-btn {
+  background: #0f1118 !important;
+  border-color: var(--student-border-strong) !important;
+  color: var(--student-text) !important;
+}
+
+.chapter-divider {
+  border-color: var(--student-border) !important;
+}
+
+.hover-popup {
+  background: #0b0c12 !important;
+  border-color: var(--student-border-strong) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow-soft) !important;
+}
+
+.hover-popup h6,
+.hover-popup li,
+.hover-popup p,
+.personalized-recommendations h5,
+.personalized-recommendations h6,
+.inner-card h6,
+.focus-card h5,
+.student-info-card h5,
+.my-attendance-header h3 {
+  color: var(--student-heading) !important;
+}
+
+.row-excellent,
+.row-good,
+.row-work,
+.weak-bg,
+.unknown-bg,
+.coverage-bg {
+  background: #0f1118 !important;
+  border-color: var(--student-border) !important;
+}
+
+.weak-icon,
+.unknown-icon,
+.coverage-icon {
+  background: var(--student-g1) !important;
+}
+
+.weak-text,
+.status-absent,
+.pill-red,
+.status-work {
+  color: var(--student-danger) !important;
+}
+
+.unknown-text,
+.status-late,
+.status-good {
+  color: var(--student-warning) !important;
+}
+
+.coverage-text {
+  color: var(--student-blue) !important;
+}
+
+.status-present,
+.pill-green,
+.status-excellent {
+  color: var(--student-success) !important;
+}
+
+.status-present {
+  background: rgba(51, 214, 166, 0.16) !important;
+  border-color: rgba(51, 214, 166, 0.26) !important;
+}
+
+.status-late {
+  background: rgba(255, 138, 31, 0.18) !important;
+  border-color: rgba(255, 138, 31, 0.28) !important;
+}
+
+.status-absent {
+  background: rgba(255, 107, 107, 0.16) !important;
+  border-color: rgba(255, 107, 107, 0.26) !important;
+}
+
+.progress-present {
+  background: linear-gradient(90deg, #33d6a6, #ff8a1f) !important;
+}
+
+canvas,
+.chart-container {
+  filter: none;
+}
+
+footer {
+  background: #07070d !important;
+  border-top-color: var(--student-border) !important;
+  color: var(--student-muted) !important;
+}
+
+footer a {
+  color: #ffb15f !important;
+}
+
+html[data-admin-theme="dark"] body:not(.login-page-body) footer,
+html[data-admin-theme="dark"] body:not(.login-page-body) footer.bg-light {
+  background: #07070d !important;
+  border-top: 1px solid var(--student-border) !important;
+  color: var(--student-muted) !important;
+}
+
+html[data-admin-theme="dark"] body:not(.login-page-body) footer a {
+  color: #ffb15f !important;
+  font-weight: 700;
+}
+
+.overall-progress-card,
+.mainbody [style*="background: #ecfdf5"],
+.mainbody [style*="background: #fff7ed"],
+.mainbody [style*="background: #eff6ff"],
+.mainbody [style*="background: #f8fafc"],
+.mainbody [style*="background:#ecfdf5"],
+.mainbody [style*="background:#fff7ed"],
+.mainbody [style*="background:#eff6ff"],
+.mainbody [style*="background:#f8fafc"] {
+  background: #0b0c12 !important;
+  border: 1px solid var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow-soft) !important;
+}
+
+.mainbody [style*="background: #dcfce7"],
+.mainbody [style*="background: #ffedd5"],
+.mainbody [style*="background: #dbeafe"],
+.mainbody [style*="background:#dcfce7"],
+.mainbody [style*="background:#ffedd5"],
+.mainbody [style*="background:#dbeafe"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--student-muted) !important;
+}
+
+.mainbody [style*="color: #15803d"],
+.mainbody [style*="color:#15803d"] {
+  color: var(--student-success) !important;
+}
+
+.mainbody [style*="color: #c2410c"],
+.mainbody [style*="color:#c2410c"] {
+  color: var(--student-warning) !important;
+}
+
+@media (max-width: 1024px) {
+  .tabs-left a.active {
+    background: var(--student-g1) !important;
+    color: #ffffff !important;
+  }
+}

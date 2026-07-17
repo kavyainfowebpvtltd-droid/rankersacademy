@@ -1,0 +1,176 @@
+{% extends 'base.html' %} 
+{% load static %} 
+{% block content %}
+<div class="container py-5">
+  <!-- Stats -->
+  <div class="row g-4 mb-5 stat-summary-grid">
+    <div class="col-lg-4">
+      <div class="stat-card weak-bg">
+        <div class="icon-box weak-icon">
+          <i class="fas fa-triangle-exclamation"></i>
+        </div>
+        <div class="stat-content">
+          <h2 class="stat-number">{{ weak_chapters_count }}</h2>
+          <h6>Weak Chapters</h6>
+          <p class="stat-desc weak-text">Below 50% coverage</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="stat-card unknown-bg">
+        <div class="icon-box unknown-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-content">
+          <h2 class="stat-number">{{ unknown_topics_count }}</h2>
+          <h6>Unknown Topics</h6>
+          <p class="stat-desc unknown-text">Across all subjects</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="stat-card coverage-bg">
+        <div class="icon-box coverage-icon">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <div class="stat-content">
+          <h2 class="stat-number">{{ avg_coverage }}%</h2>
+          <h6>Avg. Coverage</h6>
+          <p class="stat-desc coverage-text">Syllabus completion</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matrix -->
+  <div class="matrix-card">
+    <div class="matrix-header">
+      <h4>Knowledge Coverage Matrix</h4>
+      <p>Detailed chapter-wise topic coverage analysis</p>
+    </div>
+
+    <table class="table table-borderless">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Chapter</th>
+          <th>Total Topics</th>
+          <th>Known</th>
+          <th>Unknown</th>
+          <th>Coverage</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for r in matrix_rows %}
+        <tr class="{{ r.row_class }}">
+          <td><strong>{{ r.subject.name }}</strong></td>
+          <td>{{ r.chapter.name }}</td>
+          <td>{{ r.total_topics }}</td>
+          <td><span class="pill-green">{{ r.known }}</span></td>
+
+          <td>
+            {% if r.unknown == 0 %}
+            <span class="pill-red zero-pill">
+              0
+              <div class="hover-popup">
+                <h6>Great!</h6>
+                <p>You have no unknown topics 🎉</p>
+              </div>
+            </span>
+            {% else %}
+            <span class="pill-red unknown-pill">
+              {{ r.unknown }}
+              <div class="hover-popup">
+                <h6>Unknown Topics</h6>
+                <ul>
+                  {% for name in r.unknown_topic_names %}
+                  <li>{{ name }}</li>
+                  {% endfor %}
+                </ul>
+
+                <button
+                  onclick="window.location.href='{% url 'test' %}?subject={{ r.subject.id }}&chapter={{ r.chapter.id }}&topics={{ r.unknown_topic_ids_csv }}'"
+                >
+                  If you prepared then take test
+                </button>
+              </div>
+            </span>
+            {% endif %}
+          </td>
+
+          <td>
+            <div class="d-flex gap-3 align-items-center">
+              <div class="progress w-100">
+                <div
+                  class="progress-bar {{ r.bar_class }}"
+                  style="width: {{ r.percent }}%"
+                ></div>
+              </div>
+              <strong>{{ r.percent }}%</strong>
+            </div>
+          </td>
+
+          <td><span class="{{ r.status_class }}">{{ r.status }}</span></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            No syllabus data found for your grade/board!
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Priority Learning -->
+  <div class="priority-wrapper mt-5">
+    <div class="mb-4">
+      <div class="priority-title">Priority Learning Recommendations</div>
+      <div class="priority-sub">
+        Immediate focus areas based on weakest chapters & topics
+      </div>
+    </div>
+
+    <div class="row g-4">
+      {% for c in priority_cards %}
+      <div class="col-lg-6">
+        <div class="focus-card">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h5>{{ c.subject }}</h5>
+              <div class="chapter-line">Chapter | {{ c.chapter }}</div>
+            </div>
+            <span class="focus-badge">Immediate Focus Required</span>
+          </div>
+
+          <div class="sub-topics">{{ c.unknown_topics_preview }}</div>
+
+          <div class="extra-content d-none">
+            <p>
+              Revise concepts + attempt a quick verification test for this
+              chapter.
+            </p>
+          </div>
+
+          <button class="show-more-btn" onclick="toggleContent(this)">
+            Show More
+          </button>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-white">
+        <p class="mb-0">No priority chapters found 🎉 Keep it up!</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/gap-analysis.js' %}"></script>
+{% endblock %}
+   

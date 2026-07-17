@@ -1,0 +1,2876 @@
+import json
+import logging
+import re
+from contextlib import suppress
+from datetime import datetime
+from urllib.parse import urlencode
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.http import HttpResponseForbidden, JsonResponse
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_http_methods
+from django.utils import timezone
+from django.db import transaction, IntegrityError, connection
+from django.db.models import Q
+from django.db.utils import OperationalError
+from django.conf import settings
+from sds.models import Student
+
+from scholarship_test.models import (
+    RankPredictorLead,
+    ScholarshipStudent,
+    ScholarshipSubject,
+    ScholarshipQuestion,
+    ScholarshipTestAttempt,
+    ScholarshipOTP,
+    ScholarshipTestFolder,
+    ScholarshipTest,
+    ScholarshipTestConfig,
+    ScholarshipTestSection,
+    ScholarshipTestQuestion,
+    ScholarshipTestOption,
+    ScholarshipTestAnswer,
+    ScholarshipTestImage,
+)
+from scholarship_test.forms import (
+    ScholarshipRegistrationStepOneForm,
+    ScholarshipRegistrationStepTwoForm,
+    OTPVerificationForm
+)
+from scholarship_test.services import (
+    otp_service,
+    test_service,
+    sms_service,
+    word_import_service,
+)
+
+logger = logging.getLogger(__name__)
+
+# Test configuration
+TEST_DURATION_MINUTES = 20
+TOTAL_QUESTIONS = 20
+SELECTED_TEST_SESSION_KEY = 'scholarship_selected_test_id'
+RANK_PREDICTOR_UNLOCKED_SESSION_KEY = 'rank_predictor_unlocked'
+RANK_PREDICTOR_PHONE_SESSION_KEY = 'rank_predictor_phone'
+
+
+def _can_manage_scholarship_tests(user) -> bool:
+    return bool(
+        getattr(user, 'is_authenticated', False)
+        and (
+            getattr(user, 'is_superuser', False)
+            or (
+                hasattr(user, 'teacheradmin')
+                and getattr(user.teacheradmin, 'role', '') == 'Admin'
+            )
+        )
+    )
+
+
+def _is_valid_person_name(name: str) -> bool:
+    cleaned = (name or '').strip()
+    return bool(cleaned) and bool(re.fullmatch(r'[A-Za-z ]+', cleaned))
+
+
+def _normalize_mobile_number(phone: str) -> str:
+    digits = re.sub(r'\D', '', str(phone or ''))
+    if len(digits) > 10:
+        digits = digits[-10:]
+    return digits
+
+
+def _is_valid_mobile_number(phone: str) -> bool:
+    return len(phone) == 10 and phone.isdigit()
+
+
+def _set_rank_predictor_session(request, phone: str):
+    request.session[RANK_PREDICTOR_UNLOCKED_SESSION_KEY] = True
+    request.session[RANK_PREDICTOR_PHONE_SESSION_KEY] = phone
+
+
+def _clear_rank_predictor_session(request):
+    request.session.pop(RANK_PREDICTOR_UNLOCKED_SESSION_KEY, None)
+    request.session.pop(RANK_PREDICTOR_PHONE_SESSION_KEY, None)
+
+
+def _is_rtse_test(test):
+    if not test:
+        return True
+
+    normalized_name = re.sub(r'[^a-z0-9]+', '', test.name.lower())
+    return (
+        'rtse' in test.name.lower() and '2026' in test.name
+    ) or normalized_name == 'rtse2026scholarshiptest'
+
+
+def _uses_landing_page(test):
+    if _is_rtse_test(test):
+        return True
+
+    if not test or not test.name:
+        return False
+
+    normalized_name = re.sub(r'[^a-z0-9]+', '', test.name.lower())
+    return normalized_name == 'scholarshiptest'
+
+
+def _get_reference_prefix(test):
+    if _is_rtse_test(test):
+        return 'RTSE'
+
+    if not test or not test.name:
+        return 'TEST'
+
+    tokens = re.findall(r'[A-Z0-9]+', test.name.upper())
+    prefix = ''.join(tokens[:2])[:10]
+    return prefix or 'TEST'
+
+
+def _set_selected_test(request, test):
+    if test:
+        request.session[SELECTED_TEST_SESSION_KEY] = test.id
+    else:
+        request.session.pop(SELECTED_TEST_SESSION_KEY, None)
+
+
+def _get_session_selected_test(request):
+    test_id = request.session.get(SELECTED_TEST_SESSION_KEY)
+    selected_test = test_service.get_test_by_id(test_id)
+
+    if test_id and not selected_test:
+        request.session.pop(SELECTED_TEST_SESSION_KEY, None)
+
+    return selected_test
+
+
+def _get_effective_selected_test(request):
+    return _get_session_selected_test(request) or test_service.get_active_test()
+
+
+def _get_completed_attempt_for_test(student, selected_test):
+    attempts = ScholarshipTestAttempt.objects.filter(
+        student=student,
+        status__in=['completed', 'expired']
+    ).defer('started_at', 'submitted_at', 'violation_count', 'security_status')
+
+    if selected_test:
+        attempts = attempts.filter(test=selected_test)
+
+    return attempts.order_by('-test_started_at').first()
+
+
+def _get_active_attempt_for_test(student, selected_test):
+    attempts = ScholarshipTestAttempt.objects.filter(
+        student=student,
+        status__in=['started', 'in_progress']
+    ).defer('started_at', 'submitted_at', 'violation_count', 'security_status')
+
+    if selected_test:
+        attempts = attempts.filter(test=selected_test)
+
+    return attempts.order_by('-test_started_at').first()
+
+
+def _expire_attempt_if_needed(attempt):
+    if not attempt or attempt.status in ['completed', 'expired']:
+        return attempt
+
+    if not test_service.is_attempt_expired(attempt):
+        return attempt
+
+    try:
+        runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+        runtime_questions = test_service.get_runtime_questions_for_test(runtime_test)
+        if runtime_test and runtime_questions:
+            _success, _message, attempt = test_service.auto_submit_runtime_test(attempt.id)
+        else:
+            _success, _message, attempt = test_service.auto_submit_expired_test(attempt.id)
+    except Exception:
+        logger.exception("Failed to expire scholarship attempt %s", getattr(attempt, 'id', None))
+        return attempt
+
+    return attempt
+
+
+def _finalize_expired_attempts_for_test(selected_test):
+    try:
+        test_service.finalize_expired_attempts(selected_test)
+    except Exception:
+        logger.exception("Failed to finalize expired scholarship attempts")
+
+
+def _build_test_display_context(selected_test):
+    runtime_questions = test_service.get_runtime_questions_for_test(selected_test)
+    question_count = len(runtime_questions) if runtime_questions else TOTAL_QUESTIONS
+    duration_minutes = (
+        test_service.get_test_duration_minutes(selected_test)
+        if selected_test
+        else TEST_DURATION_MINUTES
+    )
+    start_at = test_service.get_test_scheduled_start_at(selected_test)
+    _start_window_start, _start_window_end, start_button_opens_at = (
+        test_service.get_test_start_window(selected_test)
+    )
+
+    if duration_minutes >= 60:
+        hours = duration_minutes // 60
+        minutes = duration_minutes % 60
+        if minutes:
+            duration_display = f"{hours} hr {minutes} min"
+        else:
+            duration_display = f"{hours} hr"
+    else:
+        duration_display = f"{duration_minutes} Minutes"
+
+    test_name = selected_test.name if selected_test else "RTSE-2026 Scholarship Test"
+    is_rtse_selected_test = _is_rtse_test(selected_test)
+
+    return {
+        'selected_test': selected_test,
+        'selected_test_name': test_name,
+        'selected_test_question_count': question_count,
+        'selected_test_duration_minutes': duration_minutes,
+        'selected_test_duration_display': duration_display,
+        'is_rtse_selected_test': is_rtse_selected_test,
+        'uses_landing_page': _uses_landing_page(selected_test),
+        'selected_test_reference_prefix': _get_reference_prefix(selected_test),
+        'selected_test_scheduled_start_at': _serialize_scheduled_start_at(start_at),
+        'selected_test_start_button_opens_at': _serialize_scheduled_start_at(start_button_opens_at),
+        'selected_test_server_now': _serialize_scheduled_start_at(
+            timezone.localtime(timezone.now(), test_service.ACADEMY_TIMEZONE)
+        ),
+    }
+
+
+def _requires_otp_login(selected_test):
+    return test_service.requires_otp_login(selected_test)
+
+
+def _build_portal_login_url(selected_test):
+    login_url = reverse('login')
+    if not selected_test:
+        return login_url
+
+    launch_url = reverse('scholarship_test:scholarship_launch_test', args=[selected_test.id])
+    return f"{login_url}?{urlencode({'next': launch_url})}"
+
+
+def _normalize_portal_phone(phone):
+    digits = re.sub(r'\D', '', str(phone or ''))
+    if digits:
+        return digits[-10:]
+    return ''
+
+
+def _get_portal_student(request):
+    user = getattr(request, 'user', None)
+    if not user or not user.is_authenticated:
+        return None
+
+    return getattr(user, 'student', None)
+
+
+def _portal_student_has_test_access(selected_test, portal_student) -> bool:
+    if not selected_test or not portal_student:
+        return True
+
+    return test_service.is_test_assigned_to_portal_student(
+        selected_test,
+        portal_student,
+    )
+
+
+def _redirect_if_portal_student_cannot_access_test(request, selected_test):
+    portal_student = _get_portal_student(request)
+    if _portal_student_has_test_access(selected_test, portal_student):
+        return None
+
+    _set_selected_test(request, None)
+    messages.error(
+        request,
+        "This test is not assigned to your batch and stream.",
+    )
+    return redirect("student-dashboard")
+
+
+def _sync_portal_student_session(request, selected_test):
+    portal_student = _get_portal_student(request)
+    if not portal_student:
+        return None, None
+
+    phone_number = _normalize_portal_phone(portal_student.contact)
+    if not phone_number:
+        phone_number = f"INT{portal_student.id:08d}"[:15]
+
+    scholarship_student, _ = ScholarshipStudent.objects.get_or_create(
+        phone_number=phone_number,
+        defaults={
+            'name': portal_student.student_name or portal_student.user.username,
+            'grade': portal_student.grade or '',
+            'board': portal_student.board or '',
+            'otp_verified': True,
+        },
+    )
+
+    updated_fields = []
+    desired_name = portal_student.student_name or portal_student.user.username
+    desired_grade = portal_student.grade or ''
+    desired_board = portal_student.board or ''
+
+    if scholarship_student.name != desired_name:
+        scholarship_student.name = desired_name
+        updated_fields.append('name')
+    if scholarship_student.grade != desired_grade:
+        scholarship_student.grade = desired_grade
+        updated_fields.append('grade')
+    if scholarship_student.board != desired_board:
+        scholarship_student.board = desired_board
+        updated_fields.append('board')
+    if not scholarship_student.otp_verified:
+        scholarship_student.otp_verified = True
+        updated_fields.append('otp_verified')
+
+    if updated_fields:
+        scholarship_student.save(update_fields=updated_fields)
+
+    request.session['scholarship_student_id'] = scholarship_student.id
+    request.session['scholarship_student_name'] = scholarship_student.name
+    request.session['scholarship_grade'] = scholarship_student.grade
+    request.session['scholarship_board'] = scholarship_student.board
+
+    return scholarship_student, portal_student
+
+
+def _get_non_scholarship_stream(attempt):
+    portal_student = getattr(attempt, 'portal_student', None)
+    if not portal_student:
+        return getattr(attempt.student, 'board', '') or '-'
+
+    matched_streams = []
+    stream_values = test_service.get_portal_student_stream_values(portal_student)
+    normalized_streams = {str(value or "").strip().upper() for value in stream_values if str(value or "").strip()}
+    for stream_name in ('JEE', 'NEET', 'MHTCET'):
+        if any(stream_name in value for value in normalized_streams):
+            matched_streams.append(stream_name)
+
+    if matched_streams:
+        return ' / '.join(matched_streams)
+
+    board_value = getattr(portal_student, 'board', '') or getattr(attempt.student, 'board', '')
+    return board_value or '-'
+
+
+def _build_attempt_subject_tabs(runtime_test, portal_student=None):
+    subject_tabs = []
+    for index, section in enumerate(
+        test_service.get_test_section_definitions(runtime_test, portal_student=portal_student)
+    ):
+        section_name = str(section.get('name') or section.get('sectionName') or f'Section {index + 1}').strip()
+        normalized = re.sub(r'[^a-z0-9]+', ' ', section_name.casefold()).strip()
+        subject_tabs.append(
+            {
+                'key': normalized.replace(' ', '-') or f'section-{index + 1}',
+                'label': section_name,
+            }
+        )
+    return subject_tabs
+
+
+def _runtime_attempt_queryset():
+    return ScholarshipTestAttempt.objects.defer(
+        'started_at',
+        'submitted_at',
+        'violation_count',
+        'security_status',
+    )
+
+
+def _is_missing_attempt_security_column_error(error: Exception) -> bool:
+    message = str(error or "")
+    return (
+        "Unknown column" in message
+        and any(
+            field_name in message
+            for field_name in ("security_status", "violation_count", "started_at", "submitted_at")
+        )
+    )
+
+
+def _create_runtime_attempt_compat(
+    *,
+    student,
+    active_test,
+    portal_student,
+    total_questions,
+    total_marks,
+    progress_state,
+):
+    created_at = timezone.now()
+    create_kwargs = {
+        'student': student,
+        'test': active_test,
+        'portal_student': portal_student,
+        'student_batch': (portal_student.batch if portal_student else ''),
+        'status': 'started',
+        'security_status': 'pending',
+        'total_questions': total_questions,
+        'total_marks': total_marks,
+        'progress_state': progress_state,
+    }
+
+    try:
+        with transaction.atomic():
+            return ScholarshipTestAttempt.objects.create(**create_kwargs)
+    except OperationalError as error:
+        if not _is_missing_attempt_security_column_error(error):
+            raise
+
+    table_name = connection.ops.quote_name(ScholarshipTestAttempt._meta.db_table)
+    progress_state_json = json.dumps(progress_state)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            INSERT INTO {table_name}
+                (student_id, test_id, portal_student_id, student_batch, score,
+                 scholarship_percentage, test_started_at, test_completed_at, status,
+                 total_questions, total_marks, progress_state, sms_sent, sms_error)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            [
+                student.id,
+                active_test.id if active_test else None,
+                portal_student.id if portal_student else None,
+                portal_student.batch if portal_student else '',
+                0,
+                0,
+                created_at,
+                None,
+                'started',
+                total_questions,
+                total_marks,
+                progress_state_json,
+                False,
+                None,
+            ],
+        )
+        attempt_id = cursor.lastrowid
+
+    return (
+        _runtime_attempt_queryset()
+        .select_related('test')
+        .get(id=attempt_id)
+    )
+
+
+
+
+def scholarship_landing(request):
+    selected_test = _get_effective_selected_test(request)
+    if selected_test:
+        _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
+    context = _build_test_display_context(selected_test)
+    return render(request, "scholarship-landing.html", context)
+
+
+def rank_predictor(request):
+    is_unlocked = bool(request.session.get(RANK_PREDICTOR_UNLOCKED_SESSION_KEY))
+    phone_number = request.session.get(RANK_PREDICTOR_PHONE_SESSION_KEY, '')
+
+    context = {
+        'rank_predictor_unlocked': is_unlocked,
+        'rank_predictor_phone': phone_number,
+        'rank_predictor_default_difficulty': 'similar',
+    }
+    return render(request, 'rank-predictor.html', context)
+
+def scholarship_home(request):
+    return redirect('scholarship_test:scholarship_register')
+
+
+def scholarship_launch_test(request, test_id):
+    selected_test = test_service.get_test_by_id(test_id)
+
+    if not selected_test:
+        messages.error(request, "Selected scholarship test was not found.")
+        return redirect('login')
+
+    if not test_service.get_runtime_questions_for_test(selected_test):
+        messages.error(request, "This scholarship test is not ready yet.")
+        return redirect('login')
+
+    launch_state = test_service.get_test_launch_state(selected_test)
+    if not launch_state["can_launch"]:
+        messages.error(
+            request,
+            launch_state["message"] or "This test is not available right now.",
+        )
+        if getattr(request.user, "is_authenticated", False) and hasattr(request.user, "student"):
+            return redirect("student-dashboard")
+        return redirect("login")
+
+    _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
+
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+    if scholarship_student:
+        return redirect('scholarship_test:scholarship_dashboard')
+
+    if _requires_otp_login(selected_test):
+        return redirect('scholarship_test:scholarship_landing')
+
+    return redirect(_build_portal_login_url(selected_test))
+
+
+def scholarship_register(request):
+    # Check if user already has session
+    if 'scholarship_student_id' in request.session:
+        return redirect('scholarship_test:scholarship_dashboard')
+
+    selected_test = _get_effective_selected_test(request)
+    if _requires_otp_login(selected_test):
+        return redirect(f"{reverse('scholarship_test:scholarship_landing')}?show_register=1")
+
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+    if scholarship_student:
+        return redirect('scholarship_test:scholarship_dashboard')
+
+    return redirect(_build_portal_login_url(selected_test))
+
+
+def scholarship_register_step2(request):
+    
+    # Check if already registered
+    if 'scholarship_student_id' in request.session:
+        return redirect('scholarship_test:scholarship_dashboard')
+    
+    if request.method == 'POST':
+        grade = request.POST.get('grade', '')
+        board = request.POST.get('board', '')
+        name = request.POST.get('name', '').strip()
+        phone = request.POST.get('phone_number', '')
+        
+        # Normalize phone
+        phone = phone.replace('+91', '').replace(' ', '').replace('-', '')
+        if len(phone) > 10:
+            phone = phone[-10:]
+        
+        # Validate
+        if not grade or not board or not name or len(phone) != 10:
+            return JsonResponse({'success': False, 'error': 'Invalid form data'}, status=400)
+        if not _is_valid_person_name(name):
+            return JsonResponse(
+                {'success': False, 'error': 'Name should contain only letters and spaces'},
+                status=400,
+            )
+        
+        # Store in session
+        request.session['scholarship_grade'] = grade
+        request.session['scholarship_board'] = board
+        request.session['scholarship_temp_name'] = name
+        request.session['scholarship_temp_phone'] = phone  
+        
+        # Send OTP
+        success, message = otp_service.send_otp(phone)
+        
+        if success:
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': message}, status=400)
+    
+    # If not POST, redirect to registration page
+    return redirect('scholarship_test:scholarship_register')
+
+
+@csrf_exempt
+def scholarship_send_otp(request):
+    
+    phone = request.POST.get('phone_number', '')
+    
+    # Normalize phone
+    phone = phone.replace('+91', '').replace(' ', '').replace('-', '')
+    if len(phone) > 10:
+        phone = phone[-10:]
+    
+    success, message = otp_service.send_otp(phone)   
+    
+    if success:
+        return JsonResponse({'success': True, 'message': message})
+    else:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+
+@csrf_exempt
+def scholarship_verify_otp(request):
+    
+    phone = request.POST.get('phone_number', '')
+    otp = request.POST.get('otp_code', '')
+    is_login = request.POST.get('login', 'false').lower() == 'true'
+    
+    # Normalize phone
+    phone = phone.replace('+91', '').replace(' ', '').replace('-', '')
+    if len(phone) > 10:
+        phone = phone[-10:]
+    
+    success, message, student = otp_service.verify_otp(phone, otp)
+    
+    if success and student:
+        # Debug logging
+        logger.info(f"=== scholarship_verify_otp called ===")
+        logger.info(f"is_login: {is_login}, student.id: {student.id}, current name: '{student.name}'")
+        logger.info(f"Session data - temp_name: '{request.session.get('scholarship_temp_name')}', grade: '{request.session.get('scholarship_grade')}', board: '{request.session.get('scholarship_board')}'")
+        
+       
+        if is_login:
+            request.session.pop('scholarship_temp_name', None)
+            request.session.pop('scholarship_temp_phone', None)
+            
+           
+            if not student.name:
+                logger.warning(f"Student {student.id} has empty name, attempting to preserve")
+        else:
+           
+            student.refresh_from_db()
+            
+            name = request.session.get('scholarship_temp_name') or ''
+            name = name.strip()
+            grade = request.session.get('scholarship_grade') or ''
+            grade = grade.strip()
+            board = request.session.get('scholarship_board') or ''
+            board = board.strip()
+            
+            logger.info(f"Registration - name from session: '{name}', grade: '{grade}', board: '{board}'")
+            
+           
+            if name:
+                student.name = name
+                logger.info(f"Setting student.name to: '{name}'")
+            if grade:
+                student.grade = grade
+            if board:
+                student.board = board
+            
+          
+            student.save()
+            logger.info(f"Student {student.id} saved with name: '{student.name}'")
+            
+         
+            student.refresh_from_db()
+            logger.info(f"After refresh - Student {student.id} name: '{student.name}'")
+        
+        
+        student.otp_verified = True
+        student.save()
+        logger.info(f"Student {student.id} FINAL saved with name: '{student.name}'" )
+        
+      
+        request.session['scholarship_student_id'] = student.id
+        request.session['scholarship_student_name'] = student.name
+        request.session['scholarship_grade'] = student.grade
+        request.session['scholarship_board'] = student.board
+        
+        request.session.pop('scholarship_temp_name', None)
+        request.session.pop('scholarship_temp_phone', None)
+        
+        return JsonResponse({'success': True, 'message': 'Registration successful!'})
+    else:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+
+@csrf_exempt
+def scholarship_resend_otp(request):
+   
+    phone = request.POST.get('phone_number', '')
+    
+   
+    phone = phone.replace('+91', '').replace(' ', '').replace('-', '')
+    if len(phone) > 10:
+        phone = phone[-10:]
+    
+    success, message = otp_service.resend_otp(phone)
+    
+    if success:
+        return JsonResponse({'success': True, 'message': message})
+    else:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+
+@csrf_exempt
+@require_POST
+def rank_predictor_send_otp(request):
+    phone = _normalize_mobile_number(request.POST.get('phone_number', ''))
+
+    if not _is_valid_mobile_number(phone):
+        return JsonResponse(
+            {'success': False, 'error': 'Please enter a valid 10-digit mobile number'},
+            status=400,
+        )
+
+    lead, _ = RankPredictorLead.objects.get_or_create(phone_number=phone)
+    lead.last_otp_requested_at = timezone.now()
+    lead.save(update_fields=['last_otp_requested_at', 'updated_at'])
+
+    success, message = otp_service.send_otp(phone)
+    if not success:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    _clear_rank_predictor_session(request)
+    return JsonResponse({'success': True, 'message': message})
+
+
+@csrf_exempt
+@require_POST
+def rank_predictor_verify_otp(request):
+    phone = _normalize_mobile_number(request.POST.get('phone_number', ''))
+    otp = (request.POST.get('otp_code', '') or '').strip()
+
+    if not _is_valid_mobile_number(phone):
+        return JsonResponse(
+            {'success': False, 'error': 'Please enter a valid 10-digit mobile number'},
+            status=400,
+        )
+
+    if len(otp) != 4 or not otp.isdigit():
+        return JsonResponse(
+            {'success': False, 'error': 'Please enter a valid 4-digit OTP'},
+            status=400,
+        )
+
+    success, message, student = otp_service.verify_otp(phone, otp)
+    if not success or not student:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    lead, _ = RankPredictorLead.objects.get_or_create(phone_number=phone)
+    lead.scholarship_student = student
+    lead.is_verified = True
+    lead.verified_at = timezone.now()
+    lead.last_otp_requested_at = lead.last_otp_requested_at or timezone.now()
+    lead.save()
+
+    _set_rank_predictor_session(request, phone)
+    return JsonResponse({'success': True, 'message': 'OTP verified successfully'})
+
+
+def scholarship_dashboard(request):
+    selected_test = _get_effective_selected_test(request)
+    if selected_test:
+        _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
+
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        if _requires_otp_login(selected_test):
+            return redirect('scholarship_test:scholarship_register')
+        return redirect(_build_portal_login_url(selected_test))
+
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        request.session.clear()
+        if _requires_otp_login(selected_test):
+            return redirect('scholarship_test:scholarship_register')
+        return redirect(_build_portal_login_url(selected_test))
+
+    request.session['scholarship_student_name'] = student.name
+    request.session['scholarship_grade'] = student.grade
+    request.session['scholarship_board'] = student.board
+
+    active_attempt = _expire_attempt_if_needed(
+        _get_active_attempt_for_test(student, selected_test)
+    )
+    if active_attempt and active_attempt.status in ['completed', 'expired']:
+        return redirect('scholarship_test:scholarship_success', attempt_id=active_attempt.id)
+
+    completed_attempt = _get_completed_attempt_for_test(student, selected_test)
+    if completed_attempt:
+        return redirect('scholarship_test:scholarship_success', attempt_id=completed_attempt.id)
+
+    can_attempt, message = test_service.can_attempt_test(student, selected_test)
+    start_state = test_service.get_test_start_state(selected_test)
+    can_start_test = can_attempt and start_state["can_start"]
+    start_button_message = (
+        message if not can_attempt else start_state["message"]
+    )
+
+    context = {
+        'student': student,
+        'can_attempt': can_attempt,
+        'can_start_test': can_start_test,
+        'message': message,
+        'start_button_message': start_button_message,
+        'completed': completed_attempt is not None,
+        'attempt': completed_attempt,
+        'active_attempt': active_attempt,
+        'is_guest': False,
+    }
+    context.update(_build_test_display_context(selected_test))
+    return render(request, 'scholarship-dashboard.html', context)
+
+
+def scholarship_start_test(request):
+    selected_test = _get_effective_selected_test(request)
+    if selected_test:
+        _set_selected_test(request, selected_test)
+    _finalize_expired_attempts_for_test(selected_test)
+    access_redirect = _redirect_if_portal_student_cannot_access_test(
+        request,
+        selected_test,
+    )
+    if access_redirect:
+        return access_redirect
+
+    scholarship_student, portal_student = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        if _requires_otp_login(selected_test):
+            return redirect('scholarship_test:scholarship_register')
+        return redirect(_build_portal_login_url(selected_test))
+
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        request.session.clear()
+        if _requires_otp_login(selected_test):
+            return redirect('scholarship_test:scholarship_register')
+        return redirect(_build_portal_login_url(selected_test))
+
+    request.session['scholarship_student_name'] = student.name
+    request.session['scholarship_grade'] = student.grade
+    request.session['scholarship_board'] = student.board
+
+    active_attempt = _expire_attempt_if_needed(
+        _get_active_attempt_for_test(student, selected_test)
+    )
+    if active_attempt and active_attempt.status in ['started', 'in_progress']:
+        return redirect('scholarship_test:scholarship_test', attempt_id=active_attempt.id)
+
+    completed_attempt = _get_completed_attempt_for_test(student, selected_test)
+    if completed_attempt:
+        return redirect('scholarship_test:scholarship_success', attempt_id=completed_attempt.id)
+
+    active_test = selected_test or test_service.get_active_test()
+    start_state = test_service.get_test_start_state(active_test)
+    if not start_state["can_start"]:
+        messages.error(
+            request,
+            start_state["message"] or "This test cannot be started right now.",
+        )
+        return redirect('scholarship_test:scholarship_dashboard')
+
+    active_runtime_questions = test_service.get_runtime_questions_for_test(active_test)
+    if active_test and not active_runtime_questions:
+        messages.error(request, "No questions are configured for the selected scholarship test.")
+        return redirect('scholarship_test:scholarship_dashboard')
+
+    total_questions = len(active_runtime_questions) if active_runtime_questions else TOTAL_QUESTIONS
+
+    progress_state = {
+        'answers': {},
+        'current_question_index': 0,
+        'tab_switch_count': 0,
+        'violation_count': 0,
+        'security_locked': False,
+        'security_status': 'pending',
+        'saved_at': timezone.now().isoformat(),
+    }
+    attempt = _create_runtime_attempt_compat(
+        student=student,
+        active_test=active_test,
+        portal_student=portal_student,
+        total_questions=total_questions,
+        total_marks=(
+            sum(int(question.pos_marks or 0) for question in active_runtime_questions)
+            if active_runtime_questions else total_questions
+        ),
+        progress_state=progress_state,
+    )
+
+    return redirect('scholarship_test:scholarship_test', attempt_id=attempt.id)
+
+
+def scholarship_test(request, attempt_id):
+    selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
+    scholarship_student, synced_portal_student = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        if _requires_otp_login(selected_test):
+            return redirect('scholarship_test:scholarship_register')
+        return redirect(_build_portal_login_url(selected_test))
+    
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        request.session.clear()
+        if _requires_otp_login(selected_test):
+            return redirect('scholarship_test:scholarship_register')
+        return redirect(_build_portal_login_url(selected_test))
+    
+    request.session['scholarship_student_name'] = student.name
+    request.session['scholarship_grade'] = student.grade
+    request.session['scholarship_board'] = student.board
+    
+    try:
+        attempt = _runtime_attempt_queryset().select_related('test', 'portal_student').get(id=attempt_id, student=student)
+    except ScholarshipTestAttempt.DoesNotExist:
+        messages.error(request, "Test not found")
+        return redirect('scholarship_test:scholarship_dashboard')
+    
+    if attempt.status in ['completed', 'expired']:
+        return redirect('scholarship_test:scholarship_success', attempt_id=attempt.id)
+    
+    attempt = _expire_attempt_if_needed(attempt)
+    if attempt.status in ['completed', 'expired']:
+        return redirect('scholarship_test:scholarship_success', attempt_id=attempt.id)
+
+    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+    portal_student = getattr(attempt, 'portal_student', None) or synced_portal_student
+    runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
+    time_limit_minutes = test_service.get_test_duration_minutes(runtime_test) if runtime_test else TEST_DURATION_MINUTES
+    time_remaining_seconds = test_service.get_attempt_time_remaining_seconds(attempt)
+
+    if runtime_test and runtime_questions:
+        questions_data = [
+            test_service.serialize_runtime_question(question, index + 1)
+            for index, question in enumerate(runtime_questions)
+        ]
+    else:
+        questions = test_service.get_test_questions(
+            grade=student.grade,
+            board=student.board,
+            count=TOTAL_QUESTIONS
+        )
+        
+        if not questions:
+            messages.error(request, "No questions available for your grade/board. Please contact admin.")
+            return redirect('scholarship_test:scholarship_dashboard')
+        
+        questions_data = []
+        for q in questions:
+            questions_data.append({
+                'id': q.id,
+                'type': 'mcq',
+                'sequence': len(questions_data) + 1,
+                'question_html': q.question_text,
+                'section_name': '',
+                'section_instructions': '',
+                'multi_select': False,
+                'options': [
+                    {'value': 'A', 'label': 'A', 'text_html': q.option_a},
+                    {'value': 'B', 'label': 'B', 'text_html': q.option_b},
+                    {'value': 'C', 'label': 'C', 'text_html': q.option_c},
+                    {'value': 'D', 'label': 'D', 'text_html': q.option_d},
+                ],
+            })
+    
+    context = {
+        'attempt': attempt,
+        'student': student,
+        'test': runtime_test,
+        'questions': questions_data,
+        'total_questions': len(questions_data),
+        'time_limit': time_limit_minutes,
+        'time_remaining_seconds': time_remaining_seconds,
+        'saved_progress': test_service.get_saved_progress(attempt),
+        'attempt_started_at': test_service.get_attempt_started_at_value(attempt),
+        'attempt_security_status': test_service.get_attempt_security_status_value(attempt),
+        'attempt_violation_count': test_service.get_attempt_violation_count_value(attempt),
+        'security_max_violations': max(1, int(getattr(settings, 'EXAM_SECURITY_MAX_VIOLATIONS', 3) or 3)),
+        'attempt_subject_tabs_json': json.dumps(_build_attempt_subject_tabs(runtime_test, portal_student)),
+    }
+    context.update(_build_test_display_context(runtime_test))
+    
+    return render(request, 'scholarship-test.html', context)
+
+
+@require_POST
+@csrf_exempt
+def scholarship_activate_test(request, attempt_id):
+    selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
+
+    try:
+        attempt = _runtime_attempt_queryset().select_related('test').get(id=attempt_id, student=student)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
+
+    if attempt.status in ['completed', 'expired'] or test_service.get_attempt_submitted_at_value(attempt):
+        return JsonResponse({
+            'success': False,
+            'error': 'Test already submitted',
+            'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id]),
+        }, status=409)
+
+    success, message, updated_attempt = test_service.activate_runtime_test_attempt(attempt.id)
+    if not success:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'message': message,
+        'time_remaining_seconds': test_service.get_attempt_time_remaining_seconds(updated_attempt),
+        'started_at': (
+            test_service.get_attempt_started_at_value(updated_attempt).isoformat()
+            if test_service.get_attempt_started_at_value(updated_attempt)
+            else None
+        ),
+        'saved_progress': test_service.get_saved_progress(updated_attempt),
+        'violation_count': test_service.get_attempt_violation_count_value(updated_attempt),
+        'security_status': test_service.get_attempt_security_status_value(updated_attempt),
+    })
+
+
+@require_POST
+@csrf_exempt
+def scholarship_submit_test(request, attempt_id):
+    selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+    
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
+    
+    request.session['scholarship_student_name'] = student.name
+    request.session['scholarship_grade'] = student.grade
+    request.session['scholarship_board'] = student.board
+    
+    try:
+        attempt = _runtime_attempt_queryset().select_related('test').get(id=attempt_id, student=student)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
+    
+    if attempt.status in ['completed', 'expired'] or test_service.get_attempt_submitted_at_value(attempt):
+        return JsonResponse({'success': True, 'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id])})
+    
+  
+    try:
+        data = json.loads(request.body)
+        answers = data.get('answers', {})
+        violation_count = data.get('violation_count', test_service.get_attempt_violation_count_value(attempt))
+        security_locked = bool(data.get('security_locked', False))
+        submission_reason = (data.get('submission_reason') or '').strip()
+    except json.JSONDecodeError:
+        answers = {}
+        violation_count = test_service.get_attempt_violation_count_value(attempt)
+        security_locked = False
+        submission_reason = ''
+    
+    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+    runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
+    if runtime_test and runtime_questions:
+        success, message, updated_attempt = test_service.submit_runtime_test(
+            attempt.id,
+            answers,
+            violation_count=violation_count,
+            security_locked=security_locked,
+            submission_reason=submission_reason,
+        )
+    else:
+        success, message, updated_attempt = test_service.submit_test(attempt.id, answers)
+    
+    if success:
+        return JsonResponse({
+            'success': True,
+            'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id])
+        })
+    else:
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+
+@require_POST
+@csrf_exempt
+def scholarship_save_test_progress(request, attempt_id):
+    selected_test = _get_effective_selected_test(request)
+    _finalize_expired_attempts_for_test(selected_test)
+    scholarship_student, _ = _sync_portal_student_session(request, selected_test)
+
+    student_id = scholarship_student.id if scholarship_student else request.session.get('scholarship_student_id')
+    if not student_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        student = ScholarshipStudent.objects.get(id=student_id)
+    except ScholarshipStudent.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
+
+    try:
+        attempt = _runtime_attempt_queryset().get(id=attempt_id, student=student)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Test not found'}, status=404)
+
+    if attempt.status in ['completed', 'expired']:
+        return JsonResponse({
+            'success': False,
+            'error': 'Test already submitted',
+            'redirect': reverse('scholarship_test:scholarship_success', args=[attempt.id]),
+        }, status=409)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        data = {}
+
+    answers = data.get('answers', {})
+    current_question_index = data.get('current_question_index', 0)
+    tab_switch_count = data.get('tab_switch_count', 0)
+    violation_count = data.get('violation_count', test_service.get_attempt_violation_count_value(attempt))
+    security_locked = bool(data.get('security_locked', False))
+
+    success, message, updated_attempt = test_service.save_runtime_test_progress(
+        attempt.id,
+        answers=answers,
+        current_question_index=current_question_index,
+        tab_switch_count=tab_switch_count,
+        violation_count=violation_count,
+        security_locked=security_locked,
+    )
+
+    if not success:
+        if message == 'Test time has expired':
+            runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+            runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
+            if runtime_test and runtime_questions:
+                _submit_success, _submit_message, updated_attempt = test_service.auto_submit_runtime_test(attempt.id)
+            else:
+                _submit_success, _submit_message, updated_attempt = test_service.auto_submit_expired_test(attempt.id)
+
+            return JsonResponse({
+                'success': False,
+                'error': message,
+                'redirect': reverse('scholarship_test:scholarship_success', args=[updated_attempt.id]),
+            }, status=409)
+
+        return JsonResponse({'success': False, 'error': message}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'saved_at': test_service.get_saved_progress(updated_attempt).get('saved_at'),
+        'time_remaining_seconds': test_service.get_attempt_time_remaining_seconds(updated_attempt),
+    })
+
+
+def scholarship_success(request, attempt_id):
+    
+    student_id = request.session.get('scholarship_student_id')
+    
+    try:
+        attempt = _runtime_attempt_queryset().select_related('student', 'portal_student').get(id=attempt_id)
+        
+        student = attempt.student
+        
+        if student_id and attempt.student.id != student_id:
+            request.session['scholarship_student_id'] = student.id
+            request.session['scholarship_student_name'] = student.name
+            request.session['scholarship_grade'] = student.grade
+            request.session['scholarship_board'] = student.board
+        
+        student.refresh_from_db()
+
+        request.session['scholarship_student_id'] = student.id
+        request.session['scholarship_student_name'] = student.name
+        request.session['scholarship_grade'] = student.grade
+        request.session['scholarship_board'] = student.board
+        _set_selected_test(request, attempt.test)
+        
+        logger.info(f"Scholarship success - Student: {student.name}, Phone: {student.phone_number}, Score: {attempt.score}")
+        
+    except ScholarshipTestAttempt.DoesNotExist:
+        messages.error(request, "Result not found")
+        return redirect('scholarship_test:scholarship_register')
+    except ScholarshipStudent.DoesNotExist:
+        messages.error(request, "Student not found")
+        return redirect('scholarship_test:scholarship_register')
+    
+    is_scholarship_result = _requires_otp_login(attempt.test)
+    score_percentage = test_service.calculate_score_percentage(
+        attempt.score,
+        attempt.total_marks,
+    )
+    completed_at_display = (
+        timezone.localtime(
+            attempt.test_completed_at,
+            test_service.ACADEMY_TIMEZONE,
+        ).strftime('%d %b %Y, %I:%M %p')
+        if attempt.test_completed_at
+        else None
+    )
+    academic_field_label = 'Board' if is_scholarship_result else 'Stream'
+    academic_field_value = (
+        student.board if is_scholarship_result else _get_non_scholarship_stream(attempt)
+    )
+    leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
+    per_test_leaderboard = (
+        test_service.get_test_attempt_leaderboard_data(
+            attempt.test,
+            current_attempt_id=attempt.id,
+            current_portal_student=attempt.portal_student,
+            limit=5,
+        )
+        if attempt.portal_student_id
+        else None
+    )
+    current_portal_entry = (per_test_leaderboard or {}).get("currentEntry") or {}
+    subject_score_sections = test_service.build_attempt_section_breakdown(attempt)
+    answer_key_available_at = test_service.get_answer_key_base_end_time(attempt)
+    answer_key_is_available = True
+    answer_key_available_at_display = timezone.localtime(
+        answer_key_available_at,
+        test_service.ACADEMY_TIMEZONE,
+    ).strftime('%d %b %Y, %I:%M %p')
+
+    if is_scholarship_result and not attempt.sms_sent and attempt.status in ['completed', 'expired']:
+        try:
+            if student.phone_number:
+                logger.info(f"Retrying SMS send for attempt {attempt.id} to {student.phone_number}")
+                sms_result, sms_message = test_service._send_attempt_result_sms(
+                    attempt=attempt,
+                    score=attempt.score,
+                    total_questions=attempt.total_marks,
+                    scholarship_percentage=attempt.scholarship_percentage,
+                )
+                attempt.sms_sent = sms_result
+                attempt.sms_error = sms_message if not sms_result else None
+                attempt.save(update_fields=['sms_sent', 'sms_error'])
+                logger.info(f"SMS retry result: {sms_result}, {sms_message}")
+            else:
+                attempt.sms_error = "No phone number on student record"
+                attempt.save(update_fields=['sms_error'])
+        except Exception as e:
+            logger.error(f"SMS retry failed: {str(e)}", exc_info=True)
+            attempt.sms_error = str(e)
+            attempt.save(update_fields=['sms_error'])
+    
+    context = {
+        'attempt': attempt,
+        'student': student,
+        'sms_sent': attempt.sms_sent,
+        'sms_error': attempt.sms_error,
+        'is_scholarship_result': is_scholarship_result,
+        'result_percentage': score_percentage,
+        'completed_at_display': completed_at_display,
+        'academic_field_label': academic_field_label,
+        'academic_field_value': academic_field_value,
+        'leaderboard_top_entries': leaderboard['top_entries'],
+        'leaderboard_current_entry': leaderboard['current_entry'],
+        'subject_score_sections': subject_score_sections,
+        'subject_score_total': int(attempt.score or 0),
+        'subject_score_total_marks': int(attempt.total_marks or 0),
+        'live_batch_rank': current_portal_entry.get('batchRank', 'NA'),
+        'live_institute_rank': current_portal_entry.get('instituteRank', 'NA'),
+        'answer_key_is_available': answer_key_is_available,
+        'answer_key_available_at': answer_key_available_at.isoformat(),
+        'answer_key_available_at_display': answer_key_available_at_display,
+        'answer_key_delay_display': test_service.get_answer_key_delay_hours_display(),
+        'answer_key_server_now': timezone.now().isoformat(),
+        'attempt_review_url': reverse('scholarship_test:scholarship_attempt_review', args=[attempt.id]),
+    }
+    context.update(_build_test_display_context(attempt.test))
+    response = render(request, 'scholarship-success.html', context)
+    # Prevent the success page from being cached so back navigation won't reuse it.
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
+
+
+def scholarship_success_live_state(request, attempt_id):
+    try:
+        attempt = ScholarshipTestAttempt.objects.select_related("student", "portal_student", "test").get(id=attempt_id)
+    except ScholarshipTestAttempt.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Attempt not found"}, status=404)
+
+    if not _student_can_view_attempt(request, attempt):
+        return JsonResponse({"success": False, "error": "Not authorized"}, status=403)
+
+    leaderboard = test_service.get_test_leaderboard(attempt.test, attempt, limit=5)
+    per_test_leaderboard = (
+        test_service.get_test_attempt_leaderboard_data(
+            attempt.test,
+            current_attempt_id=attempt.id,
+            current_portal_student=attempt.portal_student,
+            limit=5,
+        )
+        if attempt.portal_student_id
+        else None
+    )
+    current_portal_entry = (per_test_leaderboard or {}).get("currentEntry") or {}
+    section_scores = test_service.build_attempt_section_breakdown(attempt)
+
+    payload = {
+        "success": True,
+        "attempt_id": attempt.id,
+        "score": int(attempt.score or 0),
+        "total_marks": int(attempt.total_marks or 0),
+        "subject_scores": section_scores,
+        "total_score": int(attempt.score or 0),
+        "batch_rank": current_portal_entry.get("batchRank", "NA"),
+        "institute_rank": current_portal_entry.get("instituteRank", "NA"),
+        "leaderboard_position": (leaderboard.get("current_entry") or {}).get("rank"),
+        "top_performer_status": bool((leaderboard.get("current_entry") or {}).get("rank") == 1),
+        "leaderboard_top_entries": leaderboard.get("top_entries", []),
+        "leaderboard_current_entry": leaderboard.get("current_entry"),
+        "signature": "|".join(
+            [
+                str(attempt.score or 0),
+                str(attempt.total_marks or 0),
+                json.dumps(section_scores, sort_keys=True),
+                str((leaderboard.get("current_entry") or {}).get("rank") or ""),
+            ]
+        ),
+    }
+    response = JsonResponse(payload)
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    return response
+
+
+def _student_can_view_attempt(request, attempt):
+    session_student_id = request.session.get('scholarship_student_id')
+    try:
+        if session_student_id and int(session_student_id) == attempt.student_id:
+            return True
+    except (TypeError, ValueError):
+        pass
+
+    portal_student = getattr(attempt, 'portal_student', None)
+    return bool(
+        request.user.is_authenticated
+        and portal_student
+        and getattr(portal_student, 'user_id', None) == request.user.id
+    )
+
+
+def _runtime_answer_display(question, value):
+    normalized_value = test_service.normalize_runtime_answer(question, value)
+
+    if question.question_type == 'mcq':
+        selected_values = normalized_value if isinstance(normalized_value, list) else [normalized_value]
+        labels = []
+        for selected in selected_values:
+            try:
+                option = list(question.options.all())[int(selected)]
+                option_label = chr(ord('A') + int(selected))
+                labels.append(f"{option_label}. {option.option_text}")
+            except (TypeError, ValueError, IndexError):
+                continue
+        return ', '.join(labels) if labels else '-'
+
+    return str(normalized_value or '-')
+
+
+def _runtime_correct_answer_display(question):
+    if question.question_type == 'mcq':
+        correct_options = []
+        for index, option in enumerate(question.options.all()):
+            if option.is_correct:
+                correct_options.append(f"{chr(ord('A') + index)}. {option.option_text}")
+        return ', '.join(correct_options) if correct_options else '-'
+
+    answer = question.answers.first()
+    return answer.correct_answer if answer else '-'
+
+
+def _runtime_correct_answer_values(question):
+    if question.question_type == 'mcq':
+        return {
+            str(index)
+            for index, option in enumerate(question.options.all())
+            if option.is_correct
+        }
+
+    answer = question.answers.first()
+    if not answer:
+        return set()
+
+    if question.question_type == 'tf':
+        normalized = test_service.normalize_runtime_answer(question, answer.correct_answer)
+        return {normalized} if normalized else set()
+
+    return {str(answer.correct_answer)}
+
+
+def _runtime_review_options(question, selected_answer):
+    normalized_answer = test_service.normalize_runtime_answer(question, selected_answer)
+    if isinstance(normalized_answer, list):
+        selected_values = {str(value) for value in normalized_answer if value != ''}
+    elif normalized_answer not in (None, ''):
+        selected_values = {str(normalized_answer)}
+    else:
+        selected_values = set()
+
+    correct_values = _runtime_correct_answer_values(question)
+
+    if question.question_type == 'mcq':
+        return [
+            {
+                'label': chr(ord('A') + index),
+                'value': str(index),
+                'text_html': option.option_text,
+                'is_selected': str(index) in selected_values,
+                'is_correct': str(index) in correct_values,
+            }
+            for index, option in enumerate(question.options.all())
+        ]
+
+    if question.question_type == 'tf':
+        return [
+            {
+                'label': 'T',
+                'value': 'True',
+                'text_html': 'True',
+                'is_selected': 'True' in selected_values,
+                'is_correct': 'True' in correct_values,
+            },
+            {
+                'label': 'F',
+                'value': 'False',
+                'text_html': 'False',
+                'is_selected': 'False' in selected_values,
+                'is_correct': 'False' in correct_values,
+            },
+        ]
+
+    return []
+
+
+def _legacy_question_option_text(question, option_key):
+    return getattr(question, f"option_{option_key.lower()}", "") or ""
+
+
+def _legacy_answer_display(question, option_key):
+    option_key = str(option_key or "").strip().upper()
+    if option_key not in {"A", "B", "C", "D"}:
+        return "-"
+
+    option_text = _legacy_question_option_text(question, option_key)
+    return f"{option_key}. {option_text}" if option_text else option_key
+
+
+def _legacy_review_options(question, selected_answer):
+    selected_key = str(selected_answer or "").strip().upper()
+    correct_key = str(question.correct_answer or "").strip().upper()
+    return [
+        {
+            'label': option_key,
+            'value': option_key,
+            'text_html': _legacy_question_option_text(question, option_key),
+            'is_selected': selected_key == option_key,
+            'is_correct': correct_key == option_key,
+        }
+        for option_key in ["A", "B", "C", "D"]
+        if _legacy_question_option_text(question, option_key)
+    ]
+
+
+def _build_attempt_review_rows(attempt):
+    runtime_test = test_service.get_runtime_test_for_attempt(attempt)
+    runtime_questions = test_service.get_runtime_questions_for_attempt(attempt)
+    rows = []
+
+    if runtime_test and runtime_questions:
+        saved_progress = test_service.get_saved_progress(attempt)
+        submitted_answers = saved_progress.get('answers', {})
+
+        for index, question in enumerate(runtime_questions, start=1):
+            selected_answer = submitted_answers.get(str(question.id))
+            rows.append({
+                'sequence': index,
+                'section_name': question.section.name,
+                'question_html': question.question_text,
+                'selected_answer': _runtime_answer_display(question, selected_answer),
+                'correct_answer': _runtime_correct_answer_display(question),
+                'options': _runtime_review_options(question, selected_answer),
+                'is_correct': test_service.is_runtime_answer_correct(question, selected_answer),
+                'is_attempted': test_service.is_runtime_answer_provided(question, selected_answer),
+            })
+        return rows
+
+    answers_by_question_id = {
+        answer.question_id: answer
+        for answer in attempt.answers.select_related('question')
+    }
+    questions = test_service.get_test_questions(
+        grade=attempt.student.grade,
+        board=attempt.student.board,
+        count=attempt.total_questions or TOTAL_QUESTIONS,
+    )
+
+    for index, question in enumerate(questions, start=1):
+        answer = answers_by_question_id.get(question.id)
+        selected_answer = answer.selected_option if answer else ''
+        rows.append({
+            'sequence': index,
+            'section_name': '',
+            'question_html': question.question_text,
+            'selected_answer': _legacy_answer_display(question, selected_answer),
+            'correct_answer': _legacy_answer_display(question, question.correct_answer),
+            'options': _legacy_review_options(question, selected_answer),
+            'is_correct': bool(answer and answer.is_correct),
+            'is_attempted': bool(selected_answer),
+        })
+    return rows
+
+
+def scholarship_attempt_review(request, attempt_id):
+    try:
+        attempt = (
+            _runtime_attempt_queryset()
+            .select_related('student', 'portal_student', 'portal_student__user', 'test')
+            .prefetch_related(
+                'answers__question',
+                'test__sections__questions__options',
+                'test__sections__questions__answers',
+            )
+            .get(id=attempt_id, status__in=['completed', 'expired'])
+        )
+    except ScholarshipTestAttempt.DoesNotExist:
+        messages.error(request, "Attempted test paper not found.")
+        return redirect('student-dashboard')
+
+    if not _student_can_view_attempt(request, attempt):
+        return HttpResponseForbidden("You are not allowed to view this attempted paper.")
+
+    context = {
+        'attempt': attempt,
+        'student': attempt.student,
+        'review_rows': _build_attempt_review_rows(attempt),
+    }
+    context.update(_build_test_display_context(attempt.test))
+    return render(request, 'scholarship-attempt-review.html', context)
+
+
+def scholarship_logout(request):
+    
+   
+    scholarship_keys = [
+        'scholarship_student_id',
+        'scholarship_student_name',
+        'scholarship_temp_name',
+        'scholarship_temp_phone',
+        'scholarship_grade',
+        'scholarship_board',
+        SELECTED_TEST_SESSION_KEY,
+    ]
+    
+    for key in scholarship_keys:
+        request.session.pop(key, None)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True})
+    
+    return redirect('login.html')
+
+def scholarshiptest_management(request):
+    return render(request, "scholarshiptest-management.html")
+
+def scholarship_create_test(request):
+    response = render(request, "create_test.html")
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
+
+
+@csrf_exempt
+def api_get_tests(request):
+    tests = ScholarshipTest.objects.all().order_by('-created_at')
+    data = []
+    for test in tests:
+        data.append({
+            'id': test.id,
+            'name': test.name,
+            'date': test.date.isoformat() if test.date else None,
+            'folderId': test.folder.id if test.folder else None,
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'subject': test.subject,
+            'tags': test.tags,
+            'status': test.status,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
+        })
+    return JsonResponse({'tests': data})
+
+
+@csrf_exempt
+def api_manual_mark_options(request):
+    query = str(request.GET.get("q", "") or "").strip()
+
+    tests_qs = ScholarshipTest.objects.all().order_by("-created_at", "-id")
+    students_qs = Student.objects.select_related("user").order_by("username", "id")
+
+    if query:
+        tests_qs = tests_qs.filter(
+            Q(name__icontains=query)
+            | Q(batch__icontains=query)
+            | Q(stream__icontains=query)
+            | Q(subject__icontains=query)
+        )
+        students_qs = students_qs.filter(
+            Q(username__icontains=query)
+            | Q(student_name__icontains=query)
+            | Q(batch__icontains=query)
+            | Q(contact__icontains=query)
+        )
+
+    tests = list(
+        tests_qs.values("id", "name", "batch", "stream", "subject")[:200]
+    )
+    students = list(
+        students_qs.values("id", "username", "student_name", "batch")[:200]
+    )
+
+    return JsonResponse({"tests": tests, "students": students})
+
+
+@csrf_exempt
+def api_create_test(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    name = data.get('name', '').strip()
+    if not name:
+        return JsonResponse({'error': 'Name is required'}, status=400)
+    
+    folder_id = data.get('folderId')
+    folder = None
+    if folder_id:
+        try:
+            folder = ScholarshipTestFolder.objects.get(id=folder_id)
+        except ScholarshipTestFolder.DoesNotExist:
+            pass
+    
+    tags = data.get('tags', '')
+    batch = (data.get('batch') or '').strip()
+    stream = (data.get('stream') or '').strip()
+    subject = (data.get('subject') or 'Physics').strip() or 'Physics'
+    status = data.get('status', 'draft')
+    valid_statuses = {choice[0] for choice in ScholarshipTest._meta.get_field('status').choices}
+    if status not in valid_statuses:
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+    try:
+        duration_parts = _parse_test_duration(data)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid duration'}, status=400)
+    duration_hours, duration_minutes = duration_parts or (1, 0)
+    try:
+        test_date = _parse_test_date(data.get('test_date'))
+    except ValueError:
+        return JsonResponse({'error': 'Invalid test date'}, status=400)
+    try:
+        scheduled_start_at = _parse_test_start_datetime(
+            test_date,
+            data.get('test_start_time'),
+            data.get('scheduled_start_at'),
+        )
+    except ValueError:
+        return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
+    
+    test = ScholarshipTest.objects.create(
+        name=name,
+        date=test_date,
+        folder=folder,
+        batch=batch,
+        stream=stream,
+        subject=subject,
+        tags=tags,
+        duration_hours=duration_hours,
+        duration_minutes=duration_minutes,
+        status=status,
+        scheduled_start_at=scheduled_start_at,
+    )
+    
+    ScholarshipTestConfig.objects.create(
+        test=test,
+        default_pos_marks=2,
+        default_neg_marks=1,
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'date': test.date.isoformat() if test.date else None,
+            'folderId': test.folder.id if test.folder else None,
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'subject': test.subject,
+            'tags': test.tags,
+            'status': test.status,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
+        }
+    })
+
+
+def _manual_mark_int(value, field_name):
+    try:
+        score = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} must be a number")
+    if score < 0:
+        raise ValueError(f"{field_name} cannot be negative")
+    if score > 100:
+        raise ValueError(f"{field_name} cannot be greater than 100")
+    return score
+
+
+@csrf_exempt
+@require_POST
+def api_save_manual_marks(request):
+    if not _can_manage_scholarship_tests(request.user):
+        return JsonResponse(
+            {'success': False, 'error': 'Only admins can upload manual marks.'},
+            status=403,
+        )
+
+    try:
+        data = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        data = request.POST
+
+    try:
+        test_id = int(data.get('test_id') or 0)
+        portal_student_id = int(data.get('student_id') or 0)
+    except (TypeError, ValueError):
+        return JsonResponse({'success': False, 'error': 'Select a valid test and student.'}, status=400)
+
+    test = ScholarshipTest.objects.filter(id=test_id).first()
+    portal_student = Student.objects.select_related('user').filter(id=portal_student_id).first()
+    if not test or not portal_student:
+        return JsonResponse({'success': False, 'error': 'Selected test or student was not found.'}, status=404)
+
+    try:
+        physics = _manual_mark_int(data.get('physics'), 'Physics marks')
+        chemistry = _manual_mark_int(data.get('chemistry'), 'Chemistry marks')
+        biology = _manual_mark_int(data.get('biology'), 'Biology marks')
+    except ValueError as error:
+        return JsonResponse({'success': False, 'error': str(error)}, status=400)
+
+    score = physics + chemistry + biology
+    total_marks = 300
+    total_questions = len(test_service.get_runtime_questions_for_test(test)) or 0
+
+    phone_number = _normalize_portal_phone(portal_student.contact) or f"INT{portal_student.id:08d}"[:15]
+    scholarship_student, _created = ScholarshipStudent.objects.get_or_create(
+        phone_number=phone_number,
+        defaults={
+            'name': portal_student.student_name or portal_student.user.username,
+            'grade': portal_student.grade or '',
+            'board': portal_student.board or '',
+            'otp_verified': True,
+        },
+    )
+    scholarship_student.name = portal_student.student_name or portal_student.user.username
+    scholarship_student.grade = portal_student.grade or ''
+    scholarship_student.board = portal_student.board or ''
+    scholarship_student.otp_verified = True
+    scholarship_student.save(update_fields=['name', 'grade', 'board', 'otp_verified', 'updated_at'])
+
+    attempt = (
+        ScholarshipTestAttempt.objects
+        .filter(test=test, portal_student=portal_student)
+        .order_by('-test_started_at', '-id')
+        .first()
+    )
+    if attempt is None:
+        attempt = ScholarshipTestAttempt(
+            student=scholarship_student,
+            test=test,
+            portal_student=portal_student,
+        )
+
+    progress_state = dict(attempt.progress_state or {})
+    progress_state['manual_marks'] = True
+    progress_state['manual_subject_scores'] = {
+        'Physics': physics,
+        'Chemistry': chemistry,
+        'Biology': biology,
+    }
+    progress_state['answers'] = progress_state.get('answers') or {}
+
+    attempt.student = scholarship_student
+    attempt.test = test
+    attempt.portal_student = portal_student
+    attempt.student_batch = portal_student.batch or ''
+    attempt.score = score
+    attempt.total_marks = total_marks
+    attempt.total_questions = total_questions
+    attempt.scholarship_percentage = test_service.calculate_scholarship_percentage(score, total_marks)
+    attempt.status = 'completed'
+    attempt.test_completed_at = timezone.now()
+    attempt.progress_state = progress_state
+    attempt.sms_error = 'Manual marks entry'
+    attempt.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Manual marks saved successfully.',
+        'attempt_id': attempt.id,
+        'score': score,
+        'total_marks': total_marks,
+    })
+
+
+@csrf_exempt
+def api_update_test(request, test_id):
+    if request.method not in ['POST', 'PUT']:
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    name = data.get('name')
+    if name:
+        test.name = name
+    
+    folder_id = data.get('folderId')
+    if folder_id is not None:
+        if folder_id:
+            try:
+                test.folder = ScholarshipTestFolder.objects.get(id=folder_id)
+            except ScholarshipTestFolder.DoesNotExist:
+                test.folder = None
+        else:
+            test.folder = None
+    
+    if 'tags' in data:
+        test.tags = data.get('tags', '')
+    if 'batch' in data:
+        test.batch = (data.get('batch') or '').strip()
+    if 'stream' in data:
+        test.stream = (data.get('stream') or '').strip()
+    if 'subject' in data:
+        test.subject = (data.get('subject') or 'Physics').strip() or 'Physics'
+    if 'test_date' in data:
+        try:
+            test.date = _parse_test_date(data.get('test_date'))
+        except ValueError:
+            return JsonResponse({'error': 'Invalid test date'}, status=400)
+    if 'duration_hours' in data:
+        test.duration_hours = data.get('duration_hours')
+    if 'duration_minutes' in data:
+        test.duration_minutes = data.get('duration_minutes')
+    if 'status' in data:
+        status = data.get('status')
+        valid_statuses = {choice[0] for choice in ScholarshipTest._meta.get_field('status').choices}
+        if status not in valid_statuses:
+            return JsonResponse({'error': 'Invalid status'}, status=400)
+        test.status = status
+    if 'test_start_time' in data or 'scheduled_start_at' in data:
+        try:
+            base_date = test.date
+            if 'test_date' in data:
+                base_date = _parse_test_date(data.get('test_date'))
+            test.scheduled_start_at = _parse_test_start_datetime(
+                base_date,
+                data.get('test_start_time'),
+                data.get('scheduled_start_at'),
+            )
+            if test.scheduled_start_at and 'test_date' not in data:
+                test.date = timezone.localtime(
+                    test.scheduled_start_at,
+                    test_service.ACADEMY_TIMEZONE,
+                ).date()
+        except ValueError:
+            return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
+    
+    test.save()
+    
+    return JsonResponse({'success': True, 'test': {
+        'id': test.id,
+        'name': test.name,
+        'date': test.date.isoformat() if test.date else None,
+        'folderId': test.folder.id if test.folder else None,
+        'duration_hours': test.duration_hours,
+        'duration_minutes': test.duration_minutes,
+        'batch': test.batch,
+        'stream': test.stream,
+        'subject': test.subject,
+        'tags': test.tags,
+        'status': test.status,
+        'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+        'test_start_time': _serialize_test_start_time(test.scheduled_start_at),
+    }})
+
+
+@csrf_exempt
+def api_delete_test(request, test_id):
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+
+   
+    for image in test.images.all():
+        if image.image:
+            image.image.delete(save=False)
+
+    test.delete()
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'instructions': config.instructions,
+            'default_pos_marks': config.default_pos_marks,
+            'default_neg_marks': config.default_neg_marks,
+        }
+    })
+
+
+@csrf_exempt
+def api_get_folders(request):
+    folders = ScholarshipTestFolder.objects.all().order_by('name')
+    data = []
+    for folder in folders:
+        data.append({
+            'id': folder.id,
+            'name': folder.name,
+            'tags': folder.tags,
+            'parentId': folder.parent_id,
+        })
+    return JsonResponse({'folders': data})
+
+
+@csrf_exempt
+def api_create_folder(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    name = data.get('name', '').strip()
+    if not name:
+        return JsonResponse({'error': 'Name is required'}, status=400)
+
+    parent_id = data.get('parentId')
+    parent = None
+    if parent_id:
+        try:
+            parent = ScholarshipTestFolder.objects.get(id=parent_id)
+        except ScholarshipTestFolder.DoesNotExist:
+            return JsonResponse({'error': 'Parent folder not found'}, status=404)
+
+    duplicate_qs = ScholarshipTestFolder.objects.filter(name__iexact=name)
+    if parent is None:
+        duplicate_qs = duplicate_qs.filter(parent__isnull=True)
+    else:
+        duplicate_qs = duplicate_qs.filter(parent_id=parent.id)
+
+    if duplicate_qs.exists():
+        return JsonResponse(
+            {'error': 'A folder with this name already exists in this location. Change the name and try again.'},
+            status=400,
+        )
+    
+    tags = data.get('tags', '')
+    
+    folder = ScholarshipTestFolder.objects.create(
+        name=name,
+        tags=tags,
+        parent=parent,
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'folder': {
+            'id': folder.id,
+            'name': folder.name,
+            'tags': folder.tags,
+            'parentId': folder.parent_id,
+        }
+    })
+
+
+@csrf_exempt
+@csrf_exempt
+def api_update_folder(request, folder_id):
+  
+    if request.method not in ['POST', 'PUT']:
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    try:
+        folder = ScholarshipTestFolder.objects.get(id=folder_id)
+    except ScholarshipTestFolder.DoesNotExist:
+        return JsonResponse({'error': 'Folder not found'}, status=404)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    name = data.get('name', '').strip()
+    if not name:
+        return JsonResponse({'error': 'Name is required'}, status=400)
+
+    duplicate_qs = ScholarshipTestFolder.objects.filter(name__iexact=name).exclude(id=folder_id)
+    if folder.parent_id is None:
+        duplicate_qs = duplicate_qs.filter(parent__isnull=True)
+    else:
+        duplicate_qs = duplicate_qs.filter(parent_id=folder.parent_id)
+    if duplicate_qs.exists():
+        return JsonResponse(
+            {'error': 'A folder with this name already exists in this location. Change the name and try again.'},
+            status=400,
+        )
+
+    tags = data.get('tags', '')
+
+    try:
+        folder.name = name
+        folder.tags = tags
+        folder.save()
+    except IntegrityError:
+        return JsonResponse({'error': 'A folder with this name already exists'}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'folder': {
+            'id': folder.id,
+            'name': folder.name,
+            'tags': folder.tags,
+            'parentId': folder.parent_id,
+        }
+    })
+
+
+@csrf_exempt
+def api_delete_folder(request, folder_id):
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    try:
+        folder = ScholarshipTestFolder.objects.get(id=folder_id)
+    except ScholarshipTestFolder.DoesNotExist:
+        return JsonResponse({'error': 'Folder not found'}, status=404)
+
+    descendant_ids = [folder.id]
+    queue = [folder.id]
+    while queue:
+        current_id = queue.pop(0)
+        child_ids = list(
+            ScholarshipTestFolder.objects.filter(parent_id=current_id).values_list('id', flat=True)
+        )
+        descendant_ids.extend(child_ids)
+        queue.extend(child_ids)
+
+    deleted_tests_count = ScholarshipTest.objects.filter(folder_id__in=descendant_ids).count()
+    ScholarshipTest.objects.filter(folder_id__in=descendant_ids).delete()
+
+    folder.delete()
+    return JsonResponse({'success': True, 'deleted_tests_count': deleted_tests_count})
+
+
+@csrf_exempt
+def api_move_test(request, test_id):
+    if request.method not in ['POST', 'PUT']:
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    folder_id = data.get('folderId')
+    if folder_id is not None:
+        if folder_id:
+            try:
+                test.folder = ScholarshipTestFolder.objects.get(id=folder_id)
+            except ScholarshipTestFolder.DoesNotExist:
+                test.folder = None
+        else:
+            test.folder = None
+        test.save()
+    
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'instructions': config.instructions,
+            'default_pos_marks': config.default_pos_marks,
+            'default_neg_marks': config.default_neg_marks,
+        }
+    })
+
+
+@csrf_exempt
+def api_copy_test(request, test_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        original_test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    new_name = data.get('name', '').strip()
+    if not new_name:
+        new_name = original_test.name + ' (Copy)'
+    
+    new_test = ScholarshipTest.objects.create(
+        name=new_name,
+        folder=original_test.folder,
+        batch=original_test.batch,
+        stream=original_test.stream,
+        subject=original_test.subject,
+        tags=original_test.tags,
+        duration_hours=original_test.duration_hours,
+        duration_minutes=original_test.duration_minutes,
+        status=original_test.status,
+    )
+    
+    config = ScholarshipTestConfig.objects.get(test=original_test)
+    ScholarshipTestConfig.objects.create(
+        test=new_test,
+        instructions=config.instructions,
+        default_pos_marks=config.default_pos_marks,
+        default_neg_marks=config.default_neg_marks,
+    )
+    
+    for section in original_test.sections.all():
+        new_section = ScholarshipTestSection.objects.create(
+            test=new_test,
+            name=section.name,
+            order=section.order,
+            allow_switching=section.allow_switching,
+            instructions=section.instructions,
+        )
+        
+        for question in section.questions.all():
+            new_question = ScholarshipTestQuestion.objects.create(
+                section=new_section,
+                question_type=question.question_type,
+                question_text=question.question_text,
+                passage=question.passage,
+                difficulty=question.difficulty,
+                pos_marks=question.pos_marks,
+                neg_marks=question.neg_marks,
+                neg_unattempted=question.neg_unattempted,
+                tags=question.tags,
+                order=question.order,
+                is_multi_select=question.is_multi_select,
+            )
+            
+            for option in question.options.all():
+                ScholarshipTestOption.objects.create(
+                    question=new_question,
+                    option_text=option.option_text,
+                    is_correct=option.is_correct,
+                    order=option.order,
+                )
+            
+            ScholarshipTestAnswer.objects.create(
+                question=new_question,
+                correct_answer=question.answers.first().correct_answer if question.answers.exists() else '',
+            )
+
+  
+    for image in original_test.images.all():
+        ScholarshipTestImage.objects.create(
+            test=new_test,
+            image=image.image, 
+            original_filename=image.original_filename,
+        )
+
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': new_test.id,
+            'name': new_test.name,
+        }
+    })
+
+
+def _format_test_duration(hours, minutes):
+    total = int(hours or 0) + (int(minutes or 0) / 60)
+    if total.is_integer():
+        return str(int(total))
+    return f"{total:.2f}".rstrip('0').rstrip('.')
+
+
+def _serialize_scheduled_start_at(value):
+    if not value:
+        return None
+    return timezone.localtime(value, test_service.ACADEMY_TIMEZONE).isoformat()
+
+
+def _serialize_test_start_time(value):
+    if not value:
+        return None
+    return timezone.localtime(value, test_service.ACADEMY_TIMEZONE).strftime("%H:%M")
+
+
+def _parse_test_date(raw_value):
+    if raw_value in [None, ""]:
+        return timezone.localdate()
+
+    try:
+        return datetime.strptime(str(raw_value).strip(), "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("Invalid test date") from exc
+
+
+def _parse_scheduled_start_at(raw_value):
+    if raw_value in [None, ""]:
+        return None
+
+    if isinstance(raw_value, datetime):
+        parsed = raw_value
+    else:
+        normalized = str(raw_value).strip().replace("Z", "+00:00")
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError as exc:
+            raise ValueError("Invalid scheduled start time") from exc
+
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, test_service.ACADEMY_TIMEZONE)
+
+    return parsed
+
+
+def _parse_test_start_datetime(test_date, raw_time, raw_datetime):
+    if raw_time not in [None, ""]:
+        try:
+            parsed_time = datetime.strptime(str(raw_time).strip(), "%H:%M").time()
+        except ValueError as exc:
+            raise ValueError("Invalid scheduled start time") from exc
+
+        combined = datetime.combine(test_date, parsed_time)
+        return timezone.make_aware(combined, test_service.ACADEMY_TIMEZONE)
+
+    return _parse_scheduled_start_at(raw_datetime)
+
+
+def _parse_test_duration(data):
+    if 'duration_hours' in data or 'duration_minutes' in data:
+        hours = int(data.get('duration_hours') or 0)
+        minutes = int(data.get('duration_minutes') or 0)
+    elif 'duration' in data:
+        total = float(data.get('duration') or 0)
+        if total < 0:
+            raise ValueError("Duration cannot be negative")
+        hours = int(total)
+        minutes = round((total - hours) * 60)
+    else:
+        return None
+
+    if minutes < 0:
+        raise ValueError("Duration minutes cannot be negative")
+
+    hours += minutes // 60
+    minutes = minutes % 60
+    return hours, minutes
+
+
+@csrf_exempt
+def api_get_test_details(request, test_id):
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+    
+    config = getattr(test, 'config', None)
+    
+    sections_data = []
+    for section in test.sections.all():
+        questions_data = []
+        for question in section.questions.all():
+            question_options = list(question.options.all())
+            options_data = [option.option_text for option in question_options]
+            correct_option_indexes = [
+                idx for idx, option in enumerate(question_options) if option.is_correct
+            ]
+            
+            answer = question.answers.first()
+            
+            question_data = {
+                'id': question.id,
+                'type': question.question_type,
+                'text': question.question_text,
+                'passage': question.passage,
+                'difficulty': question.difficulty,
+                'pos_marks': question.pos_marks,
+                'posMarks': question.pos_marks,
+                'neg_marks': question.neg_marks,
+                'negMarks': question.neg_marks,
+                'neg_unattempted': question.neg_unattempted,
+                'negUnattempted': question.neg_unattempted,
+                'tags': question.tags.split(',') if question.tags else [],
+                'order': question.order,
+                'multi_select': question.is_multi_select,
+                'multiSelect': question.is_multi_select,
+                'options': options_data,
+                'correct_options': correct_option_indexes,
+                'correctOptions': correct_option_indexes,
+                'correct_answer': answer.correct_answer if answer else '',
+                'correctAnswer': answer.correct_answer if answer else '',
+            }
+            
+           
+            if question.question_type == 'comp':
+                try:
+                    import json
+                    comp_data = json.loads(question.question_text)
+                    question_data['text'] = comp_data.get('text', question.question_text)
+                    question_data['passage'] = comp_data.get('passage', '')
+                    question_data['sub_questions'] = comp_data.get('sub_questions', [])
+                except:
+                    question_data['sub_questions'] = []
+            
+            questions_data.append(question_data)
+        
+        sections_data.append({
+            'id': section.id,
+            'name': section.name,
+            'order': section.order,
+            'allow_switching': section.allow_switching,
+            'allowSwitching': section.allow_switching,
+            'instructions': section.instructions,
+            'sectionInstructions': section.instructions,
+            'questions': questions_data,
+        })
+    
+    return JsonResponse({
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'subject': test.subject,
+            'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'instructions': config.instructions if config else '',
+            'default_pos_marks': config.default_pos_marks if config else 2,
+            'default_neg_marks': config.default_neg_marks if config else 1,
+            'sections': sections_data,
+        }
+    })
+
+
+@csrf_exempt
+def api_save_test_details(request, test_id):
+    if request.method not in ['POST', 'PUT']:
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    if 'testName' in data:
+        test.name = data['testName']
+    try:
+        duration_parts = _parse_test_duration(data)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid duration'}, status=400)
+    if duration_parts is not None:
+        test.duration_hours, test.duration_minutes = duration_parts
+    if 'batch' in data:
+        test.batch = (data.get('batch') or '').strip()
+    if 'stream' in data:
+        test.stream = (data.get('stream') or '').strip()
+    if 'subject' in data:
+        test.subject = (data.get('subject') or 'Physics').strip() or 'Physics'
+    if 'tags' in data:
+        test.tags = data['tags']
+    if 'status' in data:
+        status = data.get('status')
+        valid_statuses = {choice[0] for choice in ScholarshipTest._meta.get_field('status').choices}
+        if status not in valid_statuses:
+            return JsonResponse({'error': 'Invalid status'}, status=400)
+        test.status = status
+    if 'scheduled_start_at' in data:
+        try:
+            test.scheduled_start_at = _parse_scheduled_start_at(data.get('scheduled_start_at'))
+        except ValueError:
+            return JsonResponse({'error': 'Invalid scheduled start time'}, status=400)
+        if test.scheduled_start_at:
+            test.date = timezone.localtime(
+                test.scheduled_start_at,
+                test_service.ACADEMY_TIMEZONE,
+            ).date()
+
+    test.save()
+    
+    config, _ = ScholarshipTestConfig.objects.get_or_create(test=test)
+    if 'instructions' in data:
+        config.instructions = data['instructions']
+    if 'default_pos_marks' in data:
+        config.default_pos_marks = data['default_pos_marks']
+    if 'default_neg_marks' in data:
+        config.default_neg_marks = data['default_neg_marks']
+    config.save()
+
+    return JsonResponse({
+        'success': True,
+        'test': {
+            'id': test.id,
+            'name': test.name,
+            'duration': _format_test_duration(test.duration_hours, test.duration_minutes),
+            'duration_hours': test.duration_hours,
+            'duration_minutes': test.duration_minutes,
+            'batch': test.batch,
+            'stream': test.stream,
+            'subject': test.subject,
+            'tags': test.tags,
+            'scheduled_start_at': _serialize_scheduled_start_at(test.scheduled_start_at),
+            'instructions': config.instructions,
+            'default_pos_marks': config.default_pos_marks,
+            'default_neg_marks': config.default_neg_marks,
+        }
+    })
+
+
+
+@csrf_exempt
+def api_save_section(request, test_id):
+    if request.method not in ['POST', 'PUT']:
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    section_id = data.get('id')
+    name = data.get('name', '').strip()
+    if not name:
+        return JsonResponse({'error': 'Name is required'}, status=400)
+
+    allow_switching = data.get('allowSwitching', True)
+    instructions = data.get('instructions', '')
+    prefer_existing_by_name = data.get('preferExistingByName', False)
+    if isinstance(prefer_existing_by_name, str):
+        prefer_existing_by_name = prefer_existing_by_name.lower() == 'true'
+    else:
+        prefer_existing_by_name = bool(prefer_existing_by_name)
+
+    def update_section(section):
+        section.name = name
+        section.allow_switching = allow_switching
+        section.instructions = instructions
+        section.save()
+        return section
+
+    section_by_id = None
+    if section_id:
+        try:
+            section_by_id = ScholarshipTestSection.objects.get(id=section_id, test=test)
+        except (ScholarshipTestSection.DoesNotExist, ValueError, TypeError):
+            section_by_id = None
+
+    section_by_name = ScholarshipTestSection.objects.filter(test=test, name=name).first()
+
+    if prefer_existing_by_name and section_by_name:
+        target_section = section_by_name
+    elif section_by_id:
+        if section_by_name and section_by_name.id != section_by_id.id:
+            return JsonResponse({'error': 'A section with this name already exists in this test'}, status=400)
+        target_section = section_by_id
+    elif section_by_name:
+        target_section = section_by_name
+    else:
+        target_section = None
+
+    if target_section:
+        try:
+            section = update_section(target_section)
+        except IntegrityError:
+            return JsonResponse({'error': 'A section with this name already exists in this test'}, status=400)
+    else:
+        max_order = test.sections.order_by('-order').first()
+        next_order = (max_order.order + 1) if max_order else 0
+        try:
+            section = ScholarshipTestSection.objects.create(
+                test=test,
+                name=name,
+                order=next_order,
+                allow_switching=allow_switching,
+                instructions=instructions,
+            )
+        except IntegrityError:
+            return JsonResponse({'error': 'A section with this name already exists in this test'}, status=400)
+    
+    return JsonResponse({
+        'success': True,
+        'section': {
+            'id': section.id,
+            'name': section.name,
+            'order': section.order,
+            'allow_switching': section.allow_switching,
+            'instructions': section.instructions,
+        }
+    })
+
+
+@csrf_exempt
+def api_delete_section(request, test_id, section_id):
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+    
+    try:
+        section = ScholarshipTestSection.objects.get(id=section_id, test_id=test_id)
+    except ScholarshipTestSection.DoesNotExist:
+        return JsonResponse({'error': 'Section not found'}, status=404)
+    
+    section.delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+def api_save_question(request, test_id):
+    logger.info(f"api_save_question called - test_id: {test_id}, body: {request.body[:500]}")
+    try:
+        data = json.loads(request.body)
+        logger.info(f"Parsed data: section_id={data.get('section_id')}, sectionId={data.get('sectionId')}, type={data.get('type')}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON: {str(e)}")
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    question_id = data.get('id')
+    section_id = data.get('section_id') or data.get('sectionId')
+
+    if not section_id:
+        logger.error(f"Section ID is required - data keys: {list(data.keys())}")
+        return JsonResponse({'error': 'Section ID is required'}, status=400)
+
+    try:
+        section = ScholarshipTestSection.objects.get(id=section_id, test_id=test_id)
+        logger.info(f"Found section: {section.name}")
+    except ScholarshipTestSection.DoesNotExist:
+        fallback_sections = list(
+            ScholarshipTestSection.objects.filter(test_id=test_id).order_by('order', 'id')
+        )
+        if len(fallback_sections) == 1:
+            section = fallback_sections[0]
+            logger.warning(
+                f"Section id {section_id} not found for test {test_id}; "
+                f"falling back to only section id {section.id}"
+            )
+        else:
+            logger.error(
+                f"Section not found: id={section_id}, test_id={test_id}, "
+                f"available_sections={[s.id for s in fallback_sections]}"
+            )
+            return JsonResponse(
+                {
+                    'error': 'Section not found',
+                    'requested_section_id': section_id,
+                    'available_section_ids': [s.id for s in fallback_sections],
+                },
+                status=404
+            )
+    except Exception as e:
+        logger.error(f"Error getting section: {str(e)}")
+        return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
+
+    question_type = data.get('type', 'mcq')
+
+    try:
+        if question_id:
+            try:
+                question = ScholarshipTestQuestion.objects.get(id=question_id, section=section)
+                question.question_type = question_type
+                question.question_text = data.get('text', '')
+                question.passage = data.get('passage', '')
+                question.difficulty = data.get('difficulty', 'Medium')
+                question.pos_marks = data.get('pos_marks', 2)
+                question.neg_marks = data.get('neg_marks', 1)
+                question.neg_unattempted = data.get('neg_unattempted', 0)
+                question.tags = ','.join(data.get('tags', [])) if isinstance(data.get('tags'), list) else data.get('tags', '')
+                question.is_multi_select = data.get('multi_select', False)
+                question.save()
+            except ScholarshipTestQuestion.DoesNotExist:
+                max_order = section.questions.order_by('-order').first()
+                next_order = (max_order.order + 1) if max_order else 0
+                question = ScholarshipTestQuestion.objects.create(
+                    section=section,
+                    question_type=question_type,
+                    question_text=data.get('text', ''),
+                    passage=data.get('passage', ''),
+                    difficulty=data.get('difficulty', 'Medium'),
+                    pos_marks=data.get('pos_marks', 2),
+                    neg_marks=data.get('neg_marks', 1),
+                    neg_unattempted=data.get('neg_unattempted', 0),
+                    tags=','.join(data.get('tags', [])) if isinstance(data.get('tags'), list) else data.get('tags', ''),
+                    order=next_order,
+                    is_multi_select=data.get('multi_select', False),
+                )
+        else:
+            max_order = section.questions.order_by('-order').first()
+            next_order = (max_order.order + 1) if max_order else 0
+            question = ScholarshipTestQuestion.objects.create(
+                section=section,
+                question_type=question_type,
+                question_text=data.get('text', ''),
+                passage=data.get('passage', ''),
+                difficulty=data.get('difficulty', 'Medium'),
+                pos_marks=data.get('pos_marks', 2),
+                neg_marks=data.get('neg_marks', 1),
+                neg_unattempted=data.get('neg_unattempted', 0),
+                tags=','.join(data.get('tags', [])) if isinstance(data.get('tags'), list) else data.get('tags', ''),
+                order=next_order,
+                is_multi_select=data.get('multi_select', False),
+            )
+
+        question.options.all().delete()
+        question.answers.all().delete()
+
+        options = data.get('options', [])
+        correct_options = data.get('correct_options', [])
+
+        for i, opt_text in enumerate(options):
+            is_correct = i in correct_options if isinstance(correct_options, list) else (i == correct_options)
+            ScholarshipTestOption.objects.create(
+                question=question,
+                option_text=opt_text,
+                is_correct=is_correct,
+                order=i,
+            )
+
+        correct_answer = data.get('correct_answer', '')
+        if question_type in ['tf', 'fitb', 'int']:
+            correct_answer = data.get('correctAnswer', correct_answer)
+            ScholarshipTestAnswer.objects.create(
+                question=question,
+                correct_answer=correct_answer,
+            )
+        elif question_type == 'comp':
+            sub_questions = data.get('sub_questions', [])
+            if sub_questions:
+                comp_data = {
+                    'text': data.get('text', ''),
+                    'passage': question.passage,
+                    'sub_questions': sub_questions
+                }
+                question.question_text = json.dumps(comp_data)
+                question.save()
+
+        return JsonResponse({
+            'success': True,
+            'question': {
+                'id': question.id,
+                'type': question.question_type,
+                'text': question.question_text,
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error saving question: {str(e)}", exc_info=True)
+        return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def api_import_word_questions(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    uploaded_file = request.FILES.get('word_file')
+    if not uploaded_file:
+        return JsonResponse({'error': 'No Word file was uploaded'}, status=400)
+
+    file_name = uploaded_file.name or ''
+    if not file_name.lower().endswith('.docx'):
+        return JsonResponse({'error': 'Only .docx Word files are supported'}, status=400)
+
+    try:
+        imported_data = word_import_service.import_questions_from_docx(uploaded_file)
+    except word_import_service.WordImportError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+    except Exception as exc:
+        logger.error("Word import failed: %s", str(exc), exc_info=True)
+        return JsonResponse({'error': 'Failed to import the Word file'}, status=500)
+
+    return JsonResponse({'success': True, 'imported': imported_data})
+
+
+@csrf_exempt
+def api_delete_question(request, test_id, question_id):
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    try:
+        question = ScholarshipTestQuestion.objects.get(id=question_id, section__test_id=test_id)
+    except ScholarshipTestQuestion.DoesNotExist:
+        return JsonResponse({'error': 'Question not found'}, status=404)
+
+    question.delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+def api_upload_image(request, test_id):
+    """Upload image for a test"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+
+    if 'image' not in request.FILES:
+        return JsonResponse({'error': 'No image file provided'}, status=400)
+
+    image_file = request.FILES['image']
+
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+    if image_file.content_type not in allowed_types:
+        return JsonResponse({'error': 'Invalid file type. Only images are allowed.'}, status=400)
+
+    # Validate file size (max 5MB)
+    max_size = 5 * 1024 * 1024 
+    if image_file.size > max_size:
+        return JsonResponse({'error': 'File too large. Maximum size is 5MB.'}, status=400)
+
+    # Create the image record
+    test_image = ScholarshipTestImage.objects.create(
+        test=test,
+        image=image_file,
+        original_filename=image_file.name,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'image': {
+            'id': test_image.id,
+            'url': test_image.get_image_url(),
+            'filename': test_image.original_filename,
+        }
+    })
+
+
+@csrf_exempt
+def api_get_test_images(request, test_id):
+   
+    try:
+        test = ScholarshipTest.objects.get(id=test_id)
+    except ScholarshipTest.DoesNotExist:
+        return JsonResponse({'error': 'Test not found'}, status=404)
+
+    images = test.images.all()
+    data = []
+    for img in images:
+        data.append({
+            'id': img.id,
+            'url': img.get_image_url(),
+            'filename': img.original_filename,
+            'uploaded_at': img.uploaded_at.isoformat(),
+        })
+
+    return JsonResponse({'images': data})
+
+
+@csrf_exempt
+def api_delete_image(request, test_id, image_id):
+   
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    try:
+        image = ScholarshipTestImage.objects.get(id=image_id, test_id=test_id)
+    except ScholarshipTestImage.DoesNotExist:
+        return JsonResponse({'error': 'Image not found'}, status=404)
+
+
+    if image.image:
+        image.image.delete(save=False)
+
+    image.delete()
+    return JsonResponse({'success': True})

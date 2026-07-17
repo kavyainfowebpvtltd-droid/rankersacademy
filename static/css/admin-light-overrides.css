@@ -1,0 +1,604 @@
+html[data-admin-theme="light"] {
+  color-scheme: light;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) {
+  --student-light-bg: #eef3f9;
+  --student-light-surface: #ffffff;
+  --student-light-panel: #f8fbff;
+  --student-light-border: #e5eaf2;
+  --student-light-text: #111827;
+  --student-light-muted: #5f6b7a;
+  --student-light-blue: #1268ff;
+  --student-light-blue-strong: #0057e7;
+  --student-light-success: #22c55e;
+  --student-light-warning: #ff6b00;
+  --student-light-danger: #ef4444;
+  --student-light-shadow: 0 16px 34px rgba(30, 64, 175, 0.08);
+  background: #eef3f9 !important;
+  color: var(--student-light-text) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body)::before {
+  display: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--student-light-border) !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1) !important;
+  backdrop-filter: blur(12px);
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-icon,
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .btn-light {
+  background: #ffffff !important;
+  border-color: var(--student-light-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-icon {
+  width: 70px;
+  min-width: 70px;
+  height: 60px;
+  padding: 0;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .brand-icon img {
+  height: 60px !important;
+  filter: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar h5,
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .fw-bold,
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .text-dark {
+  color: var(--student-light-text) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar small,
+html[data-admin-theme="light"] body:not(.login-page-body) .navbar .text-muted,
+html[data-admin-theme="light"] body:not(.login-page-body) .text-muted,
+html[data-admin-theme="light"] body:not(.login-page-body) small,
+html[data-admin-theme="light"] body:not(.login-page-body) .small,
+html[data-admin-theme="light"] body:not(.login-page-body) .soft,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-label,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card-extra,
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-meta,
+html[data-admin-theme="light"] body:not(.login-page-body) .chapter-line,
+html[data-admin-theme="light"] body:not(.login-page-body) .sub-topics,
+html[data-admin-theme="light"] body:not(.login-page-body) .matrix-header p {
+  color: var(--student-light-muted) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .admin-theme-toggle {
+  background: #ffffff !important;
+  border-color: #111827 !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .admin-theme-toggle:hover {
+  background: var(--student-light-blue) !important;
+  border-color: var(--student-light-blue) !important;
+  color: #ffffff !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--student-light-border) !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a,
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a i {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a.active,
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a:hover i,
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a.active i {
+  color: var(--student-light-blue) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a.active::after {
+  background: var(--student-light-blue) !important;
+  box-shadow: 0 0 18px rgba(18, 104, 255, 0.22) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a:focus,
+html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a:focus-visible {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) h1,
+html[data-admin-theme="light"] body:not(.login-page-body) h2,
+html[data-admin-theme="light"] body:not(.login-page-body) h3,
+html[data-admin-theme="light"] body:not(.login-page-body) h4,
+html[data-admin-theme="light"] body:not(.login-page-body) h5,
+html[data-admin-theme="light"] body:not(.login-page-body) h6,
+html[data-admin-theme="light"] body:not(.login-page-body) .fw-bold,
+html[data-admin-theme="light"] body:not(.login-page-body) .fw-semibold,
+html[data-admin-theme="light"] body:not(.login-page-body) .display,
+html[data-admin-theme="light"] body:not(.login-page-body) .page-title,
+html[data-admin-theme="light"] body:not(.login-page-body) .priority-title,
+html[data-admin-theme="light"] body:not(.login-page-body) .matrix-header h4,
+html[data-admin-theme="light"] body:not(.login-page-body) .chapter-title,
+html[data-admin-theme="light"] body:not(.login-page-body) .subject-name,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-number,
+html[data-admin-theme="light"] body:not(.login-page-body) .stat-number,
+html[data-admin-theme="light"] body:not(.login-page-body) .rank-hero-number,
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-value,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card-value,
+html[data-admin-theme="light"] body:not(.login-page-body) .subject-score,
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-chip-value,
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-outof,
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-chip-name {
+  color: var(--student-light-text) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) p,
+html[data-admin-theme="light"] body:not(.login-page-body) td,
+html[data-admin-theme="light"] body:not(.login-page-body) li {
+  color: #334155 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .card,
+html[data-admin-theme="light"] body:not(.login-page-body) .card.bg-white,
+html[data-admin-theme="light"] body:not(.login-page-body) .bg-white,
+html[data-admin-theme="light"] body:not(.login-page-body) .table-responsive.bg-white,
+html[data-admin-theme="light"] body:not(.login-page-body) .app-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .app-card-soft,
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-chip,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .chapter-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .topic-row,
+html[data-admin-theme="light"] body:not(.login-page-body) .stat-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .matrix-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .focus-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .priority-wrapper,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-info-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .attendance-table,
+html[data-admin-theme="light"] body:not(.login-page-body) .personalized-recommendations,
+html[data-admin-theme="light"] body:not(.login-page-body) .inner-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .test-banner,
+html[data-admin-theme="light"] body:not(.login-page-body) .my-attendance-header,
+html[data-admin-theme="light"] body:not(.login-page-body) .overall-progress-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .mainbody [style*="background: #ecfdf5"],
+html[data-admin-theme="light"] body:not(.login-page-body) .mainbody [style*="background: #fff7ed"],
+html[data-admin-theme="light"] body:not(.login-page-body) .mainbody [style*="background: #eff6ff"],
+html[data-admin-theme="light"] body:not(.login-page-body) .mainbody [style*="background: #f8fafc"] {
+  background: var(--student-light-surface) !important;
+  border-color: var(--student-light-border) !important;
+  color: var(--student-light-text) !important;
+  box-shadow: var(--student-light-shadow) !important;
+  backdrop-filter: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 1),
+html[data-admin-theme="light"] body:not(.login-page-body) .stat-card:nth-of-type(3n + 1),
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-card:nth-of-type(3n + 1) {
+  background: #e9faef !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 2),
+html[data-admin-theme="light"] body:not(.login-page-body) .stat-card:nth-of-type(3n + 2),
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-card:nth-of-type(3n + 2) {
+  background: #fff4e5 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n),
+html[data-admin-theme="light"] body:not(.login-page-body) .stat-card:nth-of-type(3n),
+html[data-admin-theme="light"] body:not(.login-page-body) .home-score-card:nth-of-type(3n) {
+  background: #ffefef !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 1) .icon-box,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 1) .icon-circle,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 1) .icon-square,
+html[data-admin-theme="light"] body:not(.login-page-body) .coverage-icon {
+  background: var(--student-light-success) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 2) .icon-box,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 2) .icon-circle,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n + 2) .icon-square,
+html[data-admin-theme="light"] body:not(.login-page-body) .weak-icon {
+  background: #fff7ed !important;
+  color: var(--student-light-warning) !important;
+  border: 3px solid var(--student-light-warning) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n) .icon-box,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n) .icon-circle,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:nth-of-type(3n) .icon-square,
+html[data-admin-theme="light"] body:not(.login-page-body) .unknown-icon {
+  background: var(--student-light-danger) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .hover-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .app-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .app-card-soft:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .summary-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .chapter-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .stat-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .focus-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-info-card:hover {
+  border-color: #c7d2fe !important;
+  box-shadow: 0 18px 38px rgba(18, 104, 255, 0.12) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .download-btn,
+html[data-admin-theme="light"] body:not(.login-page-body) .btn-brand,
+html[data-admin-theme="light"] body:not(.login-page-body) .btn-primary,
+html[data-admin-theme="light"] body:not(.login-page-body) .start-btn,
+html[data-admin-theme="light"] body:not(.login-page-body) .show-more-btn,
+html[data-admin-theme="light"] body:not(.login-page-body) .hover-popup button,
+html[data-admin-theme="light"] body:not(.login-page-body) .subject-btn.active,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-switch-btn.active,
+html[data-admin-theme="light"] body:not(.login-page-body) .test-slot-btn.active,
+html[data-admin-theme="light"] body:not(.login-page-body) .nav-btn.active {
+  background: var(--student-light-blue) !important;
+  border-color: var(--student-light-blue) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(18, 104, 255, 0.22) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .icon-box,
+html[data-admin-theme="light"] body:not(.login-page-body) .icon-circle,
+html[data-admin-theme="light"] body:not(.login-page-body) .icon-square,
+html[data-admin-theme="light"] body:not(.login-page-body) .subject-icon,
+html[data-admin-theme="light"] body:not(.login-page-body) .topic-subject-icon,
+html[data-admin-theme="light"] body:not(.login-page-body) .reward-icon,
+html[data-admin-theme="light"] body:not(.login-page-body) .cluster-icon,
+html[data-admin-theme="light"] body:not(.login-page-body) .top-performer-avatar,
+html[data-admin-theme="light"] body:not(.login-page-body) .leaderboard-avatar {
+  background: var(--student-light-blue) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 10px 22px rgba(18, 104, 255, 0.16) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-switch,
+html[data-admin-theme="light"] body:not(.login-page-body) .test-slot-btn,
+html[data-admin-theme="light"] body:not(.login-page-body) .subject-btn,
+html[data-admin-theme="light"] body:not(.login-page-body) .level-pill,
+html[data-admin-theme="light"] body:not(.login-page-body) .streak-pill,
+html[data-admin-theme="light"] body:not(.login-page-body) .rank-shift-pill,
+html[data-admin-theme="light"] body:not(.login-page-body) .focus-tag,
+html[data-admin-theme="light"] body:not(.login-page-body) .focus-badge,
+html[data-admin-theme="light"] body:not(.login-page-body) .badge,
+html[data-admin-theme="light"] body:not(.login-page-body) .status-badge {
+  background: #f8fbff !important;
+  border-color: var(--student-light-border) !important;
+  color: #334155 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .progress,
+html[data-admin-theme="light"] body:not(.login-page-body) .progress-bar-custom {
+  background: #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .progress-bar,
+html[data-admin-theme="light"] body:not(.login-page-body) .progress-bar-fill,
+html[data-admin-theme="light"] body:not(.login-page-body) .subject-progress-fill,
+html[data-admin-theme="light"] body:not(.login-page-body) .topic-progress-fill {
+  background: var(--student-light-blue) !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .table,
+html[data-admin-theme="light"] body:not(.login-page-body) .table-dark {
+  --bs-table-bg: #ffffff !important;
+  --bs-table-color: #111827 !important;
+  --bs-table-border-color: var(--student-light-border) !important;
+  --bs-table-striped-bg: #f8fbff !important;
+  --bs-table-striped-color: #111827 !important;
+  --bs-table-hover-bg: #eef5ff !important;
+  --bs-table-hover-color: #111827 !important;
+  color: #111827 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .table thead th,
+html[data-admin-theme="light"] body:not(.login-page-body) .attendance-table thead {
+  background: #f8fbff !important;
+  color: #334155 !important;
+  border-color: var(--student-light-border) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .table tbody td,
+html[data-admin-theme="light"] body:not(.login-page-body) .attendance-table td,
+html[data-admin-theme="light"] body:not(.login-page-body) .attendance-table th {
+  background: transparent !important;
+  color: #334155 !important;
+  border-color: var(--student-light-border) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .form-control,
+html[data-admin-theme="light"] body:not(.login-page-body) .form-select,
+html[data-admin-theme="light"] body:not(.login-page-body) .month-selector,
+html[data-admin-theme="light"] body:not(.login-page-body) input,
+html[data-admin-theme="light"] body:not(.login-page-body) select,
+html[data-admin-theme="light"] body:not(.login-page-body) textarea,
+html[data-admin-theme="light"] body:not(.login-page-body) .input-group-text {
+  background: #ffffff !important;
+  border-color: var(--student-light-border) !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .form-control:focus,
+html[data-admin-theme="light"] body:not(.login-page-body) .form-select:focus,
+html[data-admin-theme="light"] body:not(.login-page-body) .month-selector:focus,
+html[data-admin-theme="light"] body:not(.login-page-body) input:focus,
+html[data-admin-theme="light"] body:not(.login-page-body) select:focus,
+html[data-admin-theme="light"] body:not(.login-page-body) textarea:focus {
+  border-color: var(--student-light-blue) !important;
+  box-shadow: 0 0 0 0.2rem rgba(18, 104, 255, 0.14) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-link {
+  background: #ffffff !important;
+  border-color: var(--student-light-border) !important;
+  color: var(--student-light-text) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-link:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-link:focus {
+  border-color: var(--student-light-blue) !important;
+  color: var(--student-light-blue) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .pagination .page-item.active .page-link {
+  background: var(--student-light-blue) !important;
+  border-color: var(--student-light-blue) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 20px rgba(18, 104, 255, 0.18) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .status-present,
+html[data-admin-theme="light"] body:not(.login-page-body) .pill-green,
+html[data-admin-theme="light"] body:not(.login-page-body) .status-excellent,
+html[data-admin-theme="light"] body:not(.login-page-body) .weak-text {
+  color: var(--student-light-success) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .unknown-text,
+html[data-admin-theme="light"] body:not(.login-page-body) .status-late,
+html[data-admin-theme="light"] body:not(.login-page-body) .status-good {
+  color: var(--student-light-warning) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .status-absent,
+html[data-admin-theme="light"] body:not(.login-page-body) .pill-red,
+html[data-admin-theme="light"] body:not(.login-page-body) .status-work {
+  color: var(--student-light-danger) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .test-banner {
+  background: #ffffff !important;
+  border-color: var(--student-light-border) !important;
+  box-shadow: var(--student-light-shadow) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .test-banner::before {
+  background: linear-gradient(115deg, transparent, rgba(18, 104, 255, 0.08), transparent 36%) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .test-banner::after,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .banner-curve {
+  border-color: rgba(18, 104, 255, 0.18) !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .banner-content h3,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .page-title {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  color: var(--student-light-text) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .banner-content p {
+  color: #334155 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .overall-progress-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .progress-card,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 {
+  background: #ffffff !important;
+  border-color: var(--student-light-border) !important;
+  color: var(--student-light-text) !important;
+  box-shadow: var(--student-light-shadow) !important;
+  backdrop-filter: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 {
+  background: #ecfdf5 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 {
+  background: #fff7ed !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 {
+  background: #eff6ff !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .overall-progress-card::before,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .progress-card::before,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100::before {
+  background: transparent !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .overall-progress-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .progress-card:hover,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100:hover {
+  background: #ffffff !important;
+  border-color: #c7d2fe !important;
+  box-shadow: 0 18px 38px rgba(18, 104, 255, 0.12) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100:hover {
+  background: #ecfdf5 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100:hover {
+  background: #fff7ed !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100:hover {
+  background: #eff6ff !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .overall-progress-circle::before {
+  background: #ffffff !important;
+  border-color: var(--student-light-border) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .overall-progress-circle span,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .overall-title,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .subject-name,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .subject-percent,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100 h4 {
+  color: var(--student-light-text) !important;
+  text-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .overall-sub,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .small-text,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100 small,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100 p,
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100 li {
+  color: #334155 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3 > .h-100 > span {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 > span {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 > span {
+  background: #ffedd5 !important;
+  color: #c2410c !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 > span {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(2) > .h-100 .d-flex > div:first-child {
+  background: #22c55e !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(3) > .h-100 .d-flex > div:first-child {
+  background: #f97316 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .mainbody .row.g-4 > .col-lg-3:nth-child(4) > .h-100 .d-flex > div:first-child {
+  background: #3b82f6 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-section {
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.08), transparent 34%, rgba(255, 255, 255, 0.06)),
+    linear-gradient(105deg, #6d28d9 0%, #d946ef 46%, #fb7185 72%, #fb923c 100%) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 20px 46px rgba(217, 70, 239, 0.2), 0 12px 30px rgba(251, 146, 60, 0.12) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-section::before {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 18px),
+    radial-gradient(circle at 8% 18%, rgba(255, 255, 255, 0.18), transparent 12rem) !important;
+  opacity: 0.56 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-section:hover {
+  border-color: rgba(255, 255, 255, 0.38) !important;
+  box-shadow: 0 24px 54px rgba(217, 70, 239, 0.26), 0 16px 34px rgba(251, 146, 60, 0.16) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-icon {
+  background: linear-gradient(135deg, #ff8a1f 0%, #ff4fc3 48%, #8b35ff 100%) !important;
+  box-shadow: 0 0 18px rgba(255, 79, 195, 0.28), 0 0 26px rgba(139, 53, 255, 0.26) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-title {
+  color: #ffffff !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-text {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .focus-tag {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.46) !important;
+  color: #1e293b !important;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.14) !important;
+  backdrop-filter: blur(8px);
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .subject-card {
+  background: #eef5ff !important;
+  border-color: #bfdbfe !important;
+  box-shadow:
+    0 16px 34px rgba(18, 104, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) .student-dashboard-page .subject-card:hover {
+  background: #e0ecff !important;
+  border-color: var(--student-light-blue) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) footer,
+html[data-admin-theme="light"] body:not(.login-page-body) footer.bg-light {
+  background: #ffffff !important;
+  border-top: 1px solid var(--student-light-border) !important;
+  color: #475569 !important;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) footer .container-fluid,
+html[data-admin-theme="light"] body:not(.login-page-body) footer .d-flex,
+html[data-admin-theme="light"] body:not(.login-page-body) footer div {
+  color: #475569 !important;
+}
+
+html[data-admin-theme="light"] body:not(.login-page-body) a,
+html[data-admin-theme="light"] body:not(.login-page-body) footer a,
+html[data-admin-theme="light"] body:not(.login-page-body) .text-primary {
+  color: var(--student-light-blue) !important;
+}
+
+@media (max-width: 1024px) {
+  html[data-admin-theme="light"] body:not(.login-page-body) .tabs-left a.active {
+    background: transparent !important;
+    color: var(--student-light-blue) !important;
+  }
+}

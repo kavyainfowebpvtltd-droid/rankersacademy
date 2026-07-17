@@ -1,0 +1,237 @@
+.admin-theme-toggle {
+  display: none !important;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #f3f4f8;
+  background: transparent;
+  color: #f8f9ff;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.admin-theme-toggle:hover {
+  background: linear-gradient(135deg, #ff8a1f, #8b35ff);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.admin-header-logo-dark {
+  display: none;
+}
+
+html[data-admin-theme="dark"] .admin-header-logo-light {
+  display: none;
+}
+
+html[data-admin-theme="dark"] .admin-header-logo-dark {
+  display: block;
+}
+
+html[data-admin-theme="light"] body,
+html[data-admin-theme="light"] body.bg-light {
+  --admin-active-tab-bg: #e6f4fb;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .navbar,
+html[data-admin-theme="light"] .navbar.bg-white,
+html[data-admin-theme="light"] .navbar-light {
+  background: #ffffff !important;
+  border-bottom-color: #e5e7eb !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .navbar h5,
+html[data-admin-theme="light"] .navbar .fw-bold,
+html[data-admin-theme="light"] .text-dark {
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .navbar small,
+html[data-admin-theme="light"] .navbar .text-muted,
+html[data-admin-theme="light"] .text-muted,
+html[data-admin-theme="light"] .form-text {
+  color: #64748b !important;
+}
+
+html[data-admin-theme="light"] .tabs {
+  background: #ffffff !important;
+  border-bottom-color: #e5e7eb !important;
+}
+
+html[data-admin-theme="light"] .tabs-left a,
+html[data-admin-theme="light"] .tabs-left a i {
+  color: #000000 !important;
+}
+
+html[data-admin-theme="light"] .tabs-left a.active,
+html[data-admin-theme="light"] .tabs-left a.active i,
+html[data-admin-theme="light"] .tabs-left a:hover,
+html[data-admin-theme="light"] .tabs-left a:hover i {
+  color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] .tabs-left a.active::after {
+  background: #2563eb !important;
+}
+
+html[data-admin-theme="light"] .card,
+html[data-admin-theme="light"] .card.bg-white,
+html[data-admin-theme="light"] .bg-white,
+html[data-admin-theme="light"] .table-responsive.bg-white {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .shadow-sm {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-admin-theme="light"] .page-shell > .container:first-child .rounded-4.p-4.text-white.mb-4 {
+  background: linear-gradient(90deg, #7f00ff, #e100ff) !important;
+  border: 0;
+  box-shadow: none;
+}
+
+html[data-admin-theme="light"] .admin-stats-card {
+  border-color: transparent !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-card .rounded-3 {
+  border: 0 !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(1) .admin-stats-card .rounded-3 {
+  background: #e8f0ff !important;
+  color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(2) .admin-stats-card .rounded-3 {
+  background: #eafaf0 !important;
+  color: #16a34a !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(3) .admin-stats-card .rounded-3 {
+  background: #fff4e5 !important;
+  color: #f97316 !important;
+}
+
+html[data-admin-theme="light"] .admin-stats-col:nth-child(4) .admin-stats-card .rounded-3 {
+  background: #f3e8ff !important;
+  color: #9333ea !important;
+}
+
+html[data-admin-theme="light"] .text-primary {
+  color: #0d6efd !important;
+}
+
+html[data-admin-theme="light"] .text-success {
+  color: #198754 !important;
+}
+
+html[data-admin-theme="light"] .text-danger {
+  color: #dc3545 !important;
+}
+
+html[data-admin-theme="light"] .text-purple {
+  color: #9333ea !important;
+}
+
+html[data-admin-theme="light"] .input-group-text,
+html[data-admin-theme="light"] .form-control {
+  background-color: #ffffff !important;
+  border-color: #dee2e6 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .form-control::placeholder {
+  color: #6c757d !important;
+}
+
+html[data-admin-theme="light"] .table {
+  --bs-table-bg: #ffffff;
+  --bs-table-color: #0f172a;
+  --bs-table-hover-bg: #f8f9fa;
+  --bs-table-hover-color: #0f172a;
+  border-color: #dee2e6 !important;
+}
+
+html[data-admin-theme="light"] .table thead tr th,
+html[data-admin-theme="light"] .table-light {
+  --bs-table-bg: #f8f9fa;
+  --bs-table-color: #64748b;
+  background-color: #f5f7f8 !important;
+  color: #64748b !important;
+}
+
+html[data-admin-theme="light"] .table tbody tr,
+html[data-admin-theme="light"] .table td,
+html[data-admin-theme="light"] .table th {
+  border-color: #dee2e6 !important;
+}
+
+html[data-admin-theme="light"] .navbar .btn.btn-light.btn-sm.rounded-circle {
+  background: #f8f9fa !important;
+  border-color: transparent !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .admin-theme-toggle {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+html[data-admin-theme="light"] footer,
+html[data-admin-theme="light"] footer.bg-light {
+  background: #f8f9fa !important;
+  border-top-color: #dee2e6 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] footer a {
+  color: #0d6efd !important;
+}
+
+html[data-admin-theme="light"] .nav-btn.active {
+  background: linear-gradient(to right, #2563eb, #06b6d4) !important;
+}
+
+html[data-admin-theme="light"] .card-box {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-admin-theme="light"] .glass,
+html[data-admin-theme="light"] .hover-card,
+html[data-admin-theme="light"] .mini,
+html[data-admin-theme="light"] .modal-content {
+  background: #ffffff !important;
+  border-color: #dbeafe !important;
+  color: #0f172a !important;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-admin-theme="light"] .soft,
+html[data-admin-theme="light"] .mono,
+html[data-admin-theme="light"] .text-secondary,
+html[data-admin-theme="light"] .text-opacity-75 {
+  color: #64748b !important;
+}
+
+html[data-admin-theme="light"] .btn-outline-light {
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html[data-admin-theme="light"] .brand-text {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}

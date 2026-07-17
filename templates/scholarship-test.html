@@ -1,0 +1,350 @@
+{% load static %}
+<!doctype html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ selected_test_name }} - Scholarship Test</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <script src="{% static 'js/admin-theme.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/scholarship-test.css' %}?v=20260522-3" />
+    <link rel="stylesheet" href="{% static 'css/exam_security.css' %}?v=20260521-1" />
+    <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}?v=20260521-1" />
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link />
+    <style>
+      @media (max-width: 1024px) {
+        .tablet-footer-stack {
+          flex-direction: column !important;
+          align-items: center !important;
+          gap: 4px;
+          text-align: center !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="scholarship-test-page">
+    <div
+      id="examSecurityAlertContainer"
+      class="exam-security-alerts position-fixed top-0 start-50 translate-middle-x w-100 px-3 pt-3"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+    <input type="hidden" id="violationCountInput" value="{{ attempt_violation_count|default:0 }}" />
+    <input type="hidden" id="securityLockedInput" value="{% if attempt_security_status == 'locked' %}1{% else %}0{% endif %}" />
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top"
+    >
+      <div class="container-fluid px-4">
+        <div class="d-flex align-items-center">
+          <div class="brand-icon me-2">
+            <i class="bi bi-mortarboard-fill text-white"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold fs-6">{{ selected_test_name }}</h5>
+            <small class="text-muted d-block" style="font-size: 0.7rem"
+              >Scholarship Assessment Test</small
+            >
+          </div>
+        </div>
+        <div class="ms-auto d-flex align-items-center">
+          <div class="text-end me-3 d-none d-md-block">
+            <div class="fw-bold text-dark fs-6">{{ student.name }}</div>
+            <div class="text-muted" style="font-size: 0.75rem">
+              {{ student.grade }} - {{ student.board }}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="admin-theme-toggle me-2"
+            id="adminThemeToggle"
+            aria-label="Toggle theme"
+            aria-pressed="true"
+          >
+            <i class="bi bi-moon-stars"></i>
+            <span class="admin-theme-toggle-label d-none d-sm-inline">Dark</span>
+          </button>
+          <a href="{% url 'login' %}" class="btn btn-light btn-sm rounded-circle">
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <div class="question-panel">
+        <div class="glass-panel">
+          <div class="question-header">
+            <div class="question-label" id="currentQuestionNum">Question 01 of {{ total_questions }}</div>
+            <div class="timer-badge">
+              <span id="timerDisplay">Timer: --:--</span>
+            </div>
+          </div>
+          <div class="question-body">
+            <div class="subject-tabs" id="subjectTabs" aria-label="Subject filter"></div>
+            <div
+              id="syncStatusBanner"
+              class="alert alert-warning py-2 px-3 mb-3"
+              style="display: none"
+            ></div>
+            <div class="question-context" id="questionContext" hidden>
+              <div class="question-section" id="questionSection"></div>
+              <div class="question-type-chip" id="questionType"></div>
+            </div>
+            <div class="section-instructions" id="sectionInstructions"></div>
+            <div class="question-title question-richtext" id="questionText">
+              Loading question...
+            </div>
+            <div class="answer-input-wrap" id="answerInputWrap"></div>
+            <div class="options-grid" id="optionsGrid"></div>
+          </div>
+          <div class="question-footer">
+            <button class="btn-custom btn-prev">← Previous</button>
+            <button class="btn-custom btn-next">Next Question →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div class="navigator-panel">
+          <h3 class="navigator-title">Questions Navigator</h3>
+
+          <div class="question-grid" id="questionGrid"></div>
+
+          <div class="progress-section">
+            <div class="progress-row">
+              <span class="progress-label">Progress</span>
+              <span class="progress-value"><span id="answeredCount">0</span> / {{ total_questions }}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+          </div>
+
+          <div class="legend-container">
+            <div class="legend-item">
+              <div class="legend-dot dot-answered"></div>
+              Answered
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot dot-not-answered"></div>
+              Not Answered
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot dot-current"></div>
+              Current
+            </div>
+          </div>
+
+          <button class="submit-btn">Submit Test</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-light border-top py-3 mt-auto">
+      <div class="container">
+        <div
+          class="d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start tablet-footer-stack"
+        >
+          <div>
+            Copyright © 2026
+            <a href="#" class="text-primary text-decoration-none"
+              >Ranker's Academy</a
+            >, All Rights Reserved
+          </div>
+          <div>
+            Designed and Developed by
+            <a href="#" class="text-primary text-decoration-none"
+              >Kavya Infoweb Pvt. Ltd.</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <div
+      class="modal fade"
+      id="examStartModal"
+      tabindex="-1"
+      aria-labelledby="examStartModalLabel"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content exam-bootstrap-modal">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold" id="examStartModalLabel">Secure Test Start</h5>
+          </div>
+          <div class="modal-body pt-2">
+            <p class="mb-3">
+              This test runs in fullscreen mode with copy, selection, and tab-switch monitoring enabled.
+            </p>
+            <div class="alert alert-info mb-0">
+              Click the button below and allow fullscreen to begin the test.
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-primary" id="startExamButton">
+              {% if attempt_started_at or attempt.status == 'in_progress' %}Resume Test{% else %}Start Test{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="examSecurityWarningModal"
+      tabindex="-1"
+      aria-labelledby="examSecurityWarningModalLabel"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content exam-bootstrap-modal">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold" id="examSecurityWarningModalLabel">Security Warning</h5>
+          </div>
+          <div class="modal-body">
+            <p id="examSecurityWarningMessage" class="mb-3">
+              A security violation was detected during this test.
+            </p>
+            <div class="small text-muted">
+              Warnings:
+              <strong id="examSecurityViolationCount">0</strong>
+              /
+              <strong id="examSecurityViolationLimit">{{ security_max_violations }}</strong>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="examSecurityAcknowledgeButton">
+              Return to Test
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+    <div class="modal-overlay" id="warningModal">
+      <div class="modal-content">
+        <div class="modal-icon warning">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h3 class="modal-title">Incomplete Exam!</h3>
+        <p class="modal-message">
+          You have only answered <span id="warningAnsweredCount">0</span> out of
+          <span id="warningTotalCount">{{ total_questions }}</span> questions. Are you sure you want to
+          submit?
+        </p>
+        <div class="modal-buttons">
+          <button class="modal-btn cancel" onclick="closeWarningModal()">
+            Cancel
+          </button>
+          <button class="modal-btn submit-now" onclick="submitExam()">
+            Submit Anyway
+          </button>
+        </div>
+      </div>
+    </div>
+
+   <div class="modal-overlay" id="timeUpModal">
+      <div class="modal-content">
+        <div class="modal-icon success">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h3 class="modal-title">Time's Up!</h3>
+        <p class="modal-message">
+          Your exam has been automatically submitted. You answered
+          <span id="finalCount">0</span> out of {{ total_questions }} questions.
+        </p>
+        <div class="modal-buttons">
+          <button class="modal-btn confirm" onclick="goToSuccess()">
+            View Results
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="tabSwitchModal">
+      <div class="modal-content">
+        <div class="modal-icon warning">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h3 class="modal-title">Tab Switch Detected!</h3>
+        <p class="modal-message">
+          You have switched away from the exam tab. This is warning <span id="tabSwitchCount">1</span> of 3.
+          <br/><br/>
+          On the <strong>third</strong> tab switch, your test will be automatically submitted.
+        </p>
+        <div class="modal-buttons">
+          <button class="modal-btn confirm" onclick="closeTabSwitchModal()">
+            I Understand
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {{ questions|json_script:"scholarship-questions-data" }}
+    {{ saved_progress|json_script:"scholarship-progress-data" }}
+    <script>
+      window.SCHOLARSHIP_TEST_CONFIG = {
+        attemptId: {{ attempt.id }},
+        totalQuestions: {{ total_questions }},
+        timeLimit: {{ time_limit }},
+        timeRemainingSeconds: {{ time_remaining_seconds }},
+        submitUrl: "{% url 'scholarship_test:scholarship_submit_test' attempt.id %}",
+        progressUrl: "{% url 'scholarship_test:scholarship_save_test_progress' attempt.id %}",
+        activateUrl: "{% url 'scholarship_test:scholarship_activate_test' attempt.id %}",
+        successUrl: "{% url 'scholarship_test:scholarship_success' attempt.id %}",
+        localProgressKey: "scholarship-test-progress:{{ attempt.id }}",
+        maxViolations: {{ security_max_violations }},
+        startedAt: {% if attempt_started_at %}"{{ attempt_started_at|date:'c' }}"{% else %}null{% endif %},
+        status: "{{ attempt.status }}",
+        securityStatus: "{{ attempt_security_status }}",
+        initialViolationCount: {{ attempt_violation_count|default:0 }},
+        subjectTabs: {{ attempt_subject_tabs_json|default:"[]"|safe }},
+      };
+    </script>
+    <script src="{% static 'js/exam_security.js' %}?v=20260521-1"></script>
+    <script src="{% static 'js/scholarship-test.js' %}?v=20260522-3"></script>
+  </body>
+</html>

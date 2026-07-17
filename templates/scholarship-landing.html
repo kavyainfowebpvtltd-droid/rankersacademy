@@ -1,0 +1,1581 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{ selected_test_name }} - Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/scholarship-landing.css' %}" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      .step-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 30px;
+        gap: 10px;
+      }       
+
+      .step-indicator .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+
+      .step-indicator .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #6b7280;
+        transition: 0.3s;
+      }
+
+      .step-indicator .step.active .step-number {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .step-indicator .step.completed .step-number {
+        background: #22c55e;
+        color: white;
+      }
+
+      .step-indicator .step-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 6px;
+      }
+
+      .step-indicator .step.active .step-label {
+        color: #667eea;
+        font-weight: 600;
+      }
+
+      .step-indicator .step.completed .step-label {
+        color: #22c55e;
+      }
+
+      .step-indicator .step-connector {
+        width: 40px;
+        height: 2px;
+        background: #e5e7eb;
+        margin-bottom: 20px;
+      }
+
+      .step-indicator .step.completed + .step-connector,
+      .step-indicator .step.completed ~ .step-connector {
+        background: #22c55e;
+      }
+    </style>
+  </head>
+  <body>
+    {% csrf_token %}
+    <!-- NAVBAR -->
+    <header class="navbar">
+      <div class="logo" style="margin-left: 24px">
+        <img
+          src="{% static 'img/Rankers_logo.png' %}"
+          alt="Logo"
+          class="logo-img"
+        />
+      </div>
+      <div class="navbar-text">{{ selected_test_name }}</div>
+      <button
+        class="login-btn"
+        style="margin-right: 24px"
+        onclick="showScholarshipRegisterModal()"
+      >
+        Register
+      </button>
+    </header>
+
+    {% if is_rtse_selected_test %}
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="badge">RTSE-2026</div>
+        <h2>Win Upto</h2>
+        <h1>50% Scholarship</h1>
+        <button class="cta-btn" onclick="showScholarshipRegisterModal()">
+          Register for free
+        </button>
+      </div>
+
+      <div class="hero-right">
+        <div class="circle-1"></div>
+        <div class="circle-2"></div>
+        <div class="circle-3"></div>
+        <img src="{% static 'img/hero.png.webp' %}" />
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section">
+      <h2>About RTSE</h2>
+      <div class="about-box">
+        <div>
+          <p class="about-intro">
+            The Rankers Academy helps students nourish their minds by preparing
+            them to excel in the field of Engineering and Pre-medical Entrance
+            Test Examinations. The goal of RTSE(Rankers Talent Search Exam) is
+            to bring together the nation's young talent on a single platform and
+            help them realize their full potential via careful assessment,
+            practice, and counseling.
+          </p>
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="6" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
+            National level test for skills & aptitude
+          </p>                                       
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"    
+              fill="none"     
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <path
+                d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+              />
+            </svg>
+            Up to 50% scholarship
+          </p>
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <path
+                d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+              />
+            </svg>
+            Start your learning journey
+          </p>
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path
+                d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+              />
+            </svg>
+            Expert-designed curriculum
+          </p>
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="8" r="6" />
+              <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+            </svg>
+            Recognized across India
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="section">
+      <h2>About RTSE Test</h2>
+      <div class="about-points-grid">
+        <div class="about-point-card">
+          <svg
+            class="point-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#00bcd4"
+            stroke-width="2"
+          >
+            <path
+              d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+            />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          <div class="point-label">Exam Name</div>
+          <div class="point-value">RTSE-2026</div>
+        </div>
+        <div class="about-point-card">
+          <svg
+            class="point-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#00bcd4"
+            stroke-width="2"
+          >
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+          </svg>
+          <div class="point-label">Eligibility</div>
+          <div class="point-value">Class 7th - 12th</div>
+        </div>
+        <div class="about-point-card">
+          <svg
+            class="point-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#00bcd4"
+            stroke-width="2"
+          >
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+          <div class="point-label">Mode</div>
+          <div class="point-value">Online</div>
+        </div>
+        <div class="about-point-card">
+          <svg
+            class="point-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#00bcd4"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <div class="point-label">Duration</div>
+          <div class="point-value">20 Minutes</div>
+        </div>
+        <div class="about-point-card">
+          <svg
+            class="point-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#00bcd4"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <div class="point-label">Question Type</div>
+          <div class="point-value">MCQ</div>
+        </div>
+        <div class="about-point-card">
+          <svg
+            class="point-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#00bcd4"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="8" r="6" />
+            <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+          </svg>
+          <div class="point-label">Scholarship</div>
+          <div class="point-value">Up to 50%</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEPS -->
+    <section class="section">
+      <h2>Steps To Get Scholarship</h2>
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-circle">1</div>
+          <div class="step-content">
+            <h3>Register</h3>
+            <p>Create your free account</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item">
+          <div class="step-circle">2</div>
+          <div class="step-content">
+            <h3>Take Test</h3>
+            <p>Attempt the scholarship exam</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item">
+          <div class="step-circle">3</div>
+          <div class="step-content">
+            <h3>Get Scholarship</h3>
+            <p>Win up to 50% scholarship</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUCCESS -->
+    <section class="section">
+      <h2>Our Success Stories</h2>
+      <div class="success">
+        <img src="{% static 'img/banner1.png' %}" />
+        <br />
+        <img src="{% static 'img/banner2.png' %}" />
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-container">
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What is RTSE?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              RTSE (Rankers Talent Search Exam) is a national level test that
+              assesses student's skills and aptitude. It provides opportunities
+              to win scholarships up to 50% for various courses we offer.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Who is eligible for the scholarship exam?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Students from Class 7 to Class 12 are eligible to appear for the
+              RTSE 2026 scholarship exam. Both online and offline modes are
+              available.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How can I register for the exam?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              You can register for free by clicking on the "Register for free"
+              button on our website. Simply create your account, fill in your
+              details, and you're ready to take the test.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What is the exam duration and pattern?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The RTSE 2026 exam is of 20 minutes duration and consists of 20
+              multiple-choice questions (MCQ) covering various subjects and
+              aptitude areas.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How will I receive my scholarship?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              After qualifying the exam, the secured scholarship will be
+              displayed directly on your screen after you submit the exam. Also
+              you will receive a sms response from our team, the sms will
+              include your test score and scholarship secured and our CTA
+              number.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What is the syllabus for RTSE exam?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The RTSE exam covers subjects including Mathematics, Science,
+              English, and General Knowledge. The syllabus is designed as per
+              the NCERT curriculum for classes 7-12 and focuses on conceptual
+              understanding and practical application.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>When will the results be announced?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The results for RTSE-2026 will be announced right after you finish
+              your exam. You will receive an SMS notification with your score
+              and scholarship details. You can also check your results on our
+              student portal.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is there any fee for the exam?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              No, the RTSE exam is completely FREE for all students. There are
+              no registration fees or examination fees. You can register and
+              appear for the exam at no cost.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What are the benefits of RTSE scholarship?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The scholarship can be used for tuition fees, online courses,
+              study materials, test series, and more. Top performers also get
+              access to exclusive mentorship programs, career guidance sessions,
+              and national-level competitions.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can I take the exam from home?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, RTSE is an online examination that can be taken from the
+              comfort of your home. All you need is a stable internet connection
+              and a laptop or desktop computer with a webcam for proctoring.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    {% else %}
+    <section class="hero">
+      <div class="hero-left">
+        <div class="badge">Scholarship Test</div>
+        <h2>{{ selected_test_name }}</h2>
+        <h1>Attempt Your Test</h1>
+        <button class="cta-btn" onclick="showScholarshipRegisterModal()">
+          Register to Continue
+        </button>
+      </div>
+
+      <div class="hero-right">
+        <div class="circle-1"></div>
+        <div class="circle-2"></div>
+        <div class="circle-3"></div>
+        <img src="{% static 'img/hero.png.webp' %}" />
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>About This Test</h2>
+      <div class="about-box">
+        <div>
+          <p class="about-intro">
+            This scholarship test was configured in Scholarship Management and
+            is now available for students to register, verify their phone
+            number, and attempt online.
+          </p>
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+            </svg>
+            Same scholarship login, dashboard, test UI, and result flow
+          </p>
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <polyline points="12 6 12 12 16 14" />
+              <circle cx="12" cy="12" r="10" />
+            </svg>
+            Timed online assessment with instant submission handling
+          </p>
+          <p>
+            <svg
+              class="about-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#00bcd4"
+              stroke-width="2"
+            >
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+            Created directly from the scholarship test builder
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Test Details</h2>
+      <div class="about-points-grid">
+        <div class="about-point-card">
+          <div class="point-label">Test Name</div>
+          <div class="point-value">{{ selected_test_name }}</div>
+        </div>
+        <div class="about-point-card">
+          <div class="point-label">Questions</div>
+          <div class="point-value">{{ selected_test_question_count }}</div>
+        </div>
+        <div class="about-point-card">
+          <div class="point-label">Duration</div>
+          <div class="point-value">{{ selected_test_duration_display }}</div>
+        </div>
+        <div class="about-point-card">
+          <div class="point-label">Mode</div>
+          <div class="point-value">Online</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>How It Works</h2>
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-circle">1</div>
+          <div class="step-content">
+            <h3>Register</h3>
+            <p>Create your scholarship profile</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item">
+          <div class="step-circle">2</div>
+          <div class="step-content">
+            <h3>Verify</h3>
+            <p>Confirm your number with OTP</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item">
+          <div class="step-circle">3</div>
+          <div class="step-content">
+            <h3>Attempt</h3>
+            <p>Take the selected scholarship test</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <script src="{% static 'js/scholarship-landing.js' %}"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Scholarship Login Modal -->
+    <div
+      class="modal fade"
+      id="scholarshipLoginModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px">
+        <div class="modal-content">
+          <div
+            class="modal-header"
+            style="
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 12px 20px;
+            "
+          >
+            <h6 class="modal-title">
+              <i class="bi bi-award me-2"></i>{{ selected_test_name }} - Login
+            </h6>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" style="padding: 20px">
+            <div id="scholarshipLoginStep1">
+              <div class="text-center mb-3">
+                <div
+                  class="role-icon mx-auto mb-2"
+                  style="
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <i
+                    class="bi bi-shield-lock"
+                    style="font-size: 18px; color: white"
+                  ></i>
+                </div>
+                <h6 class="fw-bold mb-1">Sign In with OTP</h6>
+                <p class="text-muted small mb-0">Enter your mobile number</p>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small fw-semibold"
+                  >Mobile Number</label
+                >
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">+91</span>
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="scholarshipLoginPhone"
+                    placeholder="10-digit number"
+                    maxlength="10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary btn-sm w-100 mb-2"
+                id="scholarshipSendOtpBtn"
+              >
+                Send OTP <i class="bi bi-send ms-1"></i>
+              </button>
+
+              <div class="text-center">
+                <span class="text-muted small">New user? </span>
+                <a
+                  href="#"
+                  class="text-primary fw-semibold small"
+                  onclick="
+                    showScholarshipRegisterModal();
+                    return false;
+                  "
+                  >Register here</a
+                >
+              </div>
+            </div>
+
+            <div id="scholarshipLoginStep2" style="display: none">
+              <div class="text-center mb-3">
+                <div
+                  class="role-icon mx-auto mb-2"
+                  style="
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <i
+                    class="bi bi-check-circle"
+                    style="font-size: 18px; color: white"
+                  ></i>
+                </div>
+                <h6 class="fw-bold mb-1">Verify OTP</h6>
+                <p class="text-muted small mb-0">
+                  Enter 4-digit OTP sent to
+                  <span id="scholarshipLoginMaskedPhone"></span>
+                </p>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small fw-semibold">Enter OTP</label>
+                <input
+                  type="text"
+                  class="form-control otp-input"
+                  id="scholarshipLoginOtp"
+                  maxlength="4"
+                  placeholder="0000"
+                  style="
+                    letter-spacing: 8px;
+                    font-size: 18px;
+                    text-align: center;
+                    padding: 8px;
+                  "
+                  required
+                />
+              </div>
+
+              <div
+                id="scholarshipLoginError"
+                class="alert alert-danger small py-2"
+                style="display: none"
+              ></div>
+
+              <div class="d-flex gap-2 mb-2">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm flex-grow-1"
+                  id="scholarshipLoginResendBtn"
+                >
+                  Resend OTP
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm flex-grow-1"
+                  id="scholarshipLoginVerifyBtn"
+                >
+                  Verify & Login
+                </button>
+              </div>
+
+              <div class="text-center">
+                <a
+                  href="#"
+                  class="text-muted small"
+                  onclick="
+                    showScholarshipLoginStep1();
+                    return false;
+                  "
+                >
+                  <i class="bi bi-arrow-left me-1"></i> Change number
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scholarship Registration Modal -->
+    <div
+      class="modal fade"
+      id="scholarshipRegisterModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 420px">
+        <div class="modal-content">
+          <div
+            class="modal-header"
+            style="
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 12px 20px;
+            "
+          >
+            <h6 class="modal-title">
+              <i class="bi bi-award me-2"></i>{{ selected_test_name }} -
+              Registration
+            </h6>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" style="padding: 20px">
+            <!-- Step Indicator -->
+            <div class="step-indicator mb-3">
+              <div
+                class="step"
+                id="scholarshipRegStep1"
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                "
+              >
+                <div
+                  class="step-number"
+                  style="
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    background: #667eea;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    color: white;
+                  "
+                >
+                  1
+                </div>
+                <span class="step-label small">Details</span>
+              </div>
+              <div
+                style="
+                  width: 30px;
+                  height: 2px;
+                  background: #e5e7eb;
+                  margin-bottom: 18px;
+                "
+              ></div>
+              <div
+                class="step"
+                id="scholarshipRegStep2"
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                "
+              >
+                <div
+                  class="step-number"
+                  style="
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    background: #e5e7eb;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    color: #6b7280;
+                  "
+                >
+                  2
+                </div>
+                <span class="step-label small" style="color: #6b7280"
+                  >Verify</span
+                >
+              </div>
+            </div>
+
+            <!-- Step 1: Registration Details -->
+            <div class="step-content" id="scholarshipRegContent1">
+              <h6 class="text-center mb-3 fw-semibold">Student Registration</h6>
+
+              <div class="mb-2">
+                <label class="form-label small mb-1">Grade / Class</label>
+                <select
+                  name="grade"
+                  id="scholarshipGrade"
+                  class="form-select form-select-sm"
+                  required
+                >
+                  <option value="">Select grade</option>
+                  <option value="8th">8th</option>
+                  <option value="9th">9th</option>
+                  <option value="10th">10th</option>
+                  <option value="11th">11th</option>
+                  <option value="12th">12th</option>
+                </select>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small mb-1">Board</label>
+                <select
+                  name="board"
+                  id="scholarshipBoard"
+                  class="form-select form-select-sm"
+                  required
+                >
+                  <option value="">Select board</option>
+                  <option value="CBSE">CBSE</option>
+                  <option value="State">State Board</option>
+                  <option value="ICSE">ICSE</option>
+                </select>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small mb-1">Your Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  id="scholarshipName"
+                  class="form-control form-select-sm"
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small mb-1">Mobile Number</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">+91</span>
+                  <input
+                    type="tel"
+                    name="phone_number"
+                    id="scholarshipRegPhone"
+                    class="form-control"
+                    placeholder="10-digit number"
+                    maxlength="10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary btn-sm w-100"
+                id="scholarshipRegSubmitBtn"
+              >
+                Send OTP <i class="bi bi-send ms-1"></i>
+              </button>
+
+              <div class="text-center mt-2">
+                <span class="text-muted small">Already registered? </span>
+                <a
+                  href="#"
+                  class="text-primary fw-semibold small"
+                  onclick="
+                    showScholarshipLoginModal();
+                    return false;
+                  "
+                  >Login here</a
+                >
+              </div>
+            </div>
+
+            <!-- Step 2: OTP Verification -->
+            <div
+              class="step-content"
+              id="scholarshipRegContent2"
+              style="display: none"
+            >
+              <h6 class="text-center mb-3 fw-semibold">Verify Your Phone</h6>
+
+              <div class="text-center mb-3">
+                <p class="text-muted small mb-1">We've sent a 4-digit OTP to</p>
+                <div
+                  class="d-inline-flex align-items-center bg-light rounded px-2 py-1"
+                >
+                  <i class="bi bi-phone me-1 text-primary"></i>
+                  <strong class="small"
+                    >+91 <span id="scholarshipRegMaskedPhone"></span
+                  ></strong>
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small mb-1">Enter OTP</label>
+                <input
+                  type="text"
+                  name="otp_code"
+                  id="scholarshipRegOtp"
+                  class="form-control otp-input"
+                  maxlength="4"
+                  placeholder="0000"
+                  style="
+                    letter-spacing: 8px;
+                    font-size: 18px;
+                    text-align: center;
+                    padding: 8px;
+                  "
+                  required
+                />
+              </div>
+
+              <div
+                id="scholarshipRegError"
+                class="alert alert-danger small py-2"
+                style="display: none"
+              ></div>
+
+              <div class="d-flex gap-2 mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm flex-grow-1"
+                  id="scholarshipRegResendBtn"
+                >
+                  Resend OTP
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm flex-grow-1"
+                  id="scholarshipRegVerifyBtn"
+                >
+                  Verify & Continue
+                </button>
+              </div>
+
+              <div class="text-center">
+                <a
+                  href="#"
+                  class="text-muted small"
+                  onclick="
+                    showScholarshipRegStep1();
+                    return false;
+                  "
+                >
+                  <i class="bi bi-arrow-left me-1"></i> Change details
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Scholarship Modal Functions
+      let scholarshipLoginPhone = "";
+      let scholarshipRegPhone = "";
+      const scholarshipNameRegex = /^[A-Za-z ]+$/;
+
+      // Check for auth query parameters on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("show_register") === "1") {
+          showScholarshipRegisterModal();
+        } else if (urlParams.get("show_login") === "1") {
+          showScholarshipLoginModal();
+        }
+
+        if (
+          urlParams.get("show_register") === "1" ||
+          urlParams.get("show_login") === "1"
+        ) {
+          // Clear the query parameter so it doesn't persist
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
+        }
+      });
+
+      function getCSRF() {
+        return (
+          document.querySelector("[name=csrfmiddlewaretoken]")?.value || ""
+        );
+      }
+
+      function showScholarshipLoginModal() {
+        var loginModal = bootstrap.Modal.getInstance(
+          document.getElementById("scholarshipLoginModal"),
+        );
+        var registerModal = bootstrap.Modal.getInstance(
+          document.getElementById("scholarshipRegisterModal"),
+        );
+        if (registerModal) registerModal.hide();
+
+        setTimeout(function () {
+          var modal = new bootstrap.Modal(
+            document.getElementById("scholarshipLoginModal"),
+          );
+          modal.show();
+        }, 300);
+      }
+
+      function showScholarshipRegisterModal() {
+        var loginModal = bootstrap.Modal.getInstance(
+          document.getElementById("scholarshipLoginModal"),
+        );
+        if (loginModal) loginModal.hide();
+
+        setTimeout(function () {
+          var modal = new bootstrap.Modal(
+            document.getElementById("scholarshipRegisterModal"),
+          );
+          modal.show();
+        }, 300);
+      }
+
+      function showScholarshipLoginStep1() {
+        document.getElementById("scholarshipLoginStep1").style.display =
+          "block";
+        document.getElementById("scholarshipLoginStep2").style.display = "none";
+        document.getElementById("scholarshipLoginPhone").value = "";
+        document.getElementById("scholarshipLoginOtp").value = "";
+        document.getElementById("scholarshipLoginError").style.display = "none";
+      }
+
+      function showScholarshipRegStep1() {
+        document.getElementById("scholarshipRegContent1").style.display =
+          "block";
+        document.getElementById("scholarshipRegContent2").style.display =
+          "none";
+        document.getElementById("scholarshipRegStep1").classList.add("active");
+        document
+          .getElementById("scholarshipRegStep1")
+          .classList.remove("completed");
+        document
+          .getElementById("scholarshipRegStep2")
+          .classList.remove("active");
+      }
+
+      // Scholarship Login - Send OTP
+      document
+        .getElementById("scholarshipSendOtpBtn")
+        .addEventListener("click", async function () {
+          var phone = document.getElementById("scholarshipLoginPhone").value;
+
+          if (phone.length !== 10) {
+            Swal.fire({
+              icon: "error",
+              title: "Invalid Phone",
+              text: "Please enter a valid 10-digit mobile number",
+            });
+            return;
+          }
+
+          // Disable button and show loading
+          var btn = this;
+          btn.disabled = true;
+          btn.innerHTML =
+            'Sending... <span class="spinner-border spinner-border-sm ms-1"></span>';
+
+          scholarshipLoginPhone = phone;
+
+          var formData = new FormData();
+          formData.append("phone_number", phone);
+
+          try {
+            var response = await fetch(
+              '{% url "scholarship_test:scholarship_send_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            var data = await response.json();
+
+            if (data.success) {
+              document.getElementById(
+                "scholarshipLoginMaskedPhone",
+              ).textContent = phone.slice(0, 6) + "****";
+              document.getElementById("scholarshipLoginStep1").style.display =
+                "none";
+              document.getElementById("scholarshipLoginStep2").style.display =
+                "block";
+              document.getElementById("scholarshipLoginOtp").focus();
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.error || "Failed to send OTP",
+              });
+              btn.disabled = false;
+              btn.innerHTML = 'Send OTP <i class="bi bi-send ms-1"></i>';
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+            btn.disabled = false;
+            btn.innerHTML = 'Send OTP <i class="bi bi-send ms-1"></i>';
+          }
+        });
+
+      // Scholarship Login - Verify OTP
+      document
+        .getElementById("scholarshipLoginVerifyBtn")
+        .addEventListener("click", async function () {
+          var otp = document.getElementById("scholarshipLoginOtp").value;
+          var errorDiv = document.getElementById("scholarshipLoginError");
+
+          if (otp.length !== 4) {
+            errorDiv.textContent = "Please enter a valid 4-digit OTP";
+            errorDiv.style.display = "block";
+            return;
+          }
+
+          // Disable button and show loading
+          var btn = this;
+          btn.disabled = true;
+          btn.textContent = "Verifying...";
+
+          errorDiv.style.display = "none";
+
+          var formData = new FormData();
+          formData.append("phone_number", scholarshipLoginPhone);
+          formData.append("otp_code", otp);
+          formData.append("login", "true");
+
+          try {
+            var response = await fetch(
+              '{% url "scholarship_test:scholarship_verify_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            var data = await response.json();
+
+            if (data.success) {
+              var modal = bootstrap.Modal.getInstance(
+                document.getElementById("scholarshipLoginModal"),
+              );
+              if (modal) modal.hide();
+
+              Swal.fire({
+                icon: "success",
+                title: "Logged In!",
+                text: "Redirecting to dashboard...",
+                timer: 1500,
+                showConfirmButton: false,
+              }).then(function () {
+                window.location.href =
+                  '{% url "scholarship_test:scholarship_dashboard" %}';
+              });
+            } else {
+              errorDiv.textContent = data.error || "Invalid OTP";
+              errorDiv.style.display = "block";
+              btn.disabled = false;
+              btn.textContent = "Verify & Login";
+            }
+          } catch (err) {
+            errorDiv.textContent = "An error occurred. Please try again.";
+            errorDiv.style.display = "block";
+            btn.disabled = false;
+            btn.textContent = "Verify & Login";
+          }
+        });
+
+      // Scholarship Login - Resend OTP
+      document
+        .getElementById("scholarshipLoginResendBtn")
+        .addEventListener("click", async function () {
+          var btn = this;
+          btn.disabled = true;
+          btn.textContent = "Sending...";
+
+          var formData = new FormData();
+          formData.append("phone_number", scholarshipLoginPhone);
+
+          try {
+            var response = await fetch(
+              '{% url "scholarship_test:scholarship_resend_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            var data = await response.json();
+
+            if (data.success) {
+              Swal.fire({
+                icon: "success",
+                title: "OTP Sent",
+                text: "A new OTP has been sent to your phone",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.error || "Failed to send OTP",
+              });
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+          }
+
+          btn.disabled = false;
+          btn.textContent = "Resend OTP";
+        });
+
+      // Scholarship Registration - Submit Details
+      document
+        .getElementById("scholarshipRegSubmitBtn")
+        .addEventListener("click", async function () {
+          var grade = document.getElementById("scholarshipGrade").value;
+          var board = document.getElementById("scholarshipBoard").value;
+          var name = document.getElementById("scholarshipName").value.trim();
+          var phone = document.getElementById("scholarshipRegPhone").value;
+
+          if (!grade) {
+            Swal.fire({
+              icon: "error",
+              title: "Required",
+              text: "Please select your grade",
+            });
+            return;
+          }
+          if (!board) {
+            Swal.fire({
+              icon: "error",
+              title: "Required",
+              text: "Please select your board",
+            });
+            return;
+          }
+          if (!name.trim()) {
+            Swal.fire({
+              icon: "error",
+              title: "Required",
+              text: "Please enter your name",
+            });
+            return;
+          }
+          if (!scholarshipNameRegex.test(name)) {
+            Swal.fire({
+              icon: "error",
+              title: "Invalid Name",
+              text: "Name should contain only letters and spaces",
+            });
+            return;
+          }
+          if (phone.length !== 10) {
+            Swal.fire({
+              icon: "error",
+              title: "Invalid Phone",
+              text: "Please enter a valid 10-digit mobile number",
+            });
+            return;
+          }
+
+          scholarshipRegPhone = phone;
+
+          var formData = new FormData();
+          formData.append("grade", grade);
+          formData.append("board", board);
+          formData.append("name", name);
+          formData.append("phone_number", phone);
+
+          try {
+            var response = await fetch(
+              '{% url "scholarship_test:scholarship_register_step2" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            if (response.ok) {
+              document.getElementById("scholarshipRegMaskedPhone").textContent =
+                phone.slice(0, 6) + "****";
+              document.getElementById("scholarshipRegContent1").style.display =
+                "none";
+              document.getElementById("scholarshipRegContent2").style.display =
+                "block";
+              document
+                .getElementById("scholarshipRegStep1")
+                .classList.remove("active");
+              document
+                .getElementById("scholarshipRegStep1")
+                .classList.add("completed");
+              document
+                .getElementById("scholarshipRegStep2")
+                .classList.add("active");
+              document.getElementById("scholarshipRegOtp").focus();
+            } else {
+              var html = await response.text();
+              document.body.innerHTML = html;
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+          }
+        });
+
+      document
+        .getElementById("scholarshipName")
+        .addEventListener("input", function () {
+          this.value = this.value.replace(/[^A-Za-z ]/g, "");
+        });
+
+      // Scholarship Registration - Verify OTP
+      document
+        .getElementById("scholarshipRegVerifyBtn")
+        .addEventListener("click", async function () {
+          var otp = document.getElementById("scholarshipRegOtp").value;
+          var errorDiv = document.getElementById("scholarshipRegError");
+
+          if (otp.length !== 4) {
+            errorDiv.textContent = "Please enter a valid 4-digit OTP";
+            errorDiv.style.display = "block";
+            return;
+          }
+
+          errorDiv.style.display = "none";
+
+          var formData = new FormData();
+          formData.append("phone_number", scholarshipRegPhone);
+          formData.append("otp_code", otp);
+
+          try {
+            var response = await fetch(
+              '{% url "scholarship_test:scholarship_verify_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            var data = await response.json();
+
+            if (data.success) {
+              var modal = bootstrap.Modal.getInstance(
+                document.getElementById("scholarshipRegisterModal"),
+              );
+              if (modal) modal.hide();
+
+              Swal.fire({
+                icon: "success",
+                title: "Registered!",
+                text: "Redirecting to dashboard...",
+                timer: 1500,
+                showConfirmButton: false,
+              }).then(function () {
+                window.location.href =
+                  '{% url "scholarship_test:scholarship_dashboard" %}';
+              });
+            } else {
+              errorDiv.textContent = data.error || "Invalid OTP";
+              errorDiv.style.display = "block";
+            }
+          } catch (err) {
+            errorDiv.textContent = "An error occurred. Please try again.";
+            errorDiv.style.display = "block";
+          }
+        });
+
+      // Scholarship Registration - Resend OTP
+      document
+        .getElementById("scholarshipRegResendBtn")
+        .addEventListener("click", async function () {
+          var btn = this;
+          btn.disabled = true;
+          btn.textContent = "Sending...";
+
+          var formData = new FormData();
+          formData.append("phone_number", scholarshipRegPhone);
+
+          try {
+            var response = await fetch(
+              '{% url "scholarship_test:scholarship_resend_otp" %}',
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCSRF() },
+                body: formData,
+              },
+            );
+
+            var data = await response.json();
+
+            if (data.success) {
+              Swal.fire({
+                icon: "success",
+                title: "OTP Sent",
+                text: "A new OTP has been sent to your phone",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.error || "Failed to send OTP",
+              });
+            }
+          } catch (err) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "An error occurred. Please try again.",
+            });
+          }
+
+          btn.disabled = false;
+          btn.textContent = "Resend OTP";
+        });
+
+      // Input validation - only numbers
+      document
+        .getElementById("scholarshipLoginPhone")
+        .addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      document
+        .getElementById("scholarshipLoginOtp")
+        .addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      document
+        .getElementById("scholarshipRegPhone")
+        .addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      document
+        .getElementById("scholarshipRegOtp")
+        .addEventListener("input", function (e) {
+          this.value = this.value.replace(/\D/g, "");
+        });
+
+      // Reset modals when closed
+      document
+        .getElementById("scholarshipLoginModal")
+        .addEventListener("hidden.bs.modal", function () {
+          showScholarshipLoginStep1();
+        });
+
+      document
+        .getElementById("scholarshipRegisterModal")
+        .addEventListener("hidden.bs.modal", function () {
+          showScholarshipRegStep1();
+        });
+    </script>
+  </body>
+</html>

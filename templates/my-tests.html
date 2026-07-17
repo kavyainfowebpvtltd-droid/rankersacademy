@@ -1,0 +1,2437 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="my-tests-page">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap");
+
+    .my-tests-page {
+      --brand-a: #ff8a00;
+      --brand-b: #e52e71;
+      --brand-c: #7c3aed;
+      --muted: #a1a1aa;
+      --page-text: #fafafa;
+      --page-bg:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.2), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(229, 46, 113, 0.13), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(255, 138, 0, 0.1), transparent 60%),
+        #06060a;
+      --page-card-bg: rgba(7, 7, 12, 0.78);
+      --page-card-soft-bg: rgba(255, 255, 255, 0.04);
+      --page-card-border: rgba(255, 255, 255, 0.09);
+      --page-card-soft-border: rgba(255, 255, 255, 0.1);
+      --page-card-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+      --page-card-hover-border: rgba(255, 255, 255, 0.28);
+      --page-card-hover-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.32);
+      --page-nav-bg: rgba(255, 255, 255, 0.04);
+      --page-nav-border: rgba(255, 255, 255, 0.08);
+      --page-nav-link: #d4d4d8;
+      --page-outline-text: #f5f5f5;
+      --page-outline-bg: rgba(255, 255, 255, 0.02);
+      --page-outline-bg-hover: rgba(255, 255, 255, 0.08);
+      --page-outline-border: rgba(255, 255, 255, 0.18);
+      --page-outline-border-hover: rgba(255, 255, 255, 0.28);
+      --page-button-hover-shadow: 0 10px 22px rgba(124, 58, 237, 0.18);
+      --page-table-color: #f4f4f5;
+      --page-table-row-color: #f5f5f5;
+      --page-table-border: rgba(255, 255, 255, 0.1);
+      --page-table-striped: rgba(255, 255, 255, 0.02);
+      --page-table-hover: rgba(255, 255, 255, 0.04);
+      --page-table-body-bg: rgba(11, 12, 18, 0.94);
+      --page-table-body-bg-alt: rgba(15, 17, 24, 0.98);
+      --page-table-body-bg-hover: rgba(22, 25, 35, 0.98);
+      --page-medal-bg: rgba(255, 255, 255, 0.08);
+      --page-medal-border: rgba(255, 255, 255, 0.16);
+      --page-highlight-bg: rgba(13, 202, 240, 0.22);
+      --page-highlight-striped: rgba(13, 202, 240, 0.28);
+      --page-highlight-outline: rgba(13, 202, 240, 0.7);
+      --page-upcoming-text: #a1a1aa;
+      --page-upcoming-bg: rgba(255, 255, 255, 0.02);
+      --page-upcoming-border: rgba(255, 255, 255, 0.16);
+      --page-header-bg: rgba(255, 255, 255, 0.04);
+      --page-count-badge-bg: rgba(125, 211, 252, 0.16);
+      --page-count-badge-text: #bae6fd;
+      --page-count-badge-border: rgba(125, 211, 252, 0.24);
+      min-height: 100vh;
+      padding: 1.5rem 0 2rem;
+      color: var(--page-text);
+      background: var(--page-bg);
+      font-family: "DM Sans", system-ui, sans-serif;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page {
+      --muted: #64748b;
+      --page-text: #0f172a;
+      --page-bg:
+        radial-gradient(ellipse 85% 55% at 50% -10%, rgba(59, 130, 246, 0.14), transparent 60%),
+        radial-gradient(ellipse 65% 55% at 100% 100%, rgba(236, 72, 153, 0.08), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, rgba(14, 165, 233, 0.08), transparent 60%),
+        linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+      --page-card-bg: rgba(255, 255, 255, 0.94);
+      --page-card-soft-bg: #f8fbff;
+      --page-card-border: #dbe4f0;
+      --page-card-soft-border: #e5eaf2;
+      --page-card-shadow: 0 16px 34px rgba(18, 104, 255, 0.08);
+      --page-card-hover-border: #c7d2fe;
+      --page-card-hover-shadow: 0 18px 38px rgba(18, 104, 255, 0.12);
+      --page-nav-bg: rgba(255, 255, 255, 0.78);
+      --page-nav-border: #dbe4f0;
+      --page-nav-link: #475569;
+      --page-outline-text: #0f172a;
+      --page-outline-bg: rgba(255, 255, 255, 0.9);
+      --page-outline-bg-hover: #eef5ff;
+      --page-outline-border: #cbd5e1;
+      --page-outline-border-hover: #93c5fd;
+      --page-button-hover-shadow: 0 14px 28px rgba(18, 104, 255, 0.14);
+      --page-table-color: #0f172a;
+      --page-table-row-color: #1e293b;
+      --page-table-border: #dbe4f0;
+      --page-table-striped: #f8fbff;
+      --page-table-hover: #eef5ff;
+      --page-table-body-bg: rgba(255, 255, 255, 0.98);
+      --page-table-body-bg-alt: #f8fbff;
+      --page-table-body-bg-hover: #eef5ff;
+      --page-medal-bg: #eef5ff;
+      --page-medal-border: #c7d2fe;
+      --page-highlight-bg: rgba(59, 130, 246, 0.14);
+      --page-highlight-striped: rgba(59, 130, 246, 0.18);
+      --page-highlight-outline: rgba(37, 99, 235, 0.45);
+      --page-upcoming-text: #64748b;
+      --page-upcoming-bg: #f8fbff;
+      --page-upcoming-border: #dbe4f0;
+      --page-header-bg: #f8fbff;
+      --page-count-badge-bg: #eef5ff;
+      --page-count-badge-text: #334155;
+      --page-count-badge-border: #dbe4f0;
+    }
+
+    .my-tests-page .display {
+      font-family: "Bricolage Grotesque", system-ui, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .my-tests-page .mono {
+      font-family: "DM Mono", monospace;
+    }
+
+    .my-tests-page .soft {
+      color: var(--muted);
+    }
+
+    .my-tests-page .brand-gradient {
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+    }
+
+    .my-tests-page .brand-text {
+      background: linear-gradient(135deg, #ffb55a, #f72585 50%, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .my-tests-page .glass {
+      background: var(--page-card-bg);
+      backdrop-filter: blur(18px) saturate(160%);
+    }
+
+    .my-tests-page .app-shell {
+      min-height: 100vh;
+    }
+
+    .my-tests-page .sticky-head {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      border-radius: 1.25rem;
+    }
+
+    .my-tests-page .btn-brand {
+      --bs-btn-color: #fff;
+      --bs-btn-border-color: transparent;
+      --bs-btn-hover-color: #fff;
+      --bs-btn-hover-border-color: transparent;
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+      border-color: transparent;
+      box-shadow: 0 12px 28px rgba(229, 46, 113, 0.2);
+    }
+
+    .my-tests-page .btn-outline-light {
+      border-color: var(--page-outline-border);
+      color: var(--page-outline-text);
+      background: var(--page-outline-bg);
+    }
+
+    .my-tests-page .btn-outline-light:hover,
+    .my-tests-page .btn-outline-light:focus {
+      color: var(--page-outline-text);
+      background: var(--page-outline-bg-hover);
+      border-color: var(--page-outline-border-hover);
+    }
+
+    .my-tests-page .hover-card {
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .my-tests-page .hover-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--page-card-hover-border) !important;
+      box-shadow: var(--page-card-hover-shadow) !important;
+    }
+
+    .my-tests-page .rise {
+      animation: my-tests-rise 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    }
+
+    @keyframes my-tests-rise {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .my-tests-page .app-card {
+      background: var(--page-card-bg);
+      border: 1px solid var(--page-card-border);
+      box-shadow: var(--page-card-shadow);
+      border-radius: 1.35rem;
+    }
+
+    .my-tests-page .app-card-soft {
+      background: var(--page-card-soft-bg);
+      border: 1px solid var(--page-card-soft-border);
+      box-shadow: var(--page-card-shadow);
+      border-radius: 1.1rem;
+    }
+
+    .my-tests-page .nav-pills {
+      gap: 0.35rem;
+      background: var(--page-nav-bg);
+      border-radius: 999px;
+      padding: 0.35rem;
+      border: 1px solid var(--page-nav-border);
+    }
+
+    .my-tests-page .nav-pills .nav-link {
+      color: var(--page-nav-link);
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .my-tests-page .nav-pills .nav-link.tab-upcoming {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      color: var(--page-upcoming-text);
+      background: var(--page-upcoming-bg);
+      border: 1px dashed var(--page-upcoming-border);
+      cursor: not-allowed;
+      opacity: 0.82;
+    }
+
+    .my-tests-page .nav-pills .nav-link.tab-upcoming:hover,
+    .my-tests-page .nav-pills .nav-link.tab-upcoming:focus,
+    .my-tests-page .nav-pills .nav-link.tab-upcoming.active {
+      color: var(--page-upcoming-text);
+      background: var(--page-upcoming-bg);
+      border-color: var(--page-upcoming-border);
+    }
+
+    .my-tests-page .coming-soon-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.18rem 0.5rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(250, 204, 21, 0.16);
+      color: #facc15;
+      border: 1px solid rgba(250, 204, 21, 0.28);
+    }
+
+    .my-tests-page .nav-pills .nav-link.active,
+    .my-tests-page .nav-pills .nav-link:hover,
+    .my-tests-page .nav-pills .nav-link:focus {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+    }
+
+    .my-tests-page .hero-kpi-grid {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .my-tests-page .summary-card-title {
+      color: #768396;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+    }
+
+    .my-tests-page .summary-card-value {
+      font-size: clamp(2.05rem, 2.9vw, 2.75rem);
+      font-weight: 900;
+      line-height: 1;
+      color: #111827;
+    }
+
+    .my-tests-page .summary-card-extra {
+      font-size: 0.9rem;
+      color: #7b8697;
+    }
+
+    .my-tests-page .result-stat-card {
+      background: #ffffff;
+      border: 1px solid #dfe7f2;
+      border-radius: 1.28rem;
+      min-height: 128px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+      padding: 1.15rem 1.28rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.34rem;
+    }
+
+    .my-tests-page .student-highlight {
+      --bs-table-bg: transparent;
+      --bs-table-striped-bg: transparent;
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
+    }
+
+    .my-tests-page .rank-medal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.4rem;
+      height: 1.4rem;
+      margin-left: 0.2rem;
+      border-radius: 999px;
+      background: var(--page-medal-bg);
+      box-shadow: inset 0 0 0 1px var(--page-medal-border);
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+    .my-tests-page .reward-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b) 52%, var(--brand-c));
+      box-shadow: 0 0.5rem 1.4rem rgba(229, 46, 113, 0.22);
+      color: #fff;
+      font-size: 1rem;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .my-tests-page .test-slot-btn {
+      width: 100%;
+      min-height: 6.5rem;
+      padding: 1rem 1.2rem 1.05rem;
+      border-radius: 1.9rem;
+      font-family: "DM Sans", system-ui, sans-serif;
+      white-space: normal;
+      text-align: left;
+      display: flex;
+      align-items: flex-start;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .my-tests-page .test-slot-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0.36rem;
+      width: 100%;
+      min-width: 0;
+      line-height: 1.18;
+    }
+
+    .my-tests-page .test-slot-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.6rem;
+      flex-wrap: nowrap;
+    }
+
+    .my-tests-page .test-slot-name {
+      font-weight: 700;
+      font-size: 1rem;
+      line-height: 1.25;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .my-tests-page .test-slot-meta {
+      margin-top: 0.05rem;
+      font-family: "DM Mono", monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.01em;
+      opacity: 0.86;
+    }
+
+    .my-tests-page .test-slot-sections {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.42rem;
+      margin-top: 0.6rem;
+    }
+
+    .my-tests-page .test-slot-section-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.22rem 0.55rem;
+      font-family: "DM Mono", monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--page-nav-link);
+      background: var(--page-card-soft-bg);
+      border: 1px solid var(--page-card-soft-border);
+    }
+
+    .my-tests-page .test-slot-badge {
+      flex: 0 0 auto;
+      font-size: 0.64rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-selected {
+      color: #fdf2f8 !important;
+      background: linear-gradient(135deg, rgba(61, 8, 34, 0.96), rgba(91, 20, 62, 0.94) 52%, rgba(64, 24, 96, 0.95)) !important;
+      border-color: rgba(244, 114, 182, 0.34) !important;
+      box-shadow: 0 14px 28px rgba(76, 13, 50, 0.34) !important;
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-name,
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-meta,
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-section-chip {
+      color: #fdf2f8 !important;
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-section-chip {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(244, 114, 182, 0.24) !important;
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-selected .test-slot-badge {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: #ffe4f1 !important;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming {
+      color: #e0f2fe !important;
+      background: linear-gradient(135deg, rgba(8, 47, 73, 0.96), rgba(12, 74, 110, 0.94) 52%, rgba(14, 116, 144, 0.9)) !important;
+      border-color: rgba(125, 211, 252, 0.28) !important;
+      box-shadow: 0 14px 28px rgba(7, 44, 66, 0.26) !important;
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-name {
+      color: #ecfeff !important;
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-meta,
+    .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-section-chip {
+      color: #dbeafe !important;
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-badge {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: #e0f2fe !important;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-section-chip {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(125, 211, 252, 0.22) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected {
+      color: #831843 !important;
+      background: linear-gradient(135deg, #ffe4ec, #fdf2f8 52%, #f5ecff) !important;
+      border-color: #f9a8d4 !important;
+      box-shadow: 0 14px 28px rgba(236, 72, 153, 0.12) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected .test-slot-name,
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected .test-slot-meta,
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected .test-slot-section-chip {
+      color: #831843 !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected .test-slot-section-chip {
+      background: rgba(255, 255, 255, 0.74) !important;
+      border-color: rgba(236, 72, 153, 0.18) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-selected .test-slot-badge {
+      background: rgba(236, 72, 153, 0.12) !important;
+      color: #be185d !important;
+      border-color: rgba(236, 72, 153, 0.18);
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming {
+      color: #0c4a6e !important;
+      background: linear-gradient(135deg, #dbeafe, #e0f2fe 52%, #ecfeff) !important;
+      border-color: #93c5fd !important;
+      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.1) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-name,
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-meta,
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-section-chip {
+      color: #0c4a6e !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-section-chip {
+      background: rgba(255, 255, 255, 0.78) !important;
+      border-color: rgba(59, 130, 246, 0.18) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .test-slot-btn.test-slot-upcoming .test-slot-badge {
+      background: rgba(59, 130, 246, 0.12) !important;
+      color: #1d4ed8 !important;
+      border-color: rgba(59, 130, 246, 0.18);
+    }
+
+    .my-tests-page #testSelector {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr);
+      gap: 0.9rem;
+      align-items: stretch;
+      margin-bottom: 1.75rem !important;
+    }
+
+    .my-tests-page .test-slot-live {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+      border-color: rgba(5, 150, 105, 0.4) !important;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3) !important;
+      animation: pulse-live 2s infinite;
+    }
+
+    @keyframes pulse-live {
+      0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    .my-tests-page .test-slot-btn:hover:not(:disabled),
+    .my-tests-page .test-slot-btn:focus-visible:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--page-button-hover-shadow);
+    }
+
+    .my-tests-page .test-slot-btn:disabled {
+      opacity: 0.72;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .my-tests-page .rank-hero-number {
+      font-size: 4rem;
+    }
+
+    .my-tests-page .result-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      margin-top: 0.35rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .my-tests-page .result-test-title {
+      font-weight: 700;
+      font-size: clamp(1rem, 1.55vw, 1.2rem);
+      letter-spacing: 0.01em;
+      color: var(--page-text);
+      min-width: 0;
+    }
+
+    .my-tests-page .result-test-date {
+      color: #4b5563;
+      font-size: 1.05rem;
+      font-weight: 700;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .my-tests-page .top-performer-card {
+      --tp-size: clamp(248px, 24vw, 286px);
+      --tp-avatar-size: clamp(96px, 9.6vw, 112px);
+      width: min(100%, var(--tp-size));
+      min-height: var(--tp-size);
+      height: auto;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      position: relative;
+      display: grid;
+      grid-template-rows: auto var(--tp-avatar-size) minmax(2.45em, auto) auto;
+      justify-items: center;
+      align-content: start;
+      gap: clamp(0.32rem, 0.8vw, 0.55rem);
+      padding: clamp(1rem, 1.8vw, 1.2rem) clamp(0.95rem, 1.5vw, 1.2rem) clamp(1.15rem, 2vw, 1.35rem);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.04) 40%, transparent 64%),
+        linear-gradient(155deg, rgba(8, 12, 28, 0.9), rgba(7, 10, 22, 0.78));
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.24),
+        0 16px 36px rgba(3, 8, 25, 0.5),
+        0 0 24px rgba(99, 102, 241, 0.28);
+      transition: transform 0.26s ease, box-shadow 0.26s ease, filter 0.26s ease;
+      backdrop-filter: blur(14px) saturate(145%);
+      isolation: isolate;
+    }
+
+    .my-tests-page .top-performer-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .my-tests-page .top-performer-card::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      padding: 2px;
+      background: conic-gradient(
+        from 18deg,
+        rgba(34, 211, 238, 0.7),
+        rgba(79, 70, 229, 0.74),
+        rgba(139, 92, 246, 0.7),
+        rgba(236, 72, 153, 0.58),
+        rgba(34, 211, 238, 0.7)
+      );
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.78;
+      filter: saturate(92%);
+      animation: top-performer-border-spin 18s linear infinite;
+    }
+
+    .my-tests-page .top-performer-card::after {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    .my-tests-page .top-performer-card:hover {
+      transform: translateY(-4px) scale(1.015);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.26),
+        0 20px 38px rgba(3, 8, 25, 0.5),
+        0 0 20px rgba(129, 140, 248, 0.22);
+      filter: saturate(106%);
+    }
+
+    @keyframes top-performer-border-spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .my-tests-page .top-performer-rank {
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      font-size: clamp(0.86rem, 1.5vw, 1rem);
+      margin-bottom: 0.2rem !important;
+      line-height: 1;
+      color: #0f172a;
+      text-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.18));
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 999px;
+      padding: 0.2rem 0.62rem;
+    }
+
+    .my-tests-page .top-performer-avatar {
+      width: var(--tp-avatar-size);
+      height: var(--tp-avatar-size);
+      min-width: var(--tp-avatar-size);
+      min-height: var(--tp-avatar-size);
+      margin: 0 auto;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(129, 140, 248, 0.85);
+      background: rgba(15, 23, 42, 0.72);
+      box-shadow:
+        0 0 0 4px rgba(59, 130, 246, 0.24),
+        0 0 22px rgba(139, 92, 246, 0.38),
+        0 12px 22px rgba(2, 6, 23, 0.48);
+    }
+
+    .my-tests-page .top-performer-avatar img,
+    .my-tests-page .top-performer-avatar span {
+      width: calc(var(--tp-avatar-size) - 8px) !important;
+      height: calc(var(--tp-avatar-size) - 8px) !important;
+      min-width: calc(var(--tp-avatar-size) - 8px);
+      min-height: calc(var(--tp-avatar-size) - 8px);
+      border-radius: 999px !important;
+    }
+
+    .my-tests-page .top-performer-avatar img {
+      display: block;
+      object-fit: cover !important;
+      object-position: center 20% !important;
+      transform: none;
+      background: #f8fafc;
+    }
+
+    .my-tests-page .top-performer-name,
+    .my-tests-page .top-performer-meta {
+      width: 100%;
+      text-align: center;
+    }
+
+    .my-tests-page .top-performer-name {
+      font-size: clamp(0.94rem, 1.65vw, 1.16rem);
+      font-weight: 800;
+      margin-top: 0 !important;
+      color: #f8fafc;
+      letter-spacing: 0.01em;
+      text-shadow: 0 2px 12px rgba(15, 23, 42, 0.4);
+      white-space: normal !important;
+      overflow: hidden;
+      text-overflow: unset;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-height: 1.2;
+      min-height: 2.4em;
+      padding: 0 0.35rem;
+    }
+
+    .my-tests-page .top-performer-meta {
+      font-size: clamp(0.76rem, 1.3vw, 0.88rem);
+      line-height: 1.3;
+      color: #e2e8f0 !important;
+      font-weight: 800;
+      margin-top: 0;
+      background: rgba(148, 163, 184, 0.12);
+      border: 1px solid rgba(129, 140, 248, 0.32);
+      border-radius: 999px;
+      padding: 0.2rem 0.62rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.28rem;
+      flex-wrap: wrap;
+      max-width: calc(100% - 0.5rem);
+    }
+
+    .my-tests-page .top-performer-meta .top-performer-rank-no {
+      color: #1d4ed8;
+      font-weight: 800;
+      text-shadow: 0 0 10px rgba(59, 130, 246, 0.32);
+    }
+
+    .my-tests-page .top-performer-meta .top-performer-score-no {
+      color: #7c3aed;
+      font-weight: 900;
+      text-shadow: 0 0 10px rgba(124, 58, 237, 0.24);
+    }
+
+    html:not([data-admin-theme="light"]) .my-tests-page .top-performer-rank {
+      color: #e2e8f0;
+      text-shadow: 0 0 10px rgba(148, 163, 184, 0.35);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(245, 158, 11, 0.14));
+      border-color: rgba(251, 191, 36, 0.5);
+    }
+
+    html:not([data-admin-theme="light"]) .my-tests-page .top-performer-name {
+      color: #f8fafc;
+    }
+
+    html:not([data-admin-theme="light"]) .my-tests-page .top-performer-meta {
+      color: #cbd5e1 !important;
+      background: rgba(148, 163, 184, 0.12);
+      border-color: rgba(129, 140, 248, 0.32);
+    }
+
+    .my-tests-page .top-performers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .my-tests-page .leaderboard-table {
+      margin-bottom: 0;
+      --bs-table-bg: transparent;
+      --bs-table-color: var(--page-table-color);
+      --bs-table-border-color: var(--page-table-border);
+      --bs-table-striped-color: var(--page-table-color);
+      --bs-table-striped-bg: var(--page-table-striped);
+      --bs-table-hover-color: var(--page-table-color);
+      --bs-table-hover-bg: var(--page-table-hover);
+    }
+
+    .my-tests-page .leaderboard-table thead th {
+      background: var(--page-header-bg);
+      color: var(--muted);
+      border-bottom-color: var(--page-table-border);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .my-tests-page .leaderboard-table tbody td {
+      color: var(--page-table-row-color);
+      border-bottom-color: var(--page-table-border);
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+      vertical-align: middle;
+      background: transparent;
+    }
+
+    .my-tests-page .leaderboard-table tbody tr {
+      background: var(--page-table-body-bg);
+    }
+
+    .my-tests-page .leaderboard-table tbody tr:nth-child(even) {
+      background: var(--page-table-body-bg-alt);
+    }
+
+    .my-tests-page .leaderboard-table tbody tr:hover {
+      background: var(--page-table-body-bg-hover);
+    }
+
+    .my-tests-page .leaderboard-table tbody tr.student-highlight,
+    .my-tests-page .leaderboard-table tbody tr.student-highlight:hover,
+    .my-tests-page .leaderboard-table tbody tr.student-highlight td {
+      background: var(--page-highlight-bg) !important;
+      color: var(--page-table-row-color) !important;
+      box-shadow: inset 0 1px 0 var(--page-highlight-outline), inset 0 -1px 0 var(--page-highlight-outline) !important;
+    }
+
+    .my-tests-page .leaderboard-table tbody tr.student-highlight td:first-child {
+      box-shadow:
+        inset 3px 0 0 var(--page-highlight-outline),
+        inset 0 1px 0 var(--page-highlight-outline),
+        inset 0 -1px 0 var(--page-highlight-outline) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight,
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight:hover,
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight td {
+      background: var(--page-highlight-bg) !important;
+      color: var(--page-table-row-color) !important;
+    }
+
+    html[data-admin-theme="light"] .my-tests-page .leaderboard-table tbody tr.student-highlight .leaderboard-id {
+      color: #64748b !important;
+    }
+
+    .my-tests-page #leaderboardCountBadge {
+      background: var(--page-count-badge-bg) !important;
+      color: var(--page-count-badge-text) !important;
+      border: 1px solid var(--page-count-badge-border);
+    }
+
+    .my-tests-page .leaderboard-rank {
+      width: 6rem;
+      white-space: nowrap;
+      padding-right: 0.4rem !important;
+      font-weight: 700;
+    }
+
+    .my-tests-page .leaderboard-rank-text {
+      font-size: 1.05rem;
+    }
+
+    .my-tests-page .leaderboard-student {
+      min-width: 15rem;
+    }
+
+    .my-tests-page .leaderboard-student-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      min-width: 0;
+    }
+
+    .my-tests-page .leaderboard-avatar {
+      width: 2.4rem;
+      height: 2.4rem;
+      flex: 0 0 2.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 999px;
+    }
+
+    .my-tests-page .leaderboard-name {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #2563eb;
+    }
+
+    .my-tests-page .leaderboard-name.is-current {
+      text-shadow: 0 0 8px rgba(37, 99, 235, 0.28);
+      filter: saturate(110%);
+    }
+
+    .my-tests-page .leaderboard-you .badge {
+      background: rgba(22, 163, 74, 0.14) !important;
+      border: 1px solid rgba(22, 163, 74, 0.35) !important;
+      color: #16a34a !important;
+      box-shadow: 0 0 10px rgba(22, 163, 74, 0.24);
+      border-radius: 999px;
+      padding: 0.08rem 0.34rem;
+      font-size: 0.66rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .my-tests-page .leaderboard-id {
+      color: var(--muted);
+    }
+
+    .my-tests-page .leaderboard-total,
+    .my-tests-page .leaderboard-section-score {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .my-tests-page .leaderboard-section-head,
+    .my-tests-page .leaderboard-section-score {
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .my-tests-page .leaderboard-section-score.score-na {
+      color: var(--muted) !important;
+      font-weight: 600;
+    }
+
+    .my-tests-page .leaderboard-total-cell {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .my-tests-page .section-panel {
+      display: none;
+    }
+
+    .my-tests-page .section-panel.active {
+      display: block;
+    }
+
+    .my-tests-page .empty-state {
+      min-height: 18rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .my-tests-page .attempt-review-action {
+      width: 100%;
+      max-width: 260px;
+      margin-left: auto;
+      text-align: center;
+      white-space: nowrap;
+      padding: 0.38rem 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    .my-tests-page .attempt-review-note {
+      width: 100%;
+      text-align: right;
+    }
+
+    @media (min-width: 992px) {
+      .my-tests-page .attempt-review-action {
+        width: 25%;
+      }
+    }
+
+    @media (max-width: 991.98px) {
+      .my-tests-page #testSelector {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .my-tests-page .hero-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .my-tests-page {
+        padding: 1rem 0 1.5rem;
+      }
+
+      .my-tests-page #testSelector {
+        grid-template-columns: 1fr;
+      }
+
+      .my-tests-page .rank-hero-number {
+        font-size: 3rem;
+      }
+
+      .my-tests-page .hero-kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .my-tests-page .result-meta-row {
+        align-items: flex-start;
+      }
+
+      .my-tests-page .result-test-date {
+        text-align: left;
+      }
+
+      .my-tests-page .test-slot-btn {
+        min-height: 5.7rem;
+        padding: 0.95rem 1rem;
+      }
+
+      .my-tests-page .test-slot-title-row {
+        flex-wrap: wrap;
+      }
+
+      .my-tests-page .top-performer-card {
+        --tp-size: clamp(232px, 70vw, 262px);
+        --tp-avatar-size: clamp(92px, 28vw, 104px);
+        margin-inline: auto;
+      }
+    }
+  </style>
+
+  <div class="container-fluid px-3 px-lg-4 app-shell">
+    <div id="studentTabs" class="nav nav-pills nav-fill mb-3">
+      <button type="button" class="nav-link active" data-tab="home">Home</button>
+      <button type="button" class="nav-link tab-upcoming" data-tab="analytics" disabled aria-disabled="true" title="Analytics is coming soon.">
+        <span>Analytics</span>
+        <span class="coming-soon-badge">Coming Soon</span>
+      </button>
+      <button type="button" class="nav-link tab-upcoming" data-tab="rewards" disabled aria-disabled="true" title="Rewards is coming soon.">
+        <span>Rewards</span>
+        <span class="coming-soon-badge">Coming Soon</span>
+      </button>
+    </div>
+
+    <div id="testSelector" class="mb-4">
+      <button type="button" class="btn btn-sm test-slot-btn" data-slot-index="0"></button>
+      <button type="button" class="btn btn-sm test-slot-btn" data-slot-index="1"></button>
+      <button type="button" class="btn btn-sm test-slot-btn" data-slot-index="2"></button>
+    </div>
+
+    <section id="homeSection" class="section-panel active">
+      <div id="heroCard" class="card app-card p-4 mb-4 rise position-relative overflow-hidden">
+        <div class="position-absolute top-0 end-0 brand-gradient opacity-25 rounded-circle" style="width:180px;height:180px;filter:blur(45px)"></div>
+        <div class="position-relative">
+          <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+            <span id="rankTierBadge" class="badge rounded-pill"></span>
+            <div class="d-flex gap-2 flex-wrap justify-content-end">
+              <span id="testStreakBadge" class="badge rounded-pill text-bg-warning text-dark d-none"></span>
+              <span id="rankShiftBadge" class="badge rounded-pill d-none"></span>
+            </div>
+          </div>
+          <h2 id="rankValue" class="display fw-bold mt-2 mb-0 rank-hero-number"></h2>
+          <div id="rankSummary" class="soft"></div>
+          <div class="result-meta-row">
+            <div id="resultTestTitle" class="result-test-title text-truncate"></div>
+            <div id="resultTestDateTime" class="result-test-date"></div>
+          </div>
+          <div id="homeKpiRow" class="hero-kpi-grid mt-3"></div>
+          <div id="homeActionRow" class="d-flex flex-wrap gap-2 mt-3"></div>
+        </div>
+      </div>
+
+      <h5 class="display fw-bold">Top Performers</h5>
+      <div id="topPerformers" class="top-performers-grid pb-2 mb-4"></div>
+
+      <div class="card app-card p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="display fw-bold mb-0">Leaderboard</h5>
+          <span id="leaderboardCountBadge" class="badge rounded-pill text-bg-info"></span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-hover align-middle leaderboard-table">
+            <thead>
+              <tr id="leaderboardHeadRow"></tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div id="leaderboardFooterText" class="small soft"></div>
+          <button id="leaderboardToggleBtn" type="button" class="btn btn-outline-light btn-sm rounded-pill">View All</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="analyticsSection" class="section-panel">
+      <div class="card app-card p-4 mb-4">
+        <h5 class="display fw-bold">Rank Journey</h5>
+        <div id="rankJourneyRow" class="row g-2"></div>
+      </div>
+
+      <h5 id="analyticsBreakdownTitle" class="display fw-bold">Section Analytics</h5>
+      <div id="topicAnalyticsContainer" class="vstack gap-3 mb-4"></div>
+    </section>
+
+    <section id="rewardsSection" class="section-panel">
+      <div class="card app-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+          <div>
+            <h5 id="rewardLevelTitle" class="display fw-bold mb-0"></h5>
+            <div id="rewardXpText" class="soft small"></div>
+          </div>
+          <span id="rewardStreakBadge" class="badge rounded-pill text-bg-warning text-dark"></span>
+        </div>
+        <div class="mt-3">
+          <div class="progress bg-black bg-opacity-25" style="height:8px">
+            <div id="rewardProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rewardsGrid" class="row g-3"></div>
+    </section>
+  </div>
+
+  <template id="kpiTemplate">
+    <div class="card result-stat-card h-100">
+      <div class="summary-card-title"></div>
+      <div class="summary-card-value"></div>
+      <div class="summary-card-extra"></div>
+    </div>
+  </template>
+
+  <template id="topPerformerTemplate">
+    <div class="card app-card-soft hover-card p-3 text-center flex-shrink-0 position-relative top-performer-card">
+      <div class="top-performer-rank mb-1"></div>
+      <div class="top-performer-avatar d-flex justify-content-center"></div>
+      <div class="fw-bold mt-2 text-truncate top-performer-name"></div>
+      <div class="mono soft top-performer-meta"></div>
+    </div>
+  </template>
+
+  <template id="leaderboardRowTemplate">
+    <tr></tr>
+  </template>
+
+  <template id="topicCardTemplate">
+    <div class="card app-card hover-card p-3">
+      <div class="d-flex align-items-center justify-content-between mb-2 gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="topic-subject-icon"></div>
+          <div>
+            <b class="topic-subject-name"></b>
+            <div class="small soft">Topic-wise mastery</div>
+          </div>
+        </div>
+        <span class="mono topic-subject-score"></span>
+      </div>
+      <div class="topic-rows"></div>
+    </div>
+  </template>
+
+  <template id="topicRowTemplate">
+    <div class="mt-2">
+      <div class="d-flex justify-content-between small gap-2">
+        <span class="topic-name"></span>
+        <span class="soft topic-score"></span>
+      </div>
+      <div class="progress bg-black bg-opacity-25" style="height:8px">
+        <div class="progress-bar progress-bar-striped progress-bar-animated topic-progress-fill"></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="rewardCardTemplate">
+    <div class="col-md-6">
+      <div class="card app-card hover-card p-3 h-100 reward-card-shell">
+        <div class="d-flex gap-3">
+          <div class="reward-icon reward-icon-text"></div>
+          <div>
+            <b class="reward-name"></b>
+            <div class="small soft reward-desc"></div>
+            <div class="small mono soft text-uppercase reward-meta"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+{{ my_tests_payload|json_script:"my-tests-payload" }}
+<script id="my-tests-live-signature" type="application/json">{{ my_tests_live_signature|default:"" }}</script>
+
+<script>
+  (() => {
+    const BADGE_DEFS = [
+      ["first_test", "T1", "Mock Test Starter", "Completed the first academy test", "bronze"],
+      ["top_25", "R25", "Rank Booster", "Entered the top 25 merit band", "silver"],
+      ["top_10", "T10", "JEE Main Sprinter", "Cracked the top 10 in class", "gold"],
+      ["top_3", "T3", "NEET Podium Performer", "Reached the top 3 merit list", "gold"],
+      ["rank_1", "R1", "AIR Mindset Champion", "Held rank #1 on a test", "platinum"],
+      ["climb_5", "UP5", "Comeback Climber", "Climbed 5+ ranks in one test", "silver"],
+      ["streak_3", "S3", "Consistency Streak", "Improved across 3 tests in a row", "gold"],
+      ["subject_90", "90+", "Subject Mastery Badge", "Scored 90+ in any subject", "gold"],
+      ["attend_perfect", "ATT", "Revision Warrior", "Attended every assigned booster session", "silver"],
+      ["no_cluster", "CLR", "Concept Clear Badge", "Stayed out of coaching clusters this test", "bronze"],
+    ].map(([id, icon, name, desc, tier]) => ({ id, icon, name, desc, tier }));
+
+    const THEME_SEQUENCE = [
+      { key: "Physics", from: "#0ea5e9", to: "#06b6d4", accent: "#22d3ee", icon: "P" },
+      { key: "Chemistry", from: "#d946ef", to: "#ec4899", accent: "#f472b6", icon: "C" },
+      { key: "Biology", from: "#22c55e", to: "#16a34a", accent: "#4ade80", icon: "B" },
+      { key: "Maths", from: "#f59e0b", to: "#f97316", accent: "#fb923c", icon: "M" },
+    ];
+
+    const MEDALS = {
+      1: { icon: "🥇", label: "Gold medal" },
+      2: { icon: "🥈", label: "Silver medal" },
+      3: { icon: "🥉", label: "Bronze medal" },
+    };
+
+    const payload = JSON.parse(document.getElementById("my-tests-payload").textContent || "{}");
+    let liveSignature = (document.getElementById("my-tests-live-signature")?.textContent || "").trim();
+    const currentStudent = payload.student || {};
+    const completedTests = (payload.completedTests || [])
+      .map((test) => ({ ...test, kind: "completed" }))
+      .sort((left, right) => new Date(left.sortAt) - new Date(right.sortAt));
+    const visibleCompleted = completedTests.slice(-2);
+    const upcomingSlot = payload.upcomingTest
+      ? { ...payload.upcomingTest, kind: "upcoming" }
+      : {
+          id: "upcoming-placeholder",
+          kind: "placeholder",
+          name: "Upcoming Test",
+          date: "Awaiting schedule",
+          shortDate: "Soon",
+          launchUrl: "",
+          canLaunchNow: false,
+        };
+    const selectorSlots = [
+      visibleCompleted[0] || completedTests[completedTests.length - 1] || null,
+      visibleCompleted[1] || visibleCompleted[0] || completedTests[completedTests.length - 1] || null,
+      upcomingSlot,
+    ];
+    const currentStudentId = currentStudent.id || "";
+    const studentMap = new Map();
+
+    (completedTests || []).forEach((test) => {
+      (test.leaderboard || []).forEach((entry) => {
+        studentMap.set(entry.studentId, {
+          id: entry.studentId,
+          name: entry.studentName || entry.studentId,
+          studentRef: entry.studentRef || entry.studentId,
+          profilePhotoUrl: entry.profilePhotoUrl || "",
+        });
+      });
+    });
+
+    studentMap.set(currentStudentId, {
+      id: currentStudentId,
+      name: currentStudent.name || "Student",
+      studentRef: currentStudent.username || currentStudentId,
+      profilePhotoUrl: currentStudent.profilePhotoUrl || "",
+    });
+
+    const rewardsPayload = normalizeRewards(payload.rewards || {});
+    const lockedTabs = new Set(["analytics", "rewards"]);
+
+    const state = {
+      studentTab: "home",
+      studentLeaderboardOpen: false,
+      testId:
+        (visibleCompleted[1] && visibleCompleted[1].id) ||
+        (visibleCompleted[0] && visibleCompleted[0].id) ||
+        (completedTests[completedTests.length - 1] && completedTests[completedTests.length - 1].id) ||
+        null,
+      online: navigator.onLine,
+    };
+
+    function isLockedTab(tab) {
+      return lockedTabs.has(tab);
+    }
+
+    const refs = {
+      tabButtons: [...document.querySelectorAll("#studentTabs [data-tab]")],
+      testButtons: [...document.querySelectorAll("#testSelector [data-slot-index]")],
+      homeSection: document.getElementById("homeSection"),
+      analyticsSection: document.getElementById("analyticsSection"),
+      rewardsSection: document.getElementById("rewardsSection"),
+      rankTierBadge: document.getElementById("rankTierBadge"),
+      testStreakBadge: document.getElementById("testStreakBadge"),
+      rankShiftBadge: document.getElementById("rankShiftBadge"),
+      rankValue: document.getElementById("rankValue"),
+      rankSummary: document.getElementById("rankSummary"),
+      resultTestTitle: document.getElementById("resultTestTitle"),
+      resultTestDateTime: document.getElementById("resultTestDateTime"),
+      homeKpiRow: document.getElementById("homeKpiRow"),
+      homeActionRow: document.getElementById("homeActionRow"),
+      topPerformers: document.getElementById("topPerformers"),
+      leaderboardCountBadge: document.getElementById("leaderboardCountBadge"),
+      leaderboardBody: document.getElementById("leaderboardBody"),
+      leaderboardHeadRow: document.getElementById("leaderboardHeadRow"),
+      leaderboardFooterText: document.getElementById("leaderboardFooterText"),
+      leaderboardToggleBtn: document.getElementById("leaderboardToggleBtn"),
+      rankJourneyRow: document.getElementById("rankJourneyRow"),
+      analyticsBreakdownTitle: document.getElementById("analyticsBreakdownTitle"),
+      topicAnalyticsContainer: document.getElementById("topicAnalyticsContainer"),
+      rewardLevelTitle: document.getElementById("rewardLevelTitle"),
+      rewardXpText: document.getElementById("rewardXpText"),
+      rewardStreakBadge: document.getElementById("rewardStreakBadge"),
+      rewardProgressBar: document.getElementById("rewardProgressBar"),
+      rewardsGrid: document.getElementById("rewardsGrid"),
+    };
+
+    const clientBootstrapMs = Date.now();
+    const serverBootstrapNow = parseIsoDate(payload.serverNow);
+
+    function normalizeRewards(rawRewards) {
+      const rewardMap = new Map(BADGE_DEFS.map((badge) => [badge.id, { ...badge, earned: false }]));
+      (rawRewards.badges || []).forEach((badge) => {
+        const base = rewardMap.get(badge.id) || {};
+        rewardMap.set(badge.id, { ...base, ...badge });
+      });
+      return {
+        xp: Number(rawRewards.xp || 0),
+        level: Number(rawRewards.level || 1),
+        progress: Number(rawRewards.progress || 0),
+        streak: Number(rawRewards.streak || 0),
+        badges: [...rewardMap.values()],
+      };
+    }
+
+    function parseIsoDate(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function getServerSynchronizedNow() {
+      if (!serverBootstrapNow) {
+        return new Date();
+      }
+      return new Date(serverBootstrapNow.getTime() + (Date.now() - clientBootstrapMs));
+    }
+
+    function currentTest() {
+      return completedTests.find((test) => test.id === state.testId) || null;
+    }
+
+    function currentLeaderboard() {
+      return currentTest()?.leaderboard || [];
+    }
+
+    function currentStudentEntry(test = currentTest()) {
+      const leaderboard = test?.leaderboard || [];
+      return leaderboard.find((entry) => entry.studentId === currentStudentId || entry.isCurrentStudent) || null;
+    }
+
+    function sectionIdentity(section, index = 0) {
+      const normalized = normalizeSectionKey(section?.name || section?.sectionName || "");
+      if (normalized) {
+        return normalized;
+      }
+
+      const rawName = String(section?.name || section?.sectionName || "").trim().toLowerCase();
+      return rawName || `section-${index + 1}`;
+    }
+
+    function normalizeSectionBreakdownItems(rawSections) {
+      if (!Array.isArray(rawSections) || !rawSections.length) {
+        return [];
+      }
+
+      return rawSections.map((section, index) => {
+        const sectionName = String(section?.name || section?.sectionName || `Section ${index + 1}`).trim();
+        const score = Number(section?.score || 0);
+        const total = Number(section?.total || 0);
+        const parsedPercentage = Number(section?.percentage);
+        const percentage = Number.isFinite(parsedPercentage)
+          ? parsedPercentage
+          : (total > 0 ? Math.round((score / total) * 1000) / 10 : 0);
+
+        return {
+          ...section,
+          name: sectionName || `Section ${index + 1}`,
+          sectionName: sectionName || `Section ${index + 1}`,
+          shortLabel:
+            section?.shortLabel ||
+            sectionDisplayLabel(
+              { name: sectionName || `Section ${index + 1}` },
+              index,
+            ),
+          score,
+          total,
+          percentage,
+        };
+      });
+    }
+
+    function currentStudentSectionBreakdown(test) {
+      const currentEntry = currentStudentEntry(test);
+      const configuredSections = normalizeSectionBreakdownItems(
+        test?.studentSectionBreakdown || test?.sectionBreakdown,
+      );
+      const currentEntrySections = normalizeSectionBreakdownItems(currentEntry?.sectionScores);
+      const leaderboardSections = normalizeSectionBreakdownItems(
+        (test?.leaderboard || []).find(
+          (entry) => Array.isArray(entry.sectionScores) && entry.sectionScores.length,
+        )?.sectionScores,
+      );
+      const legacyEntrySections = normalizeSectionBreakdownItems(
+        sectionHeaderItems(test).map((section, index) => {
+          const sectionName = String(section?.name || section?.sectionName || `Section ${index + 1}`).trim();
+          const normalizedKey = normalizeSectionKey(sectionName);
+          const legacyScoreCandidates = [
+            currentEntry?.[sectionName],
+            normalizedKey ? currentEntry?.[normalizedKey] : undefined,
+            currentEntry?.[section?.sectionName],
+          ];
+          const legacyScore = legacyScoreCandidates.find(
+            (value) => value !== undefined && value !== null && value !== "",
+          );
+
+          return {
+            name: sectionName,
+            sectionName: sectionName,
+            shortLabel:
+              section?.shortLabel ||
+              sectionDisplayLabel({ name: sectionName }, index),
+            score: Number(legacyScore || 0),
+            total: Number(section?.total || 0),
+          };
+        }),
+      );
+
+      const seedSections = configuredSections.length
+        ? configuredSections
+        : currentEntrySections.length
+          ? currentEntrySections
+          : leaderboardSections.length
+            ? leaderboardSections
+            : legacyEntrySections;
+
+      if (!seedSections.length) {
+        return [];
+      }
+
+      const currentEntrySectionsByKey = new Map(
+        currentEntrySections.map((section, index) => [sectionIdentity(section, index), section]),
+      );
+      const legacyEntrySectionsByKey = new Map(
+        legacyEntrySections.map((section, index) => [sectionIdentity(section, index), section]),
+      );
+
+      return seedSections.map((section, index) => {
+        const sectionKey = sectionIdentity(section, index);
+        const currentSection = currentEntrySectionsByKey.get(sectionKey);
+        const legacySection = legacyEntrySectionsByKey.get(sectionKey);
+        const resolvedSection = currentSection || legacySection || section;
+        const sectionName = String(
+          resolvedSection?.name ||
+          resolvedSection?.sectionName ||
+          section?.name ||
+          section?.sectionName ||
+          `Section ${index + 1}`,
+        ).trim();
+        const score = Number(resolvedSection?.score || 0);
+        const total = Number(resolvedSection?.total || section?.total || 0);
+        const parsedPercentage = Number(resolvedSection?.percentage);
+        const percentage = Number.isFinite(parsedPercentage)
+          ? parsedPercentage
+          : (total > 0 ? Math.round((score / total) * 1000) / 10 : 0);
+
+        return {
+          ...section,
+          ...resolvedSection,
+          name: sectionName || `Section ${index + 1}`,
+          sectionName: sectionName || `Section ${index + 1}`,
+          shortLabel:
+            resolvedSection?.shortLabel ||
+            section?.shortLabel ||
+            sectionDisplayLabel(
+              { name: sectionName || `Section ${index + 1}` },
+              index,
+            ),
+          score,
+          total,
+          percentage,
+        };
+      });
+    }
+
+    function clearNode(node) {
+      while (node.firstChild) {
+        node.removeChild(node.firstChild);
+      }
+    }
+
+    function cloneTemplate(id) {
+      return document.getElementById(id).content.firstElementChild.cloneNode(true);
+    }
+
+    function createAvatar(name, size = 38, photoUrl = "") {
+      if (photoUrl) {
+        const img = document.createElement("img");
+        img.src = photoUrl;
+        img.alt = name;
+        img.className = "rounded-circle flex-shrink-0";
+        img.style.width = `${size}px`;
+        img.style.height = `${size}px`;
+        img.style.objectFit = "cover";
+        img.addEventListener("error", () => {
+          if (img.parentNode) {
+            img.replaceWith(createAvatar(name, size, ""));
+          }
+        });
+        return img;
+      }
+
+      const span = document.createElement("span");
+      const initials = String(name || "S")
+        .split(" ")
+        .map((part) => part[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+      span.className = "d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-bold brand-gradient flex-shrink-0";
+      span.style.width = `${size}px`;
+      span.style.height = `${size}px`;
+      span.style.fontSize = `${Math.max(10, size * 0.32)}px`;
+      span.textContent = initials || "S";
+      return span;
+    }
+
+    function createBadge(text, className) {
+      const span = document.createElement("span");
+      span.className = `badge rounded-pill ${className}`;
+      span.textContent = text;
+      return span;
+    }
+
+    function createRankMedal(rank) {
+      const medal = MEDALS[rank];
+      if (!medal) return null;
+      const span = document.createElement("span");
+      span.className = "rank-medal";
+      span.setAttribute("role", "img");
+      span.setAttribute("aria-label", medal.label);
+      span.title = medal.label;
+      span.textContent = medal.icon;
+      return span;
+    }
+
+    function setProgressBar(bar, value, background) {
+      bar.style.width = `${Math.max(0, Math.min(100, Number(value || 0)))}%`;
+      bar.style.background = background;
+    }
+
+    function normalizeSectionKey(name) {
+      const value = String(name || "").toLowerCase();
+      if (value.includes("physics") || value === "phy") return "Physics";
+      if (value.includes("chemistry") || value === "chem") return "Chemistry";
+      if (value.includes("biology") || value === "bio" || value.includes("botany") || value.includes("zoology")) return "Biology";
+      if (value.includes("math")) return "Maths";
+      return "";
+    }
+
+    function getThemeForSection(name, index = 0) {
+      const normalized = normalizeSectionKey(name);
+      if (normalized) {
+        return THEME_SEQUENCE.find((item) => item.key === normalized) || THEME_SEQUENCE[0];
+      }
+      return THEME_SEQUENCE[index % THEME_SEQUENCE.length];
+    }
+
+    function createSubjectIcon(name, index = 0) {
+      const theme = getThemeForSection(name, index);
+      const span = document.createElement("span");
+      span.className = "d-inline-flex align-items-center justify-content-center rounded-3 text-white fw-bold flex-shrink-0";
+      span.style.width = "36px";
+      span.style.height = "36px";
+      span.style.background = `linear-gradient(135deg, ${theme.from}, ${theme.to})`;
+      span.textContent = theme.icon || String(name || "S").slice(0, 1).toUpperCase();
+      return span;
+    }
+
+    function getUpcomingSlotRuntimeState(slot) {
+      if (!slot || slot.kind !== "upcoming") {
+        return slot;
+      }
+
+      const startAt = parseIsoDate(slot.scheduledStartAt);
+      const endAt = parseIsoDate(slot.scheduledEndAt);
+      const launchWindowOpensAt =
+        parseIsoDate(slot.launchWindowOpensAt) ||
+        (startAt ? new Date(startAt.getTime() - 10 * 60 * 1000) : null);
+
+      if (!startAt || !endAt) {
+        return {
+          ...slot,
+          canLaunchNow: false,
+          isLive: false,
+          hasEnded: false,
+        };
+      }
+
+      const now = getServerSynchronizedNow();
+      return {
+        ...slot,
+        canLaunchNow: !!launchWindowOpensAt && now >= launchWindowOpensAt && now < endAt,
+        isLive: now >= startAt && now < endAt,
+        hasEnded: now >= endAt,
+      };
+    }
+
+    function sectionHeaderItems(test) {
+      const configuredSections = test?.sectionBreakdown || [];
+      if (configuredSections.length) {
+        return configuredSections;
+      }
+
+      const leaderboardSections = (test?.leaderboard || []).find(
+        (entry) => Array.isArray(entry.sectionScores) && entry.sectionScores.length,
+      )?.sectionScores || [];
+
+      return leaderboardSections.map((section, index) => ({
+        name: section.name || section.sectionName || `Section ${index + 1}`,
+        shortLabel:
+          section.shortLabel ||
+          sectionDisplayLabel(
+            { name: section.name || section.sectionName || `Section ${index + 1}` },
+            index,
+          ),
+      }));
+    }
+
+    function leaderboardRowTotal(row) {
+      if (row?.score !== undefined && row?.score !== null && row?.score !== "") {
+        return Number(row.score) || 0;
+      }
+      if (row?.total !== undefined && row?.total !== null && row?.total !== "") {
+        return Number(row.total) || 0;
+      }
+      return (row?.sectionScores || []).reduce((sum, section) => sum + (Number(section?.score) || 0), 0);
+    }
+
+    function leaderboardRowTotalMarks(row, test) {
+      if (row?.totalMarks !== undefined && row?.totalMarks !== null && row?.totalMarks !== "") {
+        return Number(row.totalMarks) || 0;
+      }
+      if (test?.totalMarks !== undefined && test?.totalMarks !== null && test?.totalMarks !== "") {
+        return Number(test.totalMarks) || 0;
+      }
+      return (row?.sectionScores || []).reduce((sum, section) => sum + (Number(section?.total) || 0), 0);
+    }
+
+    function leaderboardSectionCellData(row, section, index = 0) {
+      const normalizedRowSections = normalizeSectionBreakdownItems(row?.sectionScores);
+      const targetKey = sectionIdentity(section, index);
+      const fallbackName = String(section?.name || section?.sectionName || `Section ${index + 1}`).trim();
+
+      const matchedSection = normalizedRowSections.find(
+        (item, itemIndex) => sectionIdentity(item, itemIndex) === targetKey,
+      );
+      if (matchedSection) {
+        return matchedSection;
+      }
+
+      const indexedSection = normalizedRowSections[index];
+      if (indexedSection) {
+        return indexedSection;
+      }
+
+      const normalizedKey = normalizeSectionKey(fallbackName);
+      const legacyScoreCandidates = [
+        row?.[fallbackName],
+        row?.[section?.sectionName],
+        normalizedKey ? row?.[normalizedKey] : undefined,
+      ];
+      const legacyScore = legacyScoreCandidates.find(
+        (value) => value !== undefined && value !== null && value !== "",
+      );
+
+      if (legacyScore !== undefined) {
+        return {
+          name: fallbackName || `Section ${index + 1}`,
+          sectionName: fallbackName || `Section ${index + 1}`,
+          shortLabel:
+            section?.shortLabel ||
+            sectionDisplayLabel({ name: fallbackName || `Section ${index + 1}` }, index),
+          score: Number(legacyScore || 0),
+          total: Number(section?.total || 0),
+        };
+      }
+
+      return null;
+    }
+
+    function sectionDisplayLabel(section, index = 0) {
+      if (section?.shortLabel) {
+        return section.shortLabel;
+      }
+
+      const rawName = String(section?.name || `SEC ${index + 1}`).trim();
+      if (!rawName) {
+        return `SEC ${index + 1}`;
+      }
+
+      const compactName = rawName.replace(/\s+/g, " ");
+      if (compactName.length <= 8) {
+        return compactName.toUpperCase();
+      }
+
+      const parts = compactName.split(" ").filter(Boolean);
+      if (parts.length === 1) {
+        return compactName.slice(0, 8).toUpperCase();
+      }
+
+      return parts
+        .slice(0, 3)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase();
+    }
+
+    function renderTestSlotSections(layout, slot) {
+      const sections = sectionHeaderItems(slot);
+      if (!sections.length) {
+        return;
+      }
+
+      const sectionRow = document.createElement("span");
+      sectionRow.className = "test-slot-sections";
+
+      sections.forEach((section, index) => {
+        const chip = document.createElement("span");
+        chip.className = "test-slot-section-chip";
+        chip.textContent = sectionDisplayLabel(section, index);
+        chip.title = section.name || `Section ${index + 1}`;
+        sectionRow.appendChild(chip);
+      });
+
+      layout.appendChild(sectionRow);
+    }
+
+    function renderLeaderboardHeaders(test) {
+      if (!refs.leaderboardHeadRow) {
+        return test;
+      }
+
+      clearNode(refs.leaderboardHeadRow);
+      const headers = [
+        { label: "#", className: "" },
+        { label: "Student", className: "" },
+        ...sectionHeaderItems(test).map((section, index) => ({
+          label: sectionDisplayLabel(section, index),
+          title: section.name || section.sectionName || `Section ${index + 1}`,
+          className: "leaderboard-section-head",
+        })),
+        { label: "TOTAL SCORE", className: "text-end leaderboard-total-head" },
+        { label: "BATCH RANK", className: "leaderboard-section-head" },
+        { label: "INSTITUTE RANK", className: "leaderboard-section-head" },
+      ];
+
+      headers.forEach((header) => {
+        const th = document.createElement("th");
+        th.textContent = header.label;
+        if (header.className) {
+          th.className = header.className;
+        }
+        if (header.title) {
+          th.title = header.title;
+        }
+        refs.leaderboardHeadRow.appendChild(th);
+      });
+      return test;
+    }
+
+    function leaderboardRows(rows, highlightId, collapsed) {
+      if (!collapsed) return rows;
+      const topFive = rows.slice(0, 5);
+      const mine = rows.find(
+        (row) => String(row.studentId || "") === String(highlightId || "") || row.isCurrentStudent,
+      );
+      return mine && !topFive.some(
+        (row) => String(row.studentId || "") === String(highlightId || "") || row.isCurrentStudent,
+      )
+        ? [...topFive, mine]
+        : topFive;
+    }
+
+    function renderKpiCards(items) {
+      clearNode(refs.homeKpiRow);
+      items.forEach((item) => {
+        const node = cloneTemplate("kpiTemplate");
+        node.querySelector(".summary-card-title").textContent = item.label;
+        node.querySelector(".summary-card-value").textContent = item.value;
+        node.querySelector(".summary-card-extra").textContent = item.extra || "";
+        refs.homeKpiRow.appendChild(node);
+      });
+    }
+
+    function renderHomeActions(test) {
+      clearNode(refs.homeActionRow);
+      if (!test?.attempted || !test?.attemptReviewUrl) {
+        return test;
+      }
+
+      const isAvailable = test.answerKeyAvailable !== false;
+      const availableAt = parseIsoDate(test.answerKeyAvailableAt);
+      const action = document.createElement(isAvailable ? "a" : "button");
+      action.className = `btn ${isAvailable ? "btn-brand" : "btn-outline-light"} attempt-review-action`;
+      action.type = "button";
+
+      const icon = document.createElement("i");
+      icon.className = "bi bi-key";
+      action.appendChild(icon);
+      action.appendChild(document.createTextNode(isAvailable ? "Show Answer Key" : "Answer Key Locked"));
+
+      if (isAvailable) {
+        action.href = test.attemptReviewUrl;
+        action.target = "_blank";
+        action.rel = "noopener noreferrer";
+      } else {
+        action.disabled = true;
+        action.setAttribute("aria-disabled", "true");
+      }
+
+      refs.homeActionRow.appendChild(action);
+
+      if (!isAvailable && availableAt) {
+        const note = document.createElement("div");
+        note.className = "small soft attempt-review-note";
+        note.textContent = `Available after ${availableAt.toLocaleString([], {
+          day: "2-digit",
+          month: "short",
+          hour: "numeric",
+          minute: "2-digit",
+        })}`;
+        refs.homeActionRow.appendChild(note);
+      }
+      return test;
+    }
+
+    function applyTestSlotButtonState(button, slot, slotIndex) {
+      button.classList.remove("btn-brand", "btn-outline-light", "test-slot-selected", "test-slot-upcoming");
+      button.disabled = false;
+      button.title = "";
+      button.replaceChildren();
+
+      if (!slot) {
+        button.textContent = "Unavailable";
+        button.disabled = true;
+        button.classList.add("btn-outline-light");
+        return;
+      }
+
+      const slotLabel = slotIndex === 0 ? "Previous" : slotIndex === 1 ? "Recent" : "Upcoming";
+
+      if (slot.kind === "completed") {
+        const layout = document.createElement("span");
+        layout.className = "test-slot-layout";
+        const titleRow = document.createElement("span");
+        titleRow.className = "test-slot-title-row";
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "test-slot-name";
+        nameSpan.textContent = slot.name;
+        titleRow.appendChild(nameSpan);
+        titleRow.appendChild(createBadge(slotLabel, "text-bg-dark test-slot-badge"));
+        const meta = document.createElement("span");
+        meta.className = "test-slot-meta";
+        const subjectLabel = slot.subject ? `${slot.subject} • ` : "";
+        const attemptedCountLabel =
+          Number(slot.attemptedCount || slot.totalStudents || 0) > 0
+            ? ` • ${slot.attemptedCount || slot.totalStudents} attempted`
+            : "";
+        meta.textContent = `${slot.date} • ${subjectLabel}${slot.attempted ? "Completed" : "Not Attempted"}${attemptedCountLabel}`;
+        layout.appendChild(titleRow);
+        layout.appendChild(meta);
+        renderTestSlotSections(layout, slot);
+        button.appendChild(layout);
+        button.classList.add("btn-outline-light");
+        if (slot.id === state.testId) {
+          button.classList.add("test-slot-selected");
+        }
+        return;
+      }
+
+      if (slot.kind === "placeholder") {
+        const layout = document.createElement("span");
+        layout.className = "test-slot-layout";
+        const titleRow = document.createElement("span");
+        titleRow.className = "test-slot-title-row";
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "test-slot-name";
+        nameSpan.textContent = slot.name;
+        titleRow.appendChild(nameSpan);
+        const meta = document.createElement("span");
+        meta.className = "test-slot-meta";
+        meta.textContent = slot.date;
+        layout.appendChild(titleRow);
+        layout.appendChild(meta);
+        button.appendChild(layout);
+        button.disabled = true;
+        button.title = "No upcoming test has been scheduled yet.";
+        button.classList.add("btn-outline-light", "test-slot-upcoming");
+        return;
+      }
+
+      const runtimeSlot = getUpcomingSlotRuntimeState(slot);
+      const layout = document.createElement("span");
+      layout.className = "test-slot-layout";
+
+      const titleRow = document.createElement("span");
+      titleRow.className = "test-slot-title-row";
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "test-slot-name";
+      nameSpan.textContent = runtimeSlot.name;
+      titleRow.appendChild(nameSpan);
+      titleRow.appendChild(
+        createBadge(
+          runtimeSlot.isLive ? "Live" : slotLabel,
+          runtimeSlot.isLive ? "text-bg-danger test-slot-badge" : "text-bg-warning text-dark test-slot-badge",
+        ),
+      );
+
+      const meta = document.createElement("span");
+      meta.className = "test-slot-meta";
+      if (runtimeSlot.hasEnded) {
+        meta.textContent = "This test window has closed.";
+      } else if (runtimeSlot.canLaunchNow) {
+        meta.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""} • Opens now`;
+      } else {
+        meta.textContent = `${runtimeSlot.date} • ${runtimeSlot.time || ""}`;
+      }
+
+      layout.appendChild(titleRow);
+      layout.appendChild(meta);
+      button.appendChild(layout);
+      button.classList.add("btn-outline-light", "test-slot-upcoming");
+
+      const launchable = runtimeSlot.canLaunchNow && !!runtimeSlot.launchUrl;
+      if (launchable) {
+        button.classList.add("test-slot-live", "test-slot-selected");
+      }
+      button.disabled = !launchable;
+      if (!launchable) {
+        button.title = runtimeSlot.hasEnded
+          ? "This test window has closed."
+          : "This test opens 10 minutes before the scheduled start time.";
+      }
+    }
+
+    function renderHeader() {
+      if (isLockedTab(state.studentTab)) {
+        state.studentTab = "home";
+      }
+
+      refs.tabButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.tab === state.studentTab);
+      });
+
+      refs.testButtons.forEach((button) => {
+        const slot = selectorSlots[Number(button.dataset.slotIndex)];
+        applyTestSlotButtonState(button, slot, Number(button.dataset.slotIndex));
+      });
+
+      refs.homeSection.classList.toggle("active", state.studentTab === "home");
+      refs.analyticsSection.classList.toggle("active", state.studentTab === "analytics");
+      refs.rewardsSection.classList.toggle("active", state.studentTab === "rewards");
+    }
+
+    function renderHome() {
+      const test = currentTest();
+      if (!test) {
+        refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
+        refs.rankTierBadge.textContent = "NO TESTS YET";
+        refs.rankValue.textContent = "--";
+        refs.rankSummary.textContent = "No completed tests available yet.";
+        refs.resultTestTitle.textContent = "";
+        refs.resultTestDateTime.textContent = "";
+        refs.testStreakBadge.classList.add("d-none");
+        refs.rankShiftBadge.classList.add("d-none");
+        renderKpiCards([
+          { label: "Status", value: "Awaiting", extra: "First completed test" },
+          { label: "Window", value: "Soon", extra: "Use the upcoming tab to launch" },
+        ]);
+        clearNode(refs.homeActionRow);
+        clearNode(refs.topPerformers);
+        clearNode(refs.leaderboardBody);
+        refs.leaderboardCountBadge.textContent = "0 students";
+        refs.leaderboardFooterText.textContent = "";
+        return;
+      }
+
+      const attempted = !!test.attempted;
+      const leaderboardEntry = currentStudentEntry();
+      const parsedLeaderboardRank = Number.isInteger(leaderboardEntry?.rank)
+        ? leaderboardEntry.rank
+        : null;
+      const rank = attempted
+        ? (Number.isInteger(test.rank) ? test.rank : parsedLeaderboardRank)
+        : null;
+      const rankDelta = attempted ? test.rankDelta : null;
+      const scoreValue = Number(test.score || 0);
+      const totalMarks = Number(test.totalMarks || 0);
+      const previousRank = rank !== null && rankDelta !== null ? rank + rankDelta : null;
+      const currentSections = currentStudentSectionBreakdown(test);
+
+      if (attempted) {
+        refs.rankTierBadge.className = `badge rounded-pill ${
+          Number.isInteger(rank) && rank <= 10
+            ? "text-bg-info"
+            : Number.isInteger(rank) && rank <= 25
+              ? "text-bg-primary"
+              : "text-bg-secondary"
+        }`;
+        refs.rankTierBadge.textContent = Number.isInteger(rank)
+          ? (rank <= 10 ? "ELITE" : rank <= 25 ? "RISING STAR" : "BOOST SQUAD")
+          : "ATTEMPTED";
+        refs.rankValue.textContent = Number.isInteger(rank) ? `#${rank}` : "NA";
+      } else {
+        refs.rankTierBadge.className = "badge rounded-pill text-bg-secondary";
+        refs.rankTierBadge.textContent = "NOT ATTEMPTED";
+        refs.rankValue.textContent = "--";
+      }
+
+      refs.rankSummary.textContent = `of ${test.totalStudents || currentLeaderboard().length} students`;
+      refs.resultTestTitle.textContent = test.name || "--";
+      refs.resultTestDateTime.textContent = [test.shortDate || test.date || "--", test.time || ""]
+        .filter(Boolean)
+        .join(", ");
+
+      if (test.testStreak > 0) {
+        refs.testStreakBadge.className = "badge rounded-pill text-bg-warning text-dark";
+        refs.testStreakBadge.textContent = `${test.testStreak}-TEST STREAK`;
+        refs.testStreakBadge.classList.remove("d-none");
+      } else {
+        refs.testStreakBadge.classList.add("d-none");
+      }
+
+      refs.rankShiftBadge.classList.remove("d-none", "text-bg-success", "text-bg-danger", "text-bg-secondary");
+      if (!attempted) {
+        refs.rankShiftBadge.classList.add("text-bg-secondary");
+        refs.rankShiftBadge.textContent = "NA";
+      } else if (rankDelta === null) {
+        refs.rankShiftBadge.classList.add("text-bg-secondary");
+        refs.rankShiftBadge.textContent = "0";
+      } else if (rankDelta > 0) {
+        refs.rankShiftBadge.classList.add("text-bg-success");
+        refs.rankShiftBadge.textContent = `↑ ${rankDelta}`;
+      } else if (rankDelta < 0) {
+        refs.rankShiftBadge.classList.add("text-bg-danger");
+        refs.rankShiftBadge.textContent = `↓ ${Math.abs(rankDelta)}`;
+      } else {
+        refs.rankShiftBadge.classList.add("text-bg-secondary");
+        refs.rankShiftBadge.textContent = "0";
+      }
+
+      const kpiItems = [
+        {
+          label: "Total",
+          value: `${scoreValue}/${totalMarks}`,
+          extra: attempted
+            ? previousRank === null
+              ? "First recorded test"
+              : rank < previousRank
+                ? `Up ${previousRank - rank} ranks`
+                : rank > previousRank
+                  ? `Down ${rank - previousRank} ranks`
+                  : "No rank change"
+            : "Missed this test",
+        },
+      ];
+
+      currentSections.forEach((section) => {
+        const sectionName = String(section.name || section.sectionName || "Section").trim();
+        const sectionScore = Number(section.score || 0);
+        const sectionTotal = Number(section.total || 0);
+        const sectionPercentage = Number.isFinite(Number(section.percentage))
+          ? Number(section.percentage)
+          : 0;
+
+        kpiItems.push({
+          label: sectionName || "Section",
+          value: `${sectionScore}/${sectionTotal}`,
+          extra: attempted ? `${sectionPercentage}% scored` : "Section score",
+        });
+      });
+
+      renderKpiCards(kpiItems);
+      renderHomeActions(test);
+
+      renderTopPerformers(test);
+      renderLeaderboard(test);
+    }
+    function renderTopPerformers(test) {
+      clearNode(refs.topPerformers);
+      const entries = (test?.topPerformers && test.topPerformers.length)
+        ? test.topPerformers
+        : currentLeaderboard().slice(0, 5);
+
+      if (!entries.length) {
+        const empty = document.createElement("div");
+        empty.className = "card app-card p-3 text-center soft";
+        empty.textContent = "Top performers will appear once this test has attempts.";
+        refs.topPerformers.appendChild(empty);
+        return;
+      }
+
+      entries.forEach((entry) => {
+        const student = studentMap.get(entry.studentId) || {};
+        const node = cloneTemplate("topPerformerTemplate");
+        const medal = createRankMedal(entry.rank);
+        node.querySelector(".top-performer-rank").textContent = `#${entry.rank}`;
+        if (medal) {
+          node.querySelector(".top-performer-rank").appendChild(medal);
+        }
+        node.querySelector(".top-performer-avatar").appendChild(
+          createAvatar(
+            entry.studentName || student.name || entry.studentId,
+            112,
+            entry.profilePhotoUrl || student.profilePhotoUrl || "",
+          ),
+        );
+        node.querySelector(".top-performer-name").textContent = entry.studentName || student.name || entry.studentId;
+        node.querySelector(".top-performer-meta").textContent =
+          `Score ${leaderboardRowTotal(entry)}/${leaderboardRowTotalMarks(entry, test)}`;
+        refs.topPerformers.appendChild(node);
+      });
+    }
+
+    function renderLeaderboard(test) {
+      const ranked = currentLeaderboard();
+      refs.leaderboardCountBadge.textContent = `${ranked.length} students`;
+      clearNode(refs.leaderboardBody);
+      renderLeaderboardHeaders(test);
+
+      function setSubjectScoreCell(cell, value) {
+        if (!cell) return;
+        const hasScore = value !== null && value !== undefined;
+        cell.classList.toggle("score-na", !hasScore);
+        cell.textContent = hasScore ? value : "-";
+      }
+
+      const rows = leaderboardRows(ranked, currentStudentId, !state.studentLeaderboardOpen);
+      const subjectDefs = sectionHeaderItems(test);
+      rows.forEach((row) => {
+        const student = studentMap.get(row.studentId) || {};
+        const node = document.createElement("tr");
+        const mine =
+          String(row.studentId || "") === String(currentStudentId || "") || !!row.isCurrentStudent;
+        const medal = createRankMedal(row.rank);
+
+        if (mine) {
+          node.classList.add("student-highlight");
+        }
+
+        const rankCell = document.createElement("td");
+        rankCell.className = "mono leaderboard-rank";
+        const rankText = document.createElement("span");
+        rankText.className = "leaderboard-rank-text";
+        rankText.textContent = Number.isInteger(Number(row.rank)) ? `#${row.rank}` : "NA";
+        rankCell.appendChild(rankText);
+        if (medal) {
+          const medalWrap = document.createElement("span");
+          medalWrap.className = "leaderboard-rank-medal";
+          medalWrap.appendChild(medal);
+          rankCell.appendChild(medalWrap);
+        }
+        node.appendChild(rankCell);
+
+        const studentCell = document.createElement("td");
+        studentCell.className = "leaderboard-student";
+        const studentWrap = document.createElement("div");
+        studentWrap.className = "leaderboard-student-wrap";
+        const avatarWrap = document.createElement("div");
+        avatarWrap.className = "leaderboard-avatar";
+        avatarWrap.appendChild(
+          createAvatar(
+            row.studentName || student.name || row.studentId,
+            28,
+            row.profilePhotoUrl || student.profilePhotoUrl || "",
+          ),
+        );
+        studentWrap.appendChild(avatarWrap);
+
+        const textWrap = document.createElement("div");
+        const nameRow = document.createElement("div");
+        const nameNode = document.createElement("span");
+        nameNode.className = "leaderboard-name";
+        nameNode.textContent = row.studentName || student.name || row.studentId;
+        nameRow.appendChild(nameNode);
+        if (mine) {
+          nameNode.classList.add("is-current");
+          const badgeWrap = document.createElement("span");
+          badgeWrap.className = "leaderboard-you";
+          badgeWrap.appendChild(createBadge("You", "text-bg-info"));
+          nameRow.appendChild(document.createTextNode(" "));
+          nameRow.appendChild(badgeWrap);
+        }
+        textWrap.appendChild(nameRow);
+
+        const idNode = document.createElement("div");
+        idNode.className = "small mono leaderboard-id";
+        idNode.textContent = row.studentRef || student.studentRef || row.studentId;
+        textWrap.appendChild(idNode);
+
+        studentWrap.appendChild(textWrap);
+        studentCell.appendChild(studentWrap);
+        node.appendChild(studentCell);
+
+        subjectDefs.forEach((section, index) => {
+          const scoreCell = document.createElement("td");
+          scoreCell.className = "leaderboard-section-score mono";
+          const sectionData = leaderboardSectionCellData(row, section, index);
+          setSubjectScoreCell(scoreCell, sectionData?.score);
+          node.appendChild(scoreCell);
+        });
+
+        const totalCell = document.createElement("td");
+        totalCell.className = "leaderboard-total-cell";
+        const totalNode = document.createElement("b");
+        totalNode.className = "leaderboard-total mono";
+        totalNode.textContent = `${leaderboardRowTotal(row)}`;
+        totalCell.appendChild(totalNode);
+        node.appendChild(totalCell);
+
+        const batchRankCell = document.createElement("td");
+        batchRankCell.className = "leaderboard-section-score mono";
+        batchRankCell.textContent = Number.isInteger(row.batchRank) ? `#${row.batchRank}` : "NA";
+        node.appendChild(batchRankCell);
+
+        const instituteRankCell = document.createElement("td");
+        instituteRankCell.className = "leaderboard-section-score mono";
+        instituteRankCell.textContent = Number.isInteger(row.instituteRank) ? `#${row.instituteRank}` : "NA";
+        node.appendChild(instituteRankCell);
+        refs.leaderboardBody.appendChild(node);
+      });
+
+      refs.leaderboardFooterText.textContent = state.studentLeaderboardOpen
+        ? `Showing all ${ranked.length} students`
+        : `Showing top 5${rows.length > 5 ? " + your rank" : ""}`;
+      refs.leaderboardToggleBtn.textContent = state.studentLeaderboardOpen ? "Show Less" : "View All";
+      refs.leaderboardToggleBtn.disabled = ranked.length <= 5;
+    }
+
+    function renderRankJourney() {
+      clearNode(refs.rankJourneyRow);
+      completedTests.forEach((test, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "col-6 col-lg-3";
+        const node = cloneTemplate("kpiTemplate");
+        node.querySelector(".summary-card-title").textContent = test.shortDate || test.date || `Test ${index + 1}`;
+        node.querySelector(".summary-card-value").textContent =
+          test.rank === null || test.rank === undefined ? "#-" : `#${test.rank}`;
+        node.querySelector(".summary-card-extra").textContent =
+          index === 0 || test.rankDelta === null || test.rankDelta === undefined
+            ? "Baseline"
+            : `${test.rankDelta >= 0 ? "Up" : "Down"} ${Math.abs(test.rankDelta)}`;
+        wrapper.appendChild(node);
+        refs.rankJourneyRow.appendChild(wrapper);
+      });
+    }
+
+    function renderAnalytics() {
+      const test = currentTest();
+      renderRankJourney();
+      clearNode(refs.topicAnalyticsContainer);
+
+      const sections = test?.sectionBreakdown || [];
+      refs.analyticsBreakdownTitle.textContent = sections.length <= 1 ? "Topic Analytics" : "Section Analytics";
+
+      sections.forEach((section, index) => {
+        const theme = getThemeForSection(section.name, index);
+        const node = cloneTemplate("topicCardTemplate");
+        const rowsContainer = node.querySelector(".topic-rows");
+        node.querySelector(".topic-subject-icon").appendChild(createSubjectIcon(section.shortLabel || section.name, index));
+        node.querySelector(".topic-subject-name").textContent = section.name;
+        node.querySelector(".topic-subject-name").style.color = theme.accent;
+        node.querySelector(".topic-subject-score").textContent = `${section.score}/${section.total}`;
+
+        completedTests.forEach((item) => {
+          const sectionItem = (item.sectionBreakdown || []).find((entry) => entry.name === section.name);
+          if (!sectionItem) {
+            return;
+          }
+          const row = cloneTemplate("topicRowTemplate");
+          row.querySelector(".topic-name").textContent = `${item.shortDate || item.date} - ${item.name}`;
+          row.querySelector(".topic-score").textContent = `${sectionItem.score}/${sectionItem.total}`;
+          setProgressBar(
+            row.querySelector(".topic-progress-fill"),
+            sectionItem.percentage,
+            `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+          );
+          rowsContainer.appendChild(row);
+        });
+
+        refs.topicAnalyticsContainer.appendChild(node);
+      });
+    }
+
+    function renderRewards() {
+      refs.rewardLevelTitle.textContent = `Level ${rewardsPayload.level}`;
+      refs.rewardXpText.textContent = `${rewardsPayload.xp} XP earned`;
+      refs.rewardStreakBadge.textContent = `${rewardsPayload.streak} TEST STREAK`;
+      setProgressBar(
+        refs.rewardProgressBar,
+        Math.round((rewardsPayload.progress || 0) * 100),
+        "linear-gradient(135deg, #ff8a00, #e52e71 52%, #7c3aed)",
+      );
+
+      clearNode(refs.rewardsGrid);
+      rewardsPayload.badges.forEach((badgeItem) => {
+        const node = cloneTemplate("rewardCardTemplate");
+        const shell = node.querySelector(".reward-card-shell");
+        node.querySelector(".reward-icon-text").textContent = badgeItem.icon || badgeItem.name?.slice(0, 2) || "RG";
+        node.querySelector(".reward-name").textContent = badgeItem.name;
+        node.querySelector(".reward-desc").textContent = badgeItem.desc;
+        node.querySelector(".reward-meta").textContent = `${badgeItem.earned ? "earned" : "locked"} - ${badgeItem.tier}`;
+        if (!badgeItem.earned) {
+          shell.classList.add("opacity-50");
+        }
+        refs.rewardsGrid.appendChild(node);
+      });
+    }
+
+    function render() {
+      renderHeader();
+      renderHome();
+      renderAnalytics();
+      renderRewards();
+    }
+
+    refs.tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (isLockedTab(button.dataset.tab)) {
+          state.studentTab = "home";
+          renderHeader();
+          return;
+        }
+        state.studentTab = button.dataset.tab;
+        renderHeader();
+      });
+    });
+
+    refs.testButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const slot = selectorSlots[Number(button.dataset.slotIndex)];
+        if (!slot) return;
+
+        if (slot.kind === "completed") {
+          state.testId = slot.id;
+          state.studentLeaderboardOpen = false;
+          render();
+          return;
+        }
+
+        const runtimeSlot = getUpcomingSlotRuntimeState(slot);
+        if (runtimeSlot.kind === "upcoming" && runtimeSlot.canLaunchNow && runtimeSlot.launchUrl) {
+          window.location.href = runtimeSlot.launchUrl;
+        }
+      });
+    });
+
+    refs.leaderboardToggleBtn.addEventListener("click", () => {
+      state.studentLeaderboardOpen = !state.studentLeaderboardOpen;
+      renderLeaderboard(currentTest());
+    });
+
+    window.addEventListener("online", () => {
+      state.online = true;
+      renderHeader();
+    });
+
+    window.addEventListener("offline", () => {
+      state.online = false;
+      renderHeader();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)) return;
+      if (["1", "2", "3"].includes(event.key)) {
+        const nextTab = ["home", "analytics", "rewards"][Number(event.key) - 1];
+        state.studentTab = isLockedTab(nextTab) ? "home" : nextTab;
+        renderHeader();
+      }
+    });
+
+    setInterval(() => {
+      renderHeader();
+    }, 5000);
+
+    async function pollRealtimeLeaderboardState() {
+      if (!state.online) return;
+      try {
+        const qs = new URLSearchParams({ since: liveSignature || "" });
+        const response = await fetch(`/my-tests/live-state/?${qs.toString()}`, {
+          method: "GET",
+          cache: "no-store",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data?.success || !data?.signature) return;
+        if (liveSignature && data.signature !== liveSignature) {
+          window.location.reload();
+          return;
+        }
+        liveSignature = data.signature;
+      } catch (_error) {
+      }
+    }
+
+    setInterval(pollRealtimeLeaderboardState, 3000);
+
+    render();
+  })();
+</script>
+{% endblock %}
+

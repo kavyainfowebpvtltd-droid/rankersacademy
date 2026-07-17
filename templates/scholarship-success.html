@@ -1,0 +1,596 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{{ selected_test_name }} - Result</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <script src="{% static 'js/admin-theme.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/scholarship-success.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-theme-toggle.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin-dark-overrides.css' %}" data-theme-dark-link />
+    <style>
+      @media (max-width: 1024px) {
+        .tablet-footer-stack {
+          flex-direction: column !important;
+          align-items: center !important;
+          gap: 4px;
+          text-align: center !important;
+        }
+      }
+
+      .attempt-review-action {
+        width: 100%;
+        max-width: 320px;
+        text-align: center;
+        white-space: nowrap;
+        padding: 0.7rem 1.2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+      }
+
+      .subject-score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.9rem;
+      }
+
+      .subject-score-card {
+        border: 1px solid rgba(14, 165, 233, 0.12);
+        border-radius: 14px;
+        padding: 0.95rem 1rem;
+        background: linear-gradient(180deg, rgba(224, 242, 254, 0.55), rgba(255, 255, 255, 0.96));
+      }
+
+      .subject-score-label {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .subject-score-value {
+        color: #0f172a;
+        font-size: 1.45rem;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .subject-score-meta {
+        color: #64748b;
+        font-size: 0.82rem;
+      }
+
+      .attempt-review-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      @media (min-width: 768px) {
+        .attempt-review-panel {
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+        }
+      }
+
+      html[data-admin-theme="dark"] .subject-score-card {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.72));
+        border-color: rgba(59, 130, 246, 0.22);
+      }
+
+      html[data-admin-theme="dark"] .subject-score-label,
+      html[data-admin-theme="dark"] .subject-score-meta {
+        color: #a8b3c7;
+      }
+
+      html[data-admin-theme="dark"] .subject-score-value {
+        color: #f8fafc;
+      }
+    </style>
+  </head>
+
+  <body class="scholarship-success-page">
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top"
+    >
+      <div class="container-fluid px-4">
+        <div class="d-flex align-items-center">
+          <div class="brand-icon me-2">
+            <i class="bi bi-mortarboard-fill text-white"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold fs-6">{{ selected_test_name }}</h5>
+            <small class="text-muted d-block" style="font-size: 0.7rem"
+              >Student Portal</small
+            >
+          </div>
+        </div>
+        <div class="ms-auto d-flex align-items-center">
+          <div class="text-end me-3 d-none d-md-block">
+            <div class="fw-bold text-dark fs-6">{{ student.name }}</div>
+            <div class="text-muted" style="font-size: 0.75rem">
+              {{ student.grade }} - {{ academic_field_value }}
+            </div>
+          </div>
+          <div class="avatar-circle me-3">{{ student.name|slice:":1" }}</div>
+          <button
+            type="button"
+            class="admin-theme-toggle me-2"
+            id="adminThemeToggle"
+            aria-label="Toggle theme"
+            aria-pressed="true"
+          >
+            <i class="bi bi-moon-stars"></i>
+            <span class="admin-theme-toggle-label d-none d-sm-inline">Dark</span>
+          </button>
+          <a
+            href="{% url 'login' %}"
+            class="btn btn-light btn-sm rounded-circle"
+          >
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <div class="container">
+        <div class="text-center mt-4 mb-4">
+          <h3 class="text-success fw-bold">🎉 Congratulations!</h3>
+          <p class="text-muted fs-5">
+            {% if is_scholarship_result %}
+            You have successfully completed the {{ selected_test_name }}
+            scholarship assessment
+            {% else %}
+            You have successfully completed the {{ selected_test_name }}
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="card main-card">
+          <div class="gradient-header">
+            <h3>Well Done!</h3>
+            {% if is_scholarship_result %}
+            <div class="scholarship-box">
+              <p class="mb-1">You have secured</p>
+              <h1>{{ attempt.scholarship_percentage }}%</h1>
+              <p>SCHOLARSHIP</p>
+            </div>
+            {% else %}
+            <div class="result-summary-box">
+              <div class="result-summary-item">
+                <span class="result-summary-label">Test Name</span>
+                <strong>{{ selected_test_name }}</strong>
+              </div>
+              <div class="result-summary-item">
+                <span class="result-summary-label">Remarks</span>
+                <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
+              </div>
+              {% if completed_at_display %}
+              <div class="result-summary-item">
+                <span class="result-summary-label">Completed On</span>
+                <strong>{{ completed_at_display }}</strong>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="details-section">
+            <div class="row g-4 mb-4">
+              <div class="col-12">
+                <div class="info-box score-box">
+                  <i
+                    class="bi bi-person-fill text-primary d-block mb-2"
+                    style="font-size: 2rem"
+                  ></i>
+                  <h6>Student Name</h6>
+                  <h4 class="text-primary">{{ student.name }}</h4>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-4">
+              <div class="{% if is_scholarship_result %}col-md-6{% else %}col-12{% endif %}">
+                <div class="info-box score-box">
+                  <i
+                    class="bi bi-trophy-fill text-primary d-block mb-2"
+                    style="font-size: 2rem"
+                  ></i>
+                  <h6>Your Score</h6>
+                  <h4 class="text-primary" id="liveScoreValue">
+                    {{ attempt.score }} / {{ attempt.total_marks }}
+                  </h4>
+                </div>
+              </div>
+
+              {% if is_scholarship_result %}
+              <div class="col-md-6">
+                <div class="info-box percent-box">
+                  <i
+                    class="bi bi-percent text-success d-block mb-2"
+                    style="font-size: 2rem"
+                  ></i>
+                  <h6>{% if is_scholarship_result %}Scholarship{% else %}Percentage{% endif %}</h6>
+                  <h4 class="text-success">
+                    {% if is_scholarship_result %}
+                    {{ attempt.scholarship_percentage }}%
+                    {% else %}
+                    {{ result_percentage }}%
+                    {% endif %}
+                  </h4>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            {% if leaderboard_top_entries %}
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>
+                  <h6 class="mb-0 fw-bold">Leaderboard</h6>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th scope="col">Rank</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody id="liveLeaderboardBody">
+                      {% for entry in leaderboard_top_entries %}
+                      <tr{% if entry.is_current_student %} class="table-primary"{% endif %}>
+                        <td class="fw-bold">#{{ entry.rank }}</td>
+                        <td>
+                          {{ entry.student_name }}
+                          {% if entry.is_current_student %}
+                          <span class="badge bg-primary ms-2">You</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ entry.score }} / {{ entry.total_marks }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                {% if leaderboard_current_entry %}
+                <div class="alert alert-info mt-3 mb-0" id="liveCurrentRankBox">
+                  Your Rank: <strong id="liveCurrentRank">#{{ leaderboard_current_entry.rank }}</strong>
+                  |
+                  Your Score: <strong id="liveCurrentRankScore">{{ leaderboard_current_entry.score }} / {{ leaderboard_current_entry.total_marks }}</strong>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-body">
+                <div class="subject-score-grid" id="liveSubjectScores">
+                  {% for section in subject_score_sections %}
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">{{ section.shortLabel|default:section.name }}</div>
+                    <div class="subject-score-value">{{ section.score }} / {{ section.total }}</div>
+                    <div class="subject-score-meta">{{ section.name }}</div>
+                  </div>
+                  {% empty %}
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Section Scores</div>
+                    <div class="subject-score-meta">Section-wise marks will appear here after the attempt is processed.</div>
+                  </div>
+                  {% endfor %}
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Total Score</div>
+                    <div class="subject-score-value text-primary" id="liveTotalScore">{{ subject_score_total }} / {{ subject_score_total_marks }}</div>
+                    <div class="subject-score-meta">Selected test total</div>
+                  </div>
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Batch Rank</div>
+                    <div class="subject-score-value" id="liveBatchRank">{% if live_batch_rank == "NA" %}--{% else %}#{{ live_batch_rank }}{% endif %}</div>
+                    <div class="subject-score-meta">Rank within your batch</div>
+                  </div>
+                  <div class="subject-score-card">
+                    <div class="subject-score-label">Institute Rank</div>
+                    <div class="subject-score-value" id="liveInstituteRank">{% if live_institute_rank == "NA" %}--{% else %}#{{ live_institute_rank }}{% endif %}</div>
+                    <div class="subject-score-meta">Rank within this test</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-body">
+                <div class="attempt-review-panel">
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      <i class="bi bi-file-earmark-check me-2 text-primary"></i>
+                      Attempted Test Paper
+                    </h6>
+                    <p class="text-muted mb-0 small" id="answerKeyAvailabilityText">
+                      {% if answer_key_is_available %}
+                      Attempted test paper is now available.
+                      {% else %}
+                      Answer key will be available after {{ answer_key_delay_display }} from test completion.
+                      Available at {{ answer_key_available_at_display }}.
+                      {% endif %}
+                    </p>
+                  </div>
+
+                  <a
+                    href="{{ attempt_review_url }}"
+                    class="btn {% if answer_key_is_available %}btn-primary{% else %}btn-secondary disabled{% endif %} attempt-review-action"
+                    id="attemptReviewBtn"
+                    data-review-url="{{ attempt_review_url }}"
+                    data-available-at="{{ answer_key_available_at }}"
+                    data-server-now="{{ answer_key_server_now }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    {% if not answer_key_is_available %}aria-disabled="true" tabindex="-1"{% endif %}
+                  >
+                    <i class="bi bi-eye me-2"></i>View Attempted Test Paper
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {% if is_scholarship_result %}
+            <div class="claim-box mt-4">
+              <h6>
+                <i class="bi bi-phone-vibrate me-2"></i>Claim Your Scholarship
+              </h6>
+
+              <p class="mb-2">
+                To claim your scholarship and complete the admission process,
+                please contact us at:
+              </p>
+
+              <a
+                href="tel:+919087676545"
+                class="btn w-100 py-2 fw-bold"
+                style="
+                  background-color: #f0d687;
+                  color: #000;
+                  border-radius: 8px;
+                "
+              >
+                <i class="bi bi-telephone me-2"></i> +91 8329100890
+              </a>
+            </div>
+
+            <div class="sms-box mt-4">
+              <h6><i class="bi bi-chat-dots me-2"></i>SMS Notification</h6>
+
+              {% if sms_sent %}
+              <p class="mb-0 text-success">
+                <i class="bi bi-check-circle-fill me-1"></i>
+                A confirmation SMS with your test results has been sent to your
+                registered mobile number
+                <strong>+91 {{ student.phone_number }}</strong>.
+              </p>
+              {% else %}
+              <p class="mb-0 text-warning">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                SMS could not be sent to your mobile number. 
+                {% if sms_error %}Error: {{ sms_error }}
+                {% endif %} 
+                Please note down your result reference:
+                <strong>{{ selected_test_reference_prefix }}-{{ attempt.id }}</strong>
+              </p>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <a
+              href="{% url 'my_tests' %}"
+              class="btn btn-light w-100 mt-4 py-3 border"
+              style="border-radius: 10px"
+            >
+              <i class="bi bi-house-door me-2"></i> Return to Home
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-light border-top py-3 mt-auto">
+      <div class="container">
+        <div
+          class="d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start tablet-footer-stack"
+        >
+          <div>
+            Copyright © 2026
+            <a href="#" class="text-primary text-decoration-none"
+              >The Ranker's Academy</a
+            >, All Rights Reserved
+          </div>
+
+          <div>
+            Designed and Developed by
+            <a href="#" class="text-primary text-decoration-none"
+              >Kavya Infoweb Pvt. Ltd.</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      (() => {
+        if (!window.history || !window.history.replaceState) return;
+
+        // Mark current history state so we can detect back navigation.
+        window.history.replaceState({ scholarshipSuccess: true }, "", window.location.href);
+        // Push a second state so pressing back triggers a popstate event.
+        window.history.pushState({ scholarshipSuccess: true }, "", window.location.href);
+
+        // On back navigation, redirect to a safe page (home/my_tests) instead
+        // of allowing the browser to go back to the test page.
+        window.addEventListener("popstate", () => {
+          window.location.replace("{% url 'my_tests' %}");
+        });
+      })();
+
+      (() => {
+        const button = document.getElementById("attemptReviewBtn");
+        const message = document.getElementById("answerKeyAvailabilityText");
+        if (!button || !message || !button.classList.contains("disabled")) return;
+
+        const availableAt = Date.parse(button.dataset.availableAt || "");
+        const serverNow = Date.parse(button.dataset.serverNow || "");
+        if (Number.isNaN(availableAt) || Number.isNaN(serverNow)) return;
+
+        const clientLoadedAt = Date.now();
+        const enableReview = () => {
+          button.classList.remove("btn-secondary", "disabled");
+          button.classList.add("btn-primary");
+          button.removeAttribute("aria-disabled");
+          button.removeAttribute("tabindex");
+          message.textContent = "Answer key and correct answers are now available.";
+        };
+
+        const tick = () => {
+          const estimatedServerNow = serverNow + (Date.now() - clientLoadedAt);
+          if (estimatedServerNow >= availableAt) {
+            enableReview();
+            return;
+          }
+          window.setTimeout(tick, Math.min(60000, availableAt - estimatedServerNow));
+        };
+
+        tick();
+      })();
+
+      (() => {
+        const attemptId = {{ attempt.id }};
+        let lastSignature = "";
+
+        function rankText(value) {
+          return Number.isInteger(value) ? `#${value}` : "--";
+        }
+
+        function renderSubjectScoreCards(sections, totalScore, totalMarks, batchRank, instituteRank) {
+          const container = document.getElementById("liveSubjectScores");
+          if (!container) return;
+          container.innerHTML = "";
+
+          (Array.isArray(sections) ? sections : []).forEach((section) => {
+            const card = document.createElement("div");
+            card.className = "subject-score-card";
+            card.innerHTML = `
+              <div class="subject-score-label">${section.shortLabel || section.name || "Section"}</div>
+              <div class="subject-score-value">${Number(section.score || 0)} / ${Number(section.total || 0)}</div>
+              <div class="subject-score-meta">${section.name || section.sectionName || "Section score"}</div>
+            `;
+            container.appendChild(card);
+          });
+
+          [
+            {
+              label: "Total Score",
+              value: `${Number(totalScore || 0)} / ${Number(totalMarks || 0)}`,
+              meta: "Selected test total",
+              id: "liveTotalScore",
+              extraClass: " text-primary",
+            },
+            {
+              label: "Batch Rank",
+              value: rankText(batchRank),
+              meta: "Rank within your batch",
+              id: "liveBatchRank",
+              extraClass: "",
+            },
+            {
+              label: "Institute Rank",
+              value: rankText(instituteRank),
+              meta: "Rank within this test",
+              id: "liveInstituteRank",
+              extraClass: "",
+            },
+          ].forEach((item) => {
+            const card = document.createElement("div");
+            card.className = "subject-score-card";
+            card.innerHTML = `
+              <div class="subject-score-label">${item.label}</div>
+              <div class="subject-score-value${item.extraClass}" id="${item.id}">${item.value}</div>
+              <div class="subject-score-meta">${item.meta}</div>
+            `;
+            container.appendChild(card);
+          });
+        }
+
+        function renderLeaderboardRows(entries) {
+          const body = document.getElementById("liveLeaderboardBody");
+          if (!body || !Array.isArray(entries)) return;
+          body.innerHTML = "";
+          entries.forEach((entry) => {
+            const tr = document.createElement("tr");
+            if (entry.is_current_student) tr.classList.add("table-primary");
+            tr.innerHTML = `
+              <td class="fw-bold">#${entry.rank}</td>
+              <td>${entry.student_name}${entry.is_current_student ? ' <span class="badge bg-primary ms-2">You</span>' : ""}</td>
+              <td>${entry.score} / ${entry.total_marks}</td>
+            `;
+            body.appendChild(tr);
+          });
+        }
+
+        async function pollSuccessLiveState() {
+          try {
+            const response = await fetch(`/scholarship/success/${attemptId}/live-state/`, {
+              method: "GET",
+              cache: "no-store",
+              headers: { "X-Requested-With": "XMLHttpRequest" },
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            if (!data?.success) return;
+
+            if (lastSignature && data.signature === lastSignature) return;
+            lastSignature = data.signature || "";
+
+            const scoreNode = document.getElementById("liveScoreValue");
+            if (scoreNode) scoreNode.textContent = `${data.score} / ${data.total_marks}`;
+            const currentRank = document.getElementById("liveCurrentRank");
+            if (currentRank) currentRank.textContent = rankText(data.leaderboard_position);
+            const currentScore = document.getElementById("liveCurrentRankScore");
+            if (currentScore) currentScore.textContent = `${data.score} / ${data.total_marks}`;
+
+            renderSubjectScoreCards(
+              data.subject_scores || [],
+              data.total_score,
+              data.total_marks,
+              data.batch_rank,
+              data.institute_rank,
+            );
+            renderLeaderboardRows(data.leaderboard_top_entries || []);
+          } catch (_error) {
+          }
+        }
+
+        setInterval(pollSuccessLiveState, 3000);
+        pollSuccessLiveState();
+      })();
+    </script>
+  </body>
+</html>

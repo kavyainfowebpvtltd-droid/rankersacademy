@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  .my-attendance-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0891b2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    margin-bottom: 24px;
+  }
+  .student-info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+  }
+  .student-info-card h5 {
+    color: #0d6efd;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #495057;
+    margin-bottom: 8px;
+  }
+  .info-item i {
+    color: #0d6efd;
+    width: 20px;
+  }
+  .summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .summary-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    z-index: 1;
+  }
+  .summary-number {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .summary-label {
+    color: #6c757d;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .total-days .summary-number { color: #0d6efd; }
+  .present-days .summary-number { color: #198754; }
+  .late-days .summary-number { color: #d97706; }
+  .absent-days .summary-number { color: #dc2626; }
+  .percentage .summary-number { color: #7c3aed; }
+  .attendance-table {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .attendance-table thead {
+    background: #f8f9fa;
+  }
+  .attendance-table th {
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 14px 16px;
+  }
+  .attendance-table td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .attendance-table tbody tr:hover {
+    background: #f8f9fa;
+  }
+  .attendance-table tbody tr.current-date {
+    background: #e6f4fb;
+  }
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-block;
+  }
+  .status-present {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+  .status-absent {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+  .status-late {
+    background: #fef3c7;
+    color: #d97706;
+  }
+  .month-selector {
+    border-radius: 10px;
+    padding: 10px 16px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    color: #333;
+    font-weight: 500;
+    font-size: 14px;
+  }
+  .month-selector:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    outline: none;
+  }
+  .progress-bar-custom {
+    height: 8px;
+    border-radius: 4px;
+    background: #e5e7eb;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  .progress-present {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+  }
+  .no-records {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+  }
+  .no-records i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #adb5bd;
+  }
+  @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+    .attendance-summary-grid {
+      row-gap: 16px !important;
+    }
+    .attendance-summary-grid > [class*="col-"] {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    .summary-card {
+      padding: 16px;
+      min-height: 108px;
+      height: 100%;
+    }
+    .summary-number {
+      font-size: 26px;
+    }
+    .summary-label {
+      font-size: 12px;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1366px) and (orientation: landscape) {
+    .attendance-summary-grid {
+      --bs-gutter-x: 1rem;
+      row-gap: 16px !important;
+    }
+    .attendance-summary-grid > [class*="col-"] {
+      flex: 0 0 25%;
+      max-width: 25%;
+      position: relative;
+    }
+    .summary-card {
+      padding: 14px 10px;
+      min-height: 96px;
+      height: 100%;
+    }
+    .summary-number {
+      font-size: 22px;
+    }
+    .summary-label {
+      font-size: 11px;
+    }
+    .progress-bar-custom {
+      margin-top: 6px;
+    }
+    .summary-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      z-index: 0;
+    }
+  }
+  @media (max-width: 768px) {
+    .my-attendance-header {
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .my-attendance-header h3 {
+      font-size: 20px;
+    }
+    .summary-card {
+      padding: 10px;
+    }
+    .summary-number {
+      font-size: 20px;
+    }
+    .summary-label {
+      font-size: 10px;
+    }
+    .attendance-table {
+      font-size: 12px;
+    }
+    .attendance-table th, .attendance-table td {
+      padding: 6px 4px;
+    }
+  }
+</style>
+
+<div class="container py-4" style="max-width: 95%;">
+  <div class="my-attendance-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-calendar-check me-2"></i>My Attendance</h3>
+        <p class="mb-0 opacity-75">Track your monthly attendance</p>
+      </div>
+      <div>
+        <input type="month" class="month-selector" id="monthSelect" value="{{ month }}" max="{{ current_month }}" onchange="filterByMonth(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4 attendance-summary-grid">
+    <div class="col-3">
+      <div class="summary-card total-days">
+        <div class="summary-number">{{ total_days }}</div>
+        <div class="summary-label">Total Days</div>
+        <div class="progress-bar-custom">
+          <div class="progress-bar-fill progress-present" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="summary-card present-days">
+        <div class="summary-number">{{ present_count }}</div>
+        <div class="summary-label">Present</div>
+        <div class="progress-bar-custom">
+          <div class="progress-bar-fill progress-present" id="presentBar" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="summary-card late-days">
+        <div class="summary-number">{{ late_count|default:0 }}</div>
+        <div class="summary-label">Late</div>
+        <div class="progress-bar-custom">
+          <div class="progress-bar-fill" id="lateBar" style="width: 0%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="summary-card absent-days">
+        <div class="summary-number">{{ absent_count }}</div>
+        <div class="summary-label">Absent</div>
+        <div class="progress-bar-custom">
+          <div class="progress-bar-fill" id="absentBar" style="width: 0%; background: linear-gradient(90deg, #dc2626, #b91c1c);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="row g-4">
+    <div class="col-12">
+      <div class="student-info-card">
+        <h5><i class="bi bi-person-badge me-2"></i>Student Information</h5>
+        <div class="row">
+          <div class="col-6">
+            <div class="info-item">
+              <i class="bi bi-person"></i>
+              <span><strong>Name:</strong> {{ student.student_name }}</span>
+            </div>
+          </div>
+          <div class="col-6 text-end">
+            <div class="info-item justify-content-end">
+              <span class="me-3"><strong>Batch:</strong> {{ student.batch }}</span>
+              <span><strong>Course:</strong> Grade {{ student.grade }} ({{ student.board }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="attendance-table">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Status</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if attendances %}
+                {% for record in attendances %}
+                {% with record_date=record.date %}
+                <tr class="{% if record_date|stringformat:'s' == today|stringformat:'s' %}current-date{% endif %}">
+                  <td>{{ record_date|date:"d M Y" }}</td>
+                  <td>{{ record_date|date:"l" }}</td>
+                  <td>
+                    <span class="status-badge {% if record.status == 'Present' %}status-present{% elif record.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
+                      {% if record.status == 'Present' %}<i class="bi bi-check-circle me-1"></i>
+                      {% elif record.status == 'Late' %}<i class="bi bi-exclamation-triangle me-1"></i>
+                      {% else %}<i class="bi bi-x-circle me-1"></i>{% endif %}
+                      {{ record.status }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if record.check_in %}
+                      {{ record.check_in|time:"h:i A" }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if record.check_out %}
+                      {{ record.check_out|time:"h:i A" }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endwith %}
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="5">
+                    <div class="no-records">
+                      <i class="bi bi-calendar-x"></i>
+                      <p class="mb-0">No attendance records found for this month.</p>
+                    </div>
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const totalDays = {{ total_days }};
+  const presentCount = {{ present_count }};
+  const absentCount = {{ absent_count }};
+  const lateCount = {{ late_count|default:0 }};
+  
+  if (totalDays > 0) {
+    document.getElementById('presentBar').style.width = (presentCount / totalDays * 100) + '%';
+    document.getElementById('lateBar').style.width = (lateCount / totalDays * 100) + '%';
+    document.getElementById('absentBar').style.width = (absentCount / totalDays * 100) + '%';
+  }
+
+  function filterByMonth(month) {
+    window.location.href = '?month=' + month;
+  }
+  
+  document.getElementById('monthSelect').addEventListener('change', function() {
+    filterByMonth(this.value);
+  });
+</script>
+{% endblock %}

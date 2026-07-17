@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Self-Diagnostic Test Report - The Rankers Academy</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 20mm;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #ffffff;
+        font-size: 11pt;
+        line-height: 1.4;
+        color: #1f2937;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 15px;
+      }
+
+      .header-logo {
+        width: 110px;
+        height: 110px;
+        margin-bottom: 0px;
+        object-fit: contain;
+      }
+
+      .header-placeholder {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 8px;
+        background: #1e3a8a;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .header-title {
+        font-size: 18pt;
+        font-weight: bold;
+        color: #1e3a8a;
+        margin-bottom: 2px;
+      }
+
+      .header-divider {
+        width: 200px;
+        height: 3px;
+        background: #1e3a8a;
+        margin: 8px auto;
+      }
+
+      .header-subtitle {
+        font-size: 12pt;
+        color: #1f2937;
+        font-weight: 600;
+      }
+
+      .student-details {
+        margin-bottom: 15px;
+      }
+
+      .student-details-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #f3f4f6;
+      }
+
+      .student-details-table td {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        font-size: 10pt;
+      }
+
+      .student-details-table .label {
+        color: #6b7280;
+        width: 40%;
+        font-weight: normal;
+      }
+
+      .student-details-table .value {
+        color: #1f2937;
+        font-weight: bold;
+        width: 60%;
+      }
+
+      .performance-summary {
+        margin-bottom: 15px;
+      }
+
+      .performance-boxes {
+        display: flex;
+        gap: 15px;
+      }
+
+      .performance-box {
+        flex: 1;
+        padding: 12px 15px 10px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        min-height: 78px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .performance-box .label {
+        font-size: 10pt;
+        color: #6b7280;
+        margin-bottom: 2px;
+        line-height: 1.2;
+      }
+
+      .performance-box .value {
+        font-size: 16pt;
+        font-weight: bold;
+        color: #1e3a8a;
+        line-height: 1.1;
+        display: block;
+      }
+
+      .performance-box .value.previous {
+        color: #1f2937;
+      }
+
+      .subject-report {
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+      }
+
+      .subject-title {
+        font-size: 12pt;
+        font-weight: bold;
+        color: #1e3a8a;
+        margin-bottom: 8px;
+      }
+
+      .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+      }
+
+      .report-table th {
+        background: #1e3a8a;
+        color: white;
+        padding: 8px 6px;
+        text-align: center;
+        font-size: 9pt;
+        font-weight: bold;
+      }
+
+      .report-table th:first-child {
+        text-align: center;
+        width: 35px;
+      }
+
+      .report-table th:nth-child(2) {
+        text-align: left;
+        width: auto;
+      }
+
+      .report-table td {
+        padding: 6px;
+        border: 1px solid #ddd;
+        font-size: 9pt;
+        text-align: center;
+      }
+
+      .report-table td:first-child {
+        text-align: center;
+      }
+
+      .report-table td:nth-child(2) {
+        text-align: left;
+      }
+
+      .report-table tr:nth-child(even) {
+        background: #f9fafb;
+      }
+
+      .weak-topics {
+        margin-top: 10px;
+        padding: 8px;
+        background: #fef2f2;
+        border-left: 3px solid #ef4444;
+      }
+
+      .weak-topics-title {
+        font-size: 10pt;
+        font-weight: bold;
+        color: #ef4444;
+        margin-bottom: 4px;
+      }
+
+      .weak-topics-list {
+        font-size: 9pt;
+        color: #1f2937;
+      }
+
+      .weak-topics-list .topic {
+        margin-bottom: 2px;
+      }
+
+      .no-weak-topics {
+        font-size: 10pt;
+        color: #10b981;
+        font-style: italic;
+      }
+
+      .footer {
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        page-break-inside: avoid;
+      }
+
+      .footer-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .footer-logo {
+        width: 60px;
+        height: 60px;
+      }
+
+      .footer-academy-name {
+        font-size: 10pt;
+        font-weight: bold;
+        color: #1e3a8a;
+      }
+
+      .footer-right {
+        text-align: right;
+        font-size: 8pt;
+        color: #6b7280;
+        line-height: 1.5;
+      }
+
+      .footer-copyright {
+        text-align: center;
+        font-size: 8pt;
+        color: #9ca3af;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .print-button-container {
+        text-align: center;
+        padding: 20px;
+        background: #f3f4f6;
+      }
+
+      .print-btn {
+        background: #1e3a8a;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        font-size: 14pt;
+        cursor: pointer;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+
+      .print-btn:hover {
+        background: #1e40af;
+      }
+
+      @media print {
+        body {
+          background: white !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .container {
+          width: 100% !important;
+          max-width: none !important;
+        }
+
+        .print-button-container {
+          display: none !important;
+        }
+
+        .no-print {
+          display: none !important;
+        }
+
+        table {
+          page-break-inside: avoid;
+        }
+
+        .subject-report {
+          page-break-inside: avoid;
+        }
+
+        .footer {
+          page-break-inside: avoid;
+        }
+
+        @page {
+          size: A4;
+          margin: 20mm;
+        }
+      }
+
+      @media screen {
+        body {
+          background: #e5e7eb;
+          padding: 20px;
+        }
+
+        .container {
+          background: white;
+          padding: 30px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="print-button-container no-print">
+      <button class="print-btn" onclick="window.print()">Print Report</button>
+    </div>
+
+    <div class="container">
+      <!-- HEADER SECTION -->
+      <div class="header">
+        {% if logo_url %}
+        <img
+          src="{{ logo_url }}"
+          alt="Academy Logo"
+          class="header-logo"
+          onerror="
+            this.style.display = 'none';
+            this.nextElementSibling.style.display = 'flex';
+          "
+        />
+        <div class="header-placeholder" style="display: none">RA</div>
+        {% else %}
+        <div class="header-placeholder">RA</div>
+        {% endif %}
+        <div class="header-title">THE RANKERS ACADEMY</div>
+        <div class="header-divider"></div>
+        <div class="header-subtitle">Student Self-Diagnostic Test Report</div>
+      </div>
+
+      <!-- STUDENT DETAILS SECTION -->
+      <div class="student-details">
+        <table class="student-details-table">
+          <tr>
+            <td class="label">Student Name</td>
+            <td class="value">{{ student_name|default:"-" }}</td>
+            <td class="label">Username</td>
+            <td class="value">{{ username|default:"-" }}</td>
+          </tr>
+          <tr>
+            <td class="label">School</td>
+            <td class="value">{{ school|default:"-" }}</td>
+            <td class="label">Class</td>
+            <td class="value">{{ class|default:"-" }}</td>
+          </tr>
+          <tr>
+            <td class="label">Board</td>
+            <td class="value">{{ board|default:"-" }}</td>
+            <td class="label">Gender</td>
+            <td class="value">{{ gender|default:"-" }}</td>
+          </tr>
+          <tr>
+            <td class="label">Test No</td>
+            <td class="value">{{ test_no|default:"1" }}</td>
+            <td class="label">Test Date</td>
+            <td class="value">{{ test_date|default:"-" }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- PERFORMANCE SUMMARY -->
+      <div class="performance-summary">
+        <div class="performance-boxes">
+          <div class="performance-box">
+            <div class="label">Total Score</div>
+            <div class="value">{{ total_score|default:"0%" }}</div>
+          </div>
+          <div class="performance-box">
+            <div class="label">Previous Score</div>
+            <div class="value previous">{{ previous_score|default:"0%" }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBJECT WISE REPORTS -->
+      {% for subject in subjects %}
+      <div class="subject-report">
+        <div class="subject-title">{{ subject.name }}</div>
+
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Sr No</th>
+              <th>Chapter</th>
+              <th>Total</th>
+              <th>Correct</th>
+              <th>Unknown</th>
+              <th>Coverage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for chapter in subject.chapters %}
+            <tr>
+              <td>{{ forloop.counter|stringformat:"02d" }}</td>
+              <td>{{ chapter.name }}</td>
+              <td>{{ chapter.total }}</td>
+              <td>{{ chapter.correct }}</td>
+              <td>{{ chapter.unknown }}</td>
+              <td>{{ chapter.coverage }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!-- Weak Topics -->
+        {% if subject.weak_topics and subject.weak_topics|length > 0 %}
+        <div class="weak-topics">
+          <div class="weak-topics-title">Weak Topics</div>
+          <div class="weak-topics-list">
+            {% for topic in subject.weak_topics %}
+            <div class="topic">
+              {{ forloop.counter|stringformat:"02d" }}. {{ topic }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="weak-topics">
+          <div class="weak-topics-title">Weak Topics</div>
+          <div class="no-weak-topics">No weak topics.</div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <!-- FOOTER -->
+      <div class="footer">
+        <div class="footer-left">
+          {% if logo_url %}
+          <img src="{{ logo_url }}" alt="Logo" class="footer-logo" />
+          {% endif %}
+          <div class="footer-academy-name">THE RANKERS ACADEMY</div>
+        </div>
+        <div class="footer-right">
+          Plot No. 10, Buty Layout Laxmi Nagar, Nagpur- 440022<br />
+          info@therankersacademy.com<br />
+          +91 8329100890
+        </div>
+      </div>
+      <div class="footer-copyright">
+        Copyright © 2026 The Ranker's Academy , All Rights Reserved | Student
+        Self Diagnostic Report
+      </div>
+    </div>
+  </body>
+</html>
