@@ -16,6 +16,45 @@ from scholarship_test.services import test_service as scholarship_test_service
 
 
 @override_settings(ROOT_URLCONF="sds.urls")
+class UserManagementStaffClassificationTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="adminpass123",
+        )
+        self.client.force_login(self.admin)
+
+    def _create_staff(self, username, designation):
+        user = User.objects.create_user(
+            username=username,
+            email=f"{username}@example.com",
+            password="staffpass123",
+        )
+        return TeacherAdmin.objects.create(
+            user=user,
+            name=username.title(),
+            username=username,
+            email=f"{username}@example.com",
+            contact="9876543210" if username == "teacher-admin" else "9876543211",
+            gender="Male",
+            role=designation,
+        )
+
+    def test_combined_teacher_designation_is_teaching_staff(self):
+        combined_designation_staff = self._create_staff("teacher-admin", "Teacher/Admin")
+        non_teaching_staff = self._create_staff("counselor", "Counselor")
+
+        response = self.client.get(reverse("user-management"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(combined_designation_staff, response.context["teaching_staff"])
+        self.assertNotIn(combined_designation_staff, response.context["non_teaching_staff"])
+        self.assertIn(non_teaching_staff, response.context["non_teaching_staff"])
+
+
+@override_settings(ROOT_URLCONF="sds.urls")
 class AddUserStudentFieldSelectionTests(TestCase):
     def setUp(self):
         self.client = Client()

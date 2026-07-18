@@ -1486,8 +1486,8 @@ def user_management(request):
         ]
 
     teachers = _user_management_teachers_queryset()
-    teaching_staff = teachers.filter(role__iexact="Teacher").order_by(Lower("username"), "id")
-    non_teaching_staff = teachers.exclude(role__iexact="Teacher").order_by(Lower("username"), "id")
+    teaching_staff = teachers.filter(role__icontains="Teacher").order_by(Lower("username"), "id")
+    non_teaching_staff = teachers.exclude(role__icontains="Teacher").order_by(Lower("username"), "id")
 
     student_items_per_page = get_entries_per_page(request, "student_entries")
     teacher_items_per_page = get_entries_per_page(request, "teacher_entries")
@@ -8411,5 +8411,3 @@ def api_student_progress(request):
             'test_history': test_history
         }
     })
-
-
